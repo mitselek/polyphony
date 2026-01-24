@@ -1,6 +1,6 @@
 // Test JWT signing and verification with Ed25519
 import { describe, it, expect, beforeAll } from 'vitest';
-import { signToken, verifyToken, type AuthToken } from './jwt';
+import { signToken, verifyToken, type AuthToken } from './jwt.js';
 import { exportPKCS8, exportSPKI, generateKeyPair } from 'jose';
 
 // Test keypair (generated with Ed25519)
