@@ -1,0 +1,25 @@
+{
+  "name": "polyphony",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter registry dev",
+    "build": "pnpm --filter registry build",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "check": "pnpm -r check"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
