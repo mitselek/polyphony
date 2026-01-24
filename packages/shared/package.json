@@ -1,0 +1,21 @@
+{
+  "name": "@polyphony/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./crypto": "./src/crypto/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "typescript": "^5.7.0"
+  }
+}
