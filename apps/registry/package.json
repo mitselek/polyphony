@@ -16,7 +16,8 @@
 		"format": "prettier --write ."
 	},
 	"dependencies": {
-		"@polyphony/shared": "workspace:*"
+		"@polyphony/shared": "workspace:*",
+		"nanoid": "^5.1.6"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^6.0.0",

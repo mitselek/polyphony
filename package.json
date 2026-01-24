@@ -11,7 +11,8 @@
     "check": "pnpm -r check"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "wrangler": "^4.60.0"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
