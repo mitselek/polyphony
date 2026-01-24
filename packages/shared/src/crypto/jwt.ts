@@ -2,17 +2,7 @@
 // Implements #14
 
 import { SignJWT, jwtVerify, importPKCS8, importSPKI } from 'jose';
-
-export interface AuthToken {
-	iss: string; // Issuer: registry.polyphony.app
-	sub: string; // Subject: user's email
-	aud: string; // Audience: vault_id
-	iat: number; // Issued at (Unix timestamp)
-	exp: number; // Expires at (Unix timestamp)
-	nonce: string; // Replay protection
-	name?: string; // Optional: from OAuth
-	picture?: string; // Optional: from OAuth
-}
+import type { AuthToken } from '../types/index.js';
 
 const TOKEN_EXPIRY_SECONDS = 5 * 60; // 5 minutes
 

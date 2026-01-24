@@ -1,15 +1,9 @@
 import { jwtVerify, importSPKI } from 'jose';
+import type { VerifiedToken } from '../types/index.js';
 
 export interface VerifyOptions {
 	registryUrl: string; // To fetch JWKS
 	vaultId: string; // Expected 'aud' claim
-}
-
-export interface VerifiedToken {
-	email: string;
-	name?: string;
-	picture?: string;
-	nonce: string;
 }
 
 interface JWK {
