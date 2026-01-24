@@ -189,7 +189,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical details.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/polyphony.git
+git clone https://github.com/mitselek/polyphony.git
 cd polyphony
 
 # Install dependencies
@@ -253,7 +253,7 @@ We welcome contributions! Please read our contributing guidelines _(coming soon)
 
 ## License
 
-[MIT](LICENSE) _(or AGPL—TBD)_
+[MIT](LICENSE)
 
 ---
 
