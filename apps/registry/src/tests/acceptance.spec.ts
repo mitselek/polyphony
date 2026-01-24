@@ -188,7 +188,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 			jwks = { keys: [jwk] };
 
 			// Mock fetch to return JWKS
-			globalThis.fetch = async (url: string) => {
+			globalThis.fetch = async (_url: RequestInfo | URL) => {
 				return {
 					ok: true,
 					json: async () => jwks
@@ -230,7 +230,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 			// Use unique registryUrl to avoid cache pollution from beforeAll
 			const cacheTestRegistry = 'https://cache-test-registry.polyphony.app';
 			let fetchCount = 0;
-			globalThis.fetch = async (url: string) => {
+			globalThis.fetch = async (_url: RequestInfo | URL) => {
 				fetchCount++;
 				return {
 					ok: true,
@@ -285,7 +285,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 			const jwk = await pemToJwk(publicKeyPem, 'test-key-1');
 			jwks = { keys: [jwk] };
 
-			globalThis.fetch = async (url: string) => {
+			globalThis.fetch = async (_url: RequestInfo | URL) => {
 				return {
 					ok: true,
 					json: async () => jwks
