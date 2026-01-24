@@ -16,6 +16,8 @@ export interface AuthToken {
   exp: number;
   /** Nonce for replay protection */
   nonce: string;
+  /** User's email (custom claim, matches sub for clarity) */
+  email: string;
   /** User's display name (from OAuth) */
   name?: string;
   /** User's profile picture URL (from OAuth) */

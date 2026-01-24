@@ -12,19 +12,20 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 
 ### 7/7 Issues Complete
 
-| Issue | Title | PR | Status |
-|-------|-------|-----|--------|
-| #12 | Registry monorepo setup | #19 | ✅ Merged |
-| #13 | D1 database schema | #20 | ✅ Merged |
-| #14 | JWT signing with Ed25519 | #21 | ✅ Merged |
-| #15 | JWKS endpoint | #22 | ✅ Merged |
-| #16 | OAuth 2.0 flow | #23 | ✅ Merged |
-| #17 | Vault registration API | #24 | ✅ Merged |
-| #18 | Token verification library | #25 | ✅ Merged |
+| Issue | Title                      | PR  | Status    |
+| ----- | -------------------------- | --- | --------- |
+| #12   | Registry monorepo setup    | #19 | ✅ Merged |
+| #13   | D1 database schema         | #20 | ✅ Merged |
+| #14   | JWT signing with Ed25519   | #21 | ✅ Merged |
+| #15   | JWKS endpoint              | #22 | ✅ Merged |
+| #16   | OAuth 2.0 flow             | #23 | ✅ Merged |
+| #17   | Vault registration API     | #24 | ✅ Merged |
+| #18   | Token verification library | #25 | ✅ Merged |
 
 ### Test Coverage
 
 **82 Total Tests:**
+
 - **20 shared package tests**
   - JWT signing/verification (6 tests)
   - JWKS conversion (3 tests)
@@ -34,7 +35,8 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
   - Acceptance tests (30 tests)
 
 **Test Results:**
-```
+
+```text
 ✓ packages/shared (20 tests)
   ✓ src/crypto/jwks.spec.ts (3 tests)
   ✓ src/crypto/jwt.spec.ts (6 tests)
@@ -55,22 +57,26 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 ### AC1: OAuth login produces valid JWT ✅
 
 **Implementation:**
+
 - EdDSA algorithm with Ed25519 keys
 - Standard JWT structure: `header.payload.signature`
 - Base64url encoding
 
 **Tests:**
+
 - JWT structure validation (3 parts)
 - Base64url decoding of header/payload
 - Signature verification
 
 **Files:**
+
 - `packages/shared/src/crypto/jwt.ts` - `signToken()` function
 - `apps/registry/src/routes/auth/callback/+server.ts` - OAuth callback handler
 
 ### AC2: JWT contains required claims ✅
 
 **Required Claims:**
+
 - `iss` (issuer): Registry URL
 - `sub` (subject): User email
 - `aud` (audience): Vault ID
@@ -79,90 +85,105 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 - `nonce`: Replay protection token
 
 **Custom Claims:**
+
 - `email`: User email (for clarity)
 - `name`: User full name (optional)
 - `picture`: User avatar URL (optional)
 
 **Tests:**
+
 - All required claims present and correct type
 - Custom claims validated
 - Expiry set correctly (5 minutes from iat)
 
 **Files:**
+
 - `packages/shared/src/types/index.ts` - `AuthToken` interface
 - `apps/registry/src/tests/acceptance.spec.ts` - AC2 tests (9 assertions)
 
 ### AC3: JWKS endpoint exposes public key ✅
 
 **Implementation:**
+
 - Endpoint: `GET /.well-known/jwks.json`
 - Response: RFC 7517 compliant JWKS
 - Ed25519 public keys converted from PEM to JWK
 
 **JWKS Structure:**
+
 ```typescript
 {
   keys: [
     {
-      kty: "OKP",        // Octet Key Pair
-      crv: "Ed25519",    // Edwards curve
-      x: "...",          // Base64url public key
-      kid: "...",        // Key ID (from D1)
-      use: "sig",        // Signature verification
-      alg: "EdDSA"       // Algorithm
-    }
-  ]
+      kty: "OKP", // Octet Key Pair
+      crv: "Ed25519", // Edwards curve
+      x: "...", // Base64url public key
+      kid: "...", // Key ID (from D1)
+      use: "sig", // Signature verification
+      alg: "EdDSA", // Algorithm
+    },
+  ];
 }
 ```
 
 **Tests:**
+
 - JWKS structure validation
 - Ed25519 key format verification
 - All required JWK fields present
 
 **Files:**
+
 - `apps/registry/src/routes/.well-known/jwks.json/+server.ts` - JWKS endpoint
 - `packages/shared/src/crypto/jwks.ts` - `pemToJwk()` converter
 
 ### AC4: Token expires in 5 minutes ✅
 
 **Implementation:**
+
 - Token lifetime: exactly 300 seconds (5 minutes)
 - Set via: `exp = iat + 300`
 - Enforced in `signToken()` function
 
 **Tests:**
+
 - Expiry duration calculation: `exp - iat === 300`
 - Token expires in future (relative to now)
 - Token issued in past or now
 
 **Files:**
+
 - `packages/shared/src/crypto/jwt.ts` - `TOKEN_EXPIRY_SECONDS = 5 * 60`
 
 ### AC5: Invalid callback URLs rejected ✅
 
 **Implementation:**
+
 - Vault registration validates callback URL
 - Must start with `https://`
 - HTTP URLs rejected with 400 error
 
 **Tests:**
+
 - HTTP URL rejection test (vault registration)
 - HTTPS URL acceptance test
 - Invalid URL format tests
 
 **Files:**
+
 - `apps/registry/src/routes/api/vaults/+server.ts` - POST handler with URL validation
 
 ### AC6: Vault can verify tokens using shared library ✅
 
 **Implementation:**
+
 - Exported function: `verifyAuthToken(token, { registryUrl, vaultId })`
 - JWKS fetching with 1-hour cache
 - JWK to PEM conversion (Ed25519 SPKI format)
 - Multi-key JWKS support (try each key)
 
 **Verification Steps:**
+
 1. Fetch JWKS from `{registryUrl}/.well-known/jwks.json`
 2. Convert each JWK to PEM format
 3. Try each key until signature verifies
@@ -170,6 +191,7 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 5. Return decoded payload
 
 **Tests:**
+
 - Valid token verification
 - Wrong audience rejection
 - Wrong issuer rejection
@@ -177,6 +199,7 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 - Multi-key JWKS support
 
 **Files:**
+
 - `packages/shared/src/auth/verify.ts` - `verifyAuthToken()` function (174 lines)
 - `packages/shared/src/auth/verify.spec.ts` - 11 comprehensive tests
 
@@ -185,12 +208,14 @@ Phase 0 is fully implemented, tested, and validated. All 7 sub-issues completed,
 ### Registry (SvelteKit + Cloudflare)
 
 **Stack:**
+
 - Framework: SvelteKit 2.50.1
 - Runtime: Cloudflare Pages + Workers
 - Database: Cloudflare D1 (SQLite)
 - Auth: Google OAuth 2.0
 
 **Database Schema:**
+
 ```sql
 -- Vaults (registered password managers)
 CREATE TABLE vaults (
@@ -212,20 +237,21 @@ CREATE TABLE signing_keys (
 
 **API Endpoints:**
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/auth` | GET | Initiate OAuth flow |
-| `/auth/callback` | GET | Handle OAuth callback, sign JWT |
-| `/.well-known/jwks.json` | GET | Public key JWKS |
-| `/api/vaults` | POST | Register vault |
-| `/api/vaults` | GET | List vaults |
-| `/api/vaults/[id]` | GET | Get vault details |
-| `/api/vaults/[id]` | PUT | Update vault |
-| `/api/vaults/[id]` | DELETE | Delete vault |
+| Endpoint                 | Method | Purpose                         |
+| ------------------------ | ------ | ------------------------------- |
+| `/auth`                  | GET    | Initiate OAuth flow             |
+| `/auth/callback`         | GET    | Handle OAuth callback, sign JWT |
+| `/.well-known/jwks.json` | GET    | Public key JWKS                 |
+| `/api/vaults`            | POST   | Register vault                  |
+| `/api/vaults`            | GET    | List vaults                     |
+| `/api/vaults/[id]`       | GET    | Get vault details               |
+| `/api/vaults/[id]`       | PUT    | Update vault                    |
+| `/api/vaults/[id]`       | DELETE | Delete vault                    |
 
 ### Shared Package
 
 **Exports:**
+
 ```typescript
 // JWT operations
 signToken(payload, privateKey): Promise<string>
@@ -247,6 +273,7 @@ AuthToken, JWK, VerifiedToken
 ### New Files (Phase 0)
 
 **Registry:**
+
 - `apps/registry/src/routes/auth/+server.ts` - OAuth initiation
 - `apps/registry/src/routes/auth/callback/+server.ts` - OAuth callback handler
 - `apps/registry/src/routes/.well-known/jwks.json/+server.ts` - JWKS endpoint
@@ -258,6 +285,7 @@ AuthToken, JWK, VerifiedToken
 - `apps/registry/migrations/0002_create_signing_keys.sql` - Signing keys table
 
 **Shared Package:**
+
 - `packages/shared/src/crypto/jwt.ts` - JWT signing/verification
 - `packages/shared/src/crypto/jwks.ts` - JWKS conversion utilities
 - `packages/shared/src/auth/verify.ts` - Token verification for Vaults
@@ -265,6 +293,7 @@ AuthToken, JWK, VerifiedToken
 - `packages/shared/src/index.ts` - Package exports
 
 **Tests:**
+
 - `packages/shared/src/crypto/jwt.spec.ts` - JWT tests (6 tests)
 - `packages/shared/src/crypto/jwks.spec.ts` - JWKS tests (3 tests)
 - `packages/shared/src/auth/verify.spec.ts` - Verification tests (11 tests)
@@ -276,17 +305,20 @@ AuthToken, JWK, VerifiedToken
 - `apps/registry/src/lib/setup.spec.ts` - Setup tests (2 tests)
 
 **Documentation:**
+
 - `docs/PHASE0-ACCEPTANCE-TESTS.md` - Manual test plan
 - `docs/PHASE0-COMPLETION-REPORT.md` - This document
 
 ### Lines of Code
 
 **Production Code:**
+
 - Registry: ~600 lines (routes + lib)
 - Shared: ~450 lines (crypto + auth + types)
 - **Total: ~1,050 lines**
 
 **Test Code:**
+
 - Registry tests: ~1,200 lines
 - Shared tests: ~600 lines
 - **Total: ~1,800 lines**
@@ -298,23 +330,27 @@ AuthToken, JWK, VerifiedToken
 ### 1. Ed25519 over RSA
 
 **Rationale:**
+
 - Smaller keys (32 bytes vs 2048 bits for RSA)
 - Faster signing/verification
 - No padding vulnerabilities
 - Future-proof (EdDSA is FIPS 186-5 approved)
 
 **Trade-offs:**
+
 - Less widespread than RSA
 - Requires jose library (no native Node.js support)
 
 ### 2. Manual JWKS Fetching (not createRemoteJWKSet)
 
 **Rationale:**
+
 - Better testability (can mock fetch)
 - 1-hour caching reduces Registry load
 - Control over error handling
 
 **Implementation:**
+
 ```typescript
 // Cache structure: Map<registryUrl, { jwks, fetchedAt }>
 const JWKS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -331,49 +367,55 @@ async function fetchJWKS(registryUrl: string) {
 ### 3. JWK to PEM Conversion
 
 **Rationale:**
+
 - jose library's `jwtVerify` requires CryptoKey or PEM
 - Ed25519 SPKI format is standard
 - Base64url decode `x` field, wrap in ASN.1 structure
 
 **Implementation:**
+
 ```typescript
 function jwkToPem(jwk: JWK): string {
-  const xBytes = Buffer.from(jwk.x, 'base64url');
+  const xBytes = Buffer.from(jwk.x, "base64url");
   const spki = Buffer.concat([ED25519_OID_PREFIX, xBytes]);
-  return `-----BEGIN PUBLIC KEY-----\n${spki.toString('base64')}\n-----END PUBLIC KEY-----`;
+  return `-----BEGIN PUBLIC KEY-----\n${spki.toString("base64")}\n-----END PUBLIC KEY-----`;
 }
 ```
 
 ### 4. Multi-Key JWKS Support
 
 **Rationale:**
+
 - Supports key rotation
 - Registry can have multiple active keys
 - Vaults try each key until one works
 
 **Implementation:**
+
 ```typescript
 for (const jwk of jwks.keys) {
   try {
     const pem = jwkToPem(jwk);
-    const publicKey = await importSPKI(pem, 'EdDSA');
+    const publicKey = await importSPKI(pem, "EdDSA");
     const { payload } = await jwtVerify(token, publicKey, { ...options });
     return payload; // Success!
   } catch (err) {
     // Try next key
   }
 }
-throw new Error('No valid key found');
+throw new Error("No valid key found");
 ```
 
 ### 5. 5-Minute Token Expiry
 
 **Rationale:**
+
 - Short enough to limit replay attacks
 - Long enough for user to complete OAuth flow
 - Single-use tokens (nonce prevents reuse)
 
 **Security Properties:**
+
 - Nonce stored in Vault state (CSRF protection)
 - Token expires before most attacks can be mounted
 - Registry doesn't track used tokens (stateless)
@@ -381,11 +423,13 @@ throw new Error('No valid key found');
 ### 6. HTTPS-Only Callback URLs
 
 **Rationale:**
+
 - Prevents man-in-the-middle attacks
 - Industry standard (OAuth 2.0 Security BCP)
 - Enforced at vault registration
 
 **Exception:**
+
 - `http://localhost` allowed in development (not implemented yet)
 
 ## Security Review
@@ -393,6 +437,7 @@ throw new Error('No valid key found');
 ### Threat Model
 
 **Threats Mitigated:**
+
 1. **Replay attacks**: Nonce + 5-minute expiry
 2. **Token forgery**: Ed25519 signatures
 3. **MITM**: HTTPS-only callback URLs
@@ -400,6 +445,7 @@ throw new Error('No valid key found');
 5. **Key compromise**: Multi-key support for rotation
 
 **Residual Risks:**
+
 1. **Registry compromise**: Attacker gains access to signing keys
    - Mitigation: Key rotation (Phase 2)
    - Mitigation: Hardware security modules (future)
@@ -410,11 +456,13 @@ throw new Error('No valid key found');
 ### Cryptographic Properties
 
 **Ed25519 Security:**
+
 - 128-bit security level
 - Resistant to side-channel attacks
 - No timing vulnerabilities
 
 **JWT Security:**
+
 - Signed tokens (not encrypted)
 - Vaults must verify iss, aud, exp, nonce
 - No sensitive data in payload (email is public)
@@ -422,6 +470,7 @@ throw new Error('No valid key found');
 ### Compliance
 
 **Standards:**
+
 - OAuth 2.0 (RFC 6749)
 - JWT (RFC 7519)
 - JWK (RFC 7517)
@@ -433,21 +482,25 @@ throw new Error('No valid key found');
 ### Production Requirements
 
 **Environment Variables:**
+
 - [ ] `GOOGLE_CLIENT_ID` - Google OAuth client ID
 - [ ] `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 - [ ] `GOOGLE_REDIRECT_URI` - Registry callback URL (https://registry.polyphony.app/auth/callback)
 
 **Cloudflare Configuration:**
+
 - [ ] D1 database created (`polyphony-registry-db`)
 - [ ] Migrations applied (via `wrangler d1 migrations apply`)
 - [ ] Custom domain configured (`registry.polyphony.app`)
 - [ ] HTTPS certificate provisioned
 
 **Database:**
+
 - [ ] Initial signing key generated (via `POST /api/setup` or admin script)
 - [ ] Vaults registered (if any pre-configured vaults)
 
 **Monitoring:**
+
 - [ ] Error tracking (Sentry/Cloudflare Analytics)
 - [ ] Performance monitoring (Cloudflare Web Analytics)
 - [ ] Uptime monitoring (UptimeRobot/Pingdom)
@@ -455,6 +508,7 @@ throw new Error('No valid key found');
 ### Post-Deployment Verification
 
 **Manual Tests:**
+
 1. Visit `/.well-known/jwks.json` - should return JWKS with active keys
 2. Register a vault via `POST /api/vaults`
 3. Initiate OAuth flow via `/auth?vault_id={id}&state={nonce}`
@@ -463,6 +517,7 @@ throw new Error('No valid key found');
 6. Use `verifyAuthToken()` from Vault to verify token
 
 **Automated Tests:**
+
 ```bash
 pnpm test  # All 82 tests should pass
 ```
@@ -498,6 +553,7 @@ pnpm test  # All 82 tests should pass
 Phase 0 provides a complete foundation for Phase 1 (Vault Development):
 
 **Registry Capabilities (ready):**
+
 - ✅ OAuth authentication
 - ✅ JWT issuance
 - ✅ JWKS exposure
@@ -505,6 +561,7 @@ Phase 0 provides a complete foundation for Phase 1 (Vault Development):
 - ✅ Token verification library
 
 **Vault Requirements (Phase 1):**
+
 - OAuth flow integration (`GET /auth?vault_id=...`)
 - JWT reception (callback URL fragment: `#token=...`)
 - Token verification (`verifyAuthToken()` from `@polyphony/shared`)
@@ -512,6 +569,7 @@ Phase 0 provides a complete foundation for Phase 1 (Vault Development):
 - Credential storage (KeePass format)
 
 **Shared Package (ready):**
+
 - ✅ `verifyAuthToken()` exported
 - ✅ TypeScript types published
 - ✅ Comprehensive test coverage
