@@ -15,6 +15,9 @@
 				<a href="/library" class="text-gray-600 hover:text-gray-900">Library</a>
 				{#if data.user}
 					<a href="/upload" class="text-gray-600 hover:text-gray-900">Upload</a>
+					{#if data.user.roles?.some((r) => ['admin', 'owner'].includes(r))}
+						<a href="/members" class="text-gray-600 hover:text-gray-900">Members</a>
+					{/if}
 					<span class="text-sm text-gray-500">{data.user.name ?? data.user.email}</span>
 					<a
 						href="/api/auth/logout"

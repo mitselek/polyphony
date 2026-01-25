@@ -1,7 +1,5 @@
 // Member database operations
-
-export type Role = 'owner' | 'admin' | 'librarian';
-export type VoicePart = 'S' | 'A' | 'T' | 'B' | 'SA' | 'AT' | 'TB' | 'SAT' | 'ATB' | 'SATB';
+import type { Role, VoicePart } from '$lib/types';
 
 export interface Member {
 	id: string;

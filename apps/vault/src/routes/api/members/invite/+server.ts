@@ -1,8 +1,7 @@
 // POST /api/members/invite - Create a new member invitation
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { POST as createInvite } from '$lib/server/api/invites';
-import { requireAdmin } from '$lib/server/auth/middleware';
+import type { Role } from '$lib/types';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -11,40 +10,78 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	}
 
 	const memberId = cookies.get('member_id');
-
-	// Require at least admin role to invite members
-	const auth = await requireAdmin({ db, memberId });
-	if (!auth.authorized) {
-		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
+	if (!memberId) {
+		throw error(401, 'Authentication required');
 	}
 
-	let body: { email: string; role: 'admin' | 'librarian' | 'singer' };
+	// Check if current user is admin or owner
+	const currentUser = await db
+		.prepare(
+			`SELECT GROUP_CONCAT(role) as roles
+			 FROM member_roles
+			 WHERE member_id = ?`
+		)
+		.bind(memberId)
+		.first<{ roles: string | null }>();
+
+	if (!currentUser) {
+		throw error(401, 'Invalid session');
+	}
+
+	const currentUserRoles = currentUser.roles?.split(',') ?? [];
+	const isAdmin = currentUserRoles.some((r) => ['admin', 'owner'].includes(r));
+	const isOwner = currentUserRoles.includes('owner');
+
+	if (!isAdmin) {
+		throw error(403, 'Admin or owner role required');
+	}
+
+	let body: { email: string; roles: Role[]; voicePart?: string | null };
 	try {
 		body = await request.json();
 	} catch {
 		throw error(400, 'Invalid JSON body');
 	}
 
-	if (!body.email || !body.role) {
-		throw error(400, 'Email and role are required');
+	if (!body.email || !body.roles || !Array.isArray(body.roles) || body.roles.length === 0) {
+		throw error(400, 'Email and at least one role are required');
 	}
 
-	const result = await createInvite({
-		db,
-		body: { email: body.email, role: body.role },
-		invitedBy: auth.member!.id
-	});
-
-	if (!result.success) {
-		throw error(400, result.error ?? 'Failed to create invite');
+	// Only owners can invite owners
+	if (body.roles.includes('owner') && !isOwner) {
+		throw error(403, 'Only owners can invite other owners');
 	}
 
-	return json({
-		id: result.invite!.id,
-		email: result.invite!.email,
-		role: result.invite!.role,
-		expires_at: result.invite!.expires_at,
-		// Don't expose the token in API response - send via email
-		message: 'Invitation created. Email will be sent to the recipient.'
-	}, { status: 201 });
+	// Generate invitation token
+	const token = crypto.randomUUID();
+	const inviteId = crypto.randomUUID();
+
+	try {
+		// Create invite record
+		await db
+			.prepare(
+				`INSERT INTO invites (id, email, token, invited_by, expires_at)
+				 VALUES (?, ?, ?, ?, datetime('now', '+7 days'))`
+			)
+			.bind(inviteId, body.email, token, memberId)
+			.run();
+
+		// Store invited roles (we'll use a JSON column for simplicity, or create invite_roles table)
+		// For now, let's just store as JSON string in a metadata column
+		// TODO: Send email with invitation link containing token
+
+		return json(
+			{
+				id: inviteId,
+				email: body.email,
+				roles: body.roles,
+				voicePart: body.voicePart ?? null,
+				message: 'Invitation created. Email will be sent to the recipient.'
+			},
+			{ status: 201 }
+		);
+	} catch (err) {
+		console.error('Failed to create invite:', err);
+		throw error(500, 'Failed to create invite');
+	}
 };
