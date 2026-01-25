@@ -17,6 +17,21 @@
 
 		{#if mounted}
 			<div class="bg-white rounded-lg shadow-md p-8">
+				<div class="flex gap-4 justify-center mb-8">
+					<a
+						href="/library"
+						class="rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition"
+					>
+						Browse Library
+					</a>
+					<a
+						href="/upload"
+						class="rounded-lg bg-gray-100 px-6 py-3 text-gray-700 font-medium hover:bg-gray-200 transition"
+					>
+						Upload Score
+					</a>
+				</div>
+
 				<h2 class="text-2xl font-semibold text-gray-800 mb-4">Phase 1: MVP</h2>
 				<p class="text-gray-600 mb-6">
 					A standalone vault application for managing choir sheet music libraries.
@@ -39,12 +54,6 @@
 						<h3 class="font-semibold text-gray-800">Copyright Protection</h3>
 						<p class="text-sm text-gray-600">Handle takedown requests transparently</p>
 					</div>
-				</div>
-
-				<div class="mt-8 pt-6 border-t border-gray-200">
-					<p class="text-sm text-gray-500">
-						Coming soon: Authentication, score upload, member management
-					</p>
 				</div>
 			</div>
 		{/if}
