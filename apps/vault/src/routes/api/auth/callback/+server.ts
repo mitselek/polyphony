@@ -2,7 +2,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { importJWK, jwtVerify } from 'jose';
-import { nanoid } from 'nanoid';
+import { getMemberByEmail, createMember } from '$lib/server/db/members';
 
 // Registry URL for fetching JWKS
 const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
@@ -74,22 +74,15 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		}
 
 		// Find or create member by email
-		let member = await db
-			.prepare('SELECT id, email, name, role FROM members WHERE email = ?')
-			.bind(email)
-			.first<{ id: string; email: string; name: string | null; role: string }>();
+		let member = await getMemberByEmail(db, email);
 
 		if (!member) {
-			// Create new member with 'singer' role (default for new OAuth users)
-			const memberId = nanoid(21);
-			await db
-				.prepare(
-					'INSERT INTO members (id, email, name, role, created_at) VALUES (?, ?, ?, ?, ?)'
-				)
-				.bind(memberId, email, name || null, 'singer', new Date().toISOString())
-				.run();
-
-			member = { id: memberId, email, name: name || null, role: 'singer' };
+			// Create new member (no roles assigned - they need an invite)
+			member = await createMember(db, {
+				email,
+				name,
+				roles: [] // New OAuth users have no roles until invited/assigned
+			});
 		} else if (name && member.name !== name) {
 			// Update name if changed
 			await db
