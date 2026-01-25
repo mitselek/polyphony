@@ -1,7 +1,7 @@
 // JWT signing and verification with Ed25519
 // Implements #14
 
-import { SignJWT, jwtVerify, importPKCS8, importSPKI } from 'jose';
+import { SignJWT, jwtVerify, importPKCS8, importSPKI, importJWK } from 'jose';
 import type { AuthToken } from '../types/index.js';
 
 const TOKEN_EXPIRY_SECONDS = 5 * 60; // 5 minutes
@@ -13,8 +13,16 @@ export async function signToken(
 	const now = Math.floor(Date.now() / 1000);
 	const exp = now + TOKEN_EXPIRY_SECONDS;
 
-	// Import Ed25519 private key (PKCS8 PEM format)
-	const key = await importPKCS8(privateKey, 'EdDSA');
+	// Import Ed25519 private key (supports both PKCS8 PEM and JWK JSON)
+	let key;
+	if (privateKey.trim().startsWith('{')) {
+		// JWK JSON format
+		const jwk = JSON.parse(privateKey);
+		key = await importJWK(jwk, 'EdDSA');
+	} else {
+		// PKCS8 PEM format
+		key = await importPKCS8(privateKey, 'EdDSA');
+	}
 
 	// Build JWT
 	const jwt = new SignJWT({

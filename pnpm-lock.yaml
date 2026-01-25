@@ -79,6 +79,9 @@ importers:
       '@polyphony/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      jose:
+        specifier: ^6.1.3
+        version: 6.1.3
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
