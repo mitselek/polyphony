@@ -24,8 +24,17 @@ export interface TestPlatform {
 	};
 }
 
+export interface TestGetPlatform {
+	env: {
+		DB: D1Database;
+		API_KEY?: string;
+		GOOGLE_CLIENT_ID?: string;
+		GOOGLE_CLIENT_SECRET?: string;
+	};
+}
+
 export interface TestGetEvent {
 	url?: URL;
 	fetch?: any; // Vitest mock type incompatible with SvelteKit fetch
-	platform?: TestPlatform;
+	platform?: TestGetPlatform;
 }

@@ -71,7 +71,8 @@ describe('GET /auth', () => {
 			platform: {
 				env: {
 					DB: createMockDb(true, 'https://vault.example.com/callback'),
-					API_KEY: 'test'
+					API_KEY: 'test',
+					GOOGLE_CLIENT_ID: 'test-google-client-id'
 				}
 			}
 		} satisfies TestRequestEvent);

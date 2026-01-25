@@ -15,7 +15,7 @@ const mockDb = {
 describe('GET /.well-known/jwks.json', () => {
 	it('should return valid JWKS JSON structure', async () => {
 		const response = await GET({
-			platform: { env: { DB: mockDb, API_KEY: 'test-key' } }
+			platform: { env: { DB: mockDb } }
 		} satisfies TestGetEvent);
 
 		expect(response.status).toBe(200);
@@ -28,7 +28,7 @@ describe('GET /.well-known/jwks.json', () => {
 
 	it('should include Cache-Control header', async () => {
 		const response = await GET({
-			platform: { env: { DB: mockDb, API_KEY: 'test-key' } }
+			platform: { env: { DB: mockDb } }
 		} satisfies TestGetEvent);
 
 		const cacheControl = response.headers.get('cache-control');
@@ -55,7 +55,7 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 		} as unknown as D1Database;
 
 		const response = await GET({
-			platform: { env: { DB: mockDbWithKey, API_KEY: 'test-key' } }
+			platform: { env: { DB: mockDbWithKey } }
 		} satisfies TestGetEvent);
 
 		const data = (await response.json()) as JWKS;
@@ -89,7 +89,7 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 		} as unknown as D1Database;
 
 		const response = await GET({
-			platform: { env: { DB: mockDbWithKeys, API_KEY: 'test-key' } }
+			platform: { env: { DB: mockDbWithKeys } }
 		} satisfies TestGetEvent);
 
 		const data = (await response.json()) as JWKS;

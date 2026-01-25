@@ -54,15 +54,23 @@ export async function verifyToken(token: string, publicKey: string): Promise<Aut
 		throw new Error('Invalid token payload structure');
 	}
 
-	return {
+	const result: AuthToken = {
 		iss: payload.iss,
 		sub: payload.sub,
 		aud: payload.aud,
 		iat: payload.iat,
 		exp: payload.exp,
 		nonce: payload.nonce,
-		email: payload.email,
-		name: typeof payload.name === 'string' ? payload.name : undefined,
-		picture: typeof payload.picture === 'string' ? payload.picture : undefined
+		email: payload.email
 	};
+	
+	// Only add optional properties if they exist (exactOptionalPropertyTypes compliant)
+	if (typeof payload.name === 'string') {
+		result.name = payload.name;
+	}
+	if (typeof payload.picture === 'string') {
+		result.picture = payload.picture;
+	}
+	
+	return result;
 }

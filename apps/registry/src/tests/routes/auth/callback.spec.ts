@@ -54,7 +54,7 @@ describe('GET /auth/callback', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
-			fetch: createMockFetch()
+			fetch: createMockFetch() as any
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -67,7 +67,7 @@ describe('GET /auth/callback', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
-			fetch: createMockFetch()
+			fetch: createMockFetch() as any
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -93,7 +93,7 @@ describe('GET /auth/callback', () => {
 						GOOGLE_CLIENT_SECRET: 'test-client-secret'
 					}
 				},
-				fetch: createMockFetch(true)
+				fetch: createMockFetch(true) as any
 			} satisfies TestRequestEvent);
 			
 			// Should not reach here - redirect throws
@@ -123,7 +123,7 @@ describe('GET /auth/callback', () => {
 					GOOGLE_CLIENT_SECRET: 'test-client-secret'
 				}
 			},
-			fetch: createMockFetch(false)
+			fetch: createMockFetch(false) as any
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
