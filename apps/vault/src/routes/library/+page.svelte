@@ -78,13 +78,12 @@
 							{new Date(score.uploaded_at).toLocaleDateString()}
 						</p>
 					</div>
-					<a
-						href="/api/scores/{score.id}/download"
-						data-sveltekit-reload
+					<button
+						onclick={() => window.location.href = `/api/scores/${score.id}/download`}
 						class="rounded-lg bg-gray-100 px-4 py-2 text-gray-700 transition hover:bg-gray-200"
 					>
 						Download
-					</a>
+					</button>
 				</div>
 			{/each}
 		</div>
