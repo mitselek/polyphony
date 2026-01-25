@@ -97,9 +97,6 @@
 			members = members.map((m) =>
 				m.id === memberId ? { ...m, voicePart } : m
 			);
-
-			success = 'Voice part updated';
-			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to update voice part';
 			setTimeout(() => (error = ''), 5000);
@@ -143,12 +140,6 @@
 	{#if error}
 		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
 			{error}
-		</div>
-	{/if}
-
-	{#if success}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{success}
 		</div>
 	{/if}
 
