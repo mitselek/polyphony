@@ -13,6 +13,7 @@
 	let { data }: { data: PageData } = $props();
 
 	let searchQuery = $state('');
+	let deletingId = $state<string | null>(null);
 
 	let filteredScores = $derived(
 		data.scores.filter(
@@ -21,6 +22,26 @@
 				(s.composer?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 		)
 	);
+
+	async function deleteScore(id: string, title: string) {
+		if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+
+		deletingId = id;
+		try {
+			const res = await fetch(`/api/scores/${id}`, { method: 'DELETE' });
+			if (res.ok) {
+				// Remove from local list
+				data.scores = data.scores.filter((s: Score) => s.id !== id);
+			} else {
+				const err = await res.json().catch(() => ({ message: res.statusText }));
+				alert(`Failed to delete: ${err.message || res.statusText}`);
+			}
+		} catch (e) {
+			alert(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+		} finally {
+			deletingId = null;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -78,12 +99,21 @@
 							{new Date(score.uploaded_at).toLocaleDateString()}
 						</p>
 					</div>
+					<div class="flex gap-2">
 					<button
 						onclick={() => window.location.href = `/api/scores/${score.id}/download`}
 						class="rounded-lg bg-gray-100 px-4 py-2 text-gray-700 transition hover:bg-gray-200"
 					>
 						Download
 					</button>
+					<button
+						onclick={() => deleteScore(score.id, score.title)}
+						disabled={deletingId === score.id}
+						class="rounded-lg bg-red-100 px-4 py-2 text-red-700 transition hover:bg-red-200 disabled:opacity-50"
+					>
+						{deletingId === score.id ? 'Deleting...' : 'Delete'}
+					</button>
+				</div>
 				</div>
 			{/each}
 		</div>
