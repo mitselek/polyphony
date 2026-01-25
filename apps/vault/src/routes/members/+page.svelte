@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	// Make a reactive copy of members for local updates
-	let members = $state(data.members);
+	// Using untrack to intentionally capture only initial value
+	// The $effect below will handle subsequent updates
+	let members = $state(untrack(() => data.members));
 	let searchQuery = $state('');
 	let updatingMember = $state<string | null>(null);
 	let error = $state('');
