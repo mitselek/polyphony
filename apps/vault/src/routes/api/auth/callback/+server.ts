@@ -73,22 +73,102 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 			throw error(400, 'Token missing email claim');
 		}
 
+		// Check if there's an invite token from the accept flow
+		const inviteToken = cookies.get('invite_token');
+		let inviteRoles: string[] = [];
+		let inviteVoicePart: string | null = null;
+
+		if (inviteToken) {
+			// Validate and retrieve invite details
+			const invite = await db
+				.prepare(
+					`SELECT id, roles, voice_part, status, expires_at
+					 FROM invites
+					 WHERE token = ?`
+				)
+				.bind(inviteToken)
+				.first<{
+					id: string;
+					roles: string;
+					voice_part: string | null;
+					status: string;
+					expires_at: string;
+				}>();
+
+			if (invite && invite.status === 'pending') {
+				const now = new Date();
+				const expiresAt = new Date(invite.expires_at);
+				
+				if (now <= expiresAt) {
+					// Valid invite - use its roles and voice part
+					inviteRoles = JSON.parse(invite.roles);
+					inviteVoicePart = invite.voice_part;
+
+					// Mark invite as accepted
+					await db
+						.prepare(
+							`UPDATE invites
+							 SET status = 'accepted',
+							     accepted_at = datetime('now'),
+							     accepted_by_email = ?
+							 WHERE id = ?`
+						)
+						.bind(email, invite.id)
+						.run();
+				}
+			}
+
+			// Clear the invite token cookie
+			cookies.delete('invite_token', { path: '/' });
+		}
+
 		// Find or create member by email
 		let member = await getMemberByEmail(db, email);
 
 		if (!member) {
-			// Create new member (no roles assigned - they need an invite)
+			// Create new member with roles from invite (or empty if no invite)
 			member = await createMember(db, {
 				email,
 				name,
-				roles: [] // New OAuth users have no roles until invited/assigned
+				roles: inviteRoles,
+				voice_part: inviteVoicePart
 			});
-		} else if (name && member.name !== name) {
-			// Update name if changed
-			await db
-				.prepare('UPDATE members SET name = ? WHERE id = ?')
-				.bind(name, member.id)
-				.run();
+		} else {
+			// Existing member - update name if changed
+			if (name && member.name !== name) {
+				await db
+					.prepare('UPDATE members SET name = ? WHERE id = ?')
+					.bind(name, member.id)
+					.run();
+			}
+
+			// If they came via invite, add the invited roles to their existing roles
+			if (inviteRoles.length > 0) {
+				const currentRoles = member.roles;
+				const newRoles = Array.from(new Set([...currentRoles, ...inviteRoles]));
+				
+				// Delete existing roles
+				await db
+					.prepare('DELETE FROM member_roles WHERE member_id = ?')
+					.bind(member.id)
+					.run();
+
+				// Insert updated roles
+				for (const role of newRoles) {
+					await db
+						.prepare('INSERT INTO member_roles (member_id, role) VALUES (?, ?)')
+						.bind(member.id, role)
+						.run();
+				}
+
+				// Update voice part if provided in invite
+				if (inviteVoicePart) {
+					await db
+						.prepare('UPDATE members SET voice_part = ? WHERE id = ?')
+						.bind(inviteVoicePart, member.id)
+						.run();
+				}
+			}
 		}
 
 		// Create session cookie
