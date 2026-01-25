@@ -2,18 +2,20 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { POST as createInvite } from '$lib/server/api/invites';
+import { requireAdmin } from '$lib/server/auth/middleware';
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
-	// TODO: In production, get invitedBy from authenticated session
-	// For now, use a header for testing
-	const invitedBy = request.headers.get('X-Member-Id');
-	if (!invitedBy) {
-		throw error(401, 'Authentication required');
+	const memberId = cookies.get('member_id');
+
+	// Require at least admin role to invite members
+	const auth = await requireAdmin({ db, memberId });
+	if (!auth.authorized) {
+		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
 	}
 
 	let body: { email: string; role: 'admin' | 'librarian' | 'singer' };
@@ -30,7 +32,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const result = await createInvite({
 		db,
 		body: { email: body.email, role: body.role },
-		invitedBy
+		invitedBy: auth.member!.id
 	});
 
 	if (!result.success) {

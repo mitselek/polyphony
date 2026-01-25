@@ -3,10 +3,19 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { GET_ONE, DELETE as deleteScore } from '$lib/server/api/scores';
+import { requireSinger, requireLibrarian } from '$lib/server/auth/middleware';
 
-export const GET: RequestHandler = async ({ params, platform }) => {
+export const GET: RequestHandler = async ({ params, platform, cookies }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database not available');
+	}
+
+	const memberId = cookies.get('member_id');
+
+	// Require at least singer role to view score details
+	const auth = await requireSinger({ db: platform.env.DB, memberId });
+	if (!auth.authorized) {
+		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
 	}
 
 	const result = await GET_ONE({ db: platform.env.DB, scoreId: params.id });
@@ -18,18 +27,23 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 	return json(result);
 };
 
-export const DELETE: RequestHandler = async ({ params, platform }) => {
+export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database not available');
 	}
 
-	// TODO: Check if user has admin/librarian role
-	const memberId = 'anonymous';
+	const memberId = cookies.get('member_id');
+
+	// Require at least librarian role to delete scores
+	const auth = await requireLibrarian({ db: platform.env.DB, memberId });
+	if (!auth.authorized) {
+		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
+	}
 
 	const result = await deleteScore({
 		db: platform.env.DB,
 		scoreId: params.id,
-		memberId
+		memberId: auth.member!.id
 	});
 
 	if (!result.deleted) {

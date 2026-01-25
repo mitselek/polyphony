@@ -3,23 +3,37 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { GET as getScores, POST as createScore } from '$lib/server/api/scores';
+import { requireSinger, requireLibrarian } from '$lib/server/auth/middleware';
 
-export const GET: RequestHandler = async ({ platform }) => {
+export const GET: RequestHandler = async ({ platform, cookies }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database not available');
+	}
+
+	const memberId = cookies.get('member_id');
+
+	// Require at least singer role to view scores
+	const auth = await requireSinger({ db: platform.env.DB, memberId });
+	if (!auth.authorized) {
+		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
 	}
 
 	const result = await getScores({ db: platform.env.DB });
 	return json(result);
 };
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database not available');
 	}
 
-	// TODO: Get member ID from auth token
-	const memberId = 'anonymous'; // Placeholder until auth is implemented
+	const memberId = cookies.get('member_id');
+
+	// Require at least librarian role to upload scores
+	const auth = await requireLibrarian({ db: platform.env.DB, memberId });
+	if (!auth.authorized) {
+		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
+	}
 
 	const formData = await request.formData();
 	const file = formData.get('file') as File | null;
@@ -50,7 +64,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 				license_type: license_type as 'public_domain' | 'licensed' | 'owned' | 'pending'
 			},
 			file,
-			memberId
+			memberId: auth.member!.id
 		});
 
 		return json(result, { status: 201 });
