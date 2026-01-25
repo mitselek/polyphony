@@ -2,7 +2,7 @@
 // GET /.well-known/jwks.json
 /// <reference types="@cloudflare/workers-types" />
 import { json } from '@sveltejs/kit';
-import { pemToJwk, type JWKS } from '@polyphony/shared/crypto';
+import type { JWKS } from '@polyphony/shared/crypto';
 
 interface CloudflarePlatform {
 	env: { DB: D1Database };
@@ -17,10 +17,12 @@ export const GET = async ({ platform }: { platform?: CloudflarePlatform }) => {
 		.prepare('SELECT id, public_key FROM signing_keys WHERE revoked_at IS NULL')
 		.all();
 
-	// Convert each key to JWK format
-	const keys = await Promise.all(
-		results.map((row: any) => pemToJwk(row.public_key, row.id))
-	);
+	// Parse JWK from stored JSON and add kid (key ID)
+	const keys = results.map((row: any) => {
+		const jwk = JSON.parse(row.public_key);
+		jwk.kid = row.id; // Add key ID to JWK
+		return jwk;
+	});
 
 	const jwks: JWKS = { keys };
 
