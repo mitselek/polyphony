@@ -59,7 +59,7 @@ export async function load({ url, platform, cookies }: RequestEvent) {
 	// Build OAuth URL with required parameters
 	const oauthUrl = new URL(registryAuthUrl);
 	oauthUrl.searchParams.set('response_type', 'code');
-	oauthUrl.searchParams.set('client_id', platform?.env?.OAUTH_CLIENT_ID || 'vault');
+	oauthUrl.searchParams.set('client_id', platform?.env?.REGISTRY_CLIENT_ID || 'vault');
 	oauthUrl.searchParams.set('redirect_uri', callbackUrl);
 	oauthUrl.searchParams.set('scope', 'profile email');
 	

@@ -7,6 +7,7 @@ declare global {
 				STORAGE: R2Bucket;
 				REGISTRY_CLIENT_ID: string;
 				REGISTRY_CLIENT_SECRET: string;
+				REGISTRY_OAUTH_URL: string;
 				SESSION_SECRET: string;
 			};
 			context: {
