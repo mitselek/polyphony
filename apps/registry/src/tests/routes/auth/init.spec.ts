@@ -28,7 +28,7 @@ describe('GET /auth', () => {
 		const url = new URL('http://localhost/auth');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(false), API_KEY: 'test' } }
+			platform: { env: { DB: createMockDb(false), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -40,7 +40,7 @@ describe('GET /auth', () => {
 		const url = new URL('http://localhost/auth?vault_id=vault-test-id');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(true), API_KEY: 'test' } }
+			platform: { env: { DB: createMockDb(true), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -54,7 +54,7 @@ describe('GET /auth', () => {
 		);
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(false), API_KEY: 'test' } }
+			platform: { env: { DB: createMockDb(false), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);

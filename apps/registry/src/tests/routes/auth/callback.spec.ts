@@ -53,7 +53,7 @@ describe('GET /auth/callback', () => {
 		const url = new URL('http://localhost/auth/callback?state={}');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(), API_KEY: 'test' } },
+			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
 			fetch: createMockFetch()
 		} satisfies TestRequestEvent);
 
@@ -66,7 +66,7 @@ describe('GET /auth/callback', () => {
 		const url = new URL('http://localhost/auth/callback?code=test-code');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(), API_KEY: 'test' } },
+			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
 			fetch: createMockFetch()
 		} satisfies TestRequestEvent);
 
