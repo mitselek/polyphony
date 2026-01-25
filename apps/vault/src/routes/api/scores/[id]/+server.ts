@@ -3,7 +3,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { GET_ONE, DELETE as deleteScore } from '$lib/server/api/scores';
-import { requireSinger, requireLibrarian } from '$lib/server/auth/middleware';
+import { getMemberFromCookie, requireLibrarian } from '$lib/server/auth/middleware';
 
 export const GET: RequestHandler = async ({ params, platform, cookies }) => {
 	if (!platform?.env?.DB) {
@@ -11,11 +11,11 @@ export const GET: RequestHandler = async ({ params, platform, cookies }) => {
 	}
 
 	const memberId = cookies.get('member_id');
+	const member = await getMemberFromCookie(platform.env.DB, memberId);
 
-	// Require at least singer role to view score details
-	const auth = await requireSinger({ db: platform.env.DB, memberId });
-	if (!auth.authorized) {
-		throw error(auth.status ?? 401, auth.error ?? 'Unauthorized');
+	// All authenticated users can view score details
+	if (!member) {
+		throw error(401, 'Authentication required');
 	}
 
 	const result = await GET_ONE({ db: platform.env.DB, scoreId: params.id });
