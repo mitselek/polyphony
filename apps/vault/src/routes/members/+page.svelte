@@ -3,21 +3,28 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// Make a reactive copy of members for local updates
+	let members = $state(data.members);
 	let searchQuery = $state('');
 	let updatingMember = $state<string | null>(null);
 	let error = $state('');
 	let success = $state('');
 
+	// Watch for data changes (e.g., on navigation) and update local state
+	$effect(() => {
+		members = data.members;
+	});
+
 	let filteredMembers = $derived(
-		data.members.filter(
-			(m: typeof data.members[0]) =>
+		members.filter(
+			(m: typeof members[0]) =>
 				m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
 				(m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 		)
 	);
 
 	async function toggleRole(memberId: string, role: 'owner' | 'admin' | 'librarian') {
-		const member = data.members.find((m: typeof data.members[0]) => m.id === memberId);
+		const member = members.find((m: typeof members[0]) => m.id === memberId);
 		if (!member) return;
 
 		const hasRole = member.roles.includes(role);
@@ -25,7 +32,7 @@
 
 		// Prevent removing last owner
 		if (role === 'owner' && hasRole) {
-			const ownerCount = data.members.filter((m: typeof data.members[0]) => m.roles.includes('owner')).length;
+			const ownerCount = members.filter((m: typeof members[0]) => m.roles.includes('owner')).length;
 			if (ownerCount <= 1) {
 				error = 'Cannot remove the last owner';
 				setTimeout(() => (error = ''), 3000);
@@ -49,12 +56,18 @@
 				throw new Error(data.message ?? 'Failed to update role');
 			}
 
-			// Update local state
-			if (action === 'add') {
-				member.roles = [...member.roles, role];
-			} else {
-				member.roles = member.roles.filter((r: string) => r !== role);
-			}
+			// Update local state - reassign array to trigger reactivity
+			members = members.map((m) =>
+				m.id === memberId
+					? {
+							...m,
+							roles:
+								action === 'add'
+									? [...m.roles, role]
+									: m.roles.filter((r: string) => r !== role)
+						}
+					: m
+			);
 
 			success = `${action === 'add' ? 'Added' : 'Removed'} ${role} role`;
 			setTimeout(() => (success = ''), 3000);
@@ -82,10 +95,10 @@
 				throw new Error(data.message ?? 'Failed to update voice part');
 			}
 
-			const member = data.members.find((m: typeof data.members[0]) => m.id === memberId);
-			if (member) {
-				member.voicePart = voicePart;
-			}
+			// Update local state - reassign array to trigger reactivity
+			members = members.map((m) =>
+				m.id === memberId ? { ...m, voicePart } : m
+			);
 
 			success = 'Voice part updated';
 			setTimeout(() => (success = ''), 3000);
@@ -154,7 +167,7 @@
 	<!-- Members List -->
 	{#if filteredMembers.length === 0}
 		<div class="py-12 text-center text-gray-500">
-			{#if data.members.length === 0}
+			{#if members.length === 0}
 				<p>No members yet.</p>
 			{:else}
 				<p>No members match your search.</p>
@@ -249,6 +262,6 @@
 	{/if}
 
 	<p class="mt-6 text-sm text-gray-500">
-		{filteredMembers.length} of {data.members.length} members
+		{filteredMembers.length} of {members.length} members
 	</p>
 </div>
