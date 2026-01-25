@@ -1,7 +1,7 @@
 // Test OAuth initiation endpoint
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
-import { GET } from './+server.js';
+import { GET } from '../../../routes/auth/+server.js';
 import type { JWKS } from '@polyphony/shared/crypto';
 
 // Mock D1 database

@@ -1,7 +1,7 @@
 // Test Vault registration API
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
-import { POST, GET } from './+server.js';
+import { POST, GET } from '../../../../routes/api/vaults/+server.js';
 
 // Mock D1 database
 const createMockDb = (existingVaultName?: string) => ({

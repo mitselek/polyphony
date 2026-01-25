@@ -1,7 +1,7 @@
 // Test OAuth callback endpoint
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect, vi } from 'vitest';
-import { GET } from './+server.js';
+import { GET } from '../../../routes/auth/callback/+server.js';
 
 // Mock fetch for Google token exchange
 const createMockFetch = (success: boolean = true) => {

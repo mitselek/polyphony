@@ -1,7 +1,7 @@
 // Test individual vault operations
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
-import { GET, PUT, DELETE } from './+server.js';
+import { GET, PUT, DELETE } from '../../../../routes/api/vaults/[id]/+server.js';
 
 // Mock D1 database
 const createMockDb = (vaultExists: boolean = true) => ({

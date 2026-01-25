@@ -1,7 +1,7 @@
 // Test JWKS endpoint
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GET } from './+server.js';
+import { GET } from '../../../../routes/.well-known/jwks.json/+server.js';
 import type { JWKS } from '@polyphony/shared/crypto';
 
 // Mock D1 database
