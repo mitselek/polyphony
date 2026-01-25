@@ -26,9 +26,13 @@ export interface ScoreFile {
 	uploadedAt: string;
 }
 
+// D1 returns BLOB data as number[] (Array.from(ArrayBuffer)), not ArrayBuffer directly
+// See: https://developers.cloudflare.com/d1/build-with-d1/d1-client-api/#type-conversion
+type D1BlobData = number[] | ArrayBuffer;
+
 interface ScoreFileRow {
 	score_id: string;
-	data: ArrayBuffer | null;
+	data: D1BlobData | null;
 	size: number;
 	original_name: string;
 	uploaded_at: string;
@@ -38,8 +42,20 @@ interface ScoreFileRow {
 
 interface ChunkRow {
 	chunk_index: number;
-	data: ArrayBuffer;
+	data: D1BlobData;
 	size: number;
+}
+
+/**
+ * Convert D1 BLOB data (number[] or ArrayBuffer) to ArrayBuffer
+ * D1 returns BLOBs as number[] via Array.from(), need to convert back
+ */
+function toArrayBuffer(data: D1BlobData): ArrayBuffer {
+	if (data instanceof ArrayBuffer) {
+		return data;
+	}
+	// D1 returns BLOB as number[] - convert back to ArrayBuffer
+	return new Uint8Array(data).buffer;
 }
 
 /**
@@ -143,7 +159,7 @@ export async function getScoreFileChunked(
 	if (row.is_chunked === 0 && row.data) {
 		return {
 			scoreId: row.score_id,
-			data: row.data,
+			data: toArrayBuffer(row.data),
 			size: row.size,
 			originalName: row.original_name,
 			uploadedAt: row.uploaded_at
@@ -222,7 +238,9 @@ function reassembleChunks(chunks: ChunkRow[]): ArrayBuffer {
 	let offset = 0;
 
 	for (const chunk of chunks) {
-		const chunkData = new Uint8Array(chunk.data);
+		// Convert D1 BLOB data back to ArrayBuffer
+		const chunkBuffer = toArrayBuffer(chunk.data);
+		const chunkData = new Uint8Array(chunkBuffer);
 		result.set(chunkData, offset);
 		offset += chunk.size;
 	}
