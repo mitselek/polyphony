@@ -15,11 +15,11 @@ async function main() {
 		{ name: 'Ed25519' },
 		true, // extractable
 		['sign', 'verify']
-	);
+	) as unknown as CryptoKeyPair;
 
 	// Export to JWK format
-	const publicJwk = await webcrypto.subtle.exportKey('jwk', keyPair.publicKey);
-	const privateJwk = await webcrypto.subtle.exportKey('jwk', keyPair.privateKey);
+	const publicJwk = await webcrypto.subtle.exportKey('jwk', keyPair.publicKey as CryptoKey);
+	const privateJwk = await webcrypto.subtle.exportKey('jwk', keyPair.privateKey as CryptoKey);
 
 	// Generate key ID
 	const keyId = `key-${nanoid(16)}`;
