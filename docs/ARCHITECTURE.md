@@ -29,7 +29,7 @@ Technical architecture for the Polyphony federated choral score ecosystem.
 │   VAULT A    │      │   VAULT B    │      │   VAULT C    │
 │  (Choir X)   │◄────►│  (Choir Y)   │◄────►│  (Choir Z)   │
 │              │ P2P  │              │ P2P  │              │
-│  D1 + R2     │      │  D1 + R2     │      │  D1 + R2     │
+│     D1       │      │     D1       │      │     D1       │
 └──────────────┘      └──────────────┘      └──────────────┘
      Each Vault = independent Cloudflare Pages deployment
 ```
@@ -45,7 +45,7 @@ Based on proven evr-mail-mock stack:
 | **Framework**    | SvelteKit 2 + Svelte 5     | Full-stack, SSR capable                    |
 | **Platform**     | Cloudflare Pages + Workers | Edge deployment, global CDN                |
 | **Database**     | Cloudflare D1              | SQLite at edge, per-deployment             |
-| **File Storage** | Cloudflare R2              | S3-compatible object storage (Vaults only) |
+| **File Storage** | Cloudflare D1              | Chunked BLOB storage (≤9.5MB per file)     |
 | **Styling**      | Tailwind CSS v4            | Utility-first CSS                          |
 | **Testing**      | Vitest + Playwright        | Unit + E2E                                 |
 | **Language**     | TypeScript (strict)        | Type safety throughout                     |
@@ -88,7 +88,7 @@ polyphony/
 │       │   ├── lib/
 │       │   │   ├── server/
 │       │   │   │   ├── db/
-│       │   │   │   ├── storage/  # R2 operations
+│       │   │   │   ├── storage/  # D1 chunked storage
 │       │   │   │   └── federation/
 │       │   │   └── components/
 │       │   └── routes/
@@ -242,7 +242,7 @@ CREATE TABLE scores (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     composer TEXT,
-    file_key TEXT NOT NULL,            -- R2 object key
+    file_key TEXT NOT NULL,            -- References score_files.score_id
     file_size INTEGER,
     content_type TEXT DEFAULT 'application/pdf',
     license_type TEXT DEFAULT 'private', -- pd, cc, original, transcription
@@ -277,18 +277,39 @@ CREATE INDEX idx_scores_composer ON scores(composer);
 CREATE INDEX idx_scores_license ON scores(license_type);
 ```
 
-### 5.3 File Storage (R2)
+### 5.3 File Storage (D1 Chunked)
 
-```text
-vault-{vault_id}/
-├── scores/
-│   ├── {score_id}.pdf
-│   └── {score_id}.pdf
-└── temp/
-    └── uploads/
+Score PDFs are stored directly in D1 using chunked storage to work around the 2MB row limit:
+
+```sql
+-- Score file metadata
+CREATE TABLE score_files (
+    score_id TEXT PRIMARY KEY REFERENCES scores(id) ON DELETE CASCADE,
+    data BLOB,                     -- File data (NULL if chunked)
+    size INTEGER NOT NULL,
+    original_name TEXT,
+    uploaded_at TEXT DEFAULT (datetime('now')),
+    is_chunked INTEGER DEFAULT 0,
+    chunk_count INTEGER DEFAULT NULL
+);
+
+-- Chunks for large files (>2MB)
+CREATE TABLE score_chunks (
+    score_id TEXT NOT NULL REFERENCES scores(id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    size INTEGER NOT NULL,
+    PRIMARY KEY (score_id, chunk_index)
+);
 ```
 
-**Access pattern**: Signed URLs with short expiry (15 minutes) generated on-demand.
+**Storage approach**:
+
+- Files ≤2MB: Single row in `score_files.data`
+- Files >2MB: Split into ~1.9MB chunks, stored in `score_chunks`
+- Maximum file size: 9.5MB (5 chunks × 1.9MB)
+
+**D1 BLOB handling note**: D1 returns BLOB data as `number[]` (via `Array.from()`), not as `ArrayBuffer`. The `toArrayBuffer()` helper converts this back for HTTP responses.
 
 ### 5.4 API Endpoints
 
@@ -541,7 +562,7 @@ Each choir gets their own Cloudflare Pages project:
 **Bindings per Vault**:
 
 - D1: Vault's own database
-- R2: Vault's file storage
+- (Files stored in D1 using chunked storage)
 
 ### 8.3 Environment Variables
 
@@ -580,8 +601,8 @@ REGISTRY_URL = "https://registry.polyphony.app"
 Member → POST /api/scores (multipart form)
       → Validate file type (PDF only for MVP)
       → Generate score ID
-      → Upload to R2: scores/{id}.pdf
-      → Insert metadata into D1
+      → Store PDF in D1 (chunked if >2MB)
+      → Insert metadata into D1 scores table
       → Return score object
 ```
 
@@ -593,8 +614,8 @@ Member → GET /api/federation/scores/{peerId}/{scoreId}
       → Generate JWT for request
       → Fetch from peer: GET {peer_url}/api/federation/serve/{scoreId}
       → Peer verifies JWT
-      → Peer returns signed R2 URL
-      → Redirect member to signed URL
+      → Peer streams PDF from D1
+      → Proxy response to member
 ```
 
 ### 9.3 Submit to PD Catalog
@@ -676,9 +697,9 @@ const FEDERATION_LIMITS = {
 
 - [ ] Cloudflare API permissions needed for automated Vault deployment
 - [ ] Key rotation strategy for long-lived Vaults
-- [ ] Backup/restore workflow for D1 + R2 data
+- [ ] Backup/restore workflow for D1 data
 - [ ] Monitoring/alerting for distributed Vaults
 
 ---
 
-_Last updated: 2026-01-24_
+_Last updated: 2026-01-25_

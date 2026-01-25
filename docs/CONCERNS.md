@@ -88,7 +88,7 @@ This document tracks unresolved questions that need answers before implementatio
 
 - [x] Primary deployment target? → **Cloudflare (via Registry one-click deploy).**
 - [x] Self-hosting supported? → **Yes, Vaults can be deployed anywhere and manually registered.**
-- [ ] What Cloudflare services required? (Workers, D1, R2, Pages?)
+- [x] What Cloudflare services required? → **Pages + D1 (no R2 - files stored in D1 with chunked storage).**
 - [ ] Minimum Cloudflare plan tier? (Free tier sufficient?)
 - [ ] Self-hosted: Docker Compose? Minimum server specs?
 

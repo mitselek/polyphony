@@ -152,11 +152,13 @@ Serverless compute platform. Primary deployment target for Vaults.
 
 ### D1
 
-Cloudflare's serverless SQL database. Used for Vault data storage.
+Cloudflare's serverless SQL database. Used for Vault data and file storage.
+
+Score files are stored in D1 using chunked storage (files >2MB are split into ~1.9MB chunks). Maximum file size: 9.5MB.
 
 ### R2
 
-Cloudflare's object storage. Used for score file storage.
+Cloudflare's object storage. **Not currently used** - files are stored in D1 for simplicity. May be used in future for larger file support.
 
 ---
 
@@ -171,4 +173,4 @@ Cloudflare's object storage. Used for score file storage.
 
 ---
 
-_Last updated: 2026-01-23_
+_Last updated: 2026-01-25_
