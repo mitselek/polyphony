@@ -87,5 +87,5 @@ export async function softDeleteScore(db: D1Database, id: string): Promise<boole
 		.bind(id)
 		.run();
 
-	return result.changes > 0;
+	return (result.meta.changes ?? 0) > 0;
 }
