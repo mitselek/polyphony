@@ -7,10 +7,12 @@ The invitation system allows existing members with admin or owner roles to invit
 ## User Roles
 
 ### Who Can Invite
+
 - **Admins**: Can invite librarians and admins
 - **Owners**: Can invite librarians, admins, and owners
 
 ### Permission Rules
+
 - Only owners can invite other owners
 - Owner role checkbox is hidden from non-owners in the UI
 - At least one role must be assigned to each invite
@@ -23,7 +25,7 @@ sequenceDiagram
     participant UI as Invite Page
     participant API as POST /api/members/invite
     participant DB as D1 Database
-    
+
     Admin->>UI: Fill form (email, roles, voice part)
     Admin->>UI: Click "Send Invitation"
     UI->>API: POST invite data
@@ -48,7 +50,7 @@ CREATE TABLE invites (
     token TEXT NOT NULL UNIQUE,
     invited_by TEXT NOT NULL REFERENCES members(id),
     expires_at TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' 
+    status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'accepted', 'expired')),
     roles TEXT NOT NULL DEFAULT '[]',  -- JSON array: ["admin", "librarian"]
     voice_part TEXT CHECK (voice_part IN ('S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB')),
@@ -58,6 +60,7 @@ CREATE TABLE invites (
 ```
 
 ### Key Fields
+
 - **token**: UUID v4, unique, used in invite link
 - **expires_at**: Set to `datetime('now', '+48 hours')` on creation
 - **roles**: JSON array of role strings (e.g., `["admin", "librarian"]`)
@@ -71,6 +74,7 @@ https://polyphony-vault.pages.dev/invite/accept?token={UUID}
 ```
 
 Example:
+
 ```
 https://polyphony-vault.pages.dev/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
@@ -78,6 +82,7 @@ https://polyphony-vault.pages.dev/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef
 ## Current Implementation Status
 
 ### ✅ Implemented
+
 - Invite creation with multi-role support
 - Token generation (UUID v4)
 - 48-hour expiration
@@ -87,6 +92,7 @@ https://polyphony-vault.pages.dev/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef
 - Copy-to-clipboard UI
 
 ### 🚧 TODO
+
 - **Email sending**: Currently manual link sharing only
 - **Invite acceptance flow**: `/invite/accept` route not implemented
 - **Invite expiration cron job**: Auto-expire old invites
@@ -102,7 +108,7 @@ sequenceDiagram
     participant API as POST /api/auth/accept
     participant DB as D1 Database
     participant Auth as Auth System
-    
+
     Invitee->>UI: Click invite link
     UI->>API: GET /invite/accept?token=xxx
     API->>DB: SELECT invite WHERE token=xxx
@@ -124,17 +130,20 @@ sequenceDiagram
 ## Security Considerations
 
 ### Token Security
+
 - **UUID v4**: Cryptographically random, 122 bits of entropy
 - **Single-use**: Should be marked as accepted after first use
 - **Expiration**: 48-hour window limits exposure
 - **HTTPS only**: Tokens transmitted over encrypted connection
 
 ### Permission Validation
+
 - Server-side role checks on every invite creation
 - Owner-only validation for inviting owners
 - Cannot bypass via client manipulation
 
 ### Database Constraints
+
 - `UNIQUE` constraint on token (prevents duplicates)
 - `REFERENCES` foreign key to members (ensures invited_by exists)
 - `CHECK` constraints on status and voice_part (enforces valid values)
@@ -156,6 +165,7 @@ Cookie: member_id=xxx
 ```
 
 **Response:**
+
 ```json
 {
   "id": "inv-uuid",

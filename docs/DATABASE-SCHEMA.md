@@ -342,6 +342,6 @@ A member (admin/owner) can send multiple invitations. Invites create new members
 
 ## See Also
 
-- [VAULT-ROLES.md](VAULT-ROLES.md) - Role definitions and permissions
+- [roles.md](../apps/vault/docs/roles.md) - Role definitions and permissions
 - [migrations/](../apps/vault/migrations/) - SQL migration files
 - TypeScript interfaces: `apps/vault/src/lib/server/db/members.ts`
