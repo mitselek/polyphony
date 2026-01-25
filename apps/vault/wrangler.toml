@@ -1,0 +1,18 @@
+name = "polyphony-vault"
+compatibility_date = "2026-01-25"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "polyphony-vault-db"
+database_id = "" # Fill after creating database
+
+# R2 Storage binding
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "polyphony-vault-scores"
+
+# Environment variables (use wrangler secret for production)
+# Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET
