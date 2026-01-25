@@ -1,7 +1,6 @@
-import { redirect, error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { redirect, error, type RequestEvent } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ url, platform, cookies }) => {
+export async function load({ url, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');

@@ -3,6 +3,7 @@ import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { importJWK, jwtVerify } from 'jose';
 import { getMemberByEmail, createMember } from '$lib/server/db/members';
+import type { Role, VoicePart } from '$lib/types';
 
 // Registry URL for fetching JWKS
 const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
@@ -75,8 +76,8 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 
 		// Check if there's an invite token from the accept flow
 		const inviteToken = cookies.get('invite_token');
-		let inviteRoles: string[] = [];
-		let inviteVoicePart: string | null = null;
+		let inviteRoles: Role[] = [];
+		let inviteVoicePart: VoicePart | null = null;
 
 		if (inviteToken) {
 			// Validate and retrieve invite details
@@ -101,8 +102,8 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 				
 				if (now <= expiresAt) {
 					// Valid invite - use its roles and voice part
-					inviteRoles = JSON.parse(invite.roles);
-					inviteVoicePart = invite.voice_part;
+					inviteRoles = JSON.parse(invite.roles) as Role[];
+					inviteVoicePart = invite.voice_part as VoicePart | null;
 
 					// Mark invite as accepted
 					await db
@@ -131,7 +132,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 				email,
 				name,
 				roles: inviteRoles,
-				voice_part: inviteVoicePart
+				voice_part: inviteVoicePart ?? undefined
 			});
 		} else {
 			// Existing member - update name if changed
