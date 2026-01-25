@@ -33,7 +33,7 @@
 				// Remove from local list
 				data.scores = data.scores.filter((s: Score) => s.id !== id);
 			} else {
-				const err = await res.json().catch(() => ({ message: res.statusText }));
+				const err = await res.json().catch(() => ({ message: res.statusText })) as { message?: string };
 				alert(`Failed to delete: ${err.message || res.statusText}`);
 			}
 		} catch (e) {
