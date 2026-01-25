@@ -150,8 +150,8 @@ describe('Score API', () => {
 			).rejects.toThrow('Only PDF files are allowed');
 		});
 
-		it('rejects files over 2MB', async () => {
-			const largeContent = new Uint8Array(2 * 1024 * 1024 + 1);
+		it('rejects files over 10MB', async () => {
+			const largeContent = new Uint8Array(10 * 1024 * 1024 + 1);
 			const file = new File([largeContent], 'large.pdf', { type: 'application/pdf' });
 
 			await expect(
@@ -161,7 +161,7 @@ describe('Score API', () => {
 					file,
 					memberId: 'member_1'
 				})
-			).rejects.toThrow('File size exceeds 2MB limit');
+			).rejects.toThrow('File size exceeds 10MB limit');
 		});
 
 		it('requires title', async () => {

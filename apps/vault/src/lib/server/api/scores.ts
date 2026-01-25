@@ -1,6 +1,11 @@
 // Score API handlers
 import { createScore, getScoreById, listScores, softDeleteScore, type CreateScoreInput } from '$lib/server/db/scores';
-import { uploadScore, getScoreFile, MAX_FILE_SIZE } from '$lib/server/storage/d1-storage';
+import { 
+	uploadScoreChunked, 
+	getScoreFileChunked, 
+	deleteScoreFileChunked,
+	MAX_CHUNKED_FILE_SIZE 
+} from '$lib/server/storage/d1-chunked-storage';
 
 export interface ScoreListItem {
 	id: string;
@@ -87,9 +92,9 @@ export async function POST(params: PostParams): Promise<PostResult> {
 		throw new Error('Only PDF files are allowed');
 	}
 
-	// Validate file size
-	if (file.size > MAX_FILE_SIZE) {
-		throw new Error('File size exceeds 2MB limit');
+	// Validate file size (now supports up to 10MB with chunking)
+	if (file.size > MAX_CHUNKED_FILE_SIZE) {
+		throw new Error('File size exceeds 10MB limit');
 	}
 
 	// Generate ID
@@ -108,8 +113,8 @@ export async function POST(params: PostParams): Promise<PostResult> {
 	// Insert score record (will use the generated ID from createScore)
 	const score = await createScore(db, scoreInput);
 
-	// Upload file to D1 BLOB storage
-	await uploadScore(db, score.id, file);
+	// Upload file to D1 storage (automatic chunking for large files)
+	await uploadScoreChunked(db, score.id, file);
 
 	return {
 		id: score.id,
@@ -169,8 +174,8 @@ export async function DOWNLOAD(params: DownloadParams): Promise<DownloadResult |
 		return null;
 	}
 
-	// Get file from D1
-	const file = await getScoreFile(db, scoreId);
+	// Get file from D1 (with automatic chunk reassembly)
+	const file = await getScoreFileChunked(db, scoreId);
 	if (!file) {
 		return null;
 	}
