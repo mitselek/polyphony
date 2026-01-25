@@ -3,16 +3,14 @@ compatibility_date = "2026-01-25"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
-# D1 Database binding
+# D1 Database binding (also used for PDF BLOB storage)
 [[d1_databases]]
 binding = "DB"
 database_name = "polyphony-vault-db"
 database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 
-# R2 Storage binding
-[[r2_buckets]]
-binding = "STORAGE"
-bucket_name = "polyphony-vault-scores"
+# Note: R2 removed - PDFs stored in D1 to avoid billing requirement for vault operators
+# See issue #33 for rationale, #34 for future chunked storage support
 
 # Environment variables (use wrangler secret for production)
 # Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET
