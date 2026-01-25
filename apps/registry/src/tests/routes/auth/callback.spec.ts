@@ -6,7 +6,8 @@ import type { TestRequestEvent } from '../../helpers/types.js';
 
 // Mock fetch for Google token exchange
 const createMockFetch = (success: boolean = true) => {
-	return vi.fn(async (url: string) => {
+	return vi.fn(async (input: URL | RequestInfo) => {
+		const url = input.toString();
 		if (url.includes('oauth2.googleapis.com/token')) {
 			if (!success) {
 				return new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 });
@@ -54,7 +55,7 @@ describe('GET /auth/callback', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
-			fetch: createMockFetch() as any
+			fetch: createMockFetch()
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -67,7 +68,7 @@ describe('GET /auth/callback', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id', GOOGLE_CLIENT_SECRET: 'test-secret' } },
-			fetch: createMockFetch() as any
+			fetch: createMockFetch()
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -93,7 +94,7 @@ describe('GET /auth/callback', () => {
 						GOOGLE_CLIENT_SECRET: 'test-client-secret'
 					}
 				},
-				fetch: createMockFetch(true) as any
+				fetch: createMockFetch(true)
 			} satisfies TestRequestEvent);
 			
 			// Should not reach here - redirect throws
@@ -123,7 +124,7 @@ describe('GET /auth/callback', () => {
 					GOOGLE_CLIENT_SECRET: 'test-client-secret'
 				}
 			},
-			fetch: createMockFetch(false) as any
+			fetch: createMockFetch(false)
 		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);

@@ -34,16 +34,15 @@ export const POST: RequestHandler = async ({ request, params, platform, cookies 
 		}
 
 		const status = body.action === 'approve' ? 'approved' : 'rejected';
-		const success = await processTakedown(
-			db,
-			params.id,
+		const result = await processTakedown(db, {
+			takedownId: params.id,
 			status,
-			memberId,
-			body.notes || null
-		);
+			processedBy: memberId,
+			notes: body.notes || ''
+		});
 
-		if (!success) {
-			return json({ error: 'Takedown request not found' }, { status: 404 });
+		if (!result.success) {
+			return json({ error: result.error || 'Takedown request not found' }, { status: 404 });
 		}
 
 		return json({ 

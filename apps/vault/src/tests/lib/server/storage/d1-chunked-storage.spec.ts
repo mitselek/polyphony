@@ -39,8 +39,8 @@ describe('Chunked Storage Constants', () => {
 		expect(CHUNK_SIZE).toBeGreaterThan(1.5 * 1024 * 1024);
 	});
 
-	it('should define MAX_CHUNKED_FILE_SIZE as 10MB', () => {
-		expect(MAX_CHUNKED_FILE_SIZE).toBe(10 * 1024 * 1024);
+	it('should define MAX_CHUNKED_FILE_SIZE as 9.5MB (5 chunks)', () => {
+		expect(MAX_CHUNKED_FILE_SIZE).toBe(5 * CHUNK_SIZE);
 	});
 });
 
@@ -71,11 +71,11 @@ describe('uploadScoreChunked', () => {
 			.rejects.toThrow('Only PDF files are allowed');
 	});
 
-	it('should reject files over 10MB', async () => {
+	it('should reject files over 9.5MB', async () => {
 		const file = createMockFile(11 * 1024 * 1024);
 		
 		await expect(uploadScoreChunked(db, 'score-1', file))
-			.rejects.toThrow('File size exceeds 10MB limit');
+			.rejects.toThrow('File size exceeds 9.5MB limit');
 	});
 
 	it('should upload small files to score_files table', async () => {

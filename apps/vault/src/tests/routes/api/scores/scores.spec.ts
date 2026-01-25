@@ -1,6 +1,6 @@
 // Score API endpoint tests
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GET, POST, DELETE } from '$lib/server/api/scores';
+import { GET, POST, DELETE, type PostParams } from '$lib/server/api/scores';
 
 // Mock D1 database
 function createMockD1() {
@@ -150,8 +150,8 @@ describe('Score API', () => {
 			).rejects.toThrow('Only PDF files are allowed');
 		});
 
-		it('rejects files over 10MB', async () => {
-			const largeContent = new Uint8Array(10 * 1024 * 1024 + 1);
+		it('rejects files over 9.5MB', async () => {
+			const largeContent = new Uint8Array(Math.floor(9.5 * 1024 * 1024) + 1);
 			const file = new File([largeContent], 'large.pdf', { type: 'application/pdf' });
 
 			await expect(
@@ -161,7 +161,7 @@ describe('Score API', () => {
 					file,
 					memberId: 'member_1'
 				})
-			).rejects.toThrow('File size exceeds 10MB limit');
+			).rejects.toThrow('File size exceeds 9.5MB limit');
 		});
 
 		it('requires title', async () => {
@@ -171,7 +171,7 @@ describe('Score API', () => {
 			await expect(
 				POST({
 					db,
-					body: { license_type: 'public_domain' } as any,
+					body: { license_type: 'public_domain' } as Partial<PostParams['body']> as PostParams['body'],
 					file,
 					memberId: 'member_1'
 				})

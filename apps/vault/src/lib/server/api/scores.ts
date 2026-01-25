@@ -92,9 +92,9 @@ export async function POST(params: PostParams): Promise<PostResult> {
 		throw new Error('Only PDF files are allowed');
 	}
 
-	// Validate file size (now supports up to 10MB with chunking)
+	// Validate file size (now supports up to 9.5MB with chunking)
 	if (file.size > MAX_CHUNKED_FILE_SIZE) {
-		throw new Error('File size exceeds 10MB limit');
+		throw new Error('File size exceeds 9.5MB limit');
 	}
 
 	// Generate ID

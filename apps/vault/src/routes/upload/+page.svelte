@@ -11,7 +11,7 @@
 	let uploadProgress = $state(0);
 	let error = $state('');
 
-	const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+	const MAX_SIZE = 9.5 * 1024 * 1024; // 9.5MB (5 chunks × 1.9MB)
 
 	function handleFileChange(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -31,7 +31,7 @@
 		}
 
 		if (selectedFile.size > MAX_SIZE) {
-			error = 'File size must be under 2MB';
+			error = 'File size must be under 9.5MB';
 			file = null;
 			input.value = '';
 			return;
@@ -175,7 +175,7 @@
 				onchange={handleFileChange}
 				class="w-full rounded-lg border border-gray-300 px-4 py-2 file:mr-4 file:rounded file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-blue-700 hover:file:bg-blue-100"
 			/>
-			<p class="mt-1 text-sm text-gray-500">PDF only, max 2MB</p>
+			<p class="mt-1 text-sm text-gray-500">PDF only, max 9.5MB</p>
 			{#if file}
 				<p class="mt-1 text-sm text-green-600">
 					Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)

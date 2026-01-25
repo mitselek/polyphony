@@ -4,8 +4,8 @@
 // Chunk size: ~1.9MB to stay safely under D1's 2MB limit
 export const CHUNK_SIZE = 1.9 * 1024 * 1024;
 
-// Maximum file size for chunked uploads (10MB)
-export const MAX_CHUNKED_FILE_SIZE = 10 * 1024 * 1024;
+// Maximum file size for chunked uploads (5 chunks × 1.9MB = 9.5MB)
+export const MAX_CHUNKED_FILE_SIZE = 5 * CHUNK_SIZE;
 
 // Files under this size use single-row storage
 export const SINGLE_ROW_THRESHOLD = 2 * 1024 * 1024;
@@ -51,7 +51,7 @@ export function isChunkedFile(size: number): boolean {
 
 /**
  * Upload a PDF score with automatic chunking for large files
- * @throws Error if file is not a PDF or exceeds 10MB
+ * @throws Error if file is not a PDF or exceeds 9.5MB
  */
 export async function uploadScoreChunked(
 	db: D1Database,
@@ -65,7 +65,7 @@ export async function uploadScoreChunked(
 
 	// Validate file size
 	if (file.size > MAX_CHUNKED_FILE_SIZE) {
-		throw new Error('File size exceeds 10MB limit');
+		throw new Error('File size exceeds 9.5MB limit');
 	}
 
 	const arrayBuffer = await file.arrayBuffer();

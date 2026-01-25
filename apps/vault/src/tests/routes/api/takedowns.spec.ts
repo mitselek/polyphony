@@ -100,7 +100,7 @@ describe('GET /api/takedowns', () => {
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as { takedowns: Array<{ id: string }> };
 		expect(data.takedowns).toHaveLength(1);
 		expect(data.takedowns[0].id).toBe('takedown-1');
 	});
@@ -152,7 +152,7 @@ describe('POST /api/takedowns/[id]/process', () => {
 
 	it('should approve takedown request', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
-		vi.mocked(processTakedown).mockResolvedValue(true);
+		vi.mocked(processTakedown).mockResolvedValue({ success: true });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'approve', notes: 'Verified copyright claim' }),
@@ -164,16 +164,18 @@ describe('POST /api/takedowns/[id]/process', () => {
 		expect(response.status).toBe(200);
 		expect(processTakedown).toHaveBeenCalledWith(
 			expect.anything(),
-			'takedown-123',
-			'approved',
-			'admin-123',
-			'Verified copyright claim'
+			{
+				takedownId: 'takedown-123',
+				status: 'approved',
+				processedBy: 'admin-123',
+				notes: 'Verified copyright claim'
+			}
 		);
 	});
 
 	it('should reject takedown request', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
-		vi.mocked(processTakedown).mockResolvedValue(true);
+		vi.mocked(processTakedown).mockResolvedValue({ success: true });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'reject', notes: 'No valid claim' }),
@@ -185,16 +187,18 @@ describe('POST /api/takedowns/[id]/process', () => {
 		expect(response.status).toBe(200);
 		expect(processTakedown).toHaveBeenCalledWith(
 			expect.anything(),
-			'takedown-456',
-			'rejected',
-			'admin-123',
-			'No valid claim'
+			{
+				takedownId: 'takedown-456',
+				status: 'rejected',
+				processedBy: 'admin-123',
+				notes: 'No valid claim'
+			}
 		);
 	});
 
 	it('should return 404 when takedown not found', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
-		vi.mocked(processTakedown).mockResolvedValue(false);
+		vi.mocked(processTakedown).mockResolvedValue({ success: false, error: 'not_found' });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'approve' }),

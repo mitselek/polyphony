@@ -1,10 +1,13 @@
 // Test helper types for SvelteKit route handlers
 
+// SvelteKit-compatible fetch type for tests
+type TestFetch = (input: URL | RequestInfo, init?: RequestInit) => Promise<Response>;
+
 export interface TestRequestEvent<Params = Record<string, string>> {
 	request?: Request;
 	url?: URL;
 	params?: Params;
-	fetch?: any; // Vitest mock type incompatible with SvelteKit fetch
+	fetch?: TestFetch;
 	platform?: {
 		env: {
 			DB: D1Database;
@@ -35,6 +38,6 @@ export interface TestGetPlatform {
 
 export interface TestGetEvent {
 	url?: URL;
-	fetch?: any; // Vitest mock type incompatible with SvelteKit fetch
+	fetch?: TestFetch;
 	platform?: TestGetPlatform;
 }
