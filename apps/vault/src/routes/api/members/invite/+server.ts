@@ -36,15 +36,15 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		throw error(403, 'Admin or owner role required');
 	}
 
-	let body: { email: string; roles: Role[]; voicePart?: string | null };
+	let body: { name: string; roles: Role[]; voicePart?: string | null };
 	try {
 		body = await request.json();
 	} catch {
 		throw error(400, 'Invalid JSON body');
 	}
 
-	if (!body.email || !body.roles || !Array.isArray(body.roles) || body.roles.length === 0) {
-		throw error(400, 'Email and at least one role are required');
+	if (!body.name || !body.roles || !Array.isArray(body.roles) || body.roles.length === 0) {
+		throw error(400, 'Name and at least one role are required');
 	}
 
 	// Only owners can invite owners
@@ -60,12 +60,12 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		// Create invite record with roles and voice part
 		await db
 			.prepare(
-				`INSERT INTO invites (id, email, token, invited_by, expires_at, roles, voice_part)
+				`INSERT INTO invites (id, name, token, invited_by, expires_at, roles, voice_part)
 				 VALUES (?, ?, ?, ?, datetime('now', '+48 hours'), ?, ?)`
 			)
 			.bind(
 				inviteId,
-				body.email,
+				body.name,
 				token,
 				memberId,
 				JSON.stringify(body.roles),
@@ -79,11 +79,11 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		return json(
 			{
 				id: inviteId,
-				email: body.email,
+				name: body.name,
 				roles: body.roles,
 				voicePart: body.voicePart ?? null,
-				inviteLink, // For now, return the link in response (until email is implemented)
-				message: 'Invitation created. Email will be sent to the recipient.'
+				inviteLink,
+				message: `Invitation created. Share the link with ${body.name}.`
 			},
 			{ status: 201 }
 		);

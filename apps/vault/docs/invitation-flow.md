@@ -73,6 +73,7 @@ CREATE TABLE invites (
 ### Design Rationale
 
 **Why no email field at creation?**
+
 - Email comes from registry OAuth (source of truth)
 - User might use different email than anticipated
 - Email verification is registry's responsibility
@@ -105,7 +106,7 @@ https://polyphony-vault.pages.dev/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef
 ### 🚧 TODO
 
 - **Email sending**: Currently manual link sharing only
-- **Invite acceptance flow**: 
+- **Invite acceptance flow**:
   - `/invite/accept?token=xxx` route - validate and initiate OAuth
   - Modify `/api/auth/callback` to handle invite tokens
   - Store invite token across OAuth redirect (session storage)
@@ -125,7 +126,7 @@ sequenceDiagram
     participant Registry as Registry OAuth
     participant Callback as /api/auth/callback
     participant DB as D1 Database
-    
+
     Invitee->>Accept: Click invite link (?token=xxx)
     Accept->>DB: SELECT invite WHERE token=xxx
     DB-->>Accept: Invite data (name, roles, voice_part)
@@ -162,17 +163,20 @@ sequenceDiagram
 ### Implementation Steps
 
 #### Step 1: `/invite/accept?token=xxx` (GET)
+
 - Load invite from database
 - Check expiration: `datetime(expires_at) > datetime('now')`
 - If valid: store token in session, redirect to registry OAuth
 - If expired: show "Invite expired" error page
 
 #### Step 2: Registry OAuth Flow
+
 - Standard OAuth 2.0 authorization code flow
 - User may need to create registry account (if first time)
 - Registry validates user identity
 
 #### Step 3: `/api/auth/callback` (Modified)
+
 - Retrieve stored invite token from session
 - Exchange OAuth code for user profile
 - Check if member already exists by email

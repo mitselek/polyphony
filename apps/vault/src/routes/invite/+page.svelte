@@ -3,7 +3,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let email = $state('');
+	let name = $state('');
 	let roles = $state<Set<'owner' | 'admin' | 'librarian'>>(new Set());
 	let voicePart = $state<string | null>(null);
 	let isSubmitting = $state(false);
@@ -24,8 +24,8 @@
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 
-		if (!email) {
-			error = 'Email is required';
+		if (!name) {
+			error = 'Name is required';
 			return;
 		}
 
@@ -59,8 +59,8 @@
 
 			const result = (await response.json()) as { inviteLink: string };
 			inviteLink = result.inviteLink;
-			success = `Invitation created for ${email}! Copy the link below and share it with them.`;
-			email = '';
+			success = `Invitation created for ${name}! Copy the link below and share it with them.`;
+			name = '';
 			roles = new Set();
 			voicePart = null;
 		} catch (err) {
@@ -118,17 +118,17 @@
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			<div>
-				<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-					Email Address *
+				<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
+					Invitee Name *
 				</label>
 				<input
-					type="email"
-					id="email"
-					bind:value={email}
+					type="text"
+					id="name"
+					bind:value={name}
 					required
 					disabled={isSubmitting}
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
-					placeholder="member@example.com"
+					placeholder="John Doe"
 				/>
 			</div>
 
