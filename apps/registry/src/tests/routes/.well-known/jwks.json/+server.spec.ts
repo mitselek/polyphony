@@ -37,17 +37,20 @@ describe('GET /.well-known/jwks.json', () => {
 	});
 
 	it('should return keys in JWKS format', async () => {
-		// Mock database with a key
+		// Mock database with a key stored as JWK JSON (matches actual DB schema)
 		const mockDbWithKey = {
 			prepare: (sql: string) => ({
 				all: async () => ({
 					results: [
 						{
 							id: 'key-1',
-							algorithm: 'EdDSA',
-							public_key: `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
------END PUBLIC KEY-----`
+							public_key: JSON.stringify({
+								kty: 'OKP',
+								crv: 'Ed25519',
+								x: 'Gb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE',
+								use: 'sig',
+								alg: 'EdDSA'
+							})
 						}
 					]
 				})
@@ -71,16 +74,20 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 	});
 
 	it('should only include non-revoked keys', async () => {
+		// Mock database with JWK JSON (matches actual DB schema)
 		const mockDbWithKeys = {
 			prepare: (sql: string) => ({
 				all: async () => ({
 					results: [
 						{
 							id: 'key-active',
-							algorithm: 'EdDSA',
-							public_key: `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
------END PUBLIC KEY-----`
+							public_key: JSON.stringify({
+								kty: 'OKP',
+								crv: 'Ed25519',
+								x: 'Gb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE',
+								use: 'sig',
+								alg: 'EdDSA'
+							})
 						}
 						// key-revoked should NOT be in results (filtered by SQL)
 					]
