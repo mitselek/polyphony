@@ -21,7 +21,8 @@ describe('signToken', () => {
 			iss: 'https://registry.polyphony.app',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
-			nonce: 'test-nonce-123'
+			nonce: 'test-nonce-123',
+			email: 'user@example.com'
 		};
 
 		const token = await signToken(payload, testKeys.privateKey);
@@ -37,6 +38,7 @@ describe('signToken', () => {
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-123',
+			email: 'user@example.com',
 			name: 'Test User',
 			picture: 'https://example.com/photo.jpg'
 		};
@@ -52,7 +54,8 @@ describe('verifyToken', () => {
 			iss: 'https://registry.polyphony.app',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
-			nonce: 'test-nonce-456'
+			nonce: 'test-nonce-456',
+			email: 'user@example.com'
 		};
 
 		const token = await signToken(payload, testKeys.privateKey);
@@ -71,7 +74,8 @@ describe('verifyToken', () => {
 			iss: 'https://registry.polyphony.app',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
-			nonce: 'test-nonce-789'
+			nonce: 'test-nonce-789',
+			email: 'user@example.com'
 		};
 
 		const token = await signToken(payload, testKeys.privateKey);
@@ -92,6 +96,7 @@ describe('verifyToken', () => {
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-abc',
+			email: 'user@example.com',
 			name: 'Jane Doe',
 			picture: 'https://example.com/jane.jpg'
 		};
