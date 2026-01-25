@@ -1,4 +1,5 @@
 // Server load for root layout - provides auth state to all pages
+import { getMemberById } from '$lib/server/db/members';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ platform, cookies }) => {
@@ -9,11 +10,7 @@ export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 	}
 
 	try {
-		const member = await platform.env.DB.prepare(
-			'SELECT id, email, name, role FROM members WHERE id = ?'
-		)
-			.bind(memberId)
-			.first<{ id: string; email: string; name: string | null; role: string }>();
+		const member = await getMemberById(platform.env.DB, memberId);
 
 		if (!member) {
 			// Invalid session - clear cookie
@@ -26,7 +23,8 @@ export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 				id: member.id,
 				email: member.email,
 				name: member.name,
-				role: member.role
+				roles: member.roles,
+				voice_part: member.voice_part
 			}
 		};
 	} catch {

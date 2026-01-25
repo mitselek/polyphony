@@ -64,7 +64,6 @@ export function createAuthMiddleware(minRole: Role) {
 /**
  * Pre-built middleware for common role requirements
  */
-export const requireSinger = createAuthMiddleware('singer');
 export const requireLibrarian = createAuthMiddleware('librarian');
 export const requireAdmin = createAuthMiddleware('admin');
 export const requireOwner = createAuthMiddleware('owner');

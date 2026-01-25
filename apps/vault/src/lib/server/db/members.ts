@@ -1,10 +1,14 @@
 // Member database operations
 
+export type Role = 'owner' | 'admin' | 'librarian';
+export type VoicePart = 'S' | 'A' | 'T' | 'B' | 'SA' | 'AT' | 'TB' | 'SAT' | 'ATB' | 'SATB';
+
 export interface Member {
 	id: string;
 	email: string;
 	name: string | null;
-	role: 'admin' | 'librarian' | 'singer';
+	roles: Role[]; // Multiple roles via junction table
+	voice_part: VoicePart | null;
 	invited_by: string | null;
 	joined_at: string;
 }
@@ -12,7 +16,8 @@ export interface Member {
 export interface CreateMemberInput {
 	email: string;
 	name?: string;
-	role: 'admin' | 'librarian' | 'singer';
+	roles: Role[]; // Can assign multiple roles on creation
+	voice_part?: VoicePart;
 	invited_by?: string;
 }
 
@@ -22,7 +27,7 @@ function generateId(): string {
 }
 
 /**
- * Create a new member in the database
+ * Create a new member in the database with assigned roles
  */
 export async function createMember(
 	db: D1Database,
@@ -31,13 +36,25 @@ export async function createMember(
 	const id = generateId();
 	const name = input.name ?? null;
 	const invited_by = input.invited_by ?? null;
+	const voice_part = input.voice_part ?? null;
 
+	// Insert member record
 	await db
 		.prepare(
-			'INSERT INTO members (id, email, name, role, invited_by) VALUES (?, ?, ?, ?, ?)'
+			'INSERT INTO members (id, email, name, voice_part, invited_by) VALUES (?, ?, ?, ?, ?)'
 		)
-		.bind(id, input.email, name, input.role, invited_by)
+		.bind(id, input.email, name, voice_part, invited_by)
 		.run();
+
+	// Insert role records
+	const roleStatements = input.roles.map((role) =>
+		db
+			.prepare(
+				'INSERT INTO member_roles (member_id, role, granted_by) VALUES (?, ?, ?)'
+			)
+			.bind(id, role, invited_by)
+	);
+	await db.batch(roleStatements);
 
 	// Return the created member
 	const member = await getMemberById(db, id);
@@ -48,31 +65,55 @@ export async function createMember(
 }
 
 /**
- * Find a member by email address
+ * Find a member by email address with their roles
  */
 export async function getMemberByEmail(
 	db: D1Database,
 	email: string
 ): Promise<Member | null> {
-	const result = await db
-		.prepare('SELECT id, email, name, role, invited_by, joined_at FROM members WHERE email = ?')
+	const memberRow = await db
+		.prepare('SELECT id, email, name, voice_part, invited_by, joined_at FROM members WHERE email = ?')
 		.bind(email)
-		.first<Member>();
+		.first<Omit<Member, 'roles'>>();
 
-	return result ?? null;
+	if (!memberRow) {
+		return null;
+	}
+
+	// Get roles from junction table
+	const rolesResult = await db
+		.prepare('SELECT role FROM member_roles WHERE member_id = ?')
+		.bind(memberRow.id)
+		.all<{ role: Role }>();
+
+	const roles = rolesResult.results.map((r) => r.role);
+
+	return { ...memberRow, roles };
 }
 
 /**
- * Find a member by ID
+ * Find a member by ID with their roles
  */
 export async function getMemberById(
 	db: D1Database,
 	id: string
 ): Promise<Member | null> {
-	const result = await db
-		.prepare('SELECT id, email, name, role, invited_by, joined_at FROM members WHERE id = ?')
+	const memberRow = await db
+		.prepare('SELECT id, email, name, voice_part, invited_by, joined_at FROM members WHERE id = ?')
 		.bind(id)
-		.first<Member>();
+		.first<Omit<Member, 'roles'>>();
 
-	return result ?? null;
+	if (!memberRow) {
+		return null;
+	}
+
+	// Get roles from junction table
+	const rolesResult = await db
+		.prepare('SELECT role FROM member_roles WHERE member_id = ?')
+		.bind(memberRow.id)
+		.all<{ role: Role }>();
+
+	const roles = rolesResult.results.map((r) => r.role);
+
+	return { ...memberRow, roles };
 }

@@ -1,6 +1,6 @@
 // Permission system for role-based access control
 
-export type Role = 'owner' | 'admin' | 'librarian' | 'singer';
+export type Role = 'owner' | 'admin' | 'librarian';
 
 export type Permission =
 	| 'scores:view'
@@ -9,11 +9,12 @@ export type Permission =
 	| 'scores:delete'
 	| 'members:invite'
 	| 'members:manage'
+	| 'roles:manage'
 	| 'vault:delete';
 
 export interface Member {
 	id: string;
-	role: Role;
+	roles: Role[]; // Multi-role support
 	email: string;
 }
 
@@ -23,88 +24,84 @@ export interface RequireRoleResult {
 }
 
 /**
- * Role hierarchy (higher index = more permissions)
- */
-const ROLE_HIERARCHY: Role[] = ['singer', 'librarian', 'admin', 'owner'];
-
-/**
  * Permission matrix - which roles have which permissions
+ * Note: All authenticated members have implicit 'scores:view' and 'scores:download' permissions
  */
 const PERMISSIONS: Record<Role, Permission[]> = {
-	singer: ['scores:view', 'scores:download'],
-	librarian: ['scores:view', 'scores:download', 'scores:upload', 'scores:delete'],
-	admin: [
-		'scores:view',
-		'scores:download',
-		'scores:upload',
-		'scores:delete',
-		'members:invite',
-		'members:manage'
-	],
-	owner: [
-		'scores:view',
-		'scores:download',
-		'scores:upload',
-		'scores:delete',
-		'members:invite',
-		'members:manage',
-		'vault:delete'
-	]
+	librarian: ['scores:upload', 'scores:delete'],
+	admin: ['members:invite', 'roles:manage'],
+	owner: ['vault:delete'] // Owner gets all permissions
 };
 
 /**
- * Check if a role has a specific permission
+ * Check if a member has a specific permission
+ * Permissions are union of all assigned roles
  */
-export function hasPermission(role: Role, permission: Permission): boolean {
-	return PERMISSIONS[role]?.includes(permission) ?? false;
+export function hasPermission(member: Member | null | undefined, permission: Permission): boolean {
+	if (!member) {
+		return false;
+	}
+
+	// All authenticated members can view and download scores
+	if (permission === 'scores:view' || permission === 'scores:download') {
+		return true;
+	}
+
+	// Owner has all permissions
+	if (member.roles.includes('owner')) {
+		return true;
+	}
+
+	// Check if any of member's roles grant the permission
+	return member.roles.some((role) => PERMISSIONS[role]?.includes(permission) ?? false);
 }
 
 /**
- * Check if a member's role meets minimum required role
+ * Check if a member has a specific role
+ */
+export function hasRole(member: Member | null | undefined, role: Role): boolean {
+	return member?.roles.includes(role) ?? false;
+}
+
+/**
+ * Check if a member has at least one of the required roles
  */
 export function requireRole(
 	member: Member | null | undefined,
-	minRole: Role
+	requiredRoles: Role | Role[]
 ): RequireRoleResult {
 	if (!member) {
 		return { success: false, error: 'Authentication required' };
 	}
 
-	const memberRoleIndex = ROLE_HIERARCHY.indexOf(member.role);
-	const minRoleIndex = ROLE_HIERARCHY.indexOf(minRole);
+	const rolesArray = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+	const hasRequiredRole = rolesArray.some((role) => member.roles.includes(role));
 
-	if (memberRoleIndex < minRoleIndex) {
+	if (!hasRequiredRole) {
 		return { success: false, error: 'Insufficient permissions' };
 	}
 
 	return { success: true };
 }
 
-/**
- * Get role hierarchy level (for comparisons)
- */
-export function getRoleLevel(role: Role): number {
-	return ROLE_HIERARCHY.indexOf(role);
-}
-
 // Permission helper functions
 
-export function canUploadScores(role: Role): boolean {
-	return hasPermission(role, 'scores:upload');
+export function canUploadScores(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'scores:upload');
 }
 
-export function canDeleteScores(role: Role): boolean {
-	return hasPermission(role, 'scores:delete');
+export function canDeleteScores(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'scores:delete');
 }
 
-export function canInviteMembers(role: Role): boolean {
-	return hasPermission(role, 'members:invite');
+export function canInviteMembers(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'members:invite');
 }
 
-export function canManageMembers(role: Role): boolean {
-	return hasPermission(role, 'members:manage');
+export function canManageRoles(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'roles:manage');
 }
 
-export function canDeleteVault(role: Role): boolean {
-	return hasPermission(role, 'vault:delete');
+export function canDeleteVault(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'vault:delete');
 }
