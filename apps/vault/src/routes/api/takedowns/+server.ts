@@ -2,9 +2,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { listTakedownRequests } from '$lib/server/db/takedowns';
-import { getMemberRole, type Role } from '$lib/server/db/permissions';
-
-const ADMIN_ROLES: Role[] = ['owner', 'admin'];
+import { getMemberRole, isAdminRole } from '$lib/server/db/permissions';
 
 export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 	const memberId = cookies.get('member_id');
@@ -19,7 +17,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies }) => {
 	}
 
 	const role = await getMemberRole(db, memberId);
-	if (!role || !ADMIN_ROLES.includes(role)) {
+	if (!role || !isAdminRole(role)) {
 		return json({ error: 'Admin access required' }, { status: 403 });
 	}
 

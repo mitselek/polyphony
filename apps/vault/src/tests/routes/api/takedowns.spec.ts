@@ -16,7 +16,8 @@ vi.mock('$lib/server/middleware', () => ({
 
 // Mock the permissions
 vi.mock('$lib/server/db/permissions', () => ({
-	getMemberRole: vi.fn()
+	getMemberRole: vi.fn(),
+	isAdminRole: vi.fn((role: string) => role === 'admin')
 }));
 
 import { listTakedownRequests, processTakedown } from '$lib/server/db/takedowns';
@@ -105,14 +106,14 @@ describe('GET /api/takedowns', () => {
 	});
 
 	it('should filter by status when provided', async () => {
-		vi.mocked(getMemberRole).mockResolvedValue('owner');
+		vi.mocked(getMemberRole).mockResolvedValue('admin');
 		vi.mocked(listTakedownRequests).mockResolvedValue([]);
 
 		const response = await GET({
 			request: createMockRequest(),
 			url: new URL('http://localhost/api/takedowns?status=pending'),
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('owner-123')
+			cookies: createMockCookies('admin-123')
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(200);
@@ -171,14 +172,14 @@ describe('POST /api/takedowns/[id]/process', () => {
 	});
 
 	it('should reject takedown request', async () => {
-		vi.mocked(getMemberRole).mockResolvedValue('owner');
+		vi.mocked(getMemberRole).mockResolvedValue('admin');
 		vi.mocked(processTakedown).mockResolvedValue(true);
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'reject', notes: 'No valid claim' }),
 			params: { id: 'takedown-456' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('owner-123')
+			cookies: createMockCookies('admin-123')
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(200);
@@ -186,7 +187,7 @@ describe('POST /api/takedowns/[id]/process', () => {
 			expect.anything(),
 			'takedown-456',
 			'rejected',
-			'owner-123',
+			'admin-123',
 			'No valid claim'
 		);
 	});
