@@ -7,7 +7,7 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 [[d1_databases]]
 binding = "DB"
 database_name = "polyphony-vault-db"
-database_id = "" # Fill after creating database
+database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 
 # R2 Storage binding
 [[r2_buckets]]

@@ -1,16 +1,19 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
+import path from 'path';
 
-export default defineConfig({
-	plugins: [sveltekit(), tailwindcss()],
-	test: {
-		include: ['src/**/*.{test,spec}.{js,ts}'],
-		environment: 'happy-dom',
-		globals: true,
-		setupFiles: [],
-		coverage: {
-			reporter: ['text', 'json', 'html']
+export default defineConfig(({ mode }) => ({
+	plugins: mode === 'test' ? [] : [tailwindcss(), sveltekit()],
+	resolve: {
+		alias: {
+			'$lib': path.resolve(__dirname, './src/lib')
 		}
+	},
+	test: {
+		include: ['src/**/*.spec.ts'],
+		environment: 'node',
+		// Disable SSR transformation for tests
+		pool: 'forks'
 	}
-});
+}));
