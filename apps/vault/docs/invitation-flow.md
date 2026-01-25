@@ -41,12 +41,12 @@ sequenceDiagram
 
 ## Database Schema
 
-### Invites Table (Migration 0008)
+### Invites Table (Migration 0009 - Proposed)
 
 ```sql
 CREATE TABLE invites (
     id TEXT PRIMARY KEY,
-    email TEXT NOT NULL,
+    name TEXT NOT NULL,  -- Invitee name for tracking (not verified)
     token TEXT NOT NULL UNIQUE,
     invited_by TEXT NOT NULL REFERENCES members(id),
     expires_at TEXT NOT NULL,
@@ -55,17 +55,28 @@ CREATE TABLE invites (
     roles TEXT NOT NULL DEFAULT '[]',  -- JSON array: ["admin", "librarian"]
     voice_part TEXT CHECK (voice_part IN ('S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB')),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    accepted_at TEXT
+    accepted_at TEXT,
+    accepted_by_email TEXT  -- Registry email (filled when accepted)
 );
 ```
 
 ### Key Fields
 
+- **name**: Display name for tracking invites (e.g., "John Doe"), not verified
 - **token**: UUID v4, unique, used in invite link
 - **expires_at**: Set to `datetime('now', '+48 hours')` on creation
 - **roles**: JSON array of role strings (e.g., `["admin", "librarian"]`)
 - **voice_part**: Optional, one of the valid SATB combinations
 - **status**: `pending` | `accepted` | `expired`
+- **accepted_by_email**: Registry-verified email, filled when invite is accepted
+
+### Design Rationale
+
+**Why no email field at creation?**
+- Email comes from registry OAuth (source of truth)
+- User might use different email than anticipated
+- Email verification is registry's responsibility
+- Name is sufficient for tracking pending invites ("Invitation for John Doe")
 
 ## Invite Link Structure
 
@@ -117,7 +128,7 @@ sequenceDiagram
     
     Invitee->>Accept: Click invite link (?token=xxx)
     Accept->>DB: SELECT invite WHERE token=xxx
-    DB-->>Accept: Invite data (email, roles, voice_part)
+    DB-->>Accept: Invite data (name, roles, voice_part)
     Accept->>Accept: Validate token not expired
     Accept->>Accept: Store token in session/cookie
     Accept->>Registry: Redirect to OAuth login
@@ -204,7 +215,7 @@ Content-Type: application/json
 Cookie: member_id=xxx
 
 {
-  "email": "singer@example.com",
+  "name": "Jane Singer",
   "roles": ["librarian"],
   "voicePart": "S"
 }
@@ -215,8 +226,12 @@ Cookie: member_id=xxx
 ```json
 {
   "id": "inv-uuid",
-  "email": "singer@example.com",
+  "name": "Jane Singer",
   "roles": ["librarian"],
+  "voicePart": "S",
+  "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
+  "message": "Invitation created. Share the link with Jane Singer."
+}
   "voicePart": "S",
   "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
   "message": "Invitation created. Email will be sent to the recipient."
@@ -238,9 +253,10 @@ Content-Type: application/json
 
 ## Migration History
 
-- **0003**: Initial invites table (single role)
+- **0003**: Initial invites table (single role, email-based)
 - **0007**: Multi-role member system
 - **0008**: Update invites for multi-role support (roles JSON array + voice_part)
+- **0009** (Proposed): Replace email with name field, add accepted_by_email for OAuth flow
 
 ## Related Files
 
