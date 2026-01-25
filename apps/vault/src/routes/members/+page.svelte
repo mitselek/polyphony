@@ -33,6 +33,14 @@
 		const hasRole = member.roles.includes(role);
 		const action = hasRole ? 'remove' : 'add';
 
+		console.log('toggleRole - BEFORE:', {
+			memberId,
+			role,
+			action,
+			currentRoles: [...member.roles],
+			membersArrayLength: members.length
+		});
+
 		// Prevent removing last owner
 		if (role === 'owner' && hasRole) {
 			const ownerCount = members.filter((m: typeof members[0]) => m.roles.includes('owner')).length;
@@ -59,6 +67,8 @@
 				throw new Error(data.message ?? 'Failed to update role');
 			}
 
+			console.log('toggleRole - API SUCCESS');
+
 			// Update local state - reassign array to trigger reactivity
 			members = members.map((m) =>
 				m.id === memberId
@@ -72,9 +82,17 @@
 					: m
 			);
 
+			const updatedMember = members.find((m) => m.id === memberId);
+			console.log('toggleRole - AFTER UPDATE:', {
+				newRoles: updatedMember?.roles,
+				membersArrayLength: members.length,
+				membersIsReactive: members !== member
+			});
+
 			success = `${action === 'add' ? 'Added' : 'Removed'} ${role} role`;
 			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
+			console.error('toggleRole - ERROR:', err);
 			error = err instanceof Error ? err.message : 'Failed to update role';
 			setTimeout(() => (error = ''), 5000);
 		} finally {
@@ -233,10 +251,12 @@
 								{@const isDisabled = updatingMember === member.id || 
 									(member.id === data.currentUserId && role === 'owner') ||
 									(!data.isOwner && role === 'owner')}
+								{@const hasRole = member.roles.includes(role)}
+								{@const _ = console.log(`RENDER member=${member.id} role=${role} hasRole=${hasRole} roles=`, member.roles)}
 								<button
 									onclick={() => toggleRole(member.id, role)}
 									disabled={isDisabled}
-									class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {member.roles.includes(role)
+									class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {hasRole
 										? getRoleBadgeClass(role)
 										: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 									title={isDisabled && member.id === data.currentUserId && role === 'owner'
