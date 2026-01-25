@@ -9,6 +9,7 @@
 	let isSubmitting = $state(false);
 	let error = $state('');
 	let success = $state('');
+	let inviteLink = $state('');
 
 	function toggleRole(role: 'owner' | 'admin' | 'librarian') {
 		const newRoles = new Set(roles);
@@ -36,6 +37,7 @@
 		isSubmitting = true;
 		error = '';
 		success = '';
+		inviteLink = '';
 
 		try {
 			const response = await fetch('/api/members/invite', {
@@ -55,7 +57,9 @@
 				throw new Error(data.message ?? 'Failed to send invite');
 			}
 
-			success = `Invitation sent to ${email}!`;
+			const result = (await response.json()) as { inviteLink: string };
+			inviteLink = result.inviteLink;
+			success = `Invitation created for ${email}! Copy the link below and share it with them.`;
 			email = '';
 			roles = new Set();
 			voicePart = null;
@@ -87,7 +91,28 @@
 
 		{#if success}
 			<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-				{success}
+				<p class="font-semibold">{success}</p>
+				{#if inviteLink}
+					<div class="mt-3">
+						<p class="mb-2 text-sm">Share this link with the invitee:</p>
+						<div class="flex gap-2">
+							<input
+								type="text"
+								readonly
+								value={inviteLink}
+								class="flex-1 rounded border border-green-300 bg-white px-3 py-2 text-sm font-mono"
+								onclick={(e) => e.currentTarget.select()}
+							/>
+							<button
+								type="button"
+								onclick={() => navigator.clipboard.writeText(inviteLink)}
+								class="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
+							>
+								Copy
+							</button>
+						</div>
+					</div>
+				{/if}
 			</div>
 		{/if}
 
