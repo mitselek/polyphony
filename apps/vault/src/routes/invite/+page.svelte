@@ -46,7 +46,7 @@
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					email,
+					name,
 					roles: Array.from(roles),
 					voicePart: voicePart || null
 				})
@@ -221,7 +221,7 @@
 
 		<div class="mt-6 border-t pt-4 text-sm text-gray-500">
 			<p>
-				An email with a magic link will be sent to the invitee. The link expires in 48 hours.
+				A unique invite link will be generated. Share it manually with the invitee. The link expires in 48 hours.
 			</p>
 		</div>
 	</div>
