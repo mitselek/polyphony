@@ -80,6 +80,7 @@
 					</div>
 					<a
 						href="/api/scores/{score.id}/download"
+						data-sveltekit-reload
 						class="rounded-lg bg-gray-100 px-4 py-2 text-gray-700 transition hover:bg-gray-200"
 					>
 						Download
