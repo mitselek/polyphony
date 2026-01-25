@@ -48,7 +48,8 @@ export async function verifyToken(token: string, publicKey: string): Promise<Aut
 		typeof payload.aud !== 'string' ||
 		typeof payload.iat !== 'number' ||
 		typeof payload.exp !== 'number' ||
-		typeof payload.nonce !== 'string'
+		typeof payload.nonce !== 'string' ||
+		typeof payload.email !== 'string'
 	) {
 		throw new Error('Invalid token payload structure');
 	}
@@ -60,6 +61,7 @@ export async function verifyToken(token: string, publicKey: string): Promise<Aut
 		iat: payload.iat,
 		exp: payload.exp,
 		nonce: payload.nonce,
+		email: payload.email,
 		name: typeof payload.name === 'string' ? payload.name : undefined,
 		picture: typeof payload.picture === 'string' ? payload.picture : undefined
 	};

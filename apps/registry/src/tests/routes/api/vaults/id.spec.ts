@@ -61,7 +61,7 @@ describe('GET /api/vaults/[id]', () => {
 		} as any);
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.id).toBe('vault-test-id');
 		expect(data.name).toBe('Test Vault');
 	});
@@ -97,7 +97,7 @@ describe('PUT /api/vaults/[id]', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.error).toContain('HTTPS');
 	});
 
@@ -115,7 +115,7 @@ describe('PUT /api/vaults/[id]', () => {
 		} as any);
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.id).toBe('vault-test-id');
 	});
 });

@@ -30,7 +30,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.error).toContain('vault_id');
 	});
 
@@ -42,7 +42,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.error).toContain('callback');
 	});
 
@@ -56,7 +56,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.error).toContain('not registered');
 	});
 
@@ -75,7 +75,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as any;
 		expect(data.error).toContain('callback URL');
 	});
 

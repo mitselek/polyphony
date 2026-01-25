@@ -91,6 +91,7 @@ export const GET = async ({
 			sub: userInfo.email,
 			aud: state.vaultId,
 			nonce: nanoid(),
+			email: userInfo.email,
 			name: userInfo.name,
 			picture: userInfo.picture
 		},
