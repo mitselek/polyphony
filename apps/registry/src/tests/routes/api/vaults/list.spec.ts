@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { POST, GET } from '../../../../routes/api/vaults/+server.js';
 import type { VaultResponse, VaultListResponse, ErrorResponse } from '../../../../lib/types/api.js';
+import type { TestRequestEvent } from '../../../helpers/types.js';
 
 // Mock D1 database
 const createMockDb = (existingVaultName?: string) => ({
@@ -31,7 +32,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -49,7 +50,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -67,7 +68,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -87,7 +88,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -107,7 +108,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -127,7 +128,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb('Existing Vault'), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(409);
 		const data = await response.json() as ErrorResponse;
@@ -147,7 +148,7 @@ describe('POST /api/vaults', () => {
 		const response = await POST({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(201);
 		const data = await response.json() as VaultResponse;
@@ -164,7 +165,7 @@ describe('GET /api/vaults', () => {
 		const response = await GET({
 			request,
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -193,7 +194,7 @@ describe('GET /api/vaults', () => {
 		const response = await GET({
 			request,
 			platform: { env: { DB: mockDb, API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(200);
 		const data = await response.json() as VaultListResponse;

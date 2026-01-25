@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GET } from '../../../../routes/.well-known/jwks.json/+server.js';
 import type { JWKS } from '@polyphony/shared/crypto';
+import type { TestGetEvent } from '../../../helpers/types.js';
 
 // Mock D1 database
 const mockDb = {
@@ -15,7 +16,7 @@ describe('GET /.well-known/jwks.json', () => {
 	it('should return valid JWKS JSON structure', async () => {
 		const response = await GET({
 			platform: { env: { DB: mockDb, API_KEY: 'test-key' } }
-		} as any);
+		} satisfies TestGetEvent);
 
 		expect(response.status).toBe(200);
 		expect(response.headers.get('content-type')).toBe('application/json');
@@ -28,7 +29,7 @@ describe('GET /.well-known/jwks.json', () => {
 	it('should include Cache-Control header', async () => {
 		const response = await GET({
 			platform: { env: { DB: mockDb, API_KEY: 'test-key' } }
-		} as any);
+		} satisfies TestGetEvent);
 
 		const cacheControl = response.headers.get('cache-control');
 		expect(cacheControl).toContain('max-age=3600');
@@ -55,7 +56,7 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 
 		const response = await GET({
 			platform: { env: { DB: mockDbWithKey, API_KEY: 'test-key' } }
-		} as any);
+		} satisfies TestGetEvent);
 
 		const data = (await response.json()) as JWKS;
 		expect(data.keys).toHaveLength(1);
@@ -89,7 +90,7 @@ MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 
 		const response = await GET({
 			platform: { env: { DB: mockDbWithKeys, API_KEY: 'test-key' } }
-		} as any);
+		} satisfies TestGetEvent);
 
 		const data = (await response.json()) as JWKS;
 		expect(data.keys).toHaveLength(1);

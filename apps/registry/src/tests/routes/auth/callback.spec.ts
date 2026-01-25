@@ -2,6 +2,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect, vi } from 'vitest';
 import { GET } from '../../../routes/auth/callback/+server.js';
+import type { TestRequestEvent } from '../../helpers/types.js';
 
 // Mock fetch for Google token exchange
 const createMockFetch = (success: boolean = true) => {
@@ -54,7 +55,7 @@ describe('GET /auth/callback', () => {
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test' } },
 			fetch: createMockFetch()
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const text = await response.text();
@@ -67,7 +68,7 @@ describe('GET /auth/callback', () => {
 			url,
 			platform: { env: { DB: createMockDb(), API_KEY: 'test' } },
 			fetch: createMockFetch()
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const text = await response.text();
@@ -93,7 +94,7 @@ describe('GET /auth/callback', () => {
 					}
 				},
 				fetch: createMockFetch(true)
-			} as any);
+			} satisfies TestRequestEvent);
 			
 			// Should not reach here - redirect throws
 			expect(true).toBe(false);
@@ -123,7 +124,7 @@ describe('GET /auth/callback', () => {
 				}
 			},
 			fetch: createMockFetch(false)
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const text = await response.text();

@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { GET } from '../../../routes/auth/+server.js';
 import type { ErrorResponse } from '../../../lib/types/api.js';
 import type { JWKS } from '@polyphony/shared/crypto';
+import type { TestRequestEvent } from '../../helpers/types.js';
 
 // Mock D1 database
 const createMockDb = (vaultExists: boolean, callback?: string) => ({
@@ -28,7 +29,7 @@ describe('GET /auth', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(false), API_KEY: 'test' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -40,7 +41,7 @@ describe('GET /auth', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(true), API_KEY: 'test' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -54,7 +55,7 @@ describe('GET /auth', () => {
 		const response = await GET({
 			url,
 			platform: { env: { DB: createMockDb(false), API_KEY: 'test' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -73,7 +74,7 @@ describe('GET /auth', () => {
 					API_KEY: 'test'
 				}
 			}
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -95,7 +96,7 @@ describe('GET /auth', () => {
 						GOOGLE_CLIENT_ID: 'test-client-id'
 					}
 				}
-			} as any);
+			} satisfies TestRequestEvent);
 			
 			// Should not reach here - redirect throws
 			expect(true).toBe(false);

@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { GET, PUT, DELETE } from '../../../../routes/api/vaults/[id]/+server.js';
 import type { VaultResponse, ErrorResponse } from '../../../../lib/types/api.js';
+import type { TestRequestEvent } from '../../../helpers/types.js';
 
 // Mock D1 database
 const createMockDb = (vaultExists: boolean = true) => ({
@@ -31,7 +32,7 @@ describe('GET /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -45,7 +46,7 @@ describe('GET /api/vaults/[id]', () => {
 			request,
 			params: { id: 'unknown-id' },
 			platform: { env: { DB: createMockDb(false), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(404);
 	});
@@ -59,7 +60,7 @@ describe('GET /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(200);
 		const data = await response.json() as VaultResponse;
@@ -79,7 +80,7 @@ describe('PUT /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -95,7 +96,7 @@ describe('PUT /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(400);
 		const data = await response.json() as ErrorResponse;
@@ -113,10 +114,10 @@ describe('PUT /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(200);
-		const data = (await response.json()) as any;
+		const data = await response.json() as VaultResponse;
 		expect(data.id).toBe('vault-test-id');
 	});
 });
@@ -131,7 +132,7 @@ describe('DELETE /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(401);
 	});
@@ -146,7 +147,7 @@ describe('DELETE /api/vaults/[id]', () => {
 			request,
 			params: { id: 'vault-test-id' },
 			platform: { env: { DB: createMockDb(), API_KEY: 'secret' } }
-		} as any);
+		} satisfies TestRequestEvent);
 
 		expect(response.status).toBe(204);
 	});
