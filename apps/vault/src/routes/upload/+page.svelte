@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let title = $state('');
 	let composer = $state('');
@@ -106,7 +109,36 @@
 
 	<h1 class="mb-6 text-3xl font-bold">Upload Score</h1>
 
-	<form onsubmit={handleSubmit} class="space-y-6">
+	{#if !data.canUpload}
+		<!-- Not authorized to upload -->
+		<div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+			<svg
+				class="mx-auto mb-4 h-16 w-16 text-gray-400"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+				/>
+			</svg>
+			<h2 class="mb-2 text-xl font-semibold text-gray-900">Authentication Required</h2>
+			<p class="mb-6 text-gray-600">
+				You need to be signed in as a librarian or admin to upload scores.
+			</p>
+			<a
+				href="/api/auth/login"
+				class="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+			>
+				Sign In with Google
+			</a>
+		</div>
+	{:else}
+		<!-- Upload form -->
+		<form onsubmit={handleSubmit} class="space-y-6">
 		<!-- Title -->
 		<div>
 			<label for="title" class="mb-1 block font-medium">
@@ -210,4 +242,5 @@
 			{isUploading ? 'Uploading...' : 'Upload Score'}
 		</button>
 	</form>
+	{/if}
 </div>
