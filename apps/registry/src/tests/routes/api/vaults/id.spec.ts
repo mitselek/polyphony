@@ -2,6 +2,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
 import { GET, PUT, DELETE } from '../../../../routes/api/vaults/[id]/+server.js';
+import type { VaultResponse, ErrorResponse } from '../../../../lib/types/api.js';
 
 // Mock D1 database
 const createMockDb = (vaultExists: boolean = true) => ({
@@ -61,7 +62,7 @@ describe('GET /api/vaults/[id]', () => {
 		} as any);
 
 		expect(response.status).toBe(200);
-		const data = (await response.json()) as any;
+		const data = await response.json() as VaultResponse;
 		expect(data.id).toBe('vault-test-id');
 		expect(data.name).toBe('Test Vault');
 	});
@@ -97,7 +98,7 @@ describe('PUT /api/vaults/[id]', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('HTTPS');
 	});
 

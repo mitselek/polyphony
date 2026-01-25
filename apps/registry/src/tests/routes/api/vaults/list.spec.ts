@@ -2,6 +2,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
 import { POST, GET } from '../../../../routes/api/vaults/+server.js';
+import type { VaultResponse, VaultListResponse, ErrorResponse } from '../../../../lib/types/api.js';
 
 // Mock D1 database
 const createMockDb = (existingVaultName?: string) => ({
@@ -69,7 +70,7 @@ describe('POST /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('name');
 	});
 
@@ -89,7 +90,7 @@ describe('POST /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('callback_url');
 	});
 
@@ -109,7 +110,7 @@ describe('POST /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('HTTPS');
 	});
 
@@ -129,7 +130,7 @@ describe('POST /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(409);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('already exists');
 	});
 
@@ -149,7 +150,7 @@ describe('POST /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(201);
-		const data = (await response.json()) as any;
+		const data = await response.json() as VaultResponse;
 		expect(data.id).toBeTruthy();
 		expect(data.name).toBe('New Vault');
 		expect(data.callback_url).toBe('https://example.com/callback');
@@ -195,7 +196,7 @@ describe('GET /api/vaults', () => {
 		} as any);
 
 		expect(response.status).toBe(200);
-		const data = (await response.json()) as any;
+		const data = await response.json() as VaultListResponse;
 		expect(Array.isArray(data.vaults)).toBe(true);
 		expect(data.vaults).toHaveLength(1);
 	});

@@ -2,6 +2,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect } from 'vitest';
 import { GET } from '../../../routes/auth/+server.js';
+import type { ErrorResponse } from '../../../lib/types/api.js';
 import type { JWKS } from '@polyphony/shared/crypto';
 
 // Mock D1 database
@@ -30,7 +31,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('vault_id');
 	});
 
@@ -42,7 +43,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('callback');
 	});
 
@@ -56,7 +57,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('not registered');
 	});
 
@@ -75,7 +76,7 @@ describe('GET /auth', () => {
 		} as any);
 
 		expect(response.status).toBe(400);
-		const data = (await response.json()) as any;
+		const data = await response.json() as ErrorResponse;
 		expect(data.error).toContain('callback URL');
 	});
 
