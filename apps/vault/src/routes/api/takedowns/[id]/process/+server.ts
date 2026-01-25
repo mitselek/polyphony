@@ -2,9 +2,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { processTakedown } from '$lib/server/db/takedowns';
-import { getMemberRole, type Role } from '$lib/server/db/permissions';
-
-const ADMIN_ROLES: Role[] = ['owner', 'admin'];
+import { getMemberRole, isAdminRole } from '$lib/server/db/permissions';
 
 interface ProcessRequest {
 	action: 'approve' | 'reject';
@@ -24,7 +22,7 @@ export const POST: RequestHandler = async ({ request, params, platform, cookies 
 	}
 
 	const role = await getMemberRole(db, memberId);
-	if (!role || !ADMIN_ROLES.includes(role)) {
+	if (!role || !isAdminRole(role)) {
 		return json({ error: 'Admin access required' }, { status: 403 });
 	}
 
