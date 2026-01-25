@@ -52,16 +52,15 @@ export async function load({ url, platform, cookies }: RequestEvent) {
 	});
 
 	// Redirect to registry OAuth
-	const registryAuthUrl = platform?.env?.REGISTRY_OAUTH_URL || 'http://localhost:5174/oauth/authorize';
+	const registryUrl = platform?.env?.REGISTRY_OAUTH_URL || 'http://localhost:5174';
 	const vaultUrl = url.origin;
 	const callbackUrl = `${vaultUrl}/api/auth/callback`;
+	const vaultId = 'BQ6u9ENTnZk_danhhIbUB'; // TODO: Make configurable
 	
-	// Build OAuth URL with required parameters
-	const oauthUrl = new URL(registryAuthUrl);
-	oauthUrl.searchParams.set('response_type', 'code');
-	oauthUrl.searchParams.set('client_id', platform?.env?.REGISTRY_CLIENT_ID || 'vault');
-	oauthUrl.searchParams.set('redirect_uri', callbackUrl);
-	oauthUrl.searchParams.set('scope', 'profile email');
+	// Build registry auth URL with vault_id and callback parameters
+	const authUrl = new URL(`${registryUrl}/auth`);
+	authUrl.searchParams.set('vault_id', vaultId);
+	authUrl.searchParams.set('callback', callbackUrl);
 	
-	throw redirect(302, oauthUrl.toString());
+	throw redirect(302, authUrl.toString());
 };
