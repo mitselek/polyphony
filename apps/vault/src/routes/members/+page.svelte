@@ -227,14 +227,13 @@
 						<p class="mb-2 text-sm font-medium text-gray-700">Roles:</p>
 						<div class="flex flex-wrap gap-2">
 							{#each (['owner', 'admin', 'librarian'] as const) as role}
-								{@const hasRole = member.roles.includes(role)}
 								{@const isDisabled = updatingMember === member.id || 
 									(member.id === data.currentUserId && role === 'owner') ||
 									(!data.isOwner && role === 'owner')}
 								<button
 									onclick={() => toggleRole(member.id, role)}
 									disabled={isDisabled}
-									class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {hasRole
+									class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {member.roles.includes(role)
 										? getRoleBadgeClass(role)
 										: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 									title={isDisabled && member.id === data.currentUserId && role === 'owner'
@@ -243,7 +242,7 @@
 											? 'Only owners can manage owner role'
 											: ''}
 								>
-									{#if hasRole}
+									{#if member.roles.includes(role)}
 										✓ {role}
 									{:else}
 										+ {role}
