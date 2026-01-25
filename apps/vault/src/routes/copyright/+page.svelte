@@ -31,7 +31,7 @@
 			if (response.ok) {
 				submitted = true;
 			} else {
-				const result = await response.json();
+				const result = (await response.json()) as { error?: string };
 				error = result.error || 'Failed to submit takedown request';
 			}
 		} catch (e) {

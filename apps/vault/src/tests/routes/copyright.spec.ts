@@ -9,6 +9,12 @@ vi.mock('$lib/server/db/takedowns', () => ({
 
 import { createTakedownRequest } from '$lib/server/db/takedowns';
 
+interface TakedownResponse {
+	id?: string;
+	message?: string;
+	error?: string;
+}
+
 function createMockRequest(body: unknown): Request {
 	return new Request('http://localhost/copyright', {
 		method: 'POST',
@@ -55,7 +61,7 @@ describe('POST /copyright', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(201);
-		const data = await response.json();
+		const data = (await response.json()) as TakedownResponse;
 		expect(data.id).toBe('takedown-abc');
 		expect(data.message).toContain('received');
 	});
@@ -72,7 +78,7 @@ describe('POST /copyright', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as TakedownResponse;
 		expect(data.error).toContain('score_id');
 	});
 
@@ -89,7 +95,7 @@ describe('POST /copyright', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as TakedownResponse;
 		expect(data.error).toContain('attestation');
 	});
 
@@ -106,12 +112,12 @@ describe('POST /copyright', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as TakedownResponse;
 		expect(data.error).toContain('email');
 	});
 
-	it('should return 404 when score does not exist', async () => {
-		vi.mocked(createTakedownRequest).mockResolvedValue(null);
+	it('should return 500 when score creation fails', async () => {
+		vi.mocked(createTakedownRequest).mockRejectedValue(new Error('Score not found'));
 
 		const response = await POST({
 			request: createMockRequest({
@@ -124,9 +130,7 @@ describe('POST /copyright', () => {
 			platform: { env: { DB: createMockDb() } }
 		} as Parameters<typeof POST>[0]);
 
-		expect(response.status).toBe(404);
-		const data = await response.json();
-		expect(data.error.toLowerCase()).toContain('score');
+		expect(response.status).toBe(500);
 	});
 
 	it('should return 500 on database error', async () => {

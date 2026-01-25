@@ -34,7 +34,7 @@ function createMockDb() {
 							claimant_name,
 							claimant_email,
 							reason,
-							attestation: attestation === '1' || attestation === true,
+							attestation: attestation === '1' || attestation === 'true',
 							status: 'pending',
 							created_at: new Date().toISOString(),
 							processed_at: null,
