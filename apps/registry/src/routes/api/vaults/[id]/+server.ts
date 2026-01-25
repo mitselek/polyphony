@@ -29,7 +29,7 @@ export const GET = async ({
 
 	// Fetch vault
 	const vault = await platform.env.DB.prepare(
-		'SELECT id, name, callback_url, active, created_at FROM vaults WHERE id = ?'
+		'SELECT id, name, callback_url, active, registered_at FROM vaults WHERE id = ?'
 	)
 		.bind(params.id)
 		.first();

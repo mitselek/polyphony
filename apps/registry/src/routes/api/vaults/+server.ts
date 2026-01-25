@@ -77,7 +77,7 @@ export const GET = async ({ request, platform }: { request: Request; platform?: 
 
 	// Fetch all vaults
 	const { results } = await platform.env.DB.prepare(
-		'SELECT id, name, callback_url, active, created_at FROM vaults ORDER BY created_at DESC'
+		'SELECT id, name, callback_url, active, registered_at FROM vaults ORDER BY registered_at DESC'
 	).all();
 
 	return json({ vaults: results });
