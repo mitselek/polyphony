@@ -57,18 +57,24 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const inviteId = crypto.randomUUID();
 
 	try {
-		// Create invite record
+		// Create invite record with roles and voice part
 		await db
 			.prepare(
-				`INSERT INTO invites (id, email, token, invited_by, expires_at)
-				 VALUES (?, ?, ?, ?, datetime('now', '+7 days'))`
+				`INSERT INTO invites (id, email, token, invited_by, expires_at, roles, voice_part)
+				 VALUES (?, ?, ?, ?, datetime('now', '+48 hours'), ?, ?)`
 			)
-			.bind(inviteId, body.email, token, memberId)
+			.bind(
+				inviteId,
+				body.email,
+				token,
+				memberId,
+				JSON.stringify(body.roles),
+				body.voicePart ?? null
+			)
 			.run();
 
-		// Store invited roles (we'll use a JSON column for simplicity, or create invite_roles table)
-		// For now, let's just store as JSON string in a metadata column
 		// TODO: Send email with invitation link containing token
+		const inviteLink = `${request.url.replace('/api/members/invite', '/invite/accept')}?token=${token}`;
 
 		return json(
 			{
@@ -76,6 +82,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 				email: body.email,
 				roles: body.roles,
 				voicePart: body.voicePart ?? null,
+				inviteLink, // For now, return the link in response (until email is implemented)
 				message: 'Invitation created. Email will be sent to the recipient.'
 			},
 			{ status: 201 }
