@@ -178,7 +178,7 @@
 		</div>
 	{:else}
 		<div class="space-y-4">
-			{#each filteredMembers as member}
+			{#each filteredMembers as member (member.id)}
 				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
 					<div class="flex items-start justify-between">
 						<div class="flex-1">
