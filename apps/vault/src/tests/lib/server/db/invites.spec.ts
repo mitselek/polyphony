@@ -5,7 +5,7 @@ import {
 	getInviteByToken,
 	getInviteByName,
 	acceptInvite,
-	expireInvite,
+	renewInvite,
 	type Invite
 } from '$lib/server/db/invites';
 
@@ -49,7 +49,7 @@ function createMockDb() {
 						memberRoles.set(member_id, roles);
 						return { success: true };
 					}
-					// Handle UPDATE (accept/expire)
+					// Handle UPDATE (accept/expire/renew)
 					if (sql.includes('UPDATE invites SET status')) {
 						const token = params[params.length - 1] as string;
 						const invite = data.get(token);
@@ -63,6 +63,17 @@ function createMockDb() {
 							}
 						}
 						return { meta: { changes: invite ? 1 : 0 } };
+					}
+					// Handle UPDATE expires_at (renewInvite)
+					if (sql.includes('UPDATE invites') && sql.includes('SET expires_at')) {
+						const [newExpiresAt, inviteId] = params as [string, string];
+						for (const invite of data.values()) {
+							if (invite.id === inviteId && invite.status === 'pending') {
+								invite.expires_at = newExpiresAt;
+								return { meta: { changes: 1 } };
+							}
+						}
+						return { meta: { changes: 0 } };
 					}
 					return { meta: { changes: 1 } };
 				},
@@ -82,6 +93,17 @@ function createMockDb() {
 						const name = params[0] as string;
 						for (const invite of data.values()) {
 							if (invite.name === name && invite.status === 'pending') {
+								// Parse roles JSON for return
+								return { ...invite, roles: JSON.parse(invite.roles as string) };
+							}
+						}
+						return null;
+					}
+					// Handle SELECT by id (for renewInvite)
+					if (sql.includes('WHERE id = ?')) {
+						const inviteId = params[0] as string;
+						for (const invite of data.values()) {
+							if (invite.id === inviteId) {
 								// Parse roles JSON for return
 								return { ...invite, roles: JSON.parse(invite.roles as string) };
 							}
@@ -301,20 +323,69 @@ describe('Invite System', () => {
 		});
 	});
 
-	describe('expireInvite', () => {
-		it('marks invite as expired', async () => {
+	describe('renewInvite', () => {
+		it('extends expires_at by 48 hours from now', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
 				name: 'Test User',
 				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
-			const result = await expireInvite(mockDb as unknown as D1Database, invite.token);
+			const originalExpiry = new Date(invite.expires_at);
+			const beforeRenew = Date.now();
 
-			expect(result).toBe(true);
+			const renewed = await renewInvite(mockDb as unknown as D1Database, invite.id);
 
-			const expired = await getInviteByToken(mockDb as unknown as D1Database, invite.token);
-			expect(expired?.status).toBe('expired');
+			expect(renewed).not.toBeNull();
+			const newExpiry = new Date(renewed!.expires_at);
+
+			// New expiry should be ~48 hours from now (not from original expiry)
+			const expectedExpiry = beforeRenew + 48 * 60 * 60 * 1000;
+			const timeDiff = Math.abs(newExpiry.getTime() - expectedExpiry);
+			expect(timeDiff).toBeLessThan(1000); // Within 1 second tolerance
+		});
+
+		it('can renew already-expired invite', async () => {
+			const invite = await createInvite(mockDb as unknown as D1Database, {
+				name: 'Test User',
+				roles: ['librarian'],
+				invited_by: 'admin-123'
+			});
+
+			// Force expiration by setting expires_at to past
+			const pastExpiry = new Date(Date.now() - 1000).toISOString();
+			await mockDb.prepare('UPDATE invites SET expires_at = ? WHERE id = ?')
+				.bind(pastExpiry, invite.id)
+				.run();
+
+			const renewed = await renewInvite(mockDb as unknown as D1Database, invite.id);
+
+			expect(renewed).not.toBeNull();
+			const newExpiry = new Date(renewed!.expires_at);
+			const now = Date.now();
+			expect(newExpiry.getTime()).toBeGreaterThan(now);
+		});
+
+		it('returns null for non-existent invite', async () => {
+			const result = await renewInvite(mockDb as unknown as D1Database, 'non-existent-id');
+
+			expect(result).toBeNull();
+		});
+
+		it('returns null for accepted invite', async () => {
+			const invite = await createInvite(mockDb as unknown as D1Database, {
+				name: 'Test User',
+				roles: ['librarian'],
+				invited_by: 'admin-123'
+			});
+
+			// Accept the invite
+			await acceptInvite(mockDb as unknown as D1Database, invite.token, 'test@example.com');
+
+			// Try to renew accepted invite
+			const result = await renewInvite(mockDb as unknown as D1Database, invite.id);
+
+			expect(result).toBeNull();
 		});
 	});
 });

@@ -108,6 +108,30 @@ export async function getInviteByToken(
 }
 
 /**
+ * Find invite by ID
+ */
+export async function getInviteById(
+	db: D1Database,
+	inviteId: string
+): Promise<Invite | null> {
+	const result = await db
+		.prepare(
+			`SELECT id, name, token, invited_by, expires_at, status, roles, voice_part, created_at, accepted_at, accepted_by_email
+			 FROM invites WHERE id = ?`
+		)
+		.bind(inviteId)
+		.first<{ roles: string } & Omit<Invite, 'roles'>>();
+
+	if (!result) return null;
+
+	// Parse roles JSON
+	return {
+		...result,
+		roles: JSON.parse(result.roles) as Role[]
+	};
+}
+
+/**
  * Find a pending invite by name
  */
 export async function getInviteByName(
@@ -198,21 +222,6 @@ export async function acceptInvite(
 }
 
 /**
- * Mark an invite as expired
- */
-export async function expireInvite(
-	db: D1Database,
-	token: string
-): Promise<boolean> {
-	const result = await db
-		.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`)
-		.bind(token)
-		.run();
-
-	return (result.meta.changes ?? 0) > 0;
-}
-
-/**
  * Get all pending invites with inviter info
  */
 export async function getPendingInvites(
@@ -225,7 +234,7 @@ export async function getPendingInvites(
 			        m.name as inviter_name, m.email as inviter_email
 			 FROM invites i
 			 JOIN members m ON i.invited_by = m.id
-			 WHERE i.status = 'pending' AND i.expires_at > datetime('now')
+			 WHERE i.status = 'pending'
 			 ORDER BY i.created_at DESC`
 		)
 		.all<{ roles: string; inviter_name: string | null; inviter_email: string } & Omit<Invite, 'roles'>>();
@@ -249,4 +258,29 @@ export async function revokeInvite(
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * Renew an invite by extending expiration by 48 hours from now
+ */
+export async function renewInvite(
+	db: D1Database,
+	inviteId: string
+): Promise<Invite | null> {
+	const newExpiresAt = new Date(Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000);
+
+	const result = await db
+		.prepare(
+			`UPDATE invites 
+			 SET expires_at = ? 
+			 WHERE id = ? AND status = 'pending'`
+		)
+		.bind(newExpiresAt.toISOString(), inviteId)
+		.run();
+
+	if ((result.meta.changes ?? 0) === 0) {
+		return null;
+	}
+
+	return getInviteById(db, inviteId);
 }
