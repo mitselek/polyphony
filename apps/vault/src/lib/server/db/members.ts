@@ -34,7 +34,7 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 	const name = input.name ?? null;
 	const invited_by = input.invited_by ?? null;
 
-	// Insert member record (no voice_part column)
+	// Insert member record
 	await db
 		.prepare('INSERT INTO members (id, email, name, invited_by) VALUES (?, ?, ?, ?)')
 		.bind(id, input.email, name, invited_by)
@@ -144,6 +144,18 @@ async function loadMemberRelations(
 		.all<{ role: Role }>();
 	const roles = rolesResult.results.map((r) => r.role);
 
+	// Define interface for voice query result
+	interface VoiceRow {
+		id: string;
+		name: string;
+		abbreviation: string;
+		category: 'vocal' | 'instrumental';
+		range_group: string | null;
+		display_order: number;
+		is_active: number;
+		is_primary: number;
+	}
+
 	// Get voices with full details
 	const voicesResult = await db
 		.prepare(
@@ -154,7 +166,7 @@ async function loadMemberRelations(
 			 ORDER BY mv.is_primary DESC, v.display_order ASC`
 		)
 		.bind(memberRow.id)
-		.all<any>();
+		.all<VoiceRow>();
 
 	const voices: Voice[] = voicesResult.results.map((row) => ({
 		id: row.id,
@@ -166,6 +178,17 @@ async function loadMemberRelations(
 		isActive: row.is_active === 1
 	}));
 
+	// Define interface for section query result
+	interface SectionRow {
+		id: string;
+		name: string;
+		abbreviation: string;
+		parent_section_id: string | null;
+		display_order: number;
+		is_active: number;
+		is_primary: number;
+	}
+
 	// Get sections with full details
 	const sectionsResult = await db
 		.prepare(
@@ -176,7 +199,7 @@ async function loadMemberRelations(
 			 ORDER BY ms.is_primary DESC, s.display_order ASC`
 		)
 		.bind(memberRow.id)
-		.all<any>();
+		.all<SectionRow>();
 
 	const sections: Section[] = sectionsResult.results.map((row) => ({
 		id: row.id,
