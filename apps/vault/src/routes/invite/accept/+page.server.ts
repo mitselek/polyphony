@@ -14,7 +14,7 @@ export async function load({ url, platform, cookies }: RequestEvent) {
 	// Validate token and check expiration
 	const invite = await db
 		.prepare(
-			`SELECT id, name, expires_at, status, roles, voice_part
+			`SELECT id, name, expires_at, status, roles
 			 FROM invites
 			 WHERE token = ?`
 		)
@@ -25,7 +25,6 @@ export async function load({ url, platform, cookies }: RequestEvent) {
 			expires_at: string;
 			status: string;
 			roles: string;
-			voice_part: string | null;
 		}>();
 
 	if (!invite) {
