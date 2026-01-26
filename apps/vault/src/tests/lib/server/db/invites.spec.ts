@@ -58,8 +58,7 @@ function createMockDb() {
 								invite.status = 'accepted';
 								invite.accepted_at = params[0] as string;
 								invite.accepted_by_email = params[1] as string;
-							} else if (sql.includes("status = 'expired'")) {
-								invite.status = 'expired';
+
 							}
 						}
 						return { meta: { changes: invite ? 1 : 0 } };

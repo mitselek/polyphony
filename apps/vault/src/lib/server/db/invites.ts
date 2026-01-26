@@ -8,7 +8,7 @@ export interface Invite {
 	token: string;
 	invited_by: string;
 	expires_at: string;
-	status: 'pending' | 'accepted' | 'expired';
+	status: 'pending' | 'accepted'; // 'expired' derived from expires_at < now()
 	roles: Role[]; // JSON array stored as string
 	voice_part: VoicePart | null;
 	created_at: string;
@@ -174,19 +174,10 @@ export async function acceptInvite(
 		return { success: false, error: 'Invite already used' };
 	}
 
-	if (invite.status === 'expired') {
-		return { success: false, error: 'Invite has expired' };
-	}
-
-	// Check if expired by time
+	// Check if expired by time (derived from expires_at)
 	const now = new Date();
 	const expiresAt = new Date(invite.expires_at);
 	if (now > expiresAt) {
-		// Mark as expired
-		await db
-			.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`)
-			.bind(token)
-			.run();
 		return { success: false, error: 'Invite has expired' };
 	}
 
