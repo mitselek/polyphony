@@ -246,7 +246,7 @@
 					<div class="mt-4">
 						<div class="flex items-center justify-between mb-2">
 							<p class="text-sm font-medium text-gray-700">Roles:</p>
-							{#if member.id !== data.currentUserId && (data.isAdmin || data.isOwner)}
+							{#if member.id !== data.currentUserId && data.isOwner}
 								<button
 									onclick={() => removeMember(member.id, member.name ?? member.email)}
 									disabled={removingMember === member.id}
