@@ -2,6 +2,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getPendingInvites } from '$lib/server/db/invites';
+import { getAllMembers, getMemberById } from '$lib/server/db/members';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -15,54 +16,30 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	}
 
 	// Get current user to check permissions
-	const currentUser = await db
-		.prepare(
-			`SELECT m.id, m.email, GROUP_CONCAT(mr.role) as roles
-			 FROM members m
-			 LEFT JOIN member_roles mr ON m.id = mr.member_id
-			 WHERE m.id = ?
-			 GROUP BY m.id`
-		)
-		.bind(memberId)
-		.first<{ id: string; email: string; roles: string | null }>();
+	const currentUser = await getMemberById(db, memberId);
 
 	if (!currentUser) {
 		throw error(401, 'Invalid session');
 	}
 
-	const userRoles = currentUser.roles?.split(',') ?? [];
-	const canManage = userRoles.some((r) => ['admin', 'owner'].includes(r));
+	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
 
 	if (!canManage) {
 		throw error(403, 'Insufficient permissions - admin or owner role required');
 	}
 
-	// Get all members with their roles
-	const membersResult = await db
-		.prepare(
-			`SELECT m.id, m.email, m.name, m.voice_part, m.joined_at,
-			        GROUP_CONCAT(mr.role) as roles
-			 FROM members m
-			 LEFT JOIN member_roles mr ON m.id = mr.member_id
-			 GROUP BY m.id
-			 ORDER BY m.joined_at DESC`
-		)
-		.all<{
-			id: string;
-			email: string;
-			name: string | null;
-			voice_part: string | null;
-			joined_at: string;
-			roles: string | null;
-		}>();
+	// Get all members with their roles, voices, and sections
+	const allMembers = await getAllMembers(db);
 
-	const members = membersResult.results.map((m) => ({
+	// Format for frontend
+	const members = allMembers.map((m) => ({
 		id: m.id,
 		email: m.email,
 		name: m.name,
-		voicePart: m.voice_part,
+		voices: m.voices,
+		sections: m.sections,
 		joinedAt: m.joined_at,
-		roles: m.roles ? m.roles.split(',') : []
+		roles: m.roles
 	}));
 
 	// Get pending invites
@@ -72,7 +49,8 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		id: inv.id,
 		name: inv.name,
 		roles: inv.roles,
-		voicePart: inv.voice_part,
+		voices: inv.voices,
+		sections: inv.sections,
 		createdAt: inv.created_at,
 		expiresAt: inv.expires_at,
 		invitedBy: inv.inviter_name ?? inv.inviter_email,
@@ -83,7 +61,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		members,
 		invites,
 		currentUserId: currentUser.id,
-		isOwner: userRoles.includes('owner'),
-		isAdmin: userRoles.some((r) => ['admin', 'owner'].includes(r))
+		isOwner: currentUser.roles.includes('owner'),
+		isAdmin: currentUser.roles.some((r) => ['admin', 'owner'].includes(r))
 	};
 };

@@ -3,7 +3,8 @@ import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { importJWK, jwtVerify } from 'jose';
 import { getMemberByEmail, createMember } from '$lib/server/db/members';
-import type { Role, VoicePart } from '$lib/types';
+import { acceptInvite } from '$lib/server/db/invites';
+import type { Role } from '$lib/types';
 
 // Registry URL for fetching JWKS
 const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
@@ -76,63 +77,40 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 
 		// Check if there's an invite token from the accept flow
 		const inviteToken = cookies.get('invite_token');
-		let inviteRoles: Role[] = [];
-		let inviteVoicePart: VoicePart | null = null;
 
 		if (inviteToken) {
-			// Validate and retrieve invite details
-			const invite = await db
-				.prepare(
-					`SELECT id, roles, voice_part, status, expires_at
-					 FROM invites
-					 WHERE token = ?`
-				)
-				.bind(inviteToken)
-				.first<{
-					id: string;
-					roles: string;
-					voice_part: string | null;
-					status: string;
-					expires_at: string;
-				}>();
+			// Use acceptInvite function which handles voices/sections transfer
+			const inviteResult = await acceptInvite(db, inviteToken, email, name);
 
-			if (invite && invite.status === 'pending') {
-				const now = new Date();
-				const expiresAt = new Date(invite.expires_at);
-				
-				if (now <= expiresAt) {
-					// Valid invite - use its roles and voice part
-					inviteRoles = JSON.parse(invite.roles) as Role[];
-					inviteVoicePart = invite.voice_part as VoicePart | null;
+			if (inviteResult.success && inviteResult.memberId) {
+				// Clear the invite token cookie
+				cookies.delete('invite_token', { path: '/' });
 
-					// Mark invite as accepted
-					await db
-						.prepare(
-							`UPDATE invites
-							 SET status = 'accepted',
-							     accepted_at = datetime('now'),
-							     accepted_by_email = ?
-							 WHERE id = ?`
-						)
-						.bind(email, invite.id)
-						.run();
-				}
+				// Set session for the new member
+				cookies.set('member_id', inviteResult.memberId, {
+					path: '/',
+					httpOnly: true,
+					sameSite: 'lax',
+					secure: true,
+					maxAge: 60 * 60 * 24 * 30 // 30 days
+				});
+
+				throw redirect(302, '/welcome');
 			}
 
-			// Clear the invite token cookie
+			// If invite acceptance failed, clear the cookie and fall through to normal login
 			cookies.delete('invite_token', { path: '/' });
 		}
 
-		// Find or create member by email
+		// Find or create member by email (no invite case)
 		let member = await getMemberByEmail(db, email);
 
 		if (!member) {
-			// Create new member with roles from invite (or empty if no invite)
+			// Create new member with no roles or voices/sections
 			member = await createMember(db, {
 				email,
 				name,
-				roles: inviteRoles,
-				voice_part: inviteVoicePart ?? undefined
+				roles: []
 			});
 		} else {
 			// Existing member - update name if changed
@@ -141,33 +119,11 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 					.prepare('UPDATE members SET name = ? WHERE id = ?')
 					.bind(name, member.id)
 					.run();
-			}
 
-			// If they came via invite, add the invited roles to their existing roles
-			if (inviteRoles.length > 0) {
-				const currentRoles = member.roles;
-				const newRoles = Array.from(new Set([...currentRoles, ...inviteRoles]));
-				
-				// Delete existing roles
-				await db
-					.prepare('DELETE FROM member_roles WHERE member_id = ?')
-					.bind(member.id)
-					.run();
-
-				// Insert updated roles
-				for (const role of newRoles) {
-					await db
-						.prepare('INSERT INTO member_roles (member_id, role) VALUES (?, ?)')
-						.bind(member.id, role)
-						.run();
-				}
-
-				// Update voice part if provided in invite
-				if (inviteVoicePart) {
-					await db
-						.prepare('UPDATE members SET voice_part = ? WHERE id = ?')
-						.bind(inviteVoicePart, member.id)
-						.run();
+				// Reload member to get updated data
+				member = await getMemberByEmail(db, email);
+				if (!member) {
+					throw error(500, 'Failed to reload member after name update');
 				}
 			}
 		}

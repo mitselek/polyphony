@@ -149,33 +149,7 @@
 		}
 	}
 
-	async function updateVoicePart(memberId: string, voicePart: string | null) {
-		updatingMember = memberId;
-		error = '';
-
-		try {
-			const response = await fetch(`/api/members/${memberId}/voice-part`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ voicePart })
-			});
-
-			if (!response.ok) {
-				const data = (await response.json()) as { message?: string };
-				throw new Error(data.message ?? 'Failed to update voice part');
-			}
-
-			// Update local state - reassign array to trigger reactivity
-			members = members.map((m) =>
-				m.id === memberId ? { ...m, voicePart } : m
-			);
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update voice part';
-			setTimeout(() => (error = ''), 5000);
-		} finally {
-			updatingMember = null;
-		}
-	}
+	// TODO Phase 3: Add updateMemberVoices and updateMemberSections functions
 
 	async function removeMember(memberId: string, memberName: string) {
 		const confirmed = confirm(
@@ -267,11 +241,7 @@
 										EXPIRED
 									</span>
 								{/if}
-								{#if invite.voicePart}
-									<span class="rounded px-2 py-0.5 text-xs {expired ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
-										{invite.voicePart}
-									</span>
-								{/if}
+								<!-- TODO Phase 3: Display voices/sections badges for invite -->
 								{#each invite.roles as role}
 									<span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 										{role}
@@ -371,28 +341,7 @@
 										title="This is your account"
 									>You</span>
 								{/if}
-								<!-- Voice Part -->
-								<select
-									id="voice-part-{member.id}"
-									value={member.voicePart ?? ''}
-									onchange={(e) => updateVoicePart(member.id, e.currentTarget.value || null)}
-									disabled={updatingMember === member.id}
-									class="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-									title="Voice part: {member.voicePart || 'None'}"
-									aria-label="Voice part for {member.name ?? member.email}"
-								>
-									<option value="">None</option>
-									<option value="S">S</option>
-									<option value="A">A</option>
-									<option value="T">T</option>
-									<option value="B">B</option>
-									<option value="SA">SA</option>
-									<option value="AT">AT</option>
-									<option value="TB">TB</option>
-									<option value="SAT">SAT</option>
-									<option value="ATB">ATB</option>
-									<option value="SATB">SATB</option>
-								</select>
+								<!-- TODO Phase 3: Add voices/sections badges here -->
 							</div>
 							{#if member.name}
 								<p class="text-sm text-gray-600">{member.email}</p>

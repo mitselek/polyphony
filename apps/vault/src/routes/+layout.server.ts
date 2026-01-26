@@ -24,7 +24,8 @@ export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 				email: member.email,
 				name: member.name,
 				roles: member.roles,
-				voice_part: member.voice_part
+				voices: member.voices,
+				sections: member.sections
 			}
 		};
 	} catch {
