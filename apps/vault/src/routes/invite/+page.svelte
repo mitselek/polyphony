@@ -1,17 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
 	let name = $state('');
-	let roles = $state<Set<'owner' | 'admin' | 'librarian'>>(new Set());
+	let roles = $state<Set<Role>>(new Set());
 	let voicePart = $state<string | null>(null);
 	let isSubmitting = $state(false);
 	let error = $state('');
 	let success = $state('');
 	let inviteLink = $state('');
 
-	function toggleRole(role: 'owner' | 'admin' | 'librarian') {
+	function toggleRole(role: Role) {
 		const newRoles = new Set(roles);
 		if (newRoles.has(role)) {
 			newRoles.delete(role);
@@ -132,50 +133,33 @@
 				Roles (optional)
 				</legend>
 				<div class="space-y-2">
-					{#if data.isOwner}
+				{#each ASSIGNABLE_ROLES as role}
+					{#if role !== 'owner' || data.isOwner}
 						<label class="flex items-center gap-2">
 							<input
 								type="checkbox"
-								checked={roles.has('owner')}
-								onchange={() => toggleRole('owner')}
+								checked={roles.has(role)}
+								onchange={() => toggleRole(role)}
 								disabled={isSubmitting}
 								class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
 							/>
 							<span class="text-sm">
-								<span class="font-medium">Owner</span> - Full system access including owner
-								management
+								<span class="font-medium capitalize">{role.replace('_', ' ')}</span>
+								{#if role === 'owner'}
+									- Full system access including owner management
+								{:else if role === 'admin'}
+									- Member and role management
+								{:else if role === 'librarian'}
+									- Score management (upload, delete)
+								{:else if role === 'conductor'}
+									- Event and attendance management
+								{:else if role === 'section_leader'}
+									- Attendance recording
+								{/if}
 							</span>
 						</label>
 					{/if}
-					<label class="flex items-center gap-2">
-						<input
-							type="checkbox"
-							checked={roles.has('admin')}
-							onchange={() => toggleRole('admin')}
-							disabled={isSubmitting}
-							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
-						/>
-						<span class="text-sm">
-							<span class="font-medium">Admin</span> - Member and role management
-						</span>
-					</label>
-					<label class="flex items-center gap-2">
-						<input
-							type="checkbox"
-							checked={roles.has('librarian')}
-							onchange={() => toggleRole('librarian')}
-							disabled={isSubmitting}
-							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
-						/>
-						<span class="text-sm">
-							<span class="font-medium">Librarian</span> - Score management (upload, delete)
-						</span>
-					</label>
-				</div>
-				<p class="mt-2 text-sm text-gray-500">
-					All members can view and download scores. Assign roles to grant additional permissions.
-				</p>
-			</fieldset>
+				{/each}
 
 			<div>
 				<label for="voicePart" class="mb-1 block text-sm font-medium text-gray-700">

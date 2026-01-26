@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
+	import { ASSIGNABLE_ROLES } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
@@ -358,7 +359,7 @@
 					<div class="mt-4">
 						<p class="mb-2 text-sm font-medium text-gray-700">Roles:</p>
 						<div class="flex flex-wrap gap-2">
-							{#each (['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const) as role}
+							{#each ASSIGNABLE_ROLES as role}
 								{@const isDisabled = updatingMember === member.id || 
 									(member.id === data.currentUserId && role === 'owner') ||
 									(!data.isOwner && role === 'owner')}
