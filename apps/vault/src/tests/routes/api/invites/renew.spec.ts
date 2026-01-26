@@ -50,7 +50,7 @@ function createMockDb() {
 					return { meta: { changes: 1 } };
 				},
 				first: async () => {
-					if (sql.includes('WHERE id = ?')) {
+					if (sql.includes('FROM invites') && sql.includes('WHERE id = ?')) {
 						const inviteId = params[0];
 						const invite = invites.get(inviteId);
 						if (invite) {
@@ -58,6 +58,10 @@ function createMockDb() {
 						}
 					}
 					return null;
+				},
+				all: async () => {
+					// Handle SELECT voices/sections for invite (empty results for test)
+					return { results: [] };
 				}
 			})
 		}),

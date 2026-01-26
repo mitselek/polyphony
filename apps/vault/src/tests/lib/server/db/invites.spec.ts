@@ -14,14 +14,16 @@ function createMockDb() {
 	const data: Map<string, Record<string, unknown>> = new Map();
 	const members: Map<string, Record<string, unknown>> = new Map();
 	const memberRoles: Map<string, string[]> = new Map();
+	const inviteVoices: Map<string, string[]> = new Map(); // invite_id -> voice_ids
+	const inviteSections: Map<string, string[]> = new Map(); // invite_id -> section_ids
 	
 	return {
 		prepare: (sql: string) => ({
 			bind: (...params: unknown[]) => ({
 				run: async () => {
-					// Handle INSERT INTO invites (name-based)
+					// Handle INSERT INTO invites (name-based, no voice_part)
 					if (sql.startsWith('INSERT INTO invites')) {
-						const [id, name, token, invited_by, expires_at, roles, voice_part, created_at] = params as any[];
+						const [id, name, token, invited_by, expires_at, roles, created_at] = params as any[];
 						data.set(token, {
 							id,
 							name,
@@ -29,17 +31,32 @@ function createMockDb() {
 							invited_by,
 							expires_at,
 							status: 'pending',
-							roles: JSON.stringify(roles), // Store as JSON string like D1 would
-							voice_part,
+							roles, // Already a JSON string from createInvite
 							created_at,
 							accepted_at: null,
 							accepted_by_email: null
 						});
 					}
-					// Handle INSERT INTO members
+					// Handle INSERT INTO invite_voices
+					if (sql.includes('INSERT INTO invite_voices')) {
+						const [invite_id, voice_id] = params as [string, string];
+						const voices = inviteVoices.get(invite_id) || [];
+						voices.push(voice_id);
+						inviteVoices.set(invite_id, voices);
+						return { meta: { changes: 1 } };
+					}
+					// Handle INSERT INTO invite_sections
+					if (sql.includes('INSERT INTO invite_sections')) {
+						const [invite_id, section_id] = params as [string, string];
+						const sections = inviteSections.get(invite_id) || [];
+						sections.push(section_id);
+						inviteSections.set(invite_id, sections);
+						return { meta: { changes: 1 } };
+					}
+					// Handle INSERT INTO members (no voice_part)
 					if (sql.includes('INSERT INTO members')) {
-						const [id, email, name, voice_part, invited_by] = params as string[];
-						members.set(id, { id, email, name, voice_part, invited_by, joined_at: new Date().toISOString() });
+						const [id, email, name, invited_by] = params as string[];
+						members.set(id, { id, email, name, invited_by, joined_at: new Date().toISOString() });
 					}
 					// Handle INSERT INTO member_roles
 					if (sql.includes('INSERT INTO member_roles')) {
@@ -78,38 +95,53 @@ function createMockDb() {
 				},
 				first: async () => {
 					// Handle SELECT by token
-					if (sql.includes('WHERE token = ?')) {
+					if (sql.includes('FROM invites') && sql.includes('WHERE token = ?')) {
 						const token = params[0] as string;
 						const inv = data.get(token);
 						if (inv) {
-							// Parse roles JSON for return
-							return { ...inv, roles: JSON.parse(inv.roles as string) };
+							// Return roles as JSON string (not parsed) for loadInviteRelations
+							return { ...inv };
 						}
 						return null;
 					}
 					// Handle SELECT by name
-					if (sql.includes('WHERE name = ?')) {
+					if (sql.includes('FROM invites') && sql.includes('WHERE name = ?')) {
 						const name = params[0] as string;
 						for (const invite of data.values()) {
 							if (invite.name === name && invite.status === 'pending') {
-								// Parse roles JSON for return
-								return { ...invite, roles: JSON.parse(invite.roles as string) };
+								// Return roles as JSON string (not parsed) for loadInviteRelations
+								return { ...invite };
 							}
 						}
 						return null;
 					}
 					// Handle SELECT by id (for renewInvite)
-					if (sql.includes('WHERE id = ?')) {
+					if (sql.includes('FROM invites') && sql.includes('WHERE id = ?')) {
 						const inviteId = params[0] as string;
 						for (const invite of data.values()) {
 							if (invite.id === inviteId) {
-								// Parse roles JSON for return
-								return { ...invite, roles: JSON.parse(invite.roles as string) };
+								// Return roles as JSON string (not parsed) for loadInviteRelations
+								return { ...invite };
 							}
 						}
 						return null;
 					}
 					return null;
+				},
+				all: async () => {
+					// Handle SELECT voices for invite (JOIN with voices table)
+					if (sql.includes('FROM voices') && sql.includes('JOIN invite_voices')) {
+						const invite_id = params[0] as string;
+						// Return empty array - we don't have voices in test data by default
+						return { results: [] };
+					}
+					// Handle SELECT sections for invite (JOIN with sections table)
+					if (sql.includes('FROM sections') && sql.includes('JOIN invite_sections')) {
+						const invite_id = params[0] as string;
+						// Return empty array - we don't have sections in test data by default
+						return { results: [] };
+					}
+					return { results: [] };
 				}
 			})
 		}),
@@ -256,7 +288,6 @@ describe('Invite System', () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
 				name: 'Jane Doe',
 				roles: ['librarian'],
-				voice_part: 'S',
 				invited_by: 'admin-123'
 			});
 
@@ -270,7 +301,6 @@ describe('Invite System', () => {
 			const member = mockDb._members.get(result.memberId!);
 			expect(member).toBeDefined();
 			expect(member?.email).toBe('jane@example.com');
-			expect(member?.voice_part).toBe('S');
 		});
 
 		it('rejects expired invite', async () => {

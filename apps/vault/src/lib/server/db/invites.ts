@@ -1,6 +1,6 @@
 // Invite database operations for member invitation system
 
-import type { Role, VoicePart } from '$lib/types';
+import type { Role, Voice, Section } from '$lib/types';
 
 export interface Invite {
 	id: string;
@@ -10,7 +10,8 @@ export interface Invite {
 	expires_at: string;
 	status: 'pending' | 'accepted'; // 'expired' derived from expires_at < now()
 	roles: Role[]; // JSON array stored as string
-	voice_part: VoicePart | null;
+	voices: Voice[]; // Invited voices (from junction table)
+	sections: Section[]; // Invited sections (from junction table)
 	created_at: string;
 	accepted_at: string | null;
 	accepted_by_email: string | null; // Registry-verified email (filled when accepted)
@@ -20,7 +21,8 @@ export interface CreateInviteInput {
 	name: string;
 	roles: Role[];
 	invited_by: string;
-	voice_part?: VoicePart;
+	voiceIds?: string[];
+	sectionIds?: string[];
 }
 
 export interface AcceptInviteResult {
@@ -61,8 +63,8 @@ export async function createInvite(
 
 	await db
 		.prepare(
-			`INSERT INTO invites (id, name, token, invited_by, expires_at, status, roles, voice_part, created_at)
-			 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+			`INSERT INTO invites (id, name, token, invited_by, expires_at, status, roles, created_at)
+			 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`
 		)
 		.bind(
 			id,
@@ -71,16 +73,100 @@ export async function createInvite(
 			input.invited_by,
 			expiresAt.toISOString(),
 			rolesJson,
-			input.voice_part ?? null,
 			now.toISOString()
 		)
 		.run();
+
+	// Insert voice assignments
+	if (input.voiceIds && input.voiceIds.length > 0) {
+		const voiceStatements = input.voiceIds.map((voiceId, index) =>
+			db
+				.prepare(
+					'INSERT INTO invite_voices (invite_id, voice_id, is_primary) VALUES (?, ?, ?)'
+				)
+				.bind(id, voiceId, index === 0 ? 1 : 0)
+		);
+		await db.batch(voiceStatements);
+	}
+
+	// Insert section assignments
+	if (input.sectionIds && input.sectionIds.length > 0) {
+		const sectionStatements = input.sectionIds.map((sectionId, index) =>
+			db
+				.prepare(
+					'INSERT INTO invite_sections (invite_id, section_id, is_primary) VALUES (?, ?, ?)'
+				)
+				.bind(id, sectionId, index === 0 ? 1 : 0)
+		);
+		await db.batch(sectionStatements);
+	}
 
 	const invite = await getInviteByToken(db, token);
 	if (!invite) {
 		throw new Error('Failed to create invite');
 	}
 	return invite;
+}
+
+/**
+ * Helper to load voices and sections for an invite
+ */
+async function loadInviteRelations(
+	db: D1Database,
+	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections'> & { roles: string }
+): Promise<Invite> {
+	// Parse roles JSON
+	const roles = JSON.parse(inviteRow.roles) as Role[];
+
+	// Get voices
+	const voicesResult = await db
+		.prepare(
+			`SELECT v.id, v.name, v.abbreviation, v.category, v.range_group, v.display_order, v.is_active
+			 FROM voices v
+			 JOIN invite_voices iv ON v.id = iv.voice_id
+			 WHERE iv.invite_id = ?
+			 ORDER BY iv.is_primary DESC, v.display_order ASC`
+		)
+		.bind(inviteRow.id)
+		.all<any>();
+
+	const voices: Voice[] = voicesResult.results.map((row) => ({
+		id: row.id,
+		name: row.name,
+		abbreviation: row.abbreviation,
+		category: row.category,
+		rangeGroup: row.range_group,
+		displayOrder: row.display_order,
+		isActive: row.is_active === 1
+	}));
+
+	// Get sections
+	const sectionsResult = await db
+		.prepare(
+			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
+			 FROM sections s
+			 JOIN invite_sections isc ON s.id = isc.section_id
+			 WHERE isc.invite_id = ?
+			 ORDER BY isc.is_primary DESC, s.display_order ASC`
+		)
+		.bind(inviteRow.id)
+		.all<any>();
+
+	const sections: Section[] = sectionsResult.results.map((row) => ({
+		id: row.id,
+		name: row.name,
+		abbreviation: row.abbreviation,
+		parentSectionId: row.parent_section_id,
+		displayOrder: row.display_order,
+		isActive: row.is_active === 1
+	}));
+
+	return {
+		...inviteRow,
+		roles,
+		voices,
+		sections
+	};
 }
 
 /**
@@ -92,19 +178,15 @@ export async function getInviteByToken(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, voice_part, created_at, accepted_at, accepted_by_email
+			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
-		.first<{ roles: string } & Omit<Invite, 'roles'>>();
+		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
 
 	if (!result) return null;
 
-	// Parse roles JSON
-	return {
-		...result,
-		roles: JSON.parse(result.roles) as Role[]
-	};
+	return await loadInviteRelations(db, result);
 }
 
 /**
@@ -116,19 +198,15 @@ export async function getInviteById(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, voice_part, created_at, accepted_at, accepted_by_email
+			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
-		.first<{ roles: string } & Omit<Invite, 'roles'>>();
+		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
 
 	if (!result) return null;
 
-	// Parse roles JSON
-	return {
-		...result,
-		roles: JSON.parse(result.roles) as Role[]
-	};
+	return await loadInviteRelations(db, result);
 }
 
 /**
@@ -140,23 +218,20 @@ export async function getInviteByName(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, voice_part, created_at, accepted_at, accepted_by_email
+			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
 			 FROM invites WHERE name = ? AND status = 'pending'`
 		)
 		.bind(name)
-		.first<{ roles: string } & Omit<Invite, 'roles'>>();
+		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
 
 	if (!result) return null;
 
-	// Parse roles JSON
-	return {
-		...result,
-		roles: JSON.parse(result.roles) as Role[]
-	};
+	return await loadInviteRelations(db, result);
 }
 
 /**
  * Accept an invite and create member (email from Registry OAuth)
+ * Transfers roles, voices, and sections from invite to new member
  */
 export async function acceptInvite(
 	db: D1Database,
@@ -181,25 +256,51 @@ export async function acceptInvite(
 		return { success: false, error: 'Invite has expired' };
 	}
 
-	// Create member with multi-role support
+	// Create member (no voice_part column)
 	const memberId = generateId();
 	await db
 		.prepare(
-			`INSERT INTO members (id, email, name, voice_part, invited_by)
-			 VALUES (?, ?, ?, ?, ?)`
+			`INSERT INTO members (id, email, name, invited_by)
+			 VALUES (?, ?, ?, ?)`
 		)
-		.bind(memberId, email, name ?? null, invite.voice_part, invite.invited_by)
+		.bind(memberId, email, name ?? null, invite.invited_by)
 		.run();
 
 	// Insert roles from invite
-	const roleStatements = invite.roles.map((role) =>
-		db
-			.prepare(
-				'INSERT INTO member_roles (member_id, role, granted_by) VALUES (?, ?, ?)'
-			)
-			.bind(memberId, role, invite.invited_by)
-	);
-	await db.batch(roleStatements);
+	if (invite.roles.length > 0) {
+		const roleStatements = invite.roles.map((role) =>
+			db
+				.prepare(
+					'INSERT INTO member_roles (member_id, role, granted_by) VALUES (?, ?, ?)'
+				)
+				.bind(memberId, role, invite.invited_by)
+		);
+		await db.batch(roleStatements);
+	}
+
+	// Transfer voices from invite to member
+	if (invite.voices.length > 0) {
+		const voiceStatements = invite.voices.map((voice, index) =>
+			db
+				.prepare(
+					'INSERT INTO member_voices (member_id, voice_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
+				)
+				.bind(memberId, voice.id, index === 0 ? 1 : 0, invite.invited_by)
+		);
+		await db.batch(voiceStatements);
+	}
+
+	// Transfer sections from invite to member
+	if (invite.sections.length > 0) {
+		const sectionStatements = invite.sections.map((section, index) =>
+			db
+				.prepare(
+					'INSERT INTO member_sections (member_id, section_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
+				)
+				.bind(memberId, section.id, index === 0 ? 1 : 0, invite.invited_by)
+		);
+		await db.batch(sectionStatements);
+	}
 
 	// Mark invite as accepted with verified email
 	await db
@@ -221,19 +322,28 @@ export async function getPendingInvites(
 	const result = await db
 		.prepare(
 			`SELECT i.id, i.name, i.token, i.invited_by, i.expires_at, i.status, 
-			        i.roles, i.voice_part, i.created_at, i.accepted_at, i.accepted_by_email,
+			        i.roles, i.created_at, i.accepted_at, i.accepted_by_email,
 			        m.name as inviter_name, m.email as inviter_email
 			 FROM invites i
 			 JOIN members m ON i.invited_by = m.id
 			 WHERE i.status = 'pending'
 			 ORDER BY i.created_at DESC`
 		)
-		.all<{ roles: string; inviter_name: string | null; inviter_email: string } & Omit<Invite, 'roles'>>();
+		.all<{ roles: string; inviter_name: string | null; inviter_email: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
 
-	return result.results.map((row) => ({
-		...row,
-		roles: JSON.parse(row.roles) as Role[]
-	}));
+	// Load relations for each invite
+	const invitesWithRelations = await Promise.all(
+		result.results.map(async (row) => {
+			const invite = await loadInviteRelations(db, row);
+			return {
+				...invite,
+				inviter_name: row.inviter_name,
+				inviter_email: row.inviter_email
+			};
+		})
+	);
+
+	return invitesWithRelations;
 }
 
 /**
