@@ -115,3 +115,27 @@ export async function getMemberById(
 
 	return { ...memberRow, roles };
 }
+
+/**
+ * Get all members with their roles
+ */
+export async function getAllMembers(db: D1Database): Promise<Member[]> {
+	const { results: memberRows } = await db
+		.prepare('SELECT id, email, name, voice_part, invited_by, joined_at FROM members')
+		.all<Omit<Member, 'roles'>>();
+
+	// Get roles for all members efficiently
+	const membersWithRoles = await Promise.all(
+		memberRows.map(async (memberRow) => {
+			const rolesResult = await db
+				.prepare('SELECT role FROM member_roles WHERE member_id = ?')
+				.bind(memberRow.id)
+				.all<{ role: Role }>();
+
+			const roles = rolesResult.results.map((r) => r.role);
+			return { ...memberRow, roles };
+		})
+	);
+
+	return membersWithRoles;
+}

@@ -39,6 +39,17 @@ export const updateVoicePartSchema = z.object({
 export type UpdateVoicePartInput = z.infer<typeof updateVoicePartSchema>;
 
 /**
+ * Schema for updating vault settings
+ */
+export const updateSettingsSchema = z.object({
+	default_voice_part: voicePartSchema.or(z.literal('')).optional(),
+	default_event_duration: z.coerce.number().int().positive().optional(),
+	conductor_id: z.string().optional()
+});
+
+export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
+
+/**
  * Parse and validate request body against a Zod schema.
  * Throws SvelteKit error with appropriate status code on failure.
  */
