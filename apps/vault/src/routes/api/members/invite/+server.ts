@@ -1,8 +1,8 @@
 // POST /api/members/invite - Create a new member invitation
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { Role } from '$lib/types';
 import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/middleware';
+import { parseBody, createInviteSchema } from '$lib/server/validation/schemas';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -14,20 +14,8 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	let body: { name: string; roles: Role[]; voicePart?: string | null };
-	try {
-		body = await request.json();
-	} catch {
-		throw error(400, 'Invalid JSON body');
-	}
-
-	if (!body.name) {
-		throw error(400, 'Name is required');
-	}
-
-	if (!body.roles || !Array.isArray(body.roles)) {
-		body.roles = []; // Default to empty roles if not provided
-	}
+	// Validate request body with Zod
+	const body = await parseBody(request, createInviteSchema);
 
 	// Only owners can invite owners
 	if (body.roles.includes('owner') && !isOwner(member)) {

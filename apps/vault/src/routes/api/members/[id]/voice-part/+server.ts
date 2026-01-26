@@ -2,8 +2,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
-
-const VALID_VOICE_PARTS = ['S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB'];
+import { parseBody, updateVoicePartSchema } from '$lib/server/validation/schemas';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -15,12 +14,8 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 	const currentMember = await getAuthenticatedMember(db, cookies);
 	assertAdmin(currentMember);
 
-	const { voicePart } = (await request.json()) as { voicePart: string | null };
-
-	// Validate voice part
-	if (voicePart !== null && !VALID_VOICE_PARTS.includes(voicePart)) {
-		throw error(400, 'Invalid voice part');
-	}
+	// Validate request body with Zod
+	const { voicePart } = await parseBody(request, updateVoicePartSchema);
 
 	const targetMemberId = params.id;
 

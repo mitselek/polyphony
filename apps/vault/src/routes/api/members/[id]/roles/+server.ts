@@ -1,8 +1,8 @@
 // API endpoint for managing member roles
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { Role } from '$lib/types';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
+import { parseBody, updateRolesSchema } from '$lib/server/validation/schemas';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -15,15 +15,8 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 	assertAdmin(currentMember);
 	const isOwner = checkIsOwner(currentMember);
 
-	const { role, action } = (await request.json()) as { role: Role; action: 'add' | 'remove' };
-
-	if (!['owner', 'admin', 'librarian'].includes(role)) {
-		throw error(400, 'Invalid role');
-	}
-
-	if (!['add', 'remove'].includes(action)) {
-		throw error(400, 'Invalid action');
-	}
+	// Validate request body with Zod
+	const { role, action } = await parseBody(request, updateRolesSchema);
 
 	// Only owners can manage owner role
 	if (role === 'owner' && !isOwner) {
