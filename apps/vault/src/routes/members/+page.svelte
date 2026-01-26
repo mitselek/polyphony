@@ -14,6 +14,7 @@
 	let updatingMember = $state<string | null>(null);
 	let removingMember = $state<string | null>(null);
 	let revokingInvite = $state<string | null>(null);
+	let renewingInvite = $state<string | null>(null);
 	let error = $state('');
 
 	// Watch for data changes (e.g., on navigation) and update local state
@@ -21,6 +22,11 @@
 		members = data.members;
 		invites = data.invites;
 	});
+
+	// Helper to check if invite is expired
+	function isInviteExpired(expiresAt: string): boolean {
+		return new Date(expiresAt) < new Date();
+	}
 
 	let filteredMembers = $derived(
 		members.filter(
@@ -49,6 +55,28 @@
 			setTimeout(() => (error = ''), 5000);
 		} finally {
 			revokingInvite = null;
+		}
+	}
+
+	async function renewInvite(inviteId: string, name: string) {
+		renewingInvite = inviteId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/invites/${inviteId}/renew`, { method: 'POST' });
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to renew invite');
+			}
+			const renewedInvite = (await response.json()) as typeof invites[0];
+			
+			// Update local state - reassign array to trigger reactivity
+			invites = invites.map((inv) => (inv.id === inviteId ? renewedInvite : inv));
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to renew invite';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			renewingInvite = null;
 		}
 	}
 
@@ -229,12 +257,18 @@
 			</h2>
 			<div class="space-y-3">
 				{#each invites as invite (invite.id)}
-					<div class="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4">
+					{@const expired = isInviteExpired(invite.expiresAt)}
+					<div class="flex items-center justify-between rounded-lg border p-4 {expired ? 'border-red-200 bg-red-50 opacity-75' : 'border-amber-200 bg-amber-50'}">
 						<div class="flex-1">
 							<div class="flex items-center gap-3">
 								<span class="font-medium">{invite.name}</span>
+								{#if expired}
+									<span class="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+										EXPIRED
+									</span>
+								{/if}
 								{#if invite.voicePart}
-									<span class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+									<span class="rounded px-2 py-0.5 text-xs {expired ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
 										{invite.voicePart}
 									</span>
 								{/if}
@@ -244,9 +278,13 @@
 									</span>
 								{/each}
 							</div>
-							<p class="mt-1 text-sm text-gray-500">
+							<p class="mt-1 text-sm {expired ? 'text-gray-600' : 'text-gray-500'}">
 								Invited by {invite.invitedBy} · 
-								Expires {new Date(invite.expiresAt).toLocaleDateString()}
+								{#if expired}
+									Expired {new Date(invite.expiresAt).toLocaleDateString()}
+								{:else}
+									Expires {new Date(invite.expiresAt).toLocaleDateString()}
+								{/if}
 							</p>
 						</div>
 						<div class="flex items-center gap-2">
@@ -257,6 +295,16 @@
 							>
 								Copy Link
 							</button>
+							{#if expired}
+								<button
+									onclick={() => renewInvite(invite.id, invite.name)}
+									disabled={renewingInvite === invite.id}
+									class="rounded px-3 py-1 text-sm text-green-600 hover:bg-green-50 disabled:opacity-50"
+									title="Extend expiration by 48 hours"
+								>
+									{renewingInvite === invite.id ? 'Renewing...' : 'Renew'}
+								</button>
+							{/if}
 							<button
 								onclick={() => revokeInvite(invite.id, invite.name)}
 								disabled={revokingInvite === invite.id}
