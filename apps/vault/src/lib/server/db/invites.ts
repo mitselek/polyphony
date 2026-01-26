@@ -211,3 +211,42 @@ export async function expireInvite(
 
 	return (result.meta.changes ?? 0) > 0;
 }
+
+/**
+ * Get all pending invites with inviter info
+ */
+export async function getPendingInvites(
+	db: D1Database
+): Promise<(Invite & { inviter_name: string | null; inviter_email: string })[]> {
+	const result = await db
+		.prepare(
+			`SELECT i.id, i.name, i.token, i.invited_by, i.expires_at, i.status, 
+			        i.roles, i.voice_part, i.created_at, i.accepted_at, i.accepted_by_email,
+			        m.name as inviter_name, m.email as inviter_email
+			 FROM invites i
+			 JOIN members m ON i.invited_by = m.id
+			 WHERE i.status = 'pending' AND i.expires_at > datetime('now')
+			 ORDER BY i.created_at DESC`
+		)
+		.all<{ roles: string; inviter_name: string | null; inviter_email: string } & Omit<Invite, 'roles'>>();
+
+	return result.results.map((row) => ({
+		...row,
+		roles: JSON.parse(row.roles) as Role[]
+	}));
+}
+
+/**
+ * Revoke (delete) an invite by ID
+ */
+export async function revokeInvite(
+	db: D1Database,
+	inviteId: string
+): Promise<boolean> {
+	const result = await db
+		.prepare(`DELETE FROM invites WHERE id = ? AND status = 'pending'`)
+		.bind(inviteId)
+		.run();
+
+	return (result.meta.changes ?? 0) > 0;
+}

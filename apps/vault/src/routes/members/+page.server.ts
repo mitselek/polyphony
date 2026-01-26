@@ -1,6 +1,7 @@
 // Server load for members page - list all members with roles
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { getPendingInvites } from '$lib/server/db/invites';
 
 export const load: PageServerLoad = async ({ platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -64,8 +65,21 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 		roles: m.roles ? m.roles.split(',') : []
 	}));
 
+	// Get pending invites
+	const pendingInvites = await getPendingInvites(db);
+	const invites = pendingInvites.map((inv) => ({
+		id: inv.id,
+		name: inv.name,
+		roles: inv.roles,
+		voicePart: inv.voice_part,
+		createdAt: inv.created_at,
+		expiresAt: inv.expires_at,
+		invitedBy: inv.inviter_name ?? inv.inviter_email
+	}));
+
 	return {
 		members,
+		invites,
 		currentUserId: currentUser.id,
 		isOwner: userRoles.includes('owner'),
 		isAdmin: userRoles.some((r) => ['admin', 'owner'].includes(r))

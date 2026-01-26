@@ -8,14 +8,17 @@
 	// Using untrack to intentionally capture only initial value
 	// The $effect below will handle subsequent updates
 	let members = $state(untrack(() => data.members));
+	let invites = $state(untrack(() => data.invites));
 	let searchQuery = $state('');
 	let updatingMember = $state<string | null>(null);
 	let removingMember = $state<string | null>(null);
+	let revokingInvite = $state<string | null>(null);
 	let error = $state('');
 
 	// Watch for data changes (e.g., on navigation) and update local state
 	$effect(() => {
 		members = data.members;
+		invites = data.invites;
 	});
 
 	let filteredMembers = $derived(
@@ -25,6 +28,28 @@
 				(m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 		)
 	);
+
+	async function revokeInvite(inviteId: string, name: string) {
+		const confirmed = confirm(`Revoke invitation for ${name}?`);
+		if (!confirmed) return;
+
+		revokingInvite = inviteId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/invites/${inviteId}`, { method: 'DELETE' });
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to revoke invite');
+			}
+			invites = invites.filter((inv) => inv.id !== inviteId);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to revoke invite';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			revokingInvite = null;
+		}
+	}
 
 	async function toggleRole(memberId: string, role: 'owner' | 'admin' | 'librarian') {
 		const member = members.find((m: typeof members[0]) => m.id === memberId);
@@ -171,6 +196,48 @@
 	{#if error}
 		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
 			{error}
+		</div>
+	{/if}
+
+	<!-- Pending Invitations -->
+	{#if invites.length > 0}
+		<div class="mb-8">
+			<h2 class="mb-4 text-xl font-semibold text-gray-700">
+				Pending Invitations ({invites.length})
+			</h2>
+			<div class="space-y-3">
+				{#each invites as invite (invite.id)}
+					<div class="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4">
+						<div class="flex-1">
+							<div class="flex items-center gap-3">
+								<span class="font-medium">{invite.name}</span>
+								{#if invite.voicePart}
+									<span class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+										{invite.voicePart}
+									</span>
+								{/if}
+								{#each invite.roles as role}
+									<span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+										{role}
+									</span>
+								{/each}
+							</div>
+							<p class="mt-1 text-sm text-gray-500">
+								Invited by {invite.invitedBy} · 
+								Expires {new Date(invite.expiresAt).toLocaleDateString()}
+							</p>
+						</div>
+						<button
+							onclick={() => revokeInvite(invite.id, invite.name)}
+							disabled={revokingInvite === invite.id}
+							class="ml-4 rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+							title="Revoke invitation"
+						>
+							{revokingInvite === invite.id ? 'Revoking...' : 'Revoke'}
+						</button>
+					</div>
+				{/each}
+			</div>
 		</div>
 	{/if}
 
