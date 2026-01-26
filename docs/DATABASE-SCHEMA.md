@@ -161,12 +161,12 @@ Vault members (authenticated users).
 
 Multi-role support via junction table.
 
-| Column     | Type | Constraints          | Description                                    |
-| ---------- | ---- | -------------------- | ---------------------------------------------- |
-| member_id  | TEXT | PK, FK → members(id) | Member reference                               |
-| role       | TEXT | PK, CHECK            | `owner`, `admin`, `librarian`, `conductor`     |
-| granted_at | TEXT | DEFAULT now()        | When role assigned                             |
-| granted_by | TEXT | FK → members(id)     | Who granted role                               |
+| Column     | Type | Constraints          | Description                                |
+| ---------- | ---- | -------------------- | ------------------------------------------ |
+| member_id  | TEXT | PK, FK → members(id) | Member reference                           |
+| role       | TEXT | PK, CHECK            | `owner`, `admin`, `librarian`, `conductor` |
+| granted_at | TEXT | DEFAULT now()        | When role assigned                         |
+| granted_by | TEXT | FK → members(id)     | Who granted role                           |
 
 **Indexes:**
 
@@ -248,19 +248,19 @@ Large file storage (>2MB files split into chunks).
 
 Pending member invitations (name-based, multi-role support).
 
-| Column             | Type | Constraints      | Description                                   |
-| ------------------ | ---- | ---------------- | --------------------------------------------- |
-| id                 | TEXT | PK               | Invite ID                                     |
-| name               | TEXT | NOT NULL         | Invitee name (tracking only, not verified)    |
-| token              | TEXT | NOT NULL, UNIQUE | Secret invite token                           |
-| invited_by         | TEXT | FK → members(id) | Inviter                                       |
-| expires_at         | TEXT | NOT NULL         | Expiration timestamp (48h default)            |
-| status             | TEXT | CHECK            | `pending`, `accepted`, `expired`              |
-| roles              | TEXT | NOT NULL         | JSON array of roles to grant                  |
-| voice_part         | TEXT | CHECK            | Voice part: `[SATB]{1,4}`                     |
-| created_at         | TEXT | DEFAULT now()    | Created timestamp                             |
-| accepted_at        | TEXT |                  | Acceptance timestamp                          |
-| accepted_by_email  | TEXT |                  | Registry-verified email (filled on acceptance)|
+| Column            | Type | Constraints      | Description                                    |
+| ----------------- | ---- | ---------------- | ---------------------------------------------- |
+| id                | TEXT | PK               | Invite ID                                      |
+| name              | TEXT | NOT NULL         | Invitee name (tracking only, not verified)     |
+| token             | TEXT | NOT NULL, UNIQUE | Secret invite token                            |
+| invited_by        | TEXT | FK → members(id) | Inviter                                        |
+| expires_at        | TEXT | NOT NULL         | Expiration timestamp (48h default)             |
+| status            | TEXT | CHECK            | `pending`, `accepted`, `expired`               |
+| roles             | TEXT | NOT NULL         | JSON array of roles to grant                   |
+| voice_part        | TEXT | CHECK            | Voice part: `[SATB]{1,4}`                      |
+| created_at        | TEXT | DEFAULT now()    | Created timestamp                              |
+| accepted_at       | TEXT |                  | Acceptance timestamp                           |
+| accepted_by_email | TEXT |                  | Registry-verified email (filled on acceptance) |
 
 **Indexes:**
 
@@ -337,12 +337,12 @@ Audit trail for score access.
 
 Configuration settings for the vault (key-value store with audit trail).
 
-| Column     | Type | Constraints      | Description                    |
-| ---------- | ---- | ---------------- | ------------------------------ |
-| key        | TEXT | PK               | Setting key                    |
-| value      | TEXT | NOT NULL         | Setting value                  |
-| updated_by | TEXT | FK → members(id) | Member who last updated        |
-| updated_at | TEXT | DEFAULT now()    | Last update timestamp          |
+| Column     | Type | Constraints      | Description             |
+| ---------- | ---- | ---------------- | ----------------------- |
+| key        | TEXT | PK               | Setting key             |
+| value      | TEXT | NOT NULL         | Setting value           |
+| updated_by | TEXT | FK → members(id) | Member who last updated |
+| updated_at | TEXT | DEFAULT now()    | Last update timestamp   |
 
 **Indexes:** None additional
 
@@ -360,17 +360,17 @@ Configuration settings for the vault (key-value store with audit trail).
 
 Rehearsals, concerts, and other choir events.
 
-| Column      | Type | Constraints      | Description                                 |
-| ----------- | ---- | ---------------- | ------------------------------------------- |
-| id          | TEXT | PK               | Event ID                                    |
-| title       | TEXT | NOT NULL         | Event title                                 |
-| description | TEXT |                  | Event description                           |
-| location    | TEXT |                  | Event location                              |
-| starts_at   | TEXT | NOT NULL         | Start datetime (ISO 8601)                   |
-| ends_at     | TEXT |                  | End datetime (ISO 8601)                     |
-| event_type  | TEXT | CHECK            | `rehearsal`, `concert`, `retreat`           |
-| created_by  | TEXT | FK → members(id) | Creator                                     |
-| created_at  | TEXT | DEFAULT now()    | Creation timestamp                          |
+| Column      | Type | Constraints      | Description                       |
+| ----------- | ---- | ---------------- | --------------------------------- |
+| id          | TEXT | PK               | Event ID                          |
+| title       | TEXT | NOT NULL         | Event title                       |
+| description | TEXT |                  | Event description                 |
+| location    | TEXT |                  | Event location                    |
+| starts_at   | TEXT | NOT NULL         | Start datetime (ISO 8601)         |
+| ends_at     | TEXT |                  | End datetime (ISO 8601)           |
+| event_type  | TEXT | CHECK            | `rehearsal`, `concert`, `retreat` |
+| created_by  | TEXT | FK → members(id) | Creator                           |
+| created_at  | TEXT | DEFAULT now()    | Creation timestamp                |
 
 **Indexes:**
 
@@ -383,13 +383,13 @@ Rehearsals, concerts, and other choir events.
 
 Setlists linking scores to events in order.
 
-| Column   | Type    | Constraints                                     | Description                    |
-| -------- | ------- | ----------------------------------------------- | ------------------------------ |
-| event_id | TEXT    | PK, FK → events(id) ON DELETE CASCADE           | Event reference                |
-| score_id | TEXT    | PK, FK → scores(id) ON DELETE CASCADE           | Score reference                |
-| position | INTEGER | NOT NULL, DEFAULT 0                             | Order in program (0-based)     |
-| notes    | TEXT    |                                                 | Notes about this piece         |
-| added_at | TEXT    | DEFAULT now()                                   | When added to program          |
+| Column   | Type    | Constraints                           | Description                |
+| -------- | ------- | ------------------------------------- | -------------------------- |
+| event_id | TEXT    | PK, FK → events(id) ON DELETE CASCADE | Event reference            |
+| score_id | TEXT    | PK, FK → scores(id) ON DELETE CASCADE | Score reference            |
+| position | INTEGER | NOT NULL, DEFAULT 0                   | Order in program (0-based) |
+| notes    | TEXT    |                                       | Notes about this piece     |
+| added_at | TEXT    | DEFAULT now()                         | When added to program      |
 
 **Indexes:**
 
@@ -465,8 +465,8 @@ Each event has one program (setlist) with multiple scores. Scores are ordered by
 
 ## Migration History
 
-| Migration | Description                                                |
-| --------- | ---------------------------------------------------------- |
+| Migration | Description                                                                                                                                                                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **0001**  | **Complete schema** - Consolidated from production state (2026-01-26). Includes all tables: members, member_roles, scores, score_files, score_chunks, invites, sessions, takedowns, access_log, vault_settings, events, event_programs. Replaces broken incremental migrations. |
 
 **Note**: Previous migrations (0001-0012) were consolidated into a single migration on 2026-01-26 due to schema drift between development history and production state. The new 0001_complete_schema.sql represents the verified working state and is fully replayable from scratch.
@@ -475,4 +475,4 @@ Each event has one program (setlist) with multiple scores. Scores are ordered by
 
 - [roles.md](../apps/vault/docs/roles.md) - Role definitions and permissions
 - [migrations/](../apps/vault/migrations/) - SQL migration files
-- TypeScript interfaces: `apps/vault/src/lib/server/db/members.ts`
+- TypeScript interfaces: `../apps/vault/src/lib/server/db/members.ts`
