@@ -125,9 +125,9 @@
 					d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
 				/>
 			</svg>
-			<h2 class="mb-2 text-xl font-semibold text-gray-900">Authentication Required</h2>
+			<h2 class="mb-2 text-xl font-semibold text-gray-900">Authorization Required</h2>
 			<p class="mb-6 text-gray-600">
-				You need to be signed in as a librarian or admin to upload scores.
+				You need librarian permissions to upload scores.
 			</p>
 			<a
 				href="/api/auth/login"
