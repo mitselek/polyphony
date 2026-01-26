@@ -1,8 +1,7 @@
 // DELETE /api/members/[id] - Remove a member from the vault
-import { json, error } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { json, error, type RequestEvent } from '@sveltejs/kit';
 
-export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
+export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -30,7 +29,7 @@ export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 	}
 
 	const currentUserRoles = currentUser.roles?.split(',') ?? [];
-	const isAdmin = currentUserRoles.some((r) => ['admin', 'owner'].includes(r));
+	const isAdmin = currentUserRoles.some((r: string) => ['admin', 'owner'].includes(r));
 	const isOwner = currentUserRoles.includes('owner');
 
 	if (!isAdmin) {
@@ -71,4 +70,4 @@ export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 		.run();
 
 	return json({ success: true });
-};
+}

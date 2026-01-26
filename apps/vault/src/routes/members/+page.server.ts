@@ -67,6 +67,7 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	return {
 		members,
 		currentUserId: currentUser.id,
-		isOwner: userRoles.includes('owner')
+		isOwner: userRoles.includes('owner'),
+		isAdmin: userRoles.some((r) => ['admin', 'owner'].includes(r))
 	};
 };
