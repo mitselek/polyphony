@@ -1,5 +1,6 @@
 // DELETE /api/members/[id] - Remove a member from the vault
 import { json, error, type RequestEvent } from '@sveltejs/kit';
+import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 
 export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
@@ -7,37 +8,15 @@ export async function DELETE({ params, platform, cookies }: RequestEvent) {
 		throw error(500, 'Database not available');
 	}
 
-	const currentMemberId = cookies.get('member_id');
-	if (!currentMemberId) {
-		throw error(401, 'Authentication required');
-	}
+	// Auth: get member and check admin role
+	const currentMember = await getAuthenticatedMember(db, cookies);
+	assertAdmin(currentMember);
+	const isOwner = checkIsOwner(currentMember);
 
 	const targetMemberId = params.id;
 
-	// Get current user's roles
-	const currentUser = await db
-		.prepare(
-			`SELECT GROUP_CONCAT(role) as roles
-			 FROM member_roles
-			 WHERE member_id = ?`
-		)
-		.bind(currentMemberId)
-		.first<{ roles: string | null }>();
-
-	if (!currentUser) {
-		throw error(401, 'Invalid session');
-	}
-
-	const currentUserRoles = currentUser.roles?.split(',') ?? [];
-	const isAdmin = currentUserRoles.some((r: string) => ['admin', 'owner'].includes(r));
-	const isOwner = currentUserRoles.includes('owner');
-
-	if (!isAdmin) {
-		throw error(403, 'Admin or owner role required');
-	}
-
 	// Can't remove yourself
-	if (currentMemberId === targetMemberId) {
+	if (currentMember.id === targetMemberId) {
 		throw error(400, 'Cannot remove yourself');
 	}
 

@@ -2,6 +2,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Role } from '$lib/types';
+import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/middleware';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -9,32 +10,9 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		throw error(500, 'Database not available');
 	}
 
-	const memberId = cookies.get('member_id');
-	if (!memberId) {
-		throw error(401, 'Authentication required');
-	}
-
-	// Check if current user is admin or owner
-	const currentUser = await db
-		.prepare(
-			`SELECT GROUP_CONCAT(role) as roles
-			 FROM member_roles
-			 WHERE member_id = ?`
-		)
-		.bind(memberId)
-		.first<{ roles: string | null }>();
-
-	if (!currentUser) {
-		throw error(401, 'Invalid session');
-	}
-
-	const currentUserRoles = currentUser.roles?.split(',') ?? [];
-	const isAdmin = currentUserRoles.some((r) => ['admin', 'owner'].includes(r));
-	const isOwner = currentUserRoles.includes('owner');
-
-	if (!isAdmin) {
-		throw error(403, 'Admin or owner role required');
-	}
+	// Auth: get member and check admin role
+	const member = await getAuthenticatedMember(db, cookies);
+	assertAdmin(member);
 
 	let body: { name: string; roles: Role[]; voicePart?: string | null };
 	try {
@@ -52,7 +30,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	}
 
 	// Only owners can invite owners
-	if (body.roles.includes('owner') && !isOwner) {
+	if (body.roles.includes('owner') && !isOwner(member)) {
 		throw error(403, 'Only owners can invite other owners');
 	}
 
@@ -71,7 +49,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 				inviteId,
 				body.name,
 				token,
-				memberId,
+				member.id,
 				JSON.stringify(body.roles),
 				body.voicePart ?? null
 			)

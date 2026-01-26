@@ -2,6 +2,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Role } from '$lib/types';
+import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -9,32 +10,10 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 		throw error(500, 'Database not available');
 	}
 
-	const currentMemberId = cookies.get('member_id');
-	if (!currentMemberId) {
-		throw error(401, 'Authentication required');
-	}
-
-	// Get current user's roles
-	const currentUser = await db
-		.prepare(
-			`SELECT GROUP_CONCAT(role) as roles
-			 FROM member_roles
-			 WHERE member_id = ?`
-		)
-		.bind(currentMemberId)
-		.first<{ roles: string | null }>();
-
-	if (!currentUser) {
-		throw error(401, 'Invalid session');
-	}
-
-	const currentUserRoles = currentUser.roles?.split(',') ?? [];
-	const isAdmin = currentUserRoles.some((r) => ['admin', 'owner'].includes(r));
-	const isOwner = currentUserRoles.includes('owner');
-
-	if (!isAdmin) {
-		throw error(403, 'Admin or owner role required');
-	}
+	// Auth: get member and check admin role
+	const currentMember = await getAuthenticatedMember(db, cookies);
+	assertAdmin(currentMember);
+	const isOwner = checkIsOwner(currentMember);
 
 	const { role, action } = (await request.json()) as { role: Role; action: 'add' | 'remove' };
 
@@ -81,7 +60,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 						`INSERT INTO member_roles (member_id, role, granted_by, granted_at)
 						 VALUES (?, ?, ?, datetime('now'))`
 					)
-					.bind(targetMemberId, role, currentMemberId)
+					.bind(targetMemberId, role, currentMember.id)
 					.run();
 			}
 		} else {

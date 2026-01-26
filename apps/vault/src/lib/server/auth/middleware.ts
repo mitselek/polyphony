@@ -67,3 +67,57 @@ export function createAuthMiddleware(minRole: Role) {
 export const requireLibrarian = createAuthMiddleware('librarian');
 export const requireAdmin = createAuthMiddleware('admin');
 export const requireOwner = createAuthMiddleware('owner');
+
+// ============================================
+// Direct assertion helpers (throw on failure)
+// ============================================
+
+import { error } from '@sveltejs/kit';
+import type { Cookies } from '@sveltejs/kit';
+
+/**
+ * Get authenticated member or throw 401
+ * Use in routes: const member = await getAuthenticatedMember(db, cookies);
+ */
+export async function getAuthenticatedMember(
+	db: D1Database,
+	cookies: Cookies
+): Promise<Member> {
+	const memberId = cookies.get('member_id');
+	if (!memberId) {
+		throw error(401, 'Authentication required');
+	}
+	
+	const member = await getMemberById(db, memberId);
+	if (!member) {
+		throw error(401, 'Invalid session');
+	}
+	
+	return member;
+}
+
+/**
+ * Assert member has admin or owner role, throw 403 if not
+ */
+export function assertAdmin(member: Member): void {
+	const isAdmin = member.roles.some((r) => ['admin', 'owner'].includes(r));
+	if (!isAdmin) {
+		throw error(403, 'Admin or owner role required');
+	}
+}
+
+/**
+ * Assert member has owner role, throw 403 if not
+ */
+export function assertOwner(member: Member): void {
+	if (!member.roles.includes('owner')) {
+		throw error(403, 'Owner role required');
+	}
+}
+
+/**
+ * Check if member has owner role (no throw)
+ */
+export function isOwner(member: Member): boolean {
+	return member.roles.includes('owner');
+}
