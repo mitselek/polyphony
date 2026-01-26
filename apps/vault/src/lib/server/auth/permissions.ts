@@ -1,6 +1,6 @@
 // Permission system for role-based access control
 
-export type Role = 'owner' | 'admin' | 'librarian';
+export type Role = 'owner' | 'admin' | 'librarian' | 'conductor';
 
 export type Permission =
 	| 'scores:view'
@@ -10,7 +10,11 @@ export type Permission =
 	| 'members:invite'
 	| 'members:manage'
 	| 'roles:manage'
-	| 'vault:delete';
+	| 'vault:delete'
+	| 'events:create'
+	| 'events:manage'
+	| 'events:delete'
+	| 'attendance:record';
 
 export interface Member {
 	id: string;
@@ -30,6 +34,7 @@ export interface RequireRoleResult {
 const PERMISSIONS: Record<Role, Permission[]> = {
 	librarian: ['scores:upload', 'scores:delete'],
 	admin: ['members:invite', 'roles:manage'],
+	conductor: ['events:create', 'events:manage', 'events:delete', 'attendance:record'],
 	owner: ['vault:delete'] // Owner gets all permissions
 };
 
@@ -110,4 +115,20 @@ export function canManageRoles(member: Member | null | undefined): boolean {
 
 export function canDeleteVault(member: Member | null | undefined): boolean {
 	return hasPermission(member, 'vault:delete');
+}
+
+export function canCreateEvents(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'events:create');
+}
+
+export function canManageEvents(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'events:manage');
+}
+
+export function canDeleteEvents(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'events:delete');
+}
+
+export function canRecordAttendance(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'attendance:record');
 }
