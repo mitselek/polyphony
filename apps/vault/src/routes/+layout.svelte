@@ -19,6 +19,7 @@
 					{/if}
 					{#if data.user.roles?.some((r) => ['admin', 'owner'].includes(r))}
 						<a href="/members" class="text-gray-600 hover:text-gray-900">Members</a>
+						<a href="/settings" class="text-gray-600 hover:text-gray-900">Settings</a>
 					{/if}
 					<span class="text-sm text-gray-500">{data.user.name ?? data.user.email}</span>
 					<a
