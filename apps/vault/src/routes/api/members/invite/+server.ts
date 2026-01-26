@@ -22,35 +22,29 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		throw error(403, 'Only owners can invite other owners');
 	}
 
-	// Generate invitation token
-	const token = crypto.randomUUID();
-	const inviteId = crypto.randomUUID();
-
 	try {
-		// Create invite record with roles
-		// TODO Phase 3: Add support for inviting with specific voices/sections
-		await db
-			.prepare(
-				`INSERT INTO invites (id, name, token, invited_by, expires_at, roles)
-				 VALUES (?, ?, ?, ?, datetime('now', '+48 hours'), ?)`
-			)
-			.bind(
-				inviteId,
-				body.name,
-				token,
-				member.id,
-				JSON.stringify(body.roles)
-			)
-			.run();
+		// Import createInvite from DB operations
+		const { createInvite } = await import('$lib/server/db/invites');
 
-		// TODO: Send email with invitation link containing token
-		const inviteLink = `${request.url.replace('/api/members/invite', '/invite/accept')}?token=${token}`;
+		// Create invite with roles, voices, and sections
+		const invite = await createInvite(db, {
+			name: body.name,
+			roles: body.roles,
+			voiceIds: body.voiceIds,
+			sectionIds: body.sectionIds,
+			invited_by: member.id
+		});
+
+		// Build invitation link
+		const inviteLink = `${request.url.replace('/api/members/invite', '/invite/accept')}?token=${invite.token}`;
 
 		return json(
 			{
-				id: inviteId,
-				name: body.name,
-				roles: body.roles,
+				id: invite.id,
+				name: invite.name,
+				roles: invite.roles,
+				voices: invite.voices,
+				sections: invite.sections,
 				inviteLink,
 				message: `Invitation created. Share the link with ${body.name}.`
 			},

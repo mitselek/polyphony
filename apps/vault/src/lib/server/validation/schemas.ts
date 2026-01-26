@@ -11,11 +11,12 @@ const eventTypeSchema = z.enum(['rehearsal', 'concert', 'retreat']);
 
 /**
  * Schema for creating a new member invitation
- * TODO Phase 3: Add voiceIds and sectionIds arrays
  */
 export const createInviteSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
-	roles: z.array(roleSchema).optional().default([])
+	roles: z.array(roleSchema).optional().default([]),
+	voiceIds: z.array(z.string()).optional().default([]),
+	sectionIds: z.array(z.string()).optional().default([])
 });
 
 export type CreateInviteInput = z.infer<typeof createInviteSchema>;
