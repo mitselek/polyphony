@@ -1,9 +1,10 @@
 // Zod validation schemas for API requests
 import { z } from 'zod';
 import { error } from '@sveltejs/kit';
+import { ASSIGNABLE_ROLES } from '$lib/types';
 
-// Role enum matching the database
-const roleSchema = z.enum(['owner', 'admin', 'librarian', 'conductor']);
+// Role enum matching the database - uses ASSIGNABLE_ROLES constant to stay in sync
+const roleSchema = z.enum(ASSIGNABLE_ROLES);
 
 // Voice part enum matching the database
 const voicePartSchema = z.enum(['S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB']);
