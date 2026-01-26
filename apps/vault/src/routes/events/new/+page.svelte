@@ -68,11 +68,12 @@
 		});
 	}
 
-	function calculateEndTime(startTime: string, durationHours: number): string {
+	function calculateEndTime(startTime: string, durationMinutes: number): string {
 		const [hours, minutes] = startTime.split(':').map(Number);
-		const endDate = new Date();
-		endDate.setHours(hours + durationHours, minutes);
-		return endDate.toTimeString().slice(0, 5);
+		const totalMinutes = hours * 60 + minutes + durationMinutes;
+		const endHours = Math.floor(totalMinutes / 60) % 24;
+		const endMinutes = totalMinutes % 60;
+		return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
 	}
 
 	// Auto-calculate end time when start time changes
@@ -261,6 +262,7 @@
 						id="start-time"
 						bind:value={startTime}
 						required
+						step="60"
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 					/>
 				</div>
@@ -274,10 +276,11 @@
 						type="time"
 						id="end-time"
 						bind:value={endTime}
+						step="60"
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 					/>
 					<p class="mt-1 text-sm text-gray-500">
-						Auto-calculated based on default duration ({data.defaultDuration} hours)
+						Auto-calculated based on default duration ({data.defaultDuration} minutes)
 					</p>
 				</div>
 			</div>
