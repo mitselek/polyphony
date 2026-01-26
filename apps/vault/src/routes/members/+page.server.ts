@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getPendingInvites } from '$lib/server/db/invites';
 
-export const load: PageServerLoad = async ({ platform, cookies }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -67,6 +67,7 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 
 	// Get pending invites
 	const pendingInvites = await getPendingInvites(db);
+	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = pendingInvites.map((inv) => ({
 		id: inv.id,
 		name: inv.name,
@@ -74,7 +75,8 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 		voicePart: inv.voice_part,
 		createdAt: inv.created_at,
 		expiresAt: inv.expires_at,
-		invitedBy: inv.inviter_name ?? inv.inviter_email
+		invitedBy: inv.inviter_name ?? inv.inviter_email,
+		inviteLink: `${baseUrl}?token=${inv.token}`
 	}));
 
 	return {

@@ -51,6 +51,23 @@
 		}
 	}
 
+	async function copyInviteLink(link: string, name: string) {
+		try {
+			await navigator.clipboard.writeText(link);
+			error = ''; // Clear any existing error
+			// Show brief success feedback
+			const btn = document.activeElement as HTMLButtonElement;
+			const originalText = btn?.textContent;
+			if (btn) {
+				btn.textContent = 'Copied!';
+				setTimeout(() => { btn.textContent = originalText; }, 1500);
+			}
+		} catch {
+			error = `Failed to copy link for ${name}`;
+			setTimeout(() => (error = ''), 3000);
+		}
+	}
+
 	async function toggleRole(memberId: string, role: 'owner' | 'admin' | 'librarian') {
 		const member = members.find((m: typeof members[0]) => m.id === memberId);
 		if (!member) return;
@@ -227,14 +244,23 @@
 								Expires {new Date(invite.expiresAt).toLocaleDateString()}
 							</p>
 						</div>
-						<button
-							onclick={() => revokeInvite(invite.id, invite.name)}
-							disabled={revokingInvite === invite.id}
-							class="ml-4 rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-							title="Revoke invitation"
-						>
-							{revokingInvite === invite.id ? 'Revoking...' : 'Revoke'}
-						</button>
+						<div class="flex items-center gap-2">
+							<button
+								onclick={() => copyInviteLink(invite.inviteLink, invite.name)}
+								class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+								title="Copy invitation link"
+							>
+								Copy Link
+							</button>
+							<button
+								onclick={() => revokeInvite(invite.id, invite.name)}
+								disabled={revokingInvite === invite.id}
+								class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+								title="Revoke invitation"
+							>
+								{revokingInvite === invite.id ? 'Revoking...' : 'Revoke'}
+							</button>
+						</div>
 					</div>
 				{/each}
 			</div>
