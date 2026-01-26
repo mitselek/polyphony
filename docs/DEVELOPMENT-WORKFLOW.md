@@ -30,6 +30,7 @@ This will automatically run type checks and tests before each commit.
 ### GitHub Actions (CI)
 
 Pull requests and pushes trigger automated CI that runs:
+
 - `pnpm check` - TypeScript type validation across all packages
 - `pnpm test` - All unit tests (shared, registry, vault)
 
@@ -39,6 +40,7 @@ Pull requests and pushes trigger automated CI that runs:
 - **`pnpm check`**: Runs TypeScript compiler and svelte-check. Catches interface mismatches, missing parameters, invalid types.
 
 **Example of what tests miss:**
+
 ```typescript
 // Real code:
 function acceptInvite(db, token, email, name?) { ... }
