@@ -27,19 +27,19 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const inviteId = crypto.randomUUID();
 
 	try {
-		// Create invite record with roles and voice part
+		// Create invite record with roles
+		// TODO Phase 3: Add support for inviting with specific voices/sections
 		await db
 			.prepare(
-				`INSERT INTO invites (id, name, token, invited_by, expires_at, roles, voice_part)
-				 VALUES (?, ?, ?, ?, datetime('now', '+48 hours'), ?, ?)`
+				`INSERT INTO invites (id, name, token, invited_by, expires_at, roles)
+				 VALUES (?, ?, ?, ?, datetime('now', '+48 hours'), ?)`
 			)
 			.bind(
 				inviteId,
 				body.name,
 				token,
 				member.id,
-				JSON.stringify(body.roles),
-				body.voicePart ?? null
+				JSON.stringify(body.roles)
 			)
 			.run();
 
@@ -51,7 +51,6 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 				id: inviteId,
 				name: body.name,
 				roles: body.roles,
-				voicePart: body.voicePart ?? null,
 				inviteLink,
 				message: `Invitation created. Share the link with ${body.name}.`
 			},

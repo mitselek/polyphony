@@ -6,19 +6,16 @@ import { ASSIGNABLE_ROLES } from '$lib/types';
 // Role enum matching the database - uses ASSIGNABLE_ROLES constant to stay in sync
 const roleSchema = z.enum(ASSIGNABLE_ROLES);
 
-// Voice part enum matching the database
-const voicePartSchema = z.enum(['S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB']);
-
 // Event type enum matching the database
 const eventTypeSchema = z.enum(['rehearsal', 'concert', 'retreat']);
 
 /**
  * Schema for creating a new member invitation
+ * TODO Phase 3: Add voiceIds and sectionIds arrays
  */
 export const createInviteSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
-	roles: z.array(roleSchema).optional().default([]),
-	voicePart: voicePartSchema.nullable().optional()
+	roles: z.array(roleSchema).optional().default([])
 });
 
 export type CreateInviteInput = z.infer<typeof createInviteSchema>;
@@ -34,19 +31,10 @@ export const updateRolesSchema = z.object({
 export type UpdateRolesInput = z.infer<typeof updateRolesSchema>;
 
 /**
- * Schema for updating member voice part
- */
-export const updateVoicePartSchema = z.object({
-	voicePart: voicePartSchema.nullable()
-});
-
-export type UpdateVoicePartInput = z.infer<typeof updateVoicePartSchema>;
-
-/**
  * Schema for updating vault settings
+ * TODO Phase 3: Add default_voices array
  */
 export const updateSettingsSchema = z.object({
-	default_voice_part: voicePartSchema.or(z.literal('')).optional(),
 	default_event_duration: z.coerce.number().int().positive().optional(),
 	conductor_id: z.string().optional()
 });

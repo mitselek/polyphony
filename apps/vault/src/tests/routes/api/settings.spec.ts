@@ -170,7 +170,6 @@ describe('PATCH /api/settings', () => {
 			method: 'PATCH',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				default_voice_part: 'S',
 				default_event_duration: 90
 			})
 		});
@@ -180,11 +179,9 @@ describe('PATCH /api/settings', () => {
 
 		expect(response.status).toBe(200);
 		const data = await response.json() as Record<string, string>;
-		expect(data).toEqual({
-			default_voice_part: 'S',
-			default_event_duration: '90',
-			conductor_id: ''
-		});
+		// Note: default_voice_part still exists in DB but is deprecated (will be removed in Phase 6)
+		expect(data.default_event_duration).toBe('90');
+		expect(data.conductor_id).toBe('');
 	});
 
 	it('allows partial updates', async () => {
@@ -205,19 +202,7 @@ describe('PATCH /api/settings', () => {
 		expect(data.default_event_duration).toBe('120'); // Unchanged
 	});
 
-	it('validates voice part values', async () => {
-		const mockRequest = new Request('http://localhost', {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				default_voice_part: 'INVALID'
-			})
-		});
-
-		const event = createMockEvent({ request: mockRequest });
-
-		await expect(PATCH(event)).rejects.toThrow();
-	});
+	// TODO Phase 3: Add test for default_voices validation once implemented
 
 	it('validates event duration is positive integer', async () => {
 		const mockRequest = new Request('http://localhost', {

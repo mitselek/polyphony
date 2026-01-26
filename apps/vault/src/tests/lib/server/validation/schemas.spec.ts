@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
 	createInviteSchema,
 	updateRolesSchema,
-	updateVoicePartSchema,
 	parseBody
 } from '$lib/server/validation/schemas';
 
@@ -11,14 +10,12 @@ describe('createInviteSchema', () => {
 	it('validates a valid invite', () => {
 		const result = createInviteSchema.safeParse({
 			name: 'John Doe',
-			roles: ['admin', 'librarian'],
-			voicePart: 'T'
+			roles: ['admin', 'librarian']
 		});
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.name).toBe('John Doe');
 			expect(result.data.roles).toEqual(['admin', 'librarian']);
-			expect(result.data.voicePart).toBe('T');
 		}
 	});
 
@@ -44,22 +41,6 @@ describe('createInviteSchema', () => {
 		const result = createInviteSchema.safeParse({
 			name: 'Test',
 			roles: ['invalid_role']
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it('accepts null voicePart', () => {
-		const result = createInviteSchema.safeParse({
-			name: 'Test',
-			voicePart: null
-		});
-		expect(result.success).toBe(true);
-	});
-
-	it('rejects invalid voicePart', () => {
-		const result = createInviteSchema.safeParse({
-			name: 'Test',
-			voicePart: 'X'
 		});
 		expect(result.success).toBe(false);
 	});
@@ -89,31 +70,6 @@ describe('updateRolesSchema', () => {
 	it('requires both role and action', () => {
 		expect(updateRolesSchema.safeParse({ role: 'admin' }).success).toBe(false);
 		expect(updateRolesSchema.safeParse({ action: 'add' }).success).toBe(false);
-	});
-});
-
-describe('updateVoicePartSchema', () => {
-	it('validates valid voice parts', () => {
-		const validParts = ['S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB'];
-		for (const part of validParts) {
-			const result = updateVoicePartSchema.safeParse({ voicePart: part });
-			expect(result.success).toBe(true);
-		}
-	});
-
-	it('accepts null voicePart', () => {
-		const result = updateVoicePartSchema.safeParse({ voicePart: null });
-		expect(result.success).toBe(true);
-	});
-
-	it('rejects invalid voicePart', () => {
-		const result = updateVoicePartSchema.safeParse({ voicePart: 'Soprano' });
-		expect(result.success).toBe(false);
-	});
-
-	it('rejects missing voicePart', () => {
-		const result = updateVoicePartSchema.safeParse({});
-		expect(result.success).toBe(false);
 	});
 });
 
