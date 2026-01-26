@@ -26,7 +26,6 @@
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					default_voice_part: settings.default_voice_part || '',
 					default_event_duration: parseInt(settings.default_event_duration) || 120
 				})
 			});
@@ -72,33 +71,6 @@
 	{/if}
 
 	<form onsubmit={handleSubmit} class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-		<!-- Default Voice Part -->
-		<div>
-			<label for="default_voice_part" class="block text-sm font-medium text-gray-700">
-				Default Voice Part
-			</label>
-			<select
-				id="default_voice_part"
-				bind:value={settings.default_voice_part}
-				class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-			>
-				<option value="">None</option>
-				<option value="S">S</option>
-				<option value="A">A</option>
-				<option value="T">T</option>
-				<option value="B">B</option>
-				<option value="SA">SA</option>
-				<option value="AT">AT</option>
-				<option value="TB">TB</option>
-				<option value="SAT">SAT</option>
-				<option value="ATB">ATB</option>
-				<option value="SATB">SATB</option>
-			</select>
-			<p class="mt-1 text-sm text-gray-500">
-				Default voice part for new members
-			</p>
-		</div>
-
 		<!-- Default Event Duration -->
 		<div>
 			<label for="default_event_duration" class="block text-sm font-medium text-gray-700">

@@ -21,7 +21,6 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 	const store = new Map<string, { value: string; updated_by: string | null; updated_at: string }>();
 
 	// Pre-populate with default settings
-	store.set('default_voice_part', { value: '', updated_by: null, updated_at: new Date().toISOString() });
 	store.set('default_event_duration', { value: '120', updated_by: null, updated_at: new Date().toISOString() });
 	store.set('conductor_id', { value: '', updated_by: null, updated_at: new Date().toISOString() });
 
@@ -141,7 +140,6 @@ describe('GET /api/settings', () => {
 		expect(response.status).toBe(200);
 		const data = await response.json() as Record<string, string>;
 		expect(data).toEqual({
-			default_voice_part: '',
 			default_event_duration: '120',
 			conductor_id: ''
 		});
@@ -179,7 +177,6 @@ describe('PATCH /api/settings', () => {
 
 		expect(response.status).toBe(200);
 		const data = await response.json() as Record<string, string>;
-		// Note: default_voice_part still exists in DB but is deprecated (will be removed in Phase 6)
 		expect(data.default_event_duration).toBe('90');
 		expect(data.conductor_id).toBe('');
 	});
