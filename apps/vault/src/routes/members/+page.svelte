@@ -10,6 +10,7 @@
 	let members = $state(untrack(() => data.members));
 	let searchQuery = $state('');
 	let updatingMember = $state<string | null>(null);
+	let removingMember = $state<string | null>(null);
 	let error = $state('');
 
 	// Watch for data changes (e.g., on navigation) and update local state
@@ -102,6 +103,36 @@
 			setTimeout(() => (error = ''), 5000);
 		} finally {
 			updatingMember = null;
+		}
+	}
+
+	async function removeMember(memberId: string, memberName: string) {
+		const confirmed = confirm(
+			`Are you sure you want to remove ${memberName}?\n\nThis action cannot be undone.`
+		);
+
+		if (!confirmed) return;
+
+		removingMember = memberId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${memberId}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to remove member');
+			}
+
+			// Remove from local state
+			members = members.filter((m) => m.id !== memberId);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to remove member';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			removingMember = null;
 		}
 	}
 
@@ -213,7 +244,18 @@
 
 					<!-- Roles -->
 					<div class="mt-4">
-						<p class="mb-2 text-sm font-medium text-gray-700">Roles:</p>
+						<div class="flex items-center justify-between mb-2">
+							<p class="text-sm font-medium text-gray-700">Roles:</p>
+							{#if member.id !== data.currentUserId && (data.isAdmin || data.isOwner)}
+								<button
+									onclick={() => removeMember(member.id, member.name ?? member.email)}
+									disabled={removingMember === member.id}
+									class="text-xs text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									{removingMember === member.id ? 'Removing...' : 'Remove Member'}
+								</button>
+							{/if}
+						</div>
 						<div class="flex flex-wrap gap-2">
 							{#each (['owner', 'admin', 'librarian'] as const) as role}
 								{@const isDisabled = updatingMember === member.id || 
