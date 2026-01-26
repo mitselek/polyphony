@@ -163,4 +163,3 @@ CREATE INDEX IF NOT EXISTS idx_event_programs_score ON event_programs(score_id);
 -- Default vault settings
 INSERT OR IGNORE INTO vault_settings (key, value) VALUES ('default_voice_part', '');
 INSERT OR IGNORE INTO vault_settings (key, value) VALUES ('default_event_duration', '120');
-INSERT OR IGNORE INTO vault_settings (key, value) VALUES ('conductor_id', '');

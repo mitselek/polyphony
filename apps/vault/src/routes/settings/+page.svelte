@@ -27,8 +27,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					default_voice_part: settings.default_voice_part || '',
-					default_event_duration: parseInt(settings.default_event_duration) || 120,
-					conductor_id: settings.conductor_id || ''
+					default_event_duration: parseInt(settings.default_event_duration) || 120
 				})
 			});
 
@@ -116,28 +115,6 @@
 			/>
 			<p class="mt-1 text-sm text-gray-500">
 				Default duration for new events (15-480 minutes)
-			</p>
-		</div>
-
-		<!-- Conductor -->
-		<div>
-			<label for="conductor_id" class="block text-sm font-medium text-gray-700">
-				Conductor
-			</label>
-			<select
-				id="conductor_id"
-				bind:value={settings.conductor_id}
-				class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-			>
-				<option value="">None</option>
-				{#each data.members as member (member.id)}
-					<option value={member.id}>
-						{member.name ?? member.email}
-					</option>
-				{/each}
-			</select>
-			<p class="mt-1 text-sm text-gray-500">
-				Choir conductor (will have conductor role)
 			</p>
 		</div>
 

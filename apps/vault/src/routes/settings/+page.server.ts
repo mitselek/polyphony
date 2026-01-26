@@ -1,7 +1,6 @@
 // Settings page server load function
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { getAllSettings } from '$lib/server/db/settings';
-import { getAllMembers } from '$lib/server/db/members';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, cookies }) => {
@@ -12,14 +11,10 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// Load settings and members
-	const [settings, members] = await Promise.all([
-		getAllSettings(db),
-		getAllMembers(db)
-	]);
+	// Load settings
+	const settings = await getAllSettings(db);
 
 	return {
-		settings,
-		members
+		settings
 	};
 };
