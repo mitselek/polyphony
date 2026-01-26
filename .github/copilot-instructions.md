@@ -18,15 +18,15 @@ polyphony/
 
 ### Technology Stack
 
-| Layer | Tech | Notes |
-|-------|------|-------|
-| **Framework** | SvelteKit 2 + Svelte 5 | Runes (`$state`, `$derived`, `$effect`) |
-| **Platform** | Cloudflare Pages + Workers | Edge deployment, no servers |
-| **Database** | Cloudflare D1 (SQLite) | Per-deployment, local dev with wrangler |
-| **File Storage** | D1 BLOBs (chunked) | NO R2 - files stored in `score_files`/`score_chunks` tables |
-| **Auth** | EdDSA (Ed25519) JWTs | Registry signs, Vaults verify via JWKS |
-| **Testing** | Vitest + Playwright | Unit + E2E, `npm test` runs all |
-| **Package Manager** | pnpm (workspaces) | `pnpm -r <cmd>` runs in all packages |
+| Layer               | Tech                       | Notes                                                       |
+| ------------------- | -------------------------- | ----------------------------------------------------------- |
+| **Framework**       | SvelteKit 2 + Svelte 5     | Runes (`$state`, `$derived`, `$effect`)                     |
+| **Platform**        | Cloudflare Pages + Workers | Edge deployment, no servers                                 |
+| **Database**        | Cloudflare D1 (SQLite)     | Per-deployment, local dev with wrangler                     |
+| **File Storage**    | D1 BLOBs (chunked)         | NO R2 - files stored in `score_files`/`score_chunks` tables |
+| **Auth**            | EdDSA (Ed25519) JWTs       | Registry signs, Vaults verify via JWKS                      |
+| **Testing**         | Vitest + Playwright        | Unit + E2E, `npm test` runs all                             |
+| **Package Manager** | pnpm (workspaces)          | `pnpm -r <cmd>` runs in all packages                        |
 
 ## Critical Patterns
 
@@ -44,7 +44,7 @@ export async function GET({ platform }) {
 
 Shared types live in `packages/shared/src/types/`. Server-specific types in `src/lib/server/`.
 
-### 2. Multi-Role System (Vault Members)
+### 2. Multi-Role System & Permissions (Vault Members)
 
 Vault members can have MULTIPLE roles simultaneously (owner, admin, librarian). Normalized via `member_roles` junction table (migration 0007).
 
@@ -55,7 +55,18 @@ export interface Member {
 }
 ```
 
-**UI Pattern**: Role badges are toggleable (see [members/+page.svelte](apps/vault/src/routes/members/+page.svelte)):
+**Permission Matrix**: Permissions are union of all assigned roles (see [auth/permissions.ts](../apps/vault/src/lib/server/auth/permissions.ts)):
+
+```typescript
+const PERMISSIONS: Record<Role, Permission[]> = {
+  librarian: ["scores:upload", "scores:delete"],
+  admin: ["members:invite", "roles:manage"],
+  owner: ["vault:delete"], // Owner gets all permissions
+};
+// All authenticated members have implicit 'scores:view' and 'scores:download'
+```
+
+**UI Pattern**: Role badges are toggleable (see [members/+page.svelte](../apps/vault/src/routes/members/+page.svelte)):
 
 ```svelte
 {#each member.roles as role}
@@ -72,7 +83,7 @@ PDFs stored in D1 to avoid R2 billing requirement (see issue #33). Files >9.5MB 
 - Small files: Single BLOB in `score_files.data`
 - Large files: `is_chunked=1`, chunks in `score_chunks` table (indexed by `score_id` + `chunk_index`)
 
-**Implementation**: [src/lib/server/storage/d1-chunked-storage.ts](apps/vault/src/lib/server/storage/d1-chunked-storage.ts)
+**Implementation**: [src/lib/server/storage/d1-chunked-storage.ts](../apps/vault/src/lib/server/storage/d1-chunked-storage.ts)
 
 ```typescript
 const CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per chunk
@@ -83,8 +94,9 @@ const CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per chunk
 **Flow**: Vault → Registry OAuth → Google → Registry signs JWT → Vault verifies via JWKS.
 
 **Key components**:
-- **Registry**: [packages/shared/src/crypto/jwt.ts](packages/shared/src/crypto/jwt.ts) - `signToken()`
-- **Vault**: [packages/shared/src/auth/verify.ts](packages/shared/src/auth/verify.ts) - `verifyRegistryToken()`
+
+- **Registry**: [packages/shared/src/crypto/jwt.ts](../packages/shared/src/crypto/jwt.ts) - `signToken()`
+- **Vault**: [packages/shared/src/auth/verify.ts](../packages/shared/src/auth/verify.ts) - `verifyRegistryToken()`
 - **JWKS**: Registry exposes public key at `/.well-known/jwks.json`
 
 **Token lifetime**: 5 minutes (see `TOKEN_EXPIRY_SECONDS`). Includes nonce for replay protection.
@@ -96,10 +108,10 @@ const CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per chunk
 ```svelte
 <script lang="ts">
   let members = $state([...]);
-  
+
   // ❌ WRONG - mutation doesn't trigger reactivity
   members[0].role = 'admin';
-  
+
   // ✅ CORRECT - reassign array
   members = members.map(m => m.id === id ? {...m, role: 'admin'} : m);
 </script>
@@ -127,12 +139,13 @@ $effect(() => { localState = data.value; }); // Sync on navigation
 - **scores**: Sheet music metadata (id, title, composer, license_type, file_key)
 - **score_files**: PDF BLOBs or chunking metadata
 - **score_chunks**: File chunks for large PDFs
-- **invites**: Email invitations with tokens
+- **invites**: Name-based invitations (migration 0009 - email verified by Registry OAuth)
 - **takedowns**: DMCA/DSA takedown requests
 - **access_log**: Score view/download audit trail
 
-**Role types**: `'owner' | 'admin' | 'librarian'` (see [types.ts](apps/vault/src/lib/types.ts))  
-**License types**: `'public_domain' | 'licensed' | 'owned' | 'pending'`
+**Role types**: `'owner' | 'admin' | 'librarian'` (see [types.ts](../apps/vault/src/lib/types.ts))  
+**License types**: `'public_domain' | 'licensed' | 'owned' | 'pending'`  
+**Invite flow**: Invites use name (not email) - email comes from Registry OAuth on acceptance (migration 0009)
 
 ## Development Workflows
 
@@ -162,11 +175,19 @@ wrangler d1 migrations apply DB           # Production
 
 ### Testing Strategy
 
-**82 tests** (Phase 0 complete):
-- **20** shared package tests (JWT, JWKS, token verification)
-- **62** registry tests (API endpoints + 30 acceptance tests)
+**Current Status**: ⚠️ 22 tests failing (multi-role migration incomplete)
+
+**Test Coverage** (100+ tests across packages):
+
+- **Shared package** (20 tests): JWT, JWKS, token verification
+  - ⚠️ 1 failing: signature validation edge case
+- **Registry** (62 tests): OAuth flow, API endpoints, acceptance tests
+  - ✅ All passing (Phase 0 complete)
+- **Vault** (75+ tests): Members, permissions, storage, invites, takedowns
+  - ⚠️ 21 failing: Mock DB `.all()` method for multi-role queries
 
 **Test locations**:
+
 - Unit: `*.spec.ts` alongside source files
 - Acceptance: `src/tests/acceptance.spec.ts`
 - E2E: `tests/e2e/*.spec.ts` (Playwright)
@@ -174,12 +195,16 @@ wrangler d1 migrations apply DB           # Production
 **Run modes**:
 
 ```bash
-pnpm test              # All tests once
+pnpm test              # All tests once (some failing)
 pnpm run test:unit     # Watch mode (Vitest)
 pnpm run test:e2e      # Playwright only
 ```
 
-## Terminology (see [GLOSSARY.md](docs/GLOSSARY.md))
+**Known Issues**:
+- Vault member tests: Mock DB missing `.all()` implementation for `member_roles` junction table
+- Shared verify test: Invalid signature not properly rejected (needs investigation)
+
+## Terminology (see [GLOSSARY.md](../docs/GLOSSARY.md))
 
 - **Vault**: Independent choir instance (self-contained D1 database)
 - **Registry**: Central OAuth + discovery service (stateless, no user DB)
@@ -191,21 +216,21 @@ pnpm run test:e2e      # Playwright only
 
 ### Shared Package
 
-- [packages/shared/src/types/index.ts](packages/shared/src/types/index.ts) - `AuthToken`, `RegisteredVault`, shared types
-- [packages/shared/src/crypto/jwt.ts](packages/shared/src/crypto/jwt.ts) - EdDSA signing/verification
-- [packages/shared/src/auth/verify.ts](packages/shared/src/auth/verify.ts) - Token verification library
+- [packages/shared/src/types/index.ts](../packages/shared/src/types/index.ts) - `AuthToken`, `RegisteredVault`, shared types
+- [packages/shared/src/crypto/jwt.ts](../packages/shared/src/crypto/jwt.ts) - EdDSA signing/verification
+- [packages/shared/src/auth/verify.ts](../packages/shared/src/auth/verify.ts) - Token verification library
 
 ### Registry
 
-- [apps/registry/src/routes/auth/+server.ts](apps/registry/src/routes/auth/+server.ts) - OAuth initiation
-- [apps/registry/src/routes/auth/callback/+server.ts](apps/registry/src/routes/auth/callback/+server.ts) - OAuth callback + JWT signing
-- [apps/registry/src/routes/.well-known/jwks.json/+server.ts](apps/registry/src/routes/.well-known/jwks.json/+server.ts) - Public key endpoint
+- [apps/registry/src/routes/auth/+server.ts](../apps/registry/src/routes/auth/+server.ts) - OAuth initiation
+- [apps/registry/src/routes/auth/callback/+server.ts](../apps/registry/src/routes/auth/callback/+server.ts) - OAuth callback + JWT signing
+- [apps/registry/src/routes/.well-known/jwks.json/+server.ts](../apps/registry/src/routes/.well-known/jwks.json/+server.ts) - Public key endpoint
 
 ### Vault
 
-- [apps/vault/src/lib/server/db/members.ts](apps/vault/src/lib/server/db/members.ts) - Member CRUD operations (multi-role aware)
-- [apps/vault/src/lib/server/storage/d1-chunked-storage.ts](apps/vault/src/lib/server/storage/d1-chunked-storage.ts) - Chunked BLOB storage
-- [apps/vault/src/routes/members/+page.svelte](apps/vault/src/routes/members/+page.svelte) - Member management UI (role toggles)
+- [apps/vault/src/lib/server/db/members.ts](../apps/vault/src/lib/server/db/members.ts) - Member CRUD operations (multi-role aware)
+- [apps/vault/src/lib/server/storage/d1-chunked-storage.ts](../apps/vault/src/lib/server/storage/d1-chunked-storage.ts) - Chunked BLOB storage
+- [apps/vault/src/routes/members/+page.svelte](../apps/vault/src/routes/members/+page.svelte) - Member management UI (role toggles)
 
 ## Documentation Structure
 
@@ -254,27 +279,36 @@ pnpm run test:e2e      # Playwright only
 **Private Circle Defense**: Polyphony relies on EU copyright exemption (Directive 2001/29/EC, Art. 5.2) for "private use within family circle or equivalent." Choirs = private circles, Handshakes = extended circles.
 
 **Key rules**:
+
 - Registry NEVER hosts copyrighted files (only PD links)
 - Vaults are invite-only (no public access)
 - Handshakes require explicit approval (bilateral trust)
 - Vault owner is responsible for content legality
 
-See [LEGAL-FRAMEWORK.md](docs/LEGAL-FRAMEWORK.md) and [CONCERNS.md](docs/CONCERNS.md) for open questions.
+See [LEGAL-FRAMEWORK.md](../docs/LEGAL-FRAMEWORK.md) and [CONCERNS.md](../docs/CONCERNS.md) for open questions.
 
 ## Phase Status
 
-**✅ Phase 0 Complete** (Epic #11): Registry OAuth + JWKS + token verification library. 82 tests passing.
+**✅ Phase 0 Complete** (Epic #11): Registry OAuth + JWKS + token verification library. All 62 registry tests passing.
 
-**🚧 Phase 1 In Progress**: Vault library (upload, view, organize scores) + member management.
+**🚧 Phase 1 In Progress**: Vault library + multi-role member management.
+
+**Active Work**:
+- Multi-role system (migration 0007-0009): Implementation complete, tests need mock DB fixes
+- File upload/storage: D1 chunked storage working
+- Copyright takedowns: UI + API complete
+- Name-based invites: OAuth email verification flow implemented
 
 See GitHub Issues for current work. Use Issue-Driven Development workflow (track features as epics, break into sub-issues, link PRs).
 
 ## Cloudflare Bindings
 
 **Registry** (`apps/registry/wrangler.toml`):
+
 - `DB` - D1 database (`polyphony-registry-db`)
 
 **Vault** (`apps/vault/wrangler.toml`):
+
 - `DB` - D1 database (`polyphony-vault-db`)
 - Environment vars: `REGISTRY_OAUTH_URL`, `SESSION_SECRET` (wrangler secret)
 
@@ -288,4 +322,4 @@ pnpm --filter registry dev   # Run only in registry app
 pnpm --filter @polyphony/shared test  # Run in shared package
 ```
 
-Dependencies between apps use `workspace:*` protocol (see [package.json](apps/registry/package.json)).
+Dependencies between apps use `workspace:*` protocol (see [package.json](../apps/registry/package.json)).

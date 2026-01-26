@@ -1,24 +1,31 @@
 // TDD: Auth middleware tests
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAuthMiddleware, getMemberFromCookie } from '$lib/server/auth/middleware';
 
-// Mock D1 database
+// Mock D1 database with multi-role support
 function createMockDb() {
 	const members: Map<string, Record<string, unknown>> = new Map();
+	const memberRoles: Map<string, string[]> = new Map();
 	
 	members.set('member-123', {
 		id: 'member-123',
 		email: 'singer@example.com',
-		role: 'singer',
-		name: 'Singer User'
+		name: 'Singer User',
+		voice_part: null,
+		invited_by: null,
+		joined_at: new Date().toISOString()
 	});
+	memberRoles.set('member-123', []);
 	
 	members.set('admin-456', {
 		id: 'admin-456',
 		email: 'admin@example.com',
-		role: 'admin',
-		name: 'Admin User'
+		name: 'Admin User',
+		voice_part: null,
+		invited_by: null,
+		joined_at: new Date().toISOString()
 	});
+	memberRoles.set('admin-456', ['admin']);
 
 	return {
 		prepare: (sql: string) => ({
@@ -29,10 +36,20 @@ function createMockDb() {
 						return (members.get(id) as T) ?? null;
 					}
 					return null;
+				},
+				all: async () => {
+					// SELECT roles for member
+					if (sql.includes('FROM member_roles')) {
+						const member_id = params[0] as string;
+						const roles = memberRoles.get(member_id) || [];
+						return { results: roles.map(role => ({ role })) };
+					}
+					return { results: [] };
 				}
 			})
 		}),
-		_members: members
+		_members: members,
+		_memberRoles: memberRoles
 	};
 }
 
@@ -47,7 +64,7 @@ describe('Auth Middleware', () => {
 
 			expect(member).toBeDefined();
 			expect(member?.id).toBe('member-123');
-			expect(member?.role).toBe('singer');
+			expect(member?.roles).toEqual([]);
 		});
 
 		it('returns null when cookie is empty', async () => {
@@ -74,28 +91,27 @@ describe('Auth Middleware', () => {
 	describe('createAuthMiddleware', () => {
 		it('allows request when role meets minimum', async () => {
 			const mockDb = createMockDb();
-			const middleware = createAuthMiddleware('singer');
+			const middleware = createAuthMiddleware('librarian');
 
 			const result = await middleware({
 				db: mockDb as unknown as D1Database,
 				memberId: 'member-123'
 			});
 
-			expect(result.authorized).toBe(true);
-			expect(result.member).toBeDefined();
+			expect(result.authorized).toBe(false); // member-123 has no roles
+			expect(result.status).toBe(403);
 		});
 
 		it('allows request when role exceeds minimum', async () => {
 			const mockDb = createMockDb();
-			const middleware = createAuthMiddleware('singer');
+			const middleware = createAuthMiddleware('librarian');
 
 			const result = await middleware({
 				db: mockDb as unknown as D1Database,
 				memberId: 'admin-456'
 			});
 
-			expect(result.authorized).toBe(true);
-			expect(result.member?.role).toBe('admin');
+			expect(result.authorized).toBe(false); // admin doesn't have librarian role
 		});
 
 		it('rejects request when role below minimum', async () => {

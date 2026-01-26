@@ -1,0 +1,20 @@
+{
+  // Ignore markdown link validation errors in copilot-instructions.md
+  // These are workspace-relative paths but VSCode resolves them relative to .github/
+  "markdown.validate.enabled": false,
+  "markdown.validate.fileLinks.enabled": "ignore",
+  
+  // Show only problems for currently active file to reduce noise
+  "problems.showCurrentInActiveFile": true,
+  
+  // Disable TypeScript server logging to improve performance
+  "typescript.tsserver.log": "off",
+  
+  // Svelte-specific settings
+  "svelte.enable-ts-plugin": true,
+  
+  // File associations
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}

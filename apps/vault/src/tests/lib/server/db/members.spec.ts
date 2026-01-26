@@ -3,9 +3,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMember, getMemberByEmail, getMemberById } from '../../../../lib/server/db/members.js';
 
-// Mock D1 database
+// Mock D1 database with multi-role support
 const createMockDb = () => {
-	const members = new Map<string, { id: string; email: string; name: string | null; role: string; invited_by: string | null; joined_at: string }>();
+	const members = new Map<string, { id: string; email: string; name: string | null; voice_part: string | null; invited_by: string | null; joined_at: string }>();
+	const memberRoles = new Map<string, string[]>(); // member_id -> roles[]
 	
 	return {
 		prepare: (sql: string) => ({
@@ -13,30 +14,58 @@ const createMockDb = () => {
 				run: async () => {
 					// INSERT INTO members
 					if (sql.includes('INSERT INTO members')) {
-						const [id, email, name, role, invited_by] = params as [string, string, string | null, string, string | null];
-						members.set(id, { id, email, name, role, invited_by, joined_at: new Date().toISOString() });
+						const [id, email, name, voice_part, invited_by] = params as [string, string, string | null, string | null, string | null];
+						members.set(id, { id, email, name, voice_part, invited_by, joined_at: new Date().toISOString() });
+						return { success: true };
+					}
+					// INSERT INTO member_roles
+					if (sql.includes('INSERT INTO member_roles')) {
+						const [member_id, role] = params as [string, string];
+						const roles = memberRoles.get(member_id) || [];
+						roles.push(role);
+						memberRoles.set(member_id, roles);
 						return { success: true };
 					}
 					return { success: false };
 				},
 				first: async () => {
-					// SELECT by email
-					if (sql.includes('WHERE email =')) {
+					// SELECT member by email
+					if (sql.includes('FROM members') && sql.includes('WHERE email =')) {
 						const email = params[0] as string;
 						for (const member of members.values()) {
 							if (member.email === email) return member;
 						}
 						return null;
 					}
-					// SELECT by id
-					if (sql.includes('WHERE id =')) {
+					// SELECT member by id
+					if (sql.includes('FROM members') && sql.includes('WHERE id =')) {
 						const id = params[0] as string;
 						return members.get(id) || null;
 					}
 					return null;
+				},
+				all: async () => {
+					// SELECT roles for member
+					if (sql.includes('FROM member_roles')) {
+						const member_id = params[0] as string;
+						const roles = memberRoles.get(member_id) || [];
+						return { results: roles.map(role => ({ role })) };
+					}
+					return { results: [] };
 				}
 			})
-		})
+		}),
+		batch: async (statements: any[]) => {
+			// Execute all statements (for role insertion)
+			// The statements are prepared statements with bound parameters
+			const results = [];
+			for (const stmt of statements) {
+				// Execute the statement by calling run()
+				const result = await stmt.run();
+				results.push(result);
+			}
+			return results;
+		}
 	} as unknown as D1Database;
 };
 
@@ -52,24 +81,24 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Test Singer',
-				role: 'singer'
+				roles: ['librarian']
 			});
 
 			expect(member).toBeDefined();
 			expect(member.id).toBeTruthy();
 			expect(member.email).toBe('singer@choir.org');
 			expect(member.name).toBe('Test Singer');
-			expect(member.role).toBe('singer');
+			expect(member.roles).toEqual(['librarian']);
 		});
 
 		it('should create member with admin role', async () => {
 			const member = await createMember(db, {
 				email: 'admin@choir.org',
 				name: 'Choir Admin',
-				role: 'admin'
+				roles: ['admin']
 			});
 
-			expect(member.role).toBe('admin');
+			expect(member.roles).toContain('admin');
 		});
 
 		it('should track who invited the member', async () => {
@@ -77,14 +106,14 @@ describe('Member database operations', () => {
 			const admin = await createMember(db, {
 				email: 'admin@choir.org',
 				name: 'Admin',
-				role: 'admin'
+				roles: ['admin']
 			});
 
 			// Then create a member invited by admin
 			const singer = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Singer',
-				role: 'singer',
+				roles: ['librarian'],
 				invited_by: admin.id
 			});
 
@@ -97,7 +126,7 @@ describe('Member database operations', () => {
 			await createMember(db, {
 				email: 'find@choir.org',
 				name: 'Find Me',
-				role: 'singer'
+				roles: ['librarian']
 			});
 
 			const found = await getMemberByEmail(db, 'find@choir.org');
@@ -116,7 +145,7 @@ describe('Member database operations', () => {
 			const created = await createMember(db, {
 				email: 'byid@choir.org',
 				name: 'Find By ID',
-				role: 'singer'
+				roles: ['librarian']
 			});
 
 			const found = await getMemberById(db, created.id);

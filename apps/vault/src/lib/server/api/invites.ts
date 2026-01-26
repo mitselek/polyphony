@@ -1,12 +1,14 @@
 // Invite API handlers
-import { createInvite, getInviteByEmail, type Invite } from '$lib/server/db/invites';
+import { createInvite, getInviteByName, type Invite } from '$lib/server/db/invites';
 import { getMemberByEmail } from '$lib/server/db/members';
+import type { Role, VoicePart } from '$lib/types';
 
 export interface CreateInviteParams {
 	db: D1Database;
 	body: {
-		email: string;
-		role: 'admin' | 'librarian' | 'singer';
+		name: string; // Invitee name for tracking
+		roles: Role[]; // Can assign multiple roles
+		voice_part?: VoicePart;
 	};
 	invitedBy: string;
 }
@@ -17,44 +19,33 @@ export interface CreateInviteResult {
 	error?: string;
 }
 
-const VALID_ROLES = ['admin', 'librarian', 'singer'];
-
-function isValidEmail(email: string): boolean {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 /**
- * POST /api/members/invite - Create a new invitation
+ * POST /api/members/invite - Create a new invitation link
  */
 export async function POST(params: CreateInviteParams): Promise<CreateInviteResult> {
 	const { db, body, invitedBy } = params;
 
-	// Validate email format
-	if (!isValidEmail(body.email)) {
-		return { success: false, error: 'Invalid email format' };
+	// Validate name
+	if (!body.name || body.name.trim().length === 0) {
+		return { success: false, error: 'Name is required' };
 	}
 
-	// Validate role
-	if (!VALID_ROLES.includes(body.role)) {
-		return { success: false, error: 'Invalid role' };
+	// Validate roles
+	if (!body.roles || body.roles.length === 0) {
+		return { success: false, error: 'At least one role is required' };
 	}
 
-	// Check if email is already a member
-	const existingMember = await getMemberByEmail(db, body.email);
-	if (existingMember) {
-		return { success: false, error: 'Email is already a member' };
-	}
-
-	// Check if email already has pending invite
-	const existingInvite = await getInviteByEmail(db, body.email);
+	// Check if name already has pending invite
+	const existingInvite = await getInviteByName(db, body.name);
 	if (existingInvite) {
-		return { success: false, error: 'Email already has a pending invite' };
+		return { success: false, error: 'Name already has a pending invite' };
 	}
 
 	// Create the invite
 	const invite = await createInvite(db, {
-		email: body.email,
-		role: body.role,
+		name: body.name,
+		roles: body.roles,
+		voice_part: body.voice_part,
 		invited_by: invitedBy
 	});
 

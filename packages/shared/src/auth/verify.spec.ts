@@ -158,8 +158,9 @@ describe('verifyAuthToken', () => {
 	describe('signature validation', () => {
 		it('rejects token with invalid signature', async () => {
 			const vaultId = 'vault-999';
+			const registryUrl = 'https://registry-tamper-test.example.com'; // Unique URL to avoid cache
 			const payload = {
-				iss: 'https://registry.example.com',
+				iss: registryUrl,
 				sub: 'user@example.com',
 				aud: vaultId,
 				nonce: 'abc123',
@@ -169,8 +170,9 @@ describe('verifyAuthToken', () => {
 			// Create valid token
 			const token = await signToken(payload, testKeys.privateKey);
 
-			// Tamper with token (change last character)
-			const tamperedToken = token.slice(0, -1) + 'X';
+			// Tamper with token (completely replace signature with invalid base64url)
+			const parts = token.split('.');
+			const tamperedToken = `${parts[0]}.${parts[1]}.INVALID_SIGNATURE_DATA`;
 
 			const jwks = await pemToJwk(testKeys.publicKey, 'test-key-5');
 			global.fetch = vi.fn().mockResolvedValue({
@@ -180,7 +182,7 @@ describe('verifyAuthToken', () => {
 
 			await expect(
 				verifyAuthToken(tamperedToken, {
-					registryUrl: 'https://registry.example.com',
+					registryUrl,
 					vaultId
 				})
 			).rejects.toThrow();
@@ -359,7 +361,8 @@ describe('verifyAuthToken', () => {
 				// Missing email
 			};
 
-			const token = await signToken(payload, testKeys.privateKey);
+			// Use 'as any' to bypass TypeScript checking for testing invalid payload
+			const token = await signToken(payload as any, testKeys.privateKey);
 
 			const jwks = await pemToJwk(testKeys.publicKey, 'test-key-10');
 			global.fetch = vi.fn().mockResolvedValue({

@@ -1,35 +1,53 @@
-// TDD: Invite system tests (RED phase)
+// TDD: Invite system tests (name-based, multi-role)
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
 	createInvite,
 	getInviteByToken,
-	getInviteByEmail,
+	getInviteByName,
 	acceptInvite,
 	expireInvite,
 	type Invite
 } from '$lib/server/db/invites';
 
-// Mock D1 database
+// Mock D1 database for name-based, multi-role invites
 function createMockDb() {
 	const data: Map<string, Record<string, unknown>> = new Map();
+	const members: Map<string, Record<string, unknown>> = new Map();
+	const memberRoles: Map<string, string[]> = new Map();
 	
 	return {
 		prepare: (sql: string) => ({
 			bind: (...params: unknown[]) => ({
 				run: async () => {
-					// Handle INSERT
+					// Handle INSERT INTO invites (name-based)
 					if (sql.startsWith('INSERT INTO invites')) {
-						const [id, email, role, token, invited_by, expires_at] = params as string[];
+						const [id, name, token, invited_by, expires_at, roles, voice_part, created_at] = params as any[];
 						data.set(token, {
 							id,
-							email,
-							role,
+							name,
 							token,
 							invited_by,
 							expires_at,
 							status: 'pending',
-							created_at: new Date().toISOString()
+							roles: JSON.stringify(roles), // Store as JSON string like D1 would
+							voice_part,
+							created_at,
+							accepted_at: null,
+							accepted_by_email: null
 						});
+					}
+					// Handle INSERT INTO members
+					if (sql.includes('INSERT INTO members')) {
+						const [id, email, name, voice_part, invited_by] = params as string[];
+						members.set(id, { id, email, name, voice_part, invited_by, joined_at: new Date().toISOString() });
+					}
+					// Handle INSERT INTO member_roles
+					if (sql.includes('INSERT INTO member_roles')) {
+						const [member_id, role] = params as [string, string];
+						const roles = memberRoles.get(member_id) || [];
+						roles.push(role);
+						memberRoles.set(member_id, roles);
+						return { success: true };
 					}
 					// Handle UPDATE (accept/expire)
 					if (sql.includes('UPDATE invites SET status')) {
@@ -38,7 +56,8 @@ function createMockDb() {
 						if (invite) {
 							if (sql.includes("status = 'accepted'")) {
 								invite.status = 'accepted';
-								invite.accepted_at = new Date().toISOString();
+								invite.accepted_at = params[0] as string;
+								invite.accepted_by_email = params[1] as string;
 							} else if (sql.includes("status = 'expired'")) {
 								invite.status = 'expired';
 							}
@@ -51,14 +70,20 @@ function createMockDb() {
 					// Handle SELECT by token
 					if (sql.includes('WHERE token = ?')) {
 						const token = params[0] as string;
-						return data.get(token) ?? null;
+						const inv = data.get(token);
+						if (inv) {
+							// Parse roles JSON for return
+							return { ...inv, roles: JSON.parse(inv.roles as string) };
+						}
+						return null;
 					}
-					// Handle SELECT by email
-					if (sql.includes('WHERE email = ?')) {
-						const email = params[0] as string;
+					// Handle SELECT by name
+					if (sql.includes('WHERE name = ?')) {
+						const name = params[0] as string;
 						for (const invite of data.values()) {
-							if (invite.email === email && invite.status === 'pending') {
-								return invite;
+							if (invite.name === name && invite.status === 'pending') {
+								// Parse roles JSON for return
+								return { ...invite, roles: JSON.parse(invite.roles as string) };
 							}
 						}
 						return null;
@@ -67,7 +92,18 @@ function createMockDb() {
 				}
 			})
 		}),
-		_data: data
+		batch: async (statements: any[]) => {
+			// Execute all statements (for role insertion)
+			const results = [];
+			for (const stmt of statements) {
+				const result = await stmt.run();
+				results.push(result);
+			}
+			return results;
+		},
+		_data: data,
+		_members: members,
+		_memberRoles: memberRoles
 	};
 }
 
@@ -83,14 +119,14 @@ describe('Invite System', () => {
 	describe('createInvite', () => {
 		it('creates an invite with valid data', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'John Doe',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
 			expect(invite).toBeDefined();
-			expect(invite.email).toBe('test@example.com');
-			expect(invite.role).toBe('singer');
+			expect(invite.name).toBe('John Doe');
+			expect(invite.roles).toEqual(['librarian']);
 			expect(invite.token).toBeDefined();
 			expect(invite.token.length).toBeGreaterThan(20);
 			expect(invite.status).toBe('pending');
@@ -99,8 +135,8 @@ describe('Invite System', () => {
 
 		it('sets 48h expiry by default', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Test User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
@@ -113,101 +149,124 @@ describe('Invite System', () => {
 
 		it('generates secure random token', async () => {
 			const invite1 = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test1@example.com',
-				role: 'singer',
+				name: 'User One',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
 			const invite2 = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test2@example.com',
-				role: 'singer',
+				name: 'User Two',
+				roles: ['admin'],
 				invited_by: 'admin-123'
 			});
 
 			expect(invite1.token).not.toBe(invite2.token);
+			expect(invite1.token.length).toBeGreaterThan(40);
 		});
 	});
 
 	describe('getInviteByToken', () => {
 		it('returns invite when token exists', async () => {
 			const created = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Test User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
 			const found = await getInviteByToken(mockDb as unknown as D1Database, created.token);
 
 			expect(found).toBeDefined();
-			expect(found?.email).toBe('test@example.com');
+			expect(found?.name).toBe('Test User');
+			expect(found?.roles).toEqual(['librarian']);
 		});
 
 		it('returns null when token not found', async () => {
-			const found = await getInviteByToken(mockDb as unknown as D1Database, 'nonexistent-token');
-
+			const found = await getInviteByToken(mockDb as unknown as D1Database, 'nonexistent');
 			expect(found).toBeNull();
 		});
 	});
 
-	describe('getInviteByEmail', () => {
-		it('returns pending invite for email', async () => {
+	describe('getInviteByName', () => {
+		it('returns pending invite for name', async () => {
 			await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Test User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
-			const found = await getInviteByEmail(mockDb as unknown as D1Database, 'test@example.com');
+			const found = await getInviteByName(mockDb as unknown as D1Database, 'Test User');
 
 			expect(found).toBeDefined();
+			expect(found?.name).toBe('Test User');
 			expect(found?.status).toBe('pending');
 		});
 
 		it('returns null when no pending invite exists', async () => {
-			const found = await getInviteByEmail(mockDb as unknown as D1Database, 'nonexistent@example.com');
-
+			const found = await getInviteByName(mockDb as unknown as D1Database, 'Nonexistent');
 			expect(found).toBeNull();
 		});
 	});
 
 	describe('acceptInvite', () => {
-		it('marks invite as accepted and returns member id', async () => {
+		it('marks invite as accepted and creates member with roles', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'New Member',
+				roles: ['admin', 'librarian'],
 				invited_by: 'admin-123'
 			});
 
-			const result = await acceptInvite(mockDb as unknown as D1Database, invite.token);
+			const result = await acceptInvite(
+				mockDb as unknown as D1Database,
+				invite.token,
+				'newmember@example.com',
+				'New Member'
+			);
 
 			expect(result.success).toBe(true);
 			expect(result.memberId).toBeDefined();
+
+			// Verify invite was marked accepted
+			const updatedInvite = await getInviteByToken(mockDb as unknown as D1Database, invite.token);
+			expect(updatedInvite?.status).toBe('accepted');
+			expect(updatedInvite?.accepted_by_email).toBe('newmember@example.com');
 		});
 
 		it('creates member record on accept', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'librarian',
+				name: 'Jane Doe',
+				roles: ['librarian'],
+				voice_part: 'S',
 				invited_by: 'admin-123'
 			});
 
-			const result = await acceptInvite(mockDb as unknown as D1Database, invite.token);
+			const result = await acceptInvite(
+				mockDb as unknown as D1Database,
+				invite.token,
+				'jane@example.com'
+			);
 
 			expect(result.success).toBe(true);
-			expect(result.memberId).toBeDefined();
+			const member = mockDb._members.get(result.memberId!);
+			expect(member).toBeDefined();
+			expect(member?.email).toBe('jane@example.com');
+			expect(member?.voice_part).toBe('S');
 		});
 
 		it('rejects expired invite', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Expired User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
-			// Advance time by 49 hours (past 48h expiry)
+			// Advance time past expiry
 			vi.setSystemTime(new Date('2025-01-17T13:00:00Z'));
 
-			const result = await acceptInvite(mockDb as unknown as D1Database, invite.token);
+			const result = await acceptInvite(
+				mockDb as unknown as D1Database,
+				invite.token,
+				'expired@example.com'
+			);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Invite has expired');
@@ -215,20 +274,27 @@ describe('Invite System', () => {
 
 		it('rejects already accepted invite', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Test User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
-			await acceptInvite(mockDb as unknown as D1Database, invite.token);
-			const result = await acceptInvite(mockDb as unknown as D1Database, invite.token);
+			// Accept once
+			await acceptInvite(mockDb as unknown as D1Database, invite.token, 'test@example.com');
+
+			// Try to accept again
+			const result = await acceptInvite(mockDb as unknown as D1Database, invite.token, 'test2@example.com');
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Invite already used');
 		});
 
 		it('rejects invalid token', async () => {
-			const result = await acceptInvite(mockDb as unknown as D1Database, 'invalid-token');
+			const result = await acceptInvite(
+				mockDb as unknown as D1Database,
+				'invalid-token',
+				'test@example.com'
+			);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Invalid invite token');
@@ -238,14 +304,17 @@ describe('Invite System', () => {
 	describe('expireInvite', () => {
 		it('marks invite as expired', async () => {
 			const invite = await createInvite(mockDb as unknown as D1Database, {
-				email: 'test@example.com',
-				role: 'singer',
+				name: 'Test User',
+				roles: ['librarian'],
 				invited_by: 'admin-123'
 			});
 
 			const result = await expireInvite(mockDb as unknown as D1Database, invite.token);
 
 			expect(result).toBe(true);
+
+			const expired = await getInviteByToken(mockDb as unknown as D1Database, invite.token);
+			expect(expired?.status).toBe('expired');
 		});
 	});
 });
