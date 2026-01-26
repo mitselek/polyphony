@@ -1,6 +1,6 @@
 // Permission system for role-based access control
 
-export type Role = 'owner' | 'admin' | 'librarian' | 'conductor';
+export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader';
 
 export type Permission =
 	| 'scores:view'
@@ -35,6 +35,7 @@ const PERMISSIONS: Record<Role, Permission[]> = {
 	librarian: ['scores:upload', 'scores:delete'],
 	admin: ['members:invite', 'roles:manage'],
 	conductor: ['events:create', 'events:manage', 'events:delete', 'attendance:record'],
+	section_leader: ['attendance:record'],
 	owner: ['vault:delete'] // Owner gets all permissions
 };
 

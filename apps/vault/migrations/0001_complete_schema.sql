@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS members (
 -- Member roles (multi-role support)
 CREATE TABLE IF NOT EXISTS member_roles (
     member_id TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('owner', 'admin', 'librarian', 'conductor')),
+    role TEXT NOT NULL CHECK (role IN ('owner', 'admin', 'librarian', 'conductor', 'section_leader')),
     granted_at TEXT DEFAULT (datetime('now')),
     granted_by TEXT,
     PRIMARY KEY (member_id, role)

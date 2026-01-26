@@ -68,7 +68,7 @@
 		}
 	}
 
-	async function toggleRole(memberId: string, role: 'owner' | 'admin' | 'librarian' | 'conductor') {
+	async function toggleRole(memberId: string, role: 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader') {
 		const member = members.find((m: typeof members[0]) => m.id === memberId);
 		if (!member) return;
 
@@ -188,6 +188,8 @@
 				return 'bg-green-100 text-green-800 border-green-200';
 			case 'conductor':
 				return 'bg-amber-100 text-amber-800 border-amber-200';
+			case 'section_leader':
+				return 'bg-teal-100 text-teal-800 border-teal-200';
 			default:
 				return 'bg-gray-100 text-gray-800 border-gray-200';
 		}
@@ -356,7 +358,7 @@
 					<div class="mt-4">
 						<p class="mb-2 text-sm font-medium text-gray-700">Roles:</p>
 						<div class="flex flex-wrap gap-2">
-							{#each (['owner', 'admin', 'librarian', 'conductor'] as const) as role}
+							{#each (['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const) as role}
 								{@const isDisabled = updatingMember === member.id || 
 									(member.id === data.currentUserId && role === 'owner') ||
 									(!data.isOwner && role === 'owner')}

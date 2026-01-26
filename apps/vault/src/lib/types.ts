@@ -1,7 +1,7 @@
 // Shared types for the vault application
 // These types are used across both server and client code
 
-export type Role = 'owner' | 'admin' | 'librarian' | 'conductor';
+export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader';
 export type VoicePart =
 	| 'S'
 	| 'A'
