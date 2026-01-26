@@ -65,6 +65,7 @@ export function hasRole(member: Member | null | undefined, role: Role): boolean 
 
 /**
  * Check if a member has at least one of the required roles
+ * Owner role grants access to all role requirements
  */
 export function requireRole(
 	member: Member | null | undefined,
@@ -72,6 +73,11 @@ export function requireRole(
 ): RequireRoleResult {
 	if (!member) {
 		return { success: false, error: 'Authentication required' };
+	}
+
+	// Owner has all permissions
+	if (member.roles.includes('owner')) {
+		return { success: true };
 	}
 
 	const rolesArray = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
