@@ -73,7 +73,7 @@
 
 <div class="container mx-auto max-w-xl px-4 py-8">
 	<div class="mb-8">
-		<a href="/library" class="text-blue-600 hover:underline">← Back to Library</a>
+		<a href="/members" class="text-blue-600 hover:underline">← Back to Members</a>
 	</div>
 
 	<h1 class="mb-6 text-3xl font-bold">Invite New Member</h1>
