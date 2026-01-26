@@ -6,7 +6,8 @@
 
 	let name = $state('');
 	let roles = $state<Set<Role>>(new Set());
-	let voicePart = $state<string | null>(null);
+	let voiceIds = $state<Set<string>>(new Set());
+	let sectionIds = $state<Set<string>>(new Set());
 	let isSubmitting = $state(false);
 	let error = $state('');
 	let success = $state('');
@@ -20,6 +21,26 @@
 			newRoles.add(role);
 		}
 		roles = newRoles;
+	}
+
+	function toggleVoice(voiceId: string) {
+		const newVoices = new Set(voiceIds);
+		if (newVoices.has(voiceId)) {
+			newVoices.delete(voiceId);
+		} else {
+			newVoices.add(voiceId);
+		}
+		voiceIds = newVoices;
+	}
+
+	function toggleSection(sectionId: string) {
+		const newSections = new Set(sectionIds);
+		if (newSections.has(sectionId)) {
+			newSections.delete(sectionId);
+		} else {
+			newSections.add(sectionId);
+		}
+		sectionIds = newSections;
 	}
 
 	async function handleSubmit(e: Event) {
@@ -44,7 +65,8 @@
 				body: JSON.stringify({
 					name,
 					roles: Array.from(roles),
-					voicePart: voicePart || null
+					voiceIds: Array.from(voiceIds),
+					sectionIds: Array.from(sectionIds)
 				})
 			});
 
@@ -58,7 +80,8 @@
 			success = `Invitation created for ${name}! Copy the link below and share it with them.`;
 			name = '';
 			roles = new Set();
-			voicePart = null;
+			voiceIds = new Set();
+			sectionIds = new Set();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to send invite';
 		} finally {
@@ -166,29 +189,59 @@
 				</p>
 			</fieldset>
 
-			<div>
-				<label for="voicePart" class="mb-1 block text-sm font-medium text-gray-700">
-					Voice Part (optional)
-				</label>
-				<select
-					id="voicePart"
-					bind:value={voicePart}
-					disabled={isSubmitting}
-					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
-				>
-					<option value={null}>None</option>
-					<option value="S">S (Soprano)</option>
-					<option value="A">A (Alto)</option>
-					<option value="T">T (Tenor)</option>
-					<option value="B">B (Bass)</option>
-					<option value="SA">SA (Soprano/Alto)</option>
-					<option value="AT">AT (Alto/Tenor)</option>
-					<option value="TB">TB (Tenor/Bass)</option>
-					<option value="SAT">SAT (Soprano/Alto/Tenor)</option>
-					<option value="ATB">ATB (Alto/Tenor/Bass)</option>
-					<option value="SATB">SATB (All parts)</option>
-				</select>
-			</div>
+			<fieldset>
+				<legend class="mb-2 block text-sm font-medium text-gray-700">
+					Vocal Range (optional)
+					<span class="ml-1 text-xs font-normal text-gray-500" title="What the member CAN sing - their vocal capabilities">ⓘ</span>
+				</legend>
+				<div class="space-y-2">
+					{#each data.voices as voice}
+						<label class="flex items-center gap-2">
+							<input
+								type="checkbox"
+								checked={voiceIds.has(voice.id)}
+								onchange={() => toggleVoice(voice.id)}
+								disabled={isSubmitting}
+								class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm">
+								<span class="font-medium">{voice.abbreviation}</span>
+								<span class="text-gray-600">({voice.name})</span>
+							</span>
+						</label>
+					{/each}
+				</div>
+				<p class="mt-2 text-sm text-gray-500">
+					Select all ranges this member can comfortably sing. First selected becomes primary.
+				</p>
+			</fieldset>
+
+			<fieldset>
+				<legend class="mb-2 block text-sm font-medium text-gray-700">
+					Assigned Section (optional)
+					<span class="ml-1 text-xs font-normal text-gray-500" title="Where the member DOES sing currently - their performance assignment">ⓘ</span>
+				</legend>
+				<div class="space-y-2">
+					{#each data.sections as section}
+						<label class="flex items-center gap-2">
+							<input
+								type="checkbox"
+								checked={sectionIds.has(section.id)}
+								onchange={() => toggleSection(section.id)}
+								disabled={isSubmitting}
+								class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm">
+								<span class="font-medium">{section.abbreviation}</span>
+								<span class="text-gray-600">({section.name})</span>
+							</span>
+						</label>
+					{/each}
+				</div>
+				<p class="mt-2 text-sm text-gray-500">
+					Assign to one or more sections for performances. First selected becomes primary.
+				</p>
+			</fieldset>
 
 			<button
 				type="submit"

@@ -151,6 +151,115 @@
 
 	// TODO Phase 3: Add updateMemberVoices and updateMemberSections functions
 
+	async function addVoice(memberId: string, voiceId: string, isPrimary: boolean = false) {
+		updatingMember = memberId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${memberId}/voices`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ voiceId, isPrimary })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to add voice');
+			}
+
+			// Reload member data to reflect changes (voices array updated)
+			const updatedMember = members.find((m) => m.id === memberId);
+			if (updatedMember) {
+				// For now, reload the page to get updated data
+				// TODO: Properly fetch updated member data from API
+				window.location.reload();
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to add voice';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updatingMember = null;
+		}
+	}
+
+	async function removeVoice(memberId: string, voiceId: string) {
+		updatingMember = memberId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${memberId}/voices`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ voiceId })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to remove voice');
+			}
+
+			// Reload to reflect changes
+			window.location.reload();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to remove voice';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updatingMember = null;
+		}
+	}
+
+	async function addSection(memberId: string, sectionId: string, isPrimary: boolean = false) {
+		updatingMember = memberId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${memberId}/sections`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sectionId, isPrimary })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to add section');
+			}
+
+			// Reload to reflect changes
+			window.location.reload();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to add section';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updatingMember = null;
+		}
+	}
+
+	async function removeSection(memberId: string, sectionId: string) {
+		updatingMember = memberId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${memberId}/sections`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sectionId })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { message?: string };
+				throw new Error(data.message ?? 'Failed to remove section');
+			}
+
+			// Reload to reflect changes
+			window.location.reload();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to remove section';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updatingMember = null;
+		}
+	}
+
 	async function removeMember(memberId: string, memberName: string) {
 		const confirmed = confirm(
 			`Are you sure you want to remove ${memberName}?\n\nThis action cannot be undone.`
@@ -241,12 +350,41 @@
 										EXPIRED
 									</span>
 								{/if}
-								<!-- TODO Phase 3: Display voices/sections badges for invite -->
+								
+								<!-- Role badges -->
 								{#each invite.roles as role}
 									<span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 										{role}
 									</span>
 								{/each}
+								
+								<!-- Voice badges -->
+								{#if invite.voices && invite.voices.length > 0}
+									<div class="flex gap-1">
+										{#each invite.voices as voice, index}
+											<span 
+												class="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
+												title="{voice.name} {index === 0 ? '(primary)' : ''}"
+											>
+												{#if index === 0}★{/if} {voice.abbreviation}
+											</span>
+										{/each}
+									</div>
+								{/if}
+								
+								<!-- Section badges -->
+								{#if invite.sections && invite.sections.length > 0}
+									<div class="flex gap-1">
+										{#each invite.sections as section, index}
+											<span 
+												class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
+												title="{section.name} {index === 0 ? '(primary)' : ''}"
+											>
+												{#if index === 0}★{/if} {section.abbreviation}
+											</span>
+										{/each}
+									</div>
+								{/if}
 							</div>
 							<p class="mt-1 text-sm {expired ? 'text-gray-600' : 'text-gray-500'}">
 								Invited by {invite.invitedBy} · 
@@ -341,7 +479,34 @@
 										title="This is your account"
 									>You</span>
 								{/if}
-								<!-- TODO Phase 3: Add voices/sections badges here -->
+								
+								<!-- Voices badges -->
+								{#if member.voices && member.voices.length > 0}
+									<div class="flex gap-1">
+										{#each member.voices as voice, index}
+											<span 
+												class="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
+												title="{voice.name} {index === 0 ? '(primary)' : ''}"
+											>
+												{#if index === 0}★{/if} {voice.abbreviation}
+											</span>
+										{/each}
+									</div>
+								{/if}
+								
+								<!-- Sections badges -->
+								{#if member.sections && member.sections.length > 0}
+									<div class="flex gap-1">
+										{#each member.sections as section, index}
+											<span 
+												class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
+												title="{section.name} {index === 0 ? '(primary)' : ''}"
+											>
+												{#if index === 0}★{/if} {section.abbreviation}
+											</span>
+										{/each}
+									</div>
+								{/if}
 							</div>
 							{#if member.name}
 								<p class="text-sm text-gray-600">{member.email}</p>
