@@ -222,6 +222,26 @@
 										>You</span
 									>
 								{/if}
+								<!-- Voice Part -->
+								<select
+									id="voice-part-{member.id}"
+									value={member.voicePart ?? ''}
+									onchange={(e) => updateVoicePart(member.id, e.currentTarget.value || null)}
+									disabled={updatingMember === member.id}
+									class="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+								>
+									<option value="">None</option>
+									<option value="S">S</option>
+									<option value="A">A</option>
+									<option value="T">T</option>
+									<option value="B">B</option>
+									<option value="SA">SA</option>
+									<option value="AT">AT</option>
+									<option value="TB">TB</option>
+									<option value="SAT">SAT</option>
+									<option value="ATB">ATB</option>
+									<option value="SATB">SATB</option>
+								</select>
 							</div>
 							{#if member.name}
 								<p class="text-sm text-gray-600">{member.email}</p>
@@ -229,30 +249,6 @@
 							<p class="mt-1 text-xs text-gray-500">
 								Joined {new Date(member.joinedAt).toLocaleDateString()}
 							</p>
-						</div>
-
-						<!-- Voice Part -->
-						<div class="ml-4">
-						<label for="voice-part-{member.id}" class="block text-xs font-medium text-gray-700">Voice Part</label>
-						<select
-							id="voice-part-{member.id}"
-								value={member.voicePart ?? ''}
-								onchange={(e) => updateVoicePart(member.id, e.currentTarget.value || null)}
-								disabled={updatingMember === member.id}
-								class="mt-1 rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-							>
-								<option value="">None</option>
-								<option value="S">S</option>
-								<option value="A">A</option>
-								<option value="T">T</option>
-								<option value="B">B</option>
-								<option value="SA">SA</option>
-								<option value="AT">AT</option>
-								<option value="TB">TB</option>
-								<option value="SAT">SAT</option>
-								<option value="ATB">ATB</option>
-								<option value="SATB">SATB</option>
-							</select>
 						</div>
 					</div>
 
