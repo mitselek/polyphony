@@ -51,12 +51,14 @@
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<h1 class="text-3xl font-bold">Score Library</h1>
-		<a
-			href="/upload"
-			class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-		>
-			Upload Score
-		</a>
+		{#if data.canUpload}
+			<a
+				href="/upload"
+				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+			>
+				Upload Score
+			</a>
+		{/if}
 	</div>
 
 	<!-- Search -->
@@ -74,9 +76,11 @@
 		<div class="py-12 text-center text-gray-500">
 			{#if data.scores.length === 0}
 				<p class="text-lg">No scores yet.</p>
-				<p class="mt-2">
-					<a href="/upload" class="text-blue-600 hover:underline">Upload your first score</a>
-				</p>
+				{#if data.canUpload}
+					<p class="mt-2">
+						<a href="/upload" class="text-blue-600 hover:underline">Upload your first score</a>
+					</p>
+				{/if}
 			{:else}
 				<p>No scores match your search.</p>
 			{/if}
@@ -106,13 +110,15 @@
 					>
 						Download
 					</button>
-					<button
-						onclick={() => deleteScore(score.id, score.title)}
-						disabled={deletingId === score.id}
-						class="rounded-lg bg-red-100 px-4 py-2 text-red-700 transition hover:bg-red-200 disabled:opacity-50"
-					>
-						{deletingId === score.id ? 'Deleting...' : 'Delete'}
-					</button>
+					{#if data.canDelete}
+						<button
+							onclick={() => deleteScore(score.id, score.title)}
+							disabled={deletingId === score.id}
+							class="rounded-lg bg-red-100 px-4 py-2 text-red-700 transition hover:bg-red-200 disabled:opacity-50"
+						>
+							{deletingId === score.id ? 'Deleting...' : 'Delete'}
+						</button>
+					{/if}
 				</div>
 				</div>
 			{/each}
