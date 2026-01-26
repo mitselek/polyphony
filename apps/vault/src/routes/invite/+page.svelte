@@ -160,6 +160,11 @@
 						</label>
 					{/if}
 				{/each}
+				</div>
+				<p class="mt-2 text-sm text-gray-500">
+					All members can view and download scores. Assign roles to grant additional permissions.
+				</p>
+			</fieldset>
 
 			<div>
 				<label for="voicePart" class="mb-1 block text-sm font-medium text-gray-700">
