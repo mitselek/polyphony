@@ -13,3 +13,4 @@ export type VoicePart =
 	| 'SAT'
 	| 'ATB'
 	| 'SATB';
+export type EventType = 'rehearsal' | 'concert' | 'retreat';
