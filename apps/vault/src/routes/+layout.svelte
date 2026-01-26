@@ -14,7 +14,9 @@
 			<div class="flex items-center gap-4">
 				<a href="/library" class="text-gray-600 hover:text-gray-900">Library</a>
 				{#if data.user}
-					<a href="/upload" class="text-gray-600 hover:text-gray-900">Upload</a>
+					{#if data.user.roles?.some((r) => ['librarian', 'owner'].includes(r))}
+						<a href="/upload" class="text-gray-600 hover:text-gray-900">Upload</a>
+					{/if}
 					{#if data.user.roles?.some((r) => ['admin', 'owner'].includes(r))}
 						<a href="/members" class="text-gray-600 hover:text-gray-900">Members</a>
 					{/if}

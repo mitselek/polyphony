@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { LayoutData } from './$types';
+
+	let { data }: { data: LayoutData } = $props();
 
 	let mounted = $state(false);
 
 	onMount(() => {
 		mounted = true;
 	});
+
+	// Check if user can upload (librarian or owner)
+	const canUpload = $derived(
+		data.user?.roles?.some((r) => ['librarian', 'owner'].includes(r)) ?? false
+	);
 </script>
 
 <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -24,12 +32,14 @@
 					>
 						Browse Library
 					</a>
-					<a
-						href="/upload"
-						class="rounded-lg bg-gray-100 px-6 py-3 text-gray-700 font-medium hover:bg-gray-200 transition"
-					>
-						Upload Score
-					</a>
+					{#if canUpload}
+						<a
+							href="/upload"
+							class="rounded-lg bg-gray-100 px-6 py-3 text-gray-700 font-medium hover:bg-gray-200 transition"
+						>
+							Upload Score
+						</a>
+					{/if}
 				</div>
 
 				<h2 class="text-2xl font-semibold text-gray-800 mb-4">Phase 1: MVP</h2>
