@@ -116,7 +116,7 @@ Public access without authentication. Limited to openly licensed content.
 | vault:delete      |  ✅   |  ❌   |    ❌     |   ❌   |  ❌   |
 | federation:manage |  ✅   |  ❌   |    ❌     |   ❌   |  ❌   |
 
-_PD = Public Domain scores only_
+_PD = Public Domain scores only_  
 
 ## Member Schema
 
