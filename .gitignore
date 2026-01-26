@@ -42,3 +42,6 @@ npm-debug.log*
 *.tmp
 *.temp
 .cache/
+
+# Seed documents (internal notes)
+docs/seed documents/
