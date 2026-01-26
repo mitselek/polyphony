@@ -110,4 +110,41 @@ describe('Permission System', () => {
 			expect(canManageRoles({ id: '4', roles: [], email: 't@t.com' })).toBe(false);
 		});
 	});
+
+	describe('conductor role permissions', () => {
+		it('conductor has event management permissions', () => {
+			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			expect(hasPermission(conductor, 'events:create')).toBe(true);
+			expect(hasPermission(conductor, 'events:manage')).toBe(true);
+			expect(hasPermission(conductor, 'events:delete')).toBe(true);
+			expect(hasPermission(conductor, 'attendance:record')).toBe(true);
+		});
+
+		it('conductor does not have score management permissions', () => {
+			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			expect(hasPermission(conductor, 'scores:upload')).toBe(false);
+			expect(hasPermission(conductor, 'scores:delete')).toBe(false);
+		});
+
+		it('conductor does not have member management permissions', () => {
+			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			expect(hasPermission(conductor, 'members:invite')).toBe(false);
+			expect(hasPermission(conductor, 'roles:manage')).toBe(false);
+			expect(hasPermission(conductor, 'vault:delete')).toBe(false);
+		});
+
+		it('conductor can view and download scores (implicit)', () => {
+			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			expect(hasPermission(conductor, 'scores:view')).toBe(true);
+			expect(hasPermission(conductor, 'scores:download')).toBe(true);
+		});
+
+		it('owner has all conductor permissions', () => {
+			const owner: Member = { id: '1', email: 'owner@test.com', roles: ['owner'] };
+			expect(hasPermission(owner, 'events:create')).toBe(true);
+			expect(hasPermission(owner, 'events:manage')).toBe(true);
+			expect(hasPermission(owner, 'events:delete')).toBe(true);
+			expect(hasPermission(owner, 'attendance:record')).toBe(true);
+		});
+	});
 });
