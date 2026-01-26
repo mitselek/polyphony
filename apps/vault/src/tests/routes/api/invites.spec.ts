@@ -208,15 +208,15 @@ describe('POST /api/members/invite', () => {
 		expect(result.error).toBe('Name is required');
 	});
 
-	it('validates roles array is required', async () => {
+	it('allows creating invite without roles', async () => {
 		const result = await createInviteHandler({
 			db: mockDb as unknown as D1Database,
 			body: { name: 'Test User', roles: [] },
 			invitedBy: 'admin-123'
 		});
 
-		expect(result.success).toBe(false);
-		expect(result.error).toBe('At least one role is required');
+		expect(result.success).toBe(true);
+		expect(result.invite?.roles).toEqual([]);
 	});
 });
 

@@ -30,11 +30,6 @@ export async function POST(params: CreateInviteParams): Promise<CreateInviteResu
 		return { success: false, error: 'Name is required' };
 	}
 
-	// Validate roles
-	if (!body.roles || body.roles.length === 0) {
-		return { success: false, error: 'At least one role is required' };
-	}
-
 	// Check if name already has pending invite
 	const existingInvite = await getInviteByName(db, body.name);
 	if (existingInvite) {

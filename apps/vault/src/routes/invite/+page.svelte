@@ -29,11 +29,6 @@
 			return;
 		}
 
-		if (roles.size === 0) {
-			error = 'At least one role must be selected';
-			return;
-		}
-
 		isSubmitting = true;
 		error = '';
 		success = '';
@@ -134,7 +129,7 @@
 
 			<fieldset>
 				<legend class="mb-2 block text-sm font-medium text-gray-700">
-					Roles * (select at least one)
+				Roles (optional)
 				</legend>
 				<div class="space-y-2">
 					{#if data.isOwner}
@@ -178,7 +173,7 @@
 					</label>
 				</div>
 				<p class="mt-2 text-sm text-gray-500">
-					All members can view and download scores regardless of assigned roles.
+					All members can view and download scores. Assign roles to grant additional permissions.
 				</p>
 			</fieldset>
 
