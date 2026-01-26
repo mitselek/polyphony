@@ -8,7 +8,9 @@
     "build": "pnpm --filter registry build",
     "test": "pnpm -r test",
     "test:unit": "pnpm -r test:unit",
-    "check": "pnpm -r check"
+    "check": "pnpm -r check",
+    "validate": "pnpm check && pnpm test",
+    "precommit": "pnpm validate"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

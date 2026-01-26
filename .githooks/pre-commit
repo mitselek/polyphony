@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-commit hook to ensure type safety and tests pass before commit
+
+echo "🔍 Running type checks..."
+pnpm check
+
+if [ $? -ne 0 ]; then
+  echo "❌ Type check failed. Please fix TypeScript errors before committing."
+  exit 1
+fi
+
+echo "🧪 Running tests..."
+pnpm test
+
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Please fix failing tests before committing."
+  exit 1
+fi
+
+echo "✅ All checks passed. Proceeding with commit."
+exit 0

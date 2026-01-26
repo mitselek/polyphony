@@ -130,7 +130,7 @@ describe('Auth Middleware', () => {
 
 		it('rejects request when not authenticated', async () => {
 			const mockDb = createMockDb();
-			const middleware = createAuthMiddleware('singer');
+			const middleware = createAuthMiddleware('librarian');
 
 			const result = await middleware({
 				db: mockDb as unknown as D1Database,
