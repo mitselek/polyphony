@@ -43,8 +43,12 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		throw error(400, 'Invalid JSON body');
 	}
 
-	if (!body.name || !body.roles || !Array.isArray(body.roles) || body.roles.length === 0) {
-		throw error(400, 'Name and at least one role are required');
+	if (!body.name) {
+		throw error(400, 'Name is required');
+	}
+
+	if (!body.roles || !Array.isArray(body.roles)) {
+		body.roles = []; // Default to empty roles if not provided
 	}
 
 	// Only owners can invite owners
