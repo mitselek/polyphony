@@ -104,7 +104,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Parse request body
-	const body = await request.json();
+	const body = await request.json() as { status?: string; notes?: string };
 	const status = body.status as PlannedStatus;
 	const notes = body.notes as string | undefined;
 

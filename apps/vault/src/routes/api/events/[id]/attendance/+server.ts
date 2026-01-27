@@ -44,7 +44,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Parse request body
-	const body = await request.json();
+	const body = await request.json() as { memberId?: string; status?: string };
 	const memberId = body.memberId as string;
 	const status = body.status as ActualStatus;
 
@@ -121,7 +121,7 @@ export async function PUT(event: RequestEvent) {
 	}
 
 	// Parse request body
-	const body = await request.json();
+	const body = await request.json() as { updates?: Array<{ memberId: string; status: ActualStatus }> };
 	const updates = body.updates as Array<{ memberId: string; status: ActualStatus }>;
 
 	if (!Array.isArray(updates) || updates.length === 0) {

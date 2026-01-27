@@ -65,9 +65,9 @@
 	}
 
 	// Update RSVP
-	async function updateRsvp(eventId: string, status: PlannedStatus, stopPropagation: (e: Event) => void) {
-		return async (e: Event) => {
-			stopPropagation(e);
+	function updateRsvp(eventId: string, status: PlannedStatus) {
+		return async (e: MouseEvent) => {
+			e.stopPropagation();
 			
 			updatingRsvp[eventId] = true;
 
@@ -79,8 +79,8 @@
 				});
 
 				if (!response.ok) {
-					const error = await response.json();
-					throw new Error(error.message || 'Failed to update RSVP');
+					const errorData = await response.json() as { message?: string };
+					throw new Error(errorData.message || 'Failed to update RSVP');
 				}
 
 				// Update local state
@@ -245,7 +245,7 @@
 							<p class="text-xs text-gray-500 mb-2">Your RSVP:</p>
 							<div class="grid grid-cols-4 gap-2">
 								<button
-									onclick={updateRsvp(event.id, 'yes', (e) => e.stopPropagation())}
+									onclick={updateRsvp(event.id, 'yes')}
 									disabled={updatingRsvp[event.id]}
 									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'yes')} disabled:opacity-50"
 									title="I'll be there"
@@ -253,7 +253,7 @@
 									Yes
 								</button>
 								<button
-									onclick={updateRsvp(event.id, 'no', (e) => e.stopPropagation())}
+									onclick={updateRsvp(event.id, 'no')}
 									disabled={updatingRsvp[event.id]}
 									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'no')} disabled:opacity-50"
 									title="Can't make it"
@@ -261,7 +261,7 @@
 									No
 								</button>
 								<button
-									onclick={updateRsvp(event.id, 'maybe', (e) => e.stopPropagation())}
+									onclick={updateRsvp(event.id, 'maybe')}
 									disabled={updatingRsvp[event.id]}
 									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'maybe')} disabled:opacity-50"
 									title="Not sure yet"
@@ -269,7 +269,7 @@
 									Maybe
 								</button>
 								<button
-									onclick={updateRsvp(event.id, 'late', (e) => e.stopPropagation())}
+									onclick={updateRsvp(event.id, 'late')}
 									disabled={updatingRsvp[event.id]}
 									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
 									title="I'll be late"

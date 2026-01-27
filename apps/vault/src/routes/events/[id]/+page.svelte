@@ -343,7 +343,7 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message || "Failed to update RSVP");
       }
 
@@ -369,7 +369,7 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message || "Failed to record attendance");
       }
 
@@ -403,7 +403,7 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { message?: string };
         throw new Error(errorData.message || "Failed to mark all present");
       }
 
