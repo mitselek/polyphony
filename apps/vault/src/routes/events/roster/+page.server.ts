@@ -6,7 +6,7 @@ import { getRosterView } from '$lib/server/db/roster';
 import type { Voice, Section } from '$lib/types';
 
 /**
- * Get all active sections for filter dropdown
+ * Get unique primary sections that have singers assigned
  */
 async function getActiveSections(db: D1Database): Promise<Section[]> {
 	interface SectionRow {
@@ -20,7 +20,11 @@ async function getActiveSections(db: D1Database): Promise<Section[]> {
 
 	const { results } = await db
 		.prepare(
-			'SELECT id, name, abbreviation, parent_section_id, display_order, is_active FROM sections WHERE is_active = 1 ORDER BY display_order'
+			`SELECT DISTINCT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
+			 FROM sections s
+			 JOIN member_sections ms ON s.id = ms.section_id
+			 WHERE ms.is_primary = 1 AND s.is_active = 1
+			 ORDER BY s.display_order`
 		)
 		.all<SectionRow>();
 

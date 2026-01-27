@@ -105,6 +105,11 @@
 		params.set('format', 'csv');
 		return `/api/events/roster?${params.toString()}`;
 	});
+
+	// Navigate to event detail page
+	function navigateToEvent(eventId: string) {
+		window.location.href = `/events/${eventId}`;
+	}
 </script>
 
 <svelte:head>
@@ -223,8 +228,13 @@
 						<!-- Event Column Headers (scrollable) -->
 						{#each roster.events as event}
 							<th
-								class="sticky top-0 z-10 border-r border-gray-200 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700"
+								class="sticky top-0 z-10 border-r border-gray-200 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
 								style="min-width: 100px;"
+								onclick={() => navigateToEvent(event.id)}
+								title="Click to view event details"
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
 							>
 								<div class="flex flex-col gap-1">
 									<span class="font-semibold">{event.name}</span>
@@ -236,7 +246,19 @@
 				</thead>
 
 				<tbody>
-					{#each roster.members as member}
+					{#each roster.members as member, index}
+						{@const prevMember = index > 0 ? roster.members[index - 1] : null}
+						{@const currentSectionId = member.primarySection?.id}
+						{@const prevSectionId = prevMember?.primarySection?.id}
+						{@const isNewSection = index === 0 || currentSectionId !== prevSectionId}
+
+						{#if isNewSection && index > 0}
+							<!-- Section Spacer -->
+							<tr class="h-2 bg-gray-50">
+								<td colspan={2 + roster.events.length} class="border-none"></td>
+							</tr>
+						{/if}
+
 						<tr class="border-b border-gray-100 hover:bg-gray-50">
 							<!-- Sticky Name Cell -->
 							<td

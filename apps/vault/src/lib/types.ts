@@ -232,7 +232,7 @@ export interface RosterSummary {
  * Filters for roster view query
  */
 export interface RosterViewFilters {
-	startDate?: string; // ISO date
-	endDate?: string; // ISO date
+	start?: string; // ISO datetime
+	end?: string; // ISO datetime
 	sectionId?: string; // Filter members by section
 }

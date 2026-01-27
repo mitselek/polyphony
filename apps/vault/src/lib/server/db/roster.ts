@@ -17,38 +17,41 @@ import type {
  * Build events query with optional date filtering
  */
 function buildEventsQuery(filters?: RosterViewFilters): { sql: string; params: string[] } {
-	let sql = 'SELECT * FROM events';
+	let sql = 'SELECT id, title as name, starts_at as date, event_type as type FROM events';
 	const params: string[] = [];
 
-	if (filters?.startDate && filters?.endDate) {
-		sql += ' WHERE date >= ? AND date <= ?';
-		params.push(filters.startDate, filters.endDate);
-	} else if (filters?.startDate) {
-		sql += ' WHERE date >= ?';
-		params.push(filters.startDate);
-	} else if (filters?.endDate) {
-		sql += ' WHERE date <= ?';
-		params.push(filters.endDate);
+	if (filters?.start && filters?.end) {
+		sql += ' WHERE starts_at >= ? AND starts_at <= ?';
+		params.push(filters.start, filters.end);
+	} else if (filters?.start) {
+		sql += ' WHERE starts_at >= ?';
+		params.push(filters.start);
+	} else if (filters?.end) {
+		sql += ' WHERE starts_at <= ?';
+		params.push(filters.end);
 	}
 
-	sql += ' ORDER BY date DESC';
+	sql += ' ORDER BY starts_at ASC';
 
 	return { sql, params };
 }
 
 /**
  * Build members query with optional section filtering
+ * Sorts by primary section display order, then by member name
  */
 function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: string[] } {
-	let sql = 'SELECT DISTINCT m.* FROM members m';
+	let sql = `SELECT DISTINCT m.* FROM members m
+	LEFT JOIN member_sections ms ON m.id = ms.member_id AND ms.is_primary = 1
+	LEFT JOIN sections s ON ms.section_id = s.id`;
 	const params: string[] = [];
 
 	if (filters?.sectionId) {
-		sql += ' JOIN member_sections ms ON m.id = ms.member_id WHERE ms.section_id = ?';
+		sql += ' WHERE ms.section_id = ?';
 		params.push(filters.sectionId);
 	}
 
-	sql += ' ORDER BY m.name ASC, m.email ASC';
+	sql += ' ORDER BY s.display_order ASC, m.name ASC, m.email ASC';
 
 	return { sql, params };
 }

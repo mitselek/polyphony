@@ -60,6 +60,10 @@ refactor/<issue-number>-short-description # Code refactoring
 2. **Check file metrics:**
 
    ```bash
+   # Automated complexity assessment (recommended)
+   .github/scripts/check-complexity.sh <file1> [file2]
+   
+   # Manual check
    wc -l apps/vault/src/lib/server/db/*.ts
    ```
 

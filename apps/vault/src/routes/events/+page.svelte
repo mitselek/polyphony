@@ -55,14 +55,22 @@
 			<h1 class="text-3xl font-bold">Events</h1>
 			<p class="mt-2 text-gray-600">Upcoming rehearsals, concerts, and retreats</p>
 		</div>
-		{#if data.canCreate}
+		<div class="flex gap-3">
 			<a
-				href="/events/new"
-				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+				href="/events/roster"
+				class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 			>
-				Create Event
+				View Roster
 			</a>
-		{/if}
+			{#if data.canCreate}
+				<a
+					href="/events/new"
+					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+				>
+					Create Event
+				</a>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Filter Buttons -->

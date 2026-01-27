@@ -293,7 +293,7 @@ describe('Roster View Database Functions', () => {
 			expect(result.members[2].name).toBe('Charlie');
 		});
 
-		it('should filter events by startDate', async () => {
+		it('should filter events by start date', async () => {
 			seedData(mockDb, {
 				events: [
 					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
@@ -302,14 +302,14 @@ describe('Roster View Database Functions', () => {
 				]
 			});
 
-			const filters: RosterViewFilters = { startDate: '2026-02-01' };
+			const filters: RosterViewFilters = { start: '2026-02-01' };
 			const result = await getRosterView(mockDb, filters);
 
 			expect(result.events.length).toBe(2);
 			expect(result.events.every((e) => e.date >= '2026-02-01')).toBe(true);
 		});
 
-		it('should filter events by endDate', async () => {
+		it('should filter events by end date', async () => {
 			seedData(mockDb, {
 				events: [
 					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
@@ -318,14 +318,14 @@ describe('Roster View Database Functions', () => {
 				]
 			});
 
-			const filters: RosterViewFilters = { endDate: '2026-02-28' };
+			const filters: RosterViewFilters = { end: '2026-02-28' };
 			const result = await getRosterView(mockDb, filters);
 
 			expect(result.events.length).toBe(2);
 			expect(result.events.every((e) => e.date <= '2026-02-28')).toBe(true);
 		});
 
-		it('should filter events by date range (both startDate and endDate)', async () => {
+		it('should filter events by date range (both start and end)', async () => {
 			seedData(mockDb, {
 				events: [
 					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
@@ -335,8 +335,8 @@ describe('Roster View Database Functions', () => {
 			});
 
 			const filters: RosterViewFilters = {
-				startDate: '2026-02-01',
-				endDate: '2026-02-28'
+				start: '2026-02-01',
+				end: '2026-02-28'
 			};
 			const result = await getRosterView(mockDb, filters);
 

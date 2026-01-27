@@ -342,15 +342,14 @@ export async function getPendingInvites(
 ): Promise<(Invite & { inviter_name: string | null; inviter_email: string })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.name, i.token, i.invited_by, i.expires_at, i.status, 
-			        i.roles, i.created_at, i.accepted_at, i.accepted_by_email,
+			`SELECT i.id, i.name, i.token, i.invited_by, i.expires_at, i.status, i.roles, i.created_at, i.accepted_at, i.accepted_by_email,
 			        m.name as inviter_name, m.email as inviter_email
 			 FROM invites i
 			 JOIN members m ON i.invited_by = m.id
-			 WHERE i.status = 'pending'
+			 WHERE datetime('now') < i.expires_at
 			 ORDER BY i.created_at DESC`
 		)
-		.all<{ roles: string; inviter_name: string | null; inviter_email: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
+		.all<{ inviter_name: string | null; inviter_email: string; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
 
 	// Load relations for each invite
 	const invitesWithRelations = await Promise.all(
