@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { EventType } from '$lib/types';
+	import type { EventType, PlannedStatus } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
 	// Filter state
 	let selectedFilter = $state<EventType | 'all'>('all');
+
+	// RSVP state
+	let updatingRsvp = $state<Record<string, boolean>>({});
 
 	// Filtered events based on selected type
 	let filteredEvents = $derived(
@@ -43,6 +46,59 @@
 				return 'bg-gray-100 text-gray-800 border-gray-200';
 		}
 	}
+
+	// Get RSVP button styles
+	function getRsvpButtonStyle(currentStatus: PlannedStatus | null, buttonStatus: PlannedStatus): string {
+		if (currentStatus === buttonStatus) {
+			switch (buttonStatus) {
+				case 'yes':
+					return 'bg-green-600 text-white border-green-700';
+				case 'no':
+					return 'bg-red-600 text-white border-red-700';
+				case 'maybe':
+					return 'bg-yellow-600 text-white border-yellow-700';
+				case 'late':
+					return 'bg-orange-600 text-white border-orange-700';
+			}
+		}
+		return 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+	}
+
+	// Update RSVP
+	async function updateRsvp(eventId: string, status: PlannedStatus, stopPropagation: (e: Event) => void) {
+		return async (e: Event) => {
+			stopPropagation(e);
+			
+			updatingRsvp[eventId] = true;
+
+			try {
+				const response = await fetch(`/api/events/${eventId}/participation`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ status })
+				});
+
+				if (!response.ok) {
+					const error = await response.json();
+					throw new Error(error.message || 'Failed to update RSVP');
+				}
+
+				// Update local state
+				data.events = data.events.map((event) => {
+					if (event.id === eventId) {
+						return { ...event, myRsvp: status };
+					}
+					return event;
+				});
+			} catch (err) {
+				console.error('Failed to update RSVP:', err);
+				alert('Failed to update RSVP. Please try again.');
+			} finally {
+				updatingRsvp[eventId] = false;
+			}
+		};
+	}
+
 </script>
 
 <svelte:head>
@@ -134,56 +190,106 @@
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each filteredEvents as event (event.id)}
 				{@const { date, time } = formatDateTime(event.starts_at)}
-				<a
-					href="/events/{event.id}"
-					class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
-				>
-					<!-- Event Type Badge -->
-					<div class="mb-3">
-						<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(event.event_type)}">
-							{event.event_type}
-						</span>
-					</div>
-
-					<!-- Title -->
-					<h3 class="mb-2 text-lg font-semibold text-gray-900">
-						{event.title}
-					</h3>
-
-					<!-- Date and Time -->
-					<div class="mb-3 space-y-1 text-sm text-gray-600">
-						<div class="flex items-center gap-2">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-							</svg>
-							<span>{date}</span>
+				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+					<a href="/events/{event.id}" class="block mb-4">
+						<!-- Event Type Badge -->
+						<div class="mb-3">
+							<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(event.event_type)}">
+								{event.event_type}
+							</span>
 						</div>
-						<div class="flex items-center gap-2">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-							</svg>
-							<span>{time}</span>
-						</div>
-					</div>
 
-					<!-- Location (if provided) -->
-					{#if event.location}
-						<div class="mb-3 flex items-start gap-2 text-sm text-gray-600">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mt-0.5">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-								<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-							</svg>
-							<span class="flex-1">{event.location}</span>
+						<!-- Title -->
+						<h3 class="mb-2 text-lg font-semibold text-gray-900">
+							{event.title}
+						</h3>
+
+						<!-- Date and Time -->
+						<div class="mb-3 space-y-1 text-sm text-gray-600">
+							<div class="flex items-center gap-2">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+								</svg>
+								<span>{date}</span>
+							</div>
+							<div class="flex items-center gap-2">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								<span>{time}</span>
+							</div>
+						</div>
+
+						<!-- Location (if provided) -->
+						{#if event.location}
+							<div class="mb-3 flex items-start gap-2 text-sm text-gray-600">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mt-0.5">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+									<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+								</svg>
+								<span class="flex-1">{event.location}</span>
+							</div>
+						{/if}
+
+						<!-- Description Preview (if provided) -->
+						{#if event.description}
+							<p class="text-sm text-gray-500 line-clamp-2">
+								{event.description}
+							</p>
+						{/if}
+					</a>
+
+					<!-- RSVP Buttons -->
+					{#if !event.rsvpLocked}
+						<div class="border-t border-gray-200 pt-4">
+							<p class="text-xs text-gray-500 mb-2">Your RSVP:</p>
+							<div class="grid grid-cols-4 gap-2">
+								<button
+									onclick={updateRsvp(event.id, 'yes', (e) => e.stopPropagation())}
+									disabled={updatingRsvp[event.id]}
+									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'yes')} disabled:opacity-50"
+									title="I'll be there"
+								>
+									Yes
+								</button>
+								<button
+									onclick={updateRsvp(event.id, 'no', (e) => e.stopPropagation())}
+									disabled={updatingRsvp[event.id]}
+									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'no')} disabled:opacity-50"
+									title="Can't make it"
+								>
+									No
+								</button>
+								<button
+									onclick={updateRsvp(event.id, 'maybe', (e) => e.stopPropagation())}
+									disabled={updatingRsvp[event.id]}
+									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'maybe')} disabled:opacity-50"
+									title="Not sure yet"
+								>
+									Maybe
+								</button>
+								<button
+									onclick={updateRsvp(event.id, 'late', (e) => e.stopPropagation())}
+									disabled={updatingRsvp[event.id]}
+									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
+									title="I'll be late"
+								>
+									Late
+								</button>
+							</div>
+						</div>
+					{:else}
+						<div class="border-t border-gray-200 pt-4">
+							<p class="text-xs text-gray-500 text-center">
+								{#if event.myRsvp}
+									Your RSVP: <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
+								{:else}
+									RSVP locked (event started)
+								{/if}
+							</p>
 						</div>
 					{/if}
-
-					<!-- Description Preview (if provided) -->
-					{#if event.description}
-						<p class="text-sm text-gray-500 line-clamp-2">
-							{event.description}
-						</p>
-					{/if}
-				</a>
+				</div>
 			{/each}
 		</div>
 	{/if}

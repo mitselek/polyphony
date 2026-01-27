@@ -2,10 +2,11 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
-import { canManageEvents } from '$lib/server/auth/permissions';
+import { canManageEvents, canRecordAttendance } from '$lib/server/auth/permissions';
 import { getEventById } from '$lib/server/db/events';
 import { getEventProgram } from '$lib/server/db/programs';
 import { listScores } from '$lib/server/db/scores';
+import { getParticipation } from '$lib/server/db/participation';
 
 export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 	if (!platform) throw error(500, 'Platform not available');
@@ -34,10 +35,25 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 	// Check if user can manage this event
 	const canManage = canManageEvents(member);
 
+	// Get current member's participation status
+	const myParticipation = await getParticipation(db, member.id, eventId);
+
+	// Check if event has started (for RSVP lock and attendance visibility)
+	const now = new Date();
+	const eventStart = new Date(event.starts_at);
+	const hasStarted = now >= eventStart;
+
+	// Check if member can record attendance
+	const canRecordAttendanceFlag = canRecordAttendance(member);
+
 	return {
 		event,
 		program,
 		allScores,
-		canManage
+		canManage,
+		myParticipation,
+		hasStarted,
+		canRecordAttendance: canRecordAttendanceFlag,
+		currentMemberId: member.id
 	};
 };
