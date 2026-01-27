@@ -103,3 +103,73 @@ export interface CreateSectionInput {
 	displayOrder: number;
 	isActive?: boolean;
 }
+
+// ============================================================================
+// PARTICIPATION SYSTEM
+// ============================================================================
+
+export type PlannedStatus = 'yes' | 'no' | 'maybe' | 'late';
+export type ActualStatus = 'present' | 'absent' | 'late';
+
+/**
+ * Participation record for an event
+ */
+export interface Participation {
+	id: string;
+	memberId: string;
+	eventId: string;
+
+	// RSVP (member sets)
+	plannedStatus: PlannedStatus | null;
+	plannedAt: string | null;
+	plannedNotes: string | null;
+
+	// Actual attendance (conductor records)
+	actualStatus: ActualStatus | null;
+	recordedAt: string | null;
+	recordedBy: string | null;
+
+	createdAt: string;
+	updatedAt: string;
+}
+
+/**
+ * Input for creating participation record
+ */
+export interface CreateParticipationInput {
+	memberId: string;
+	eventId: string;
+	plannedStatus?: PlannedStatus;
+	plannedNotes?: string;
+}
+
+/**
+ * Input for updating participation (RSVP or recording attendance)
+ */
+export interface UpdateParticipationInput {
+	plannedStatus?: PlannedStatus;
+	plannedNotes?: string;
+	actualStatus?: ActualStatus;
+	recordedBy?: string;
+}
+
+/**
+ * Summary statistics for an event
+ */
+export interface ParticipationSummary {
+	eventId: string;
+	totalMembers: number;
+
+	// Planned counts
+	plannedYes: number;
+	plannedNo: number;
+	plannedMaybe: number;
+	plannedLate: number;
+	noResponse: number;
+
+	// Actual counts (if event is past)
+	actualPresent: number;
+	actualAbsent: number;
+	actualLate: number;
+	notRecorded: number;
+}
