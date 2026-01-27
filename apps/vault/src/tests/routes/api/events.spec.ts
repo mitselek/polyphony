@@ -29,7 +29,6 @@ function createMockDb() {
 			email: 'conductor@example.com',
 			name: 'Test Conductor',
 			roles: ['conductor'],
-			voice_part: null,
 			invited_by: null,
 			joined_at: new Date().toISOString()
 		}],
@@ -38,7 +37,6 @@ function createMockDb() {
 			email: 'librarian@example.com',
 			name: 'Test Librarian',
 			roles: ['librarian'],
-			voice_part: null,
 			invited_by: null,
 			joined_at: new Date().toISOString()
 		}]

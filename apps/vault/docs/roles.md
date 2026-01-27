@@ -122,16 +122,17 @@ _PD = Public Domain scores only_
 
 Members have the following properties:
 
-| Property     | Type     | Description                                            |
-| ------------ | -------- | ------------------------------------------------------ |
-| `id`         | TEXT     | Unique identifier                                      |
-| `email`      | TEXT     | Email address (unique, from Registry)                  |
-| `name`       | TEXT     | Display name                                           |
-| `voice_part` | TEXT     | Voice section: `[SATB]{1,4}` (e.g., `S`, `TB`, `SATB`) |
-| `invited_by` | TEXT     | Reference to inviting member                           |
-| `joined_at`  | DATETIME | When member joined                                     |
+| Property     | Type     | Description                                   |
+| ------------ | -------- | --------------------------------------------- |
+| `id`         | TEXT     | Unique identifier                             |
+| `email`      | TEXT     | Email address (unique, from Registry)         |
+| `name`       | TEXT     | Display name                                  |
+| `invited_by` | TEXT     | Reference to inviting member                  |
+| `joined_at`  | DATETIME | When member joined                            |
 
 Roles are stored in a separate `member_roles` junction table, allowing multiple roles per member.
+
+Voices and sections are stored in separate `member_voices` and `member_sections` junction tables (migration 0003).
 
 ## Role Assignment
 

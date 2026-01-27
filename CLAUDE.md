@@ -190,12 +190,18 @@ $effect(() => { localState = data.value; });
 
 ### Vault Tables
 
-- `members`: Choir members (id, email, name, voice_part)
+- `members`: Choir members (id, email, name)
 - `member_roles`: Role assignments (junction table)
+- `member_voices`: Member vocal capabilities (junction table with voices)
+- `member_sections`: Member section assignments (junction table with sections)
+- `voices`: Vocal ranges (Soprano, Alto, Tenor, Bass, etc.)
+- `sections`: Performance sections (S1, S2, T1, T2, Full Choir, etc.)
 - `scores`: Sheet music metadata (id, title, composer, license_type, file_key)
 - `score_files`: PDF BLOBs or chunking metadata
 - `score_chunks`: File chunks for large PDFs
 - `invites`: Name-based invitations (email from Registry OAuth)
+- `invite_voices`: Voice assignments for invites (junction table)
+- `invite_sections`: Section assignments for invites (junction table)
 - `takedowns`: DMCA/DSA takedown requests
 - `access_log`: Score view/download audit trail
 - `vault_settings`: Key-value configuration store (migration 0010)

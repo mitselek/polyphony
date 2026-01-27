@@ -37,7 +37,7 @@ function createMockDb() {
 		prepare: (sql: string) => ({
 			bind: (...params: unknown[]) => ({
 				run: async () => {
-					// Handle INSERT INTO invites (name-based, no voice_part)
+					// Handle INSERT INTO invites (name-based invitation)
 					if (sql.startsWith('INSERT INTO invites')) {
 						const [id, name, token, invited_by, expires_at, roles, created_at] = params as any[];
 						data.set(token, {
@@ -69,7 +69,7 @@ function createMockDb() {
 					inviteSections.set(invite_id, sectionList);
 						return { meta: { changes: 1 } };
 					}
-					// Handle INSERT INTO members (no voice_part)
+					// Handle INSERT INTO members
 					if (sql.includes('INSERT INTO members')) {
 						const [id, email, name, invited_by] = params as string[];
 						members.set(id, { id, email, name, invited_by, joined_at: new Date().toISOString() });

@@ -53,7 +53,6 @@ CREATE TABLE invites (
     status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'accepted', 'expired')),
     roles TEXT NOT NULL DEFAULT '[]',  -- JSON array: ["admin", "librarian"]
-    voice_part TEXT CHECK (voice_part IN ('S', 'A', 'T', 'B', 'SA', 'AT', 'TB', 'SAT', 'ATB', 'SATB')),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     accepted_at TEXT,
     accepted_by_email TEXT  -- Registry email (filled when accepted)
@@ -66,9 +65,10 @@ CREATE TABLE invites (
 - **token**: UUID v4, unique, used in invite link
 - **expires_at**: Set to `datetime('now', '+48 hours')` on creation
 - **roles**: JSON array of role strings (e.g., `["admin", "librarian"]`)
-- **voice_part**: Optional, one of the valid SATB combinations
 - **status**: `pending` | `accepted` | `expired`
 - **accepted_by_email**: Registry-verified email, filled when invite is accepted
+
+Voices and sections are assigned via separate `invite_voices` and `invite_sections` junction tables (migration 0003).
 
 ### Design Rationale
 
@@ -129,7 +129,7 @@ sequenceDiagram
 
     Invitee->>Accept: Click invite link (?token=xxx)
     Accept->>DB: SELECT invite WHERE token=xxx
-    DB-->>Accept: Invite data (name, roles, voice_part)
+    DB-->>Accept: Invite data (name, roles)
     Accept->>Accept: Validate token not expired
     Accept->>Accept: Store token in session/cookie
     Accept->>Registry: Redirect to OAuth login
@@ -143,7 +143,8 @@ sequenceDiagram
         Callback->>DB: BEGIN TRANSACTION
         Callback->>DB: INSERT member (email, name from registry)
         Callback->>DB: INSERT member_roles (from invite.roles)
-        Callback->>DB: UPDATE member SET voice_part
+        Callback->>DB: INSERT member_voices (from invite_voices)
+        Callback->>DB: INSERT member_sections (from invite_sections)
         Callback->>DB: UPDATE invite SET status='accepted'
         Callback->>DB: COMMIT
     end
@@ -207,7 +208,7 @@ sequenceDiagram
 
 - `UNIQUE` constraint on token (prevents duplicates)
 - `REFERENCES` foreign key to members (ensures invited_by exists)
-- `CHECK` constraints on status and voice_part (enforces valid values)
+- `CHECK` constraint on status (enforces valid values)
 
 ## Example API Requests
 
@@ -221,7 +222,8 @@ Cookie: member_id=xxx
 {
   "name": "Jane Singer",
   "roles": ["librarian"],
-  "voicePart": "S"
+  "voiceIds": ["soprano-1"],
+  "sectionIds": ["s1"]
 }
 ```
 
@@ -232,11 +234,11 @@ Cookie: member_id=xxx
   "id": "inv-uuid",
   "name": "Jane Singer",
   "roles": ["librarian"],
-  "voicePart": "S",
+  "voices": [{"id": "soprano-1", "name": "Soprano", "abbreviation": "S1"}],
+  "sections": [{"id": "s1", "name": "Soprano 1", "abbreviation": "S1"}],
   "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
   "message": "Invitation created. Share the link with Jane Singer."
 }
-  "voicePart": "S",
   "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
   "message": "Invitation created. Email will be sent to the recipient."
 }
@@ -257,10 +259,10 @@ Content-Type: application/json
 
 ## Migration History
 
-- **0003**: Initial invites table (single role, email-based)
+- **0003**: Voices and sections system (replaced voice_part with junction tables)
 - **0007**: Multi-role member system
-- **0008**: Update invites for multi-role support (roles JSON array + voice_part)
-- **0009** (Proposed): Replace email with name field, add accepted_by_email for OAuth flow
+- **0008**: Update invites for multi-role support (roles JSON array)
+- **0009**: Replace email with name field, add accepted_by_email for OAuth flow
 
 ## Related Files
 
