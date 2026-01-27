@@ -219,8 +219,8 @@ Refs: #67
 
 **Outcomes:**
 
-- ✅ **Approved**: Lead creates PR, merges to main
-- 🔄 **Changes requested**: Specific feedback, Ada revises
+- ✅ **Approved**: Ada merges directly to main (no PR needed)
+- 🔄 **Changes requested**: Specific feedback, Ada revises and resubmits
 - ❌ **Blocked**: Dependency or architectural issue
 
 ### 8. Shared Workspace Protocol
@@ -250,33 +250,27 @@ Refs: #67
    - Lead provides feedback as text
    - Ada applies → commits → reports again
 
-### 9. Pull Request Creation
+### 9. Merge to Main
 
-**Ada creates PR with gh CLI:**
+**When approved, Ada merges directly:**
 
-```bash
-gh pr create \
-  --title "feat(scope): Description" \
-  --body "Closes #XX
+- Merge feature branch to main
+- Push to remote
+- Clean up feature branch (local and remote)
+- Post completion comment on GitHub issue
+- Close issue
 
-## Changes
-- Summary of implementation
-
-## Tests
-- X/Y tests passing
-
-## Notes
-- Any special considerations"
-```
-
-**PR checklist:**
+**Pre-merge checklist:**
 
 - [ ] All tests pass
 - [ ] No TypeScript errors
+- [ ] Code reviewed and approved by Lead
 - [ ] Follows code patterns
 - [ ] Acceptance criteria met
-- [ ] Documentation updated
+- [ ] Documentation updated (if needed)
 - [ ] Migration files included (if needed)
+
+**Note:** PRs are optional and only needed for complex changes requiring discussion or multiple reviewers.
 
 ### 10. Communication Protocol
 
