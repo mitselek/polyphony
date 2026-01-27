@@ -47,6 +47,79 @@ refactor/<issue-number>-short-description # Code refactoring
 - Use exact naming convention
 - Keep branch focused on single issue
 
+### 2.5. Pre-Work Complexity Assessment
+
+**MANDATORY: Before writing any code, evaluate existing complexity**  
+
+**Purpose:** Prevent technical debt accumulation by identifying refactoring needs while context is fresh.
+
+**Process:**
+
+1. **Identify affected files** (from issue description or lead's guidance)
+
+2. **Check file metrics:**
+
+   ```bash
+   wc -l apps/vault/src/lib/server/db/*.ts
+   ```
+
+3. **Assess complexity indicators:**
+   - Functions >100 lines
+   - Multiple nested loops/conditions (>3 levels deep)
+   - Many database queries in one function (>5 queries)
+   - Duplicated code patterns (similar logic in 3+ places)
+   - File mixing multiple concerns
+
+4. **Decision matrix:**
+
+   | File Size     | Complexity | Action                                                                                     |
+   | ------------- | ---------- | ------------------------------------------------------------------------------------------ |
+   | <200 lines    | Simple     | ✅ **Proceed** with implementation                                                         |
+   | 200-400 lines | Medium     | ⚠️ **Review** - Ask lead: "File X is Y lines with Z complexity. Should we refactor first?" |
+   | >400 lines    | High       | 🔴 **Flag** - "File X needs refactoring. Should I do it now or create follow-up issue?"    |
+
+5. **Refactoring triggers** (any one = discuss with lead):
+   - Adding feature to file >400 lines
+   - Modifying function >100 lines
+   - File has >3 similar patterns (extraction candidate)
+   - Complexity will increase with new feature
+
+**Ada reports to lead:**
+
+```
+"Issue #X affects <file>:
+- Current size: Y lines
+- Main function: Z lines
+- Complexity: [Simple/Medium/High]
+- Recommendation: [Proceed/Refactor first/Follow-up issue]"
+```
+
+**Lead decides:**
+
+- **Refactor now**: Do it in same branch/PR (most common for high complexity)
+- **Proceed**: Current complexity acceptable
+- **Create follow-up issue**: Refactor not blocking, can be done later
+
+**Benefits:**
+
+- ✅ Never accumulate technical debt
+- ✅ Fresh context makes refactoring efficient (as seen in Issue #67: 15 minutes saved hours)
+- ✅ New features built on clean code
+- ✅ Easier code reviews and maintenance
+
+**Example (Issue #67):**
+
+```
+Ada: "Issue #67 will create roster.ts with getRosterView().
+      Estimated implementation: 200-250 lines (complex JOIN logic).
+      Should I plan for refactoring?"
+
+Lead: "Yes - implement first, then extract helper functions.
+       Target: 4 functions of 40-60 lines each."
+
+Result: 247 lines → 83 lines (main function), 15 min refactoring
+```
+
 ### 3. Test-Driven Development (TDD)
 
 **Required process:**
