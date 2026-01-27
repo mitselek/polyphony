@@ -3,6 +3,8 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getPendingInvites } from '$lib/server/db/invites';
 import { getAllMembers, getMemberById } from '$lib/server/db/members';
+import { getActiveVoices } from '$lib/server/db/voices';
+import { getActiveSections } from '$lib/server/db/sections';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -57,9 +59,15 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		inviteLink: `${baseUrl}?token=${inv.token}`
 	}));
 
+	// Get available voices and sections for adding
+	const availableVoices = await getActiveVoices(db);
+	const availableSections = await getActiveSections(db);
+
 	return {
 		members,
 		invites,
+		availableVoices,
+		availableSections,
 		currentUserId: currentUser.id,
 		isOwner: currentUser.roles.includes('owner'),
 		isAdmin: currentUser.roles.some((r) => ['admin', 'owner'].includes(r))

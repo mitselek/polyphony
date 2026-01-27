@@ -279,4 +279,135 @@ test.describe('Members List', () => {
 		await expect(memberCard.locator('button:has-text("conductor")')).toBeVisible();
 		await expect(memberCard.locator('button:has-text("section_leader")')).toBeVisible();
 	});
+
+	test('adds voice to member inline', async ({ ownerPage }) => {
+		// Find a member card (first member)
+		const memberCard = ownerPage.locator('.rounded-lg.border.border-gray-200.bg-white.p-6').first();
+		
+		// Find the voices section
+		const voicesSection = memberCard.locator('text=Voices:').locator('..');
+		
+		// Count existing voice badges
+		const existingBadges = voicesSection.locator('span.bg-purple-100');
+		const initialCount = await existingBadges.count();
+		
+		// Click "+ Add" button for voices
+		const addButton = voicesSection.locator('button:has-text("+ Add")');
+		await expect(addButton).toBeVisible();
+		await addButton.click();
+		
+		// Wait for dropdown to appear
+		const dropdown = voicesSection.locator('.absolute.z-10');
+		await expect(dropdown).toBeVisible();
+		
+		// Click first available voice in dropdown
+		const firstOption = dropdown.locator('button').first();
+		await expect(firstOption).toBeVisible();
+		await firstOption.click();
+		
+		// Wait for dropdown to close and badge to appear
+		await expect(dropdown).not.toBeVisible();
+		
+		// Verify new badge appeared
+		const newCount = await existingBadges.count();
+		expect(newCount).toBe(initialCount + 1);
+	});
+
+	test('removes voice from member inline', async ({ ownerPage }) => {
+		// First, ensure member has a voice
+		const memberCard = ownerPage.locator('.rounded-lg.border.border-gray-200.bg-white.p-6').first();
+		const voicesSection = memberCard.locator('text=Voices:').locator('..');
+		
+		// Add a voice if none exist
+		const existingBadges = voicesSection.locator('span.bg-purple-100');
+		let initialCount = await existingBadges.count();
+		
+		if (initialCount === 0) {
+			const addButton = voicesSection.locator('button:has-text("+ Add")');
+			await addButton.click();
+			const dropdown = voicesSection.locator('.absolute.z-10');
+			await dropdown.locator('button').first().click();
+			await expect(dropdown).not.toBeVisible();
+			initialCount = await existingBadges.count();
+		}
+		
+		// Hover over the badge to reveal remove button
+		const badge = existingBadges.first();
+		await badge.hover();
+		
+		// Click the × button
+		const removeButton = badge.locator('button:has-text("×")');
+		await expect(removeButton).toBeVisible();
+		await removeButton.click();
+		
+		// Verify badge was removed
+		const newCount = await existingBadges.count();
+		expect(newCount).toBe(initialCount - 1);
+	});
+
+	test('adds section to member inline', async ({ ownerPage }) => {
+		// Find a member card (first member)
+		const memberCard = ownerPage.locator('.rounded-lg.border.border-gray-200.bg-white.p-6').first();
+		
+		// Find the sections section
+		const sectionsSection = memberCard.locator('text=Sections:').locator('..');
+		
+		// Count existing section badges
+		const existingBadges = sectionsSection.locator('span.bg-teal-100');
+		const initialCount = await existingBadges.count();
+		
+		// Click "+ Add" button for sections
+		const addButton = sectionsSection.locator('button:has-text("+ Add")');
+		await expect(addButton).toBeVisible();
+		await addButton.click();
+		
+		// Wait for dropdown to appear
+		const dropdown = sectionsSection.locator('.absolute.z-10');
+		await expect(dropdown).toBeVisible();
+		
+		// Click first available section in dropdown
+		const firstOption = dropdown.locator('button').first();
+		await expect(firstOption).toBeVisible();
+		await firstOption.click();
+		
+		// Wait for dropdown to close and badge to appear
+		await expect(dropdown).not.toBeVisible();
+		
+		// Verify new badge appeared
+		const newCount = await existingBadges.count();
+		expect(newCount).toBe(initialCount + 1);
+	});
+
+	test('removes section from member inline', async ({ ownerPage }) => {
+		// First, ensure member has a section
+		const memberCard = ownerPage.locator('.rounded-lg.border.border-gray-200.bg-white.p-6').first();
+		const sectionsSection = memberCard.locator('text=Sections:').locator('..');
+		
+		// Add a section if none exist
+		const existingBadges = sectionsSection.locator('span.bg-teal-100');
+		let initialCount = await existingBadges.count();
+		
+		if (initialCount === 0) {
+			const addButton = sectionsSection.locator('button:has-text("+ Add")');
+			await addButton.click();
+			const dropdown = sectionsSection.locator('.absolute.z-10');
+			await dropdown.locator('button').first().click();
+			await expect(dropdown).not.toBeVisible();
+			initialCount = await existingBadges.count();
+		}
+		
+		// Hover over the badge to reveal remove button
+		const badge = existingBadges.first();
+		await badge.hover();
+		
+		// Click the × button
+		const removeButton = badge.locator('button:has-text("×")');
+		await expect(removeButton).toBeVisible();
+		await removeButton.click();
+		
+		// Verify badge was removed
+		const newCount = await existingBadges.count();
+		expect(newCount).toBe(initialCount - 1);
+	});
 });
+

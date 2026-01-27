@@ -16,6 +16,8 @@
 	let revokingInvite = $state<string | null>(null);
 	let renewingInvite = $state<string | null>(null);
 	let error = $state('');
+	let showingVoiceDropdown = $state<string | null>(null);
+	let showingSectionDropdown = $state<string | null>(null);
 
 	// Watch for data changes (e.g., on navigation) and update local state
 	$effect(() => {
@@ -154,6 +156,7 @@
 	async function addVoice(memberId: string, voiceId: string, isPrimary: boolean = false) {
 		updatingMember = memberId;
 		error = '';
+		showingVoiceDropdown = null;
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/voices`, {
@@ -167,12 +170,18 @@
 				throw new Error(data.message ?? 'Failed to add voice');
 			}
 
-			// Reload member data to reflect changes (voices array updated)
-			const updatedMember = members.find((m) => m.id === memberId);
-			if (updatedMember) {
-				// For now, reload the page to get updated data
-				// TODO: Properly fetch updated member data from API
-				window.location.reload();
+			// Find the voice details
+			const voice = data.availableVoices.find((v: { id: string }) => v.id === voiceId);
+			if (voice) {
+				// Update local state - add voice to member
+				members = members.map((m) =>
+					m.id === memberId
+						? {
+								...m,
+								voices: isPrimary ? [voice, ...m.voices] : [...m.voices, voice]
+							}
+						: m
+				);
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to add voice';
@@ -198,8 +207,15 @@
 				throw new Error(data.message ?? 'Failed to remove voice');
 			}
 
-			// Reload to reflect changes
-			window.location.reload();
+			// Update local state - remove voice from member
+			members = members.map((m) =>
+				m.id === memberId
+					? {
+							...m,
+							voices: m.voices.filter((v) => v.id !== voiceId)
+						}
+					: m
+			);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to remove voice';
 			setTimeout(() => (error = ''), 5000);
@@ -211,6 +227,7 @@
 	async function addSection(memberId: string, sectionId: string, isPrimary: boolean = false) {
 		updatingMember = memberId;
 		error = '';
+		showingSectionDropdown = null;
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/sections`, {
@@ -224,8 +241,19 @@
 				throw new Error(data.message ?? 'Failed to add section');
 			}
 
-			// Reload to reflect changes
-			window.location.reload();
+			// Find the section details
+			const section = data.availableSections.find((s: { id: string }) => s.id === sectionId);
+			if (section) {
+				// Update local state - add section to member
+				members = members.map((m) =>
+					m.id === memberId
+						? {
+								...m,
+								sections: isPrimary ? [section, ...m.sections] : [...m.sections, section]
+							}
+						: m
+				);
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to add section';
 			setTimeout(() => (error = ''), 5000);
@@ -250,8 +278,15 @@
 				throw new Error(data.message ?? 'Failed to remove section');
 			}
 
-			// Reload to reflect changes
-			window.location.reload();
+			// Update local state - remove section from member
+			members = members.map((m) =>
+				m.id === memberId
+					? {
+							...m,
+							sections: m.sections.filter((s) => s.id !== sectionId)
+						}
+					: m
+			);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to remove section';
 			setTimeout(() => (error = ''), 5000);
@@ -479,48 +514,125 @@
 										title="This is your account"
 									>You</span>
 								{/if}
-								
-								<!-- Voices badges -->
+						</div>
+						{#if member.name}
+							<p class="text-sm text-gray-600">{member.email}</p>
+						{/if}
+						<p class="mt-1 text-xs text-gray-500">
+							Joined {new Date(member.joinedAt).toLocaleDateString()}
+						</p>
+
+						<!-- Voices section with inline editing -->
+						<div class="mt-3">
+							<div class="flex items-center gap-2">
+								<span class="text-sm font-medium text-gray-700">Voices:</span>
 								{#if member.voices && member.voices.length > 0}
-									<div class="flex gap-1">
+									<div class="flex flex-wrap gap-1">
 										{#each member.voices as voice, index}
 											<span 
-												class="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
+												class="group relative inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
 												title="{voice.name} {index === 0 ? '(primary)' : ''}"
 											>
 												{#if index === 0}★{/if} {voice.abbreviation}
+												{#if data.isAdmin && updatingMember !== member.id}
+													<button
+														onclick={() => removeVoice(member.id, voice.id)}
+														class="ml-0.5 opacity-0 group-hover:opacity-100 hover:text-purple-900 transition"
+														title="Remove {voice.name}"
+													>
+														×
+													</button>
+												{/if}
 											</span>
 										{/each}
 									</div>
 								{/if}
-								
-								<!-- Sections badges -->
-								{#if member.sections && member.sections.length > 0}
-									<div class="flex gap-1">
-										{#each member.sections as section, index}
-											<span 
-												class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
-												title="{section.name} {index === 0 ? '(primary)' : ''}"
-											>
-												{#if index === 0}★{/if} {section.abbreviation}
-											</span>
-										{/each}
+								{#if data.isAdmin && updatingMember !== member.id}
+									<div class="relative">
+										<button
+											onclick={() => showingVoiceDropdown = showingVoiceDropdown === member.id ? null : member.id}
+											class="text-purple-600 hover:text-purple-800 text-xs px-2 py-0.5 rounded hover:bg-purple-50"
+											title="Add voice"
+										>
+											+ Add
+										</button>
+										{#if showingVoiceDropdown === member.id}
+											<div class="absolute z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+												<div class="py-1">
+													{#each data.availableVoices.filter(v => !member.voices.some(mv => mv.id === v.id)) as voice}
+														<button
+															onclick={() => addVoice(member.id, voice.id, member.voices.length === 0)}
+															class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+														>
+															{voice.name} ({voice.abbreviation})
+														</button>
+													{/each}
+													{#if member.voices.length === data.availableVoices.length}
+														<div class="px-4 py-2 text-sm text-gray-500">All voices assigned</div>
+													{/if}
+												</div>
+											</div>
+										{/if}
 									</div>
 								{/if}
 							</div>
-							{#if member.name}
-								<p class="text-sm text-gray-600">{member.email}</p>
-							{/if}
-							<p class="mt-1 text-xs text-gray-500">
-								Joined {new Date(member.joinedAt).toLocaleDateString()}
-							</p>
 						</div>
-					</div>
 
-					<!-- Roles -->
-					<div class="mt-4">
-						<p class="mb-2 text-sm font-medium text-gray-700">Roles:</p>
-						<div class="flex flex-wrap gap-2">
+						<!-- Sections section with inline editing -->
+						<div class="mt-2">
+							<div class="flex items-center gap-2">
+								<span class="text-sm font-medium text-gray-700">Sections:</span>
+								{#if member.sections && member.sections.length > 0}
+									<div class="flex flex-wrap gap-1">
+										{#each member.sections as section, index}
+											<span 
+												class="group relative inline-flex items-center gap-1 rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
+												title="{section.name} {index === 0 ? '(primary)' : ''}"
+											>
+												{#if index === 0}★{/if} {section.abbreviation}
+												{#if data.isAdmin && updatingMember !== member.id}
+													<button
+														onclick={() => removeSection(member.id, section.id)}
+														class="ml-0.5 opacity-0 group-hover:opacity-100 hover:text-teal-900 transition"
+														title="Remove {section.name}"
+													>
+														×
+													</button>
+												{/if}
+											</span>
+										{/each}
+									</div>
+								{/if}
+								{#if data.isAdmin && updatingMember !== member.id}
+									<div class="relative">
+										<button
+											onclick={() => showingSectionDropdown = showingSectionDropdown === member.id ? null : member.id}
+											class="text-teal-600 hover:text-teal-800 text-xs px-2 py-0.5 rounded hover:bg-teal-50"
+											title="Add section"
+										>
+											+ Add
+										</button>
+										{#if showingSectionDropdown === member.id}
+											<div class="absolute z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+												<div class="py-1">
+													{#each data.availableSections.filter(s => !member.sections.some(ms => ms.id === s.id)) as section}
+														<button
+															onclick={() => addSection(member.id, section.id, member.sections.length === 0)}
+															class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+														>
+															{section.name} ({section.abbreviation})
+														</button>
+													{/each}
+													{#if member.sections.length === data.availableSections.length}
+														<div class="px-4 py-2 text-sm text-gray-500">All sections assigned</div>
+													{/if}
+												</div>
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						</div>
 							{#each ASSIGNABLE_ROLES as role}
 								{@const isDisabled = updatingMember === member.id || 
 									(member.id === data.currentUserId && role === 'owner') ||
