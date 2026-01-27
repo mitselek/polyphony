@@ -223,17 +223,51 @@ Refs: #67
 - 🔄 **Changes requested**: Specific feedback, Ada revises
 - ❌ **Blocked**: Dependency or architectural issue
 
-### 8. Pull Request Creation
+### 8. Shared Workspace Protocol
 
-**Lead creates PR with:**
+**CRITICAL**: Lead and Ada share the same git working directory.
 
-- Title: Issue title
-- Description:
-  - Closes #<issue-number>
-  - Summary of changes
-  - Test coverage report
-  - Screenshots (if UI changes)
-  - Migration notes (if schema changes)
+**Rules:**
+
+1. **Ada owns git operations**:
+   - Ada runs: `git checkout -b`, `git commit`, `git push`
+   - Ada has full gh CLI access
+   - Ada creates PRs via: `gh pr create`
+
+2. **Lead is read-only during implementation**:
+   - Lead uses `read_file` for code review
+   - Lead provides feedback via text/code snippets
+   - Lead NEVER edits files while Ada is working
+
+3. **Branch state is shared**:
+   - If Ada switches branch, Lead sees same branch
+   - If Ada edits file, Lead sees changes immediately
+   - Sequential coordination required
+
+4. **Review handoff**:
+   - Ada announces: "Ready for review on feat/XX"
+   - Lead reads files (already on same branch)
+   - Lead provides feedback as text
+   - Ada applies → commits → reports again
+
+### 9. Pull Request Creation
+
+**Ada creates PR with gh CLI:**
+
+```bash
+gh pr create \
+  --title "feat(scope): Description" \
+  --body "Closes #XX
+
+## Changes
+- Summary of implementation
+
+## Tests
+- X/Y tests passing
+
+## Notes
+- Any special considerations"
+```
 
 **PR checklist:**
 
@@ -244,10 +278,12 @@ Refs: #67
 - [ ] Documentation updated
 - [ ] Migration files included (if needed)
 
-### 9. Communication Protocol
+### 10. Communication Protocol
 
 **Ada → Lead:**
 
+- Announce: "Starting work on [file/feature]"
+- Report: "Ready for review on feat/XX"
 - Use structured format for updates
 - Report blockers immediately
 - Ask questions before making assumptions
@@ -255,10 +291,11 @@ Refs: #67
 
 **Lead → Ada:**
 
+- Acknowledge: "Confirmed - hands off [file]"
 - Clear, actionable instructions
 - Code examples when introducing patterns
-- Explicit acceptance criteria
-- Timely review feedback
+- Feedback as text (never direct file edits)
+- Timely review responses
 
 **Update template for Ada:**
 
