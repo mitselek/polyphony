@@ -98,7 +98,7 @@ describe('POST /api/invites/[id]/renew', () => {
 			expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 			status: 'pending',
 			roles: ['librarian'],
-			voice_part: null,
+
 			created_at: new Date().toISOString(),
 			accepted_at: null,
 			accepted_by_email: null
@@ -113,7 +113,7 @@ describe('POST /api/invites/[id]/renew', () => {
 			expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 			status: 'accepted',
 			roles: ['librarian'],
-			voice_part: null,
+
 			created_at: new Date().toISOString(),
 			accepted_at: new Date().toISOString(),
 			accepted_by_email: 'user@example.com'

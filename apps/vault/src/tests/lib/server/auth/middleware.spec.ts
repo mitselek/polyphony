@@ -11,7 +11,6 @@ function createMockDb() {
 		id: 'member-123',
 		email: 'singer@example.com',
 		name: 'Singer User',
-		voice_part: null,
 		invited_by: null,
 		joined_at: new Date().toISOString()
 	});
@@ -21,7 +20,6 @@ function createMockDb() {
 		id: 'admin-456',
 		email: 'admin@example.com',
 		name: 'Admin User',
-		voice_part: null,
 		invited_by: null,
 		joined_at: new Date().toISOString()
 	});

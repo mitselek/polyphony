@@ -47,7 +47,7 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 							id: memberData.id,
 							email: memberData.email,
 							name: memberData.name,
-							voice_part: memberData.voice_part,
+
 							invited_by: memberData.invited_by,
 							joined_at: memberData.joined_at
 						};
@@ -107,7 +107,6 @@ function createMockEvent(overrides?: Partial<RequestEvent>): RequestEvent {
 		email: 'admin@example.com',
 		name: 'Admin User',
 		roles: ['admin'],
-		voice_part: null,
 		invited_by: null,
 		joined_at: new Date().toISOString()
 	});
@@ -116,7 +115,6 @@ function createMockEvent(overrides?: Partial<RequestEvent>): RequestEvent {
 		email: 'member@example.com',
 		name: 'Regular Member',
 		roles: [],
-		voice_part: null,
 		invited_by: null,
 		joined_at: new Date().toISOString()
 	});

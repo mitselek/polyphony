@@ -134,12 +134,18 @@ $effect(() => { localState = data.value; }); // Sync on navigation
 
 ### Vault (`apps/vault/migrations/`)
 
-- **members**: Choir members (id, email, name, voice_part)
+- **members**: Choir members (id, email, name)
 - **member_roles**: Role assignments (junction table, migration 0007)
+- **member_voices**: Member vocal capabilities (junction table with voices, migration 0003)
+- **member_sections**: Member section assignments (junction table with sections, migration 0003)
+- **voices**: Vocal ranges (Soprano, Alto, Tenor, Bass, etc., migration 0003)
+- **sections**: Performance sections (S1, S2, T1, T2, Full Choir, etc., migration 0003)
 - **scores**: Sheet music metadata (id, title, composer, license_type, file_key)
 - **score_files**: PDF BLOBs or chunking metadata
 - **score_chunks**: File chunks for large PDFs
 - **invites**: Name-based invitations (migration 0009 - email verified by Registry OAuth)
+- **invite_voices**: Voice assignments for invites (junction table, migration 0003)
+- **invite_sections**: Section assignments for invites (junction table, migration 0003)
 - **takedowns**: DMCA/DSA takedown requests
 - **access_log**: Score view/download audit trail
 
