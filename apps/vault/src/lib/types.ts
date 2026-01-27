@@ -173,3 +173,66 @@ export interface ParticipationSummary {
 	actualLate: number;
 	notRecorded: number;
 }
+
+// ============================================================================
+// ROSTER VIEW SYSTEM
+// ============================================================================
+
+/**
+ * Complete roster view for display
+ */
+export interface RosterView {
+	events: RosterEvent[];
+	members: RosterMember[];
+	summary: RosterSummary;
+}
+
+/**
+ * Event with participation data
+ */
+export interface RosterEvent {
+	id: string;
+	name: string;
+	date: string;
+	type: EventType;
+	participation: Map<string, ParticipationStatus>; // memberId -> status
+}
+
+/**
+ * Member with section and voice info for roster
+ */
+export interface RosterMember {
+	id: string;
+	name: string;
+	email: string;
+	primarySection: Section | null;
+	allSections: Section[];
+	primaryVoice: Voice | null;
+}
+
+/**
+ * Participation status for a single member/event combo
+ */
+export interface ParticipationStatus {
+	plannedStatus: PlannedStatus | null;
+	actualStatus: ActualStatus | null;
+	recordedAt: string | null;
+}
+
+/**
+ * Summary statistics for roster view
+ */
+export interface RosterSummary {
+	totalEvents: number;
+	totalMembers: number;
+	averageAttendance: number; // Percentage
+}
+
+/**
+ * Filters for roster view query
+ */
+export interface RosterViewFilters {
+	startDate?: string; // ISO date
+	endDate?: string; // ISO date
+	sectionId?: string; // Filter members by section
+}
