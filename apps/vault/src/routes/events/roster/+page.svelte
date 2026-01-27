@@ -308,21 +308,105 @@
 		</div>
 
 		<!-- Summary Stats -->
-		<div class="mt-4 rounded-lg border border-gray-200 bg-white p-4">
-			<div class="flex gap-6 text-sm text-gray-600">
-				<div>
-					<span class="font-medium">Events:</span>
-					{roster.summary.totalEvents}
-				</div>
-				<div>
-					<span class="font-medium">Members:</span>
-					{roster.summary.totalMembers}
-				</div>
-				<div>
-					<span class="font-medium">Avg Attendance:</span>
-					{roster.summary.averageAttendance.toFixed(1)}%
+		<div class="mt-4 space-y-4">
+			<!-- Overall Summary -->
+			<div class="rounded-lg border border-gray-200 bg-white p-4">
+				<div class="flex gap-6 text-sm text-gray-600">
+					<div>
+						<span class="font-medium">Events:</span>
+						{roster.summary.totalEvents}
+					</div>
+					<div>
+						<span class="font-medium">Members:</span>
+						{roster.summary.totalMembers}
+					</div>
+					<div>
+						<span class="font-medium">Avg Attendance:</span>
+						{roster.summary.averageAttendance.toFixed(1)}%
+					</div>
 				</div>
 			</div>
+
+			<!-- Section Summary (Epic #73) -->
+			{#if Object.keys(roster.summary.sectionStats).length > 0}
+				<div class="rounded-lg border border-gray-200 bg-white p-4">
+					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+						{#each Object.entries(roster.summary.sectionStats).sort((a, b) => a[1].sectionName.localeCompare(b[1].sectionName)) as [sectionId, stats]}
+							<div class="rounded border border-gray-200 bg-gray-50 p-3">
+								<div class="flex items-center justify-between mb-2">
+									<span class="font-medium text-gray-700">{stats.sectionName}</span>
+									<span class="text-xs text-gray-500">{stats.sectionAbbr}</span>
+								</div>
+								<div class="space-y-1 text-xs text-gray-600">
+									<div class="flex justify-between">
+										<span>Total:</span>
+										<span class="font-medium">{stats.total}</span>
+									</div>
+									<div class="flex justify-between">
+										<span>Response rate:</span>
+										<span class="font-medium">
+											{stats.total > 0 ? ((stats.responded / stats.total) * 100).toFixed(0) : 0}%
+										</span>
+									</div>
+									<div class="flex justify-between items-center gap-2">
+										<span>Yes:</span>
+										<div class="flex items-center gap-1 flex-1">
+											<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
+												<div 
+													class="h-full bg-green-500 transition-all"
+													style="width: {stats.responded > 0 ? (stats.yes / stats.responded * 100) : 0}%"
+												></div>
+											</div>
+											<span class="font-medium w-8 text-right">{stats.yes}</span>
+										</div>
+									</div>
+									<div class="flex justify-between items-center gap-2">
+										<span>No:</span>
+										<div class="flex items-center gap-1 flex-1">
+											<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
+												<div 
+													class="h-full bg-red-500 transition-all"
+													style="width: {stats.responded > 0 ? (stats.no / stats.responded * 100) : 0}%"
+												></div>
+											</div>
+											<span class="font-medium w-8 text-right">{stats.no}</span>
+										</div>
+									</div>
+									{#if stats.maybe > 0}
+										<div class="flex justify-between items-center gap-2">
+											<span>Maybe:</span>
+											<div class="flex items-center gap-1 flex-1">
+												<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
+													<div 
+														class="h-full bg-yellow-500 transition-all"
+														style="width: {stats.responded > 0 ? (stats.maybe / stats.responded * 100) : 0}%"
+													></div>
+												</div>
+												<span class="font-medium w-8 text-right">{stats.maybe}</span>
+											</div>
+										</div>
+									{/if}
+									{#if stats.late > 0}
+										<div class="flex justify-between items-center gap-2">
+											<span>Late:</span>
+											<div class="flex items-center gap-1 flex-1">
+												<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
+													<div 
+														class="h-full bg-orange-500 transition-all"
+														style="width: {stats.responded > 0 ? (stats.late / stats.responded * 100) : 0}%"
+													></div>
+												</div>
+												<span class="font-medium w-8 text-right">{stats.late}</span>
+											</div>
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -39,9 +39,15 @@ function buildEventsQuery(filters?: RosterViewFilters): { sql: string; params: s
 /**
  * Build members query with optional section filtering
  * Sorts by primary section display order, then by member name
+ * Includes primary section details for statistics
  */
 function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: string[] } {
-	let sql = `SELECT DISTINCT m.* FROM members m
+	let sql = `SELECT DISTINCT m.*, 
+	       ms.section_id as primary_section, 
+	       s.name as section_name, 
+	       s.abbreviation as section_abbr,
+	       s.is_active as section_is_active
+	FROM members m
 	LEFT JOIN member_sections ms ON m.id = ms.member_id AND ms.is_primary = 1
 	LEFT JOIN sections s ON ms.section_id = s.id`;
 	const params: string[] = [];
@@ -90,7 +96,7 @@ async function loadMemberSections(db: D1Database, memberId: string): Promise<Sec
 }
 
 /**
- * Calculate attendance summary statistics
+ * Calculate attendance summary statistics including section breakdown
  */
 function calculateAttendanceSummary(
 	events: any[],
@@ -116,10 +122,59 @@ function calculateAttendanceSummary(
 	const averageAttendance =
 		totalPossible > 0 ? Math.round((totalPresent / totalPossible) * 100) : 0;
 
+	// Calculate section-based statistics (Epic #73)
+	const sectionStats: Record<string, any> = {};
+
+	members.forEach((member) => {
+		// Only include members with active primary sections
+		if (!member.primary_section || !member.section_is_active) {
+			return;
+		}
+
+		const sectionId = member.primary_section;
+		const sectionName = member.section_name;
+		const sectionAbbr = member.section_abbr;
+
+		// Initialize section stats if not exists
+		if (!sectionStats[sectionId]) {
+			sectionStats[sectionId] = {
+				sectionName,
+				sectionAbbr,
+				total: 0,
+				yes: 0,
+				no: 0,
+				maybe: 0,
+				late: 0,
+				responded: 0
+			};
+		}
+
+		sectionStats[sectionId].total++;
+
+		// Count RSVPs for this member across all events
+		const memberParticipation = participation.filter((p) => p.member_id === member.id);
+		memberParticipation.forEach((p) => {
+			if (p.planned_status === 'yes') {
+				sectionStats[sectionId].yes++;
+			} else if (p.planned_status === 'no') {
+				sectionStats[sectionId].no++;
+			} else if (p.planned_status === 'maybe') {
+				sectionStats[sectionId].maybe++;
+			} else if (p.planned_status === 'late') {
+				sectionStats[sectionId].late++;
+			}
+
+			if (p.planned_status !== null) {
+				sectionStats[sectionId].responded++;
+			}
+		});
+	});
+
 	return {
 		totalEvents,
 		totalMembers,
-		averageAttendance
+		averageAttendance,
+		sectionStats
 	};
 }
 

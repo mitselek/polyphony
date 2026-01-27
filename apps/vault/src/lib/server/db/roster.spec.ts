@@ -55,17 +55,48 @@ function createMockDB(): D1Database & { __mockState: any } {
 							return { results };
 						}
 
-						// Members query (with section filtering)
-						if (sql.includes('SELECT DISTINCT m.*') || sql.includes('SELECT * FROM members')) {
-							let results = Array.from(mockState.members.values());
+// Members query (with section filtering and section columns)
+					if (sql.includes('SELECT DISTINCT m.') || sql.includes('SELECT * FROM members')) {
+						let results = Array.from(mockState.members.values());
 
-							// Apply section filter via join
-							if (sql.includes('JOIN member_sections') && params.length > 0) {
-								const [sectionId] = params;
-								const membersInSection = Array.from(mockState.memberSections.entries())
-									.filter(([_, secs]) => secs.some((s) => s.section_id === sectionId))
-									.map(([memberId]) => memberId);
-								results = results.filter((m) => membersInSection.includes(m.id));
+						// Apply section filter via join
+						if (sql.includes('JOIN member_sections') && params.length > 0) {
+							const [sectionId] = params;
+							const membersInSection = Array.from(mockState.memberSections.entries())
+								.filter(([_, secs]) => secs.some((s) => s.section_id === sectionId))
+								.map(([memberId]) => memberId);
+							results = results.filter((m) => membersInSection.includes(m.id));
+						}
+
+						// Join section data if query includes section columns
+						if (sql.includes('ms.section_id as primary_section')) {
+							results = results.map((m) => {
+								// If member has section_id property (shorthand in tests), look up the section
+								if (m.section_id) {
+									const section = mockState.sections.get(m.section_id);
+									return {
+										...m,
+										primary_section: m.section_id,
+										section_name: section?.name,
+										section_abbr: section?.abbreviation,
+										section_is_active: section?.is_active
+									};
+								}
+								// Otherwise check memberSections map
+								const memberSecs = mockState.memberSections.get(m.id) || [];
+								const primarySec = memberSecs.find((s) => s.is_primary === 1);
+								if (primarySec) {
+									const section = mockState.sections.get(primarySec.section_id);
+									return {
+										...m,
+										primary_section: primarySec.section_id,
+										section_name: section?.name,
+										section_abbr: section?.abbreviation,
+										section_is_active: section?.is_active
+									};
+								}
+								return m;
+							});
 							}
 
 							// Sort by name ASC
@@ -436,6 +467,82 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 			expect(result.summary.totalMembers).toBe(2);
 			// 2 present out of 4 possible (2 events × 2 members) = 50%
 			expect(result.summary.averageAttendance).toBe(50);
+		});
+
+		it('should calculate section summary statistics', async () => {
+			seedData(mockDb, {
+				sections: [
+					{ id: 'sec_s1', name: 'Soprano 1', abbreviation: 'S1', display_order: 1, is_active: 1 },
+					{ id: 'sec_a', name: 'Alto', abbreviation: 'A', display_order: 2, is_active: 1 }
+				],
+				members: [
+					{ id: 'mem_1', name: 'Alice', email: 'alice@test.com', section_id: 'sec_s1' },
+					{ id: 'mem_2', name: 'Bob', email: 'bob@test.com', section_id: 'sec_s1' },
+					{ id: 'mem_3', name: 'Carol', email: 'carol@test.com', section_id: 'sec_a' }
+				],
+				events: [
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-02-20', type: 'rehearsal' }
+				],
+				participation: [
+					{ id: 'part_1', member_id: 'mem_1', event_id: 'evt_1', planned_status: 'yes' },
+					{ id: 'part_2', member_id: 'mem_2', event_id: 'evt_1', planned_status: 'no' },
+					{ id: 'part_3', member_id: 'mem_3', event_id: 'evt_1', planned_status: 'yes' }
+				]
+			});
+
+			const result = await getRosterView(mockDb);
+
+			// Check section summary exists
+			expect(result.summary.sectionStats).toBeDefined();
+			expect(Object.keys(result.summary.sectionStats)).toHaveLength(2);
+
+			// Check S1 stats (2 members: 1 yes, 1 no)
+			const s1Stats = result.summary.sectionStats['sec_s1'];
+			expect(s1Stats).toBeDefined();
+			expect(s1Stats.sectionName).toBe('Soprano 1');
+			expect(s1Stats.sectionAbbr).toBe('S1');
+			expect(s1Stats.total).toBe(2);
+			expect(s1Stats.yes).toBe(1);
+			expect(s1Stats.no).toBe(1);
+			expect(s1Stats.maybe).toBe(0);
+			expect(s1Stats.late).toBe(0);
+			expect(s1Stats.responded).toBe(2);
+
+			// Check Alto stats (1 member: 1 yes)
+			const aStats = result.summary.sectionStats['sec_a'];
+			expect(aStats).toBeDefined();
+			expect(aStats.sectionName).toBe('Alto');
+			expect(aStats.sectionAbbr).toBe('A');
+			expect(aStats.total).toBe(1);
+			expect(aStats.yes).toBe(1);
+			expect(aStats.responded).toBe(1);
+		});
+
+		it('should only include active sections in summary', async () => {
+			seedData(mockDb, {
+				sections: [
+					{ id: 'sec_s1', name: 'Soprano 1', abbreviation: 'S1', display_order: 1, is_active: 1 },
+					{ id: 'sec_inactive', name: 'Inactive', abbreviation: 'IN', display_order: 99, is_active: 0 }
+				],
+				members: [
+					{ id: 'mem_1', name: 'Alice', email: 'alice@test.com', section_id: 'sec_s1' },
+					{ id: 'mem_2', name: 'Bob', email: 'bob@test.com', section_id: 'sec_inactive' }
+				],
+				events: [
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-02-20', type: 'rehearsal' }
+				],
+				participation: [
+					{ id: 'part_1', member_id: 'mem_1', event_id: 'evt_1', planned_status: 'yes' },
+					{ id: 'part_2', member_id: 'mem_2', event_id: 'evt_1', planned_status: 'yes' }
+				]
+			});
+
+			const result = await getRosterView(mockDb);
+
+			// Only active section should appear
+			expect(Object.keys(result.summary.sectionStats)).toHaveLength(1);
+			expect(result.summary.sectionStats['sec_s1']).toBeDefined();
+			expect(result.summary.sectionStats['sec_inactive']).toBeUndefined();
 		});
 	});
 });
