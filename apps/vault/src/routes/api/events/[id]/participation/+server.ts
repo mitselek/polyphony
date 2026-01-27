@@ -47,7 +47,9 @@ export async function GET(event: RequestEvent) {
 	const participationWithMembers = members.map((member) => {
 		const record = participation.find((p) => p.memberId === member.id);
 		// Get primary section (is_primary = 1) that is active
-		const primarySection = member.sections.find((s) => s.isActive);
+		// Note: member.sections from getAllMembers() are already filtered by isActive and sorted
+		// The first section in the array is the primary one (from member_sections query)
+		const primarySection = member.sections.find((s) => s.isActive) ?? member.sections[0];
 
 		return {
 			memberId: member.id,
@@ -57,7 +59,8 @@ export async function GET(event: RequestEvent) {
 				? {
 						id: primarySection.id,
 						abbreviation: primarySection.abbreviation,
-						name: primarySection.name
+						name: primarySection.name,
+						displayOrder: primarySection.displayOrder
 					}
 				: null,
 			plannedStatus: record?.plannedStatus ?? null,

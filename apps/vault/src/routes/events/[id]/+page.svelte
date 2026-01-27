@@ -433,9 +433,21 @@
       }
     });
 
-    // Sort sections by their order (assuming standard SATB order)
+    // Sort sections by display_order (from section data)
+    // Map section abbreviations to their display order for proper sorting
+    const sectionOrder = new Map<string, number>();
+    participationData.forEach((p) => {
+      if (p.primarySection) {
+        sectionOrder.set(p.primarySection.abbreviation, p.primarySection.displayOrder ?? 999);
+      }
+    });
+    
     const orderedSections = Object.entries(sectionCounts)
-      .sort(([a], [b]) => a.localeCompare(b));
+      .sort(([a], [b]) => {
+        const orderA = sectionOrder.get(a) ?? 999;
+        const orderB = sectionOrder.get(b) ?? 999;
+        return orderA - orderB;
+      });
 
     if (orderedSections.length === 0) return "No RSVPs yet";
 
