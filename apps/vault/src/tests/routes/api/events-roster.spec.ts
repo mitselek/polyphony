@@ -73,9 +73,10 @@ function createMockDB() {
 						return { results };
 					}
 
-					// Mock members query
-					if (sql.includes('SELECT DISTINCT m.* FROM members m')) {
+					// Mock members query - now includes section columns
+					if (sql.includes('SELECT DISTINCT m.') && sql.includes('FROM members m')) {
 						let results = Array.from(mockState.members.values());
+						
 						// Apply section filtering if JOIN present
 						if (sql.includes('JOIN member_sections') && params.length === 1) {
 							const sectionId = params[0];
@@ -84,6 +85,31 @@ function createMockDB() {
 								.map((ms: any) => ms.member_id);
 							results = results.filter((m: any) => memberIds.includes(m.id));
 						}
+						
+						// Join section data if query includes section columns
+						if (sql.includes('ms.section_id as primary_section')) {
+							results = results.map((m: any) => {
+								// Find primary section for this member
+								const memberSecs = Array.from(mockState.member_sections.values())
+									.filter((ms: any) => ms.member_id === m.id);
+								const primarySec = memberSecs.find((ms: any) => ms.is_primary === 1);
+								
+								if (primarySec) {
+									const section = mockState.sections.get(primarySec.section_id);
+									if (section) {
+										return {
+											...m,
+											primary_section: primarySec.section_id,
+											section_name: section.name,
+											section_abbr: section.abbreviation,
+											section_is_active: section.is_active
+										};
+									}
+								}
+								return m;
+							});
+						}
+						
 						return { results };
 					}
 
@@ -215,7 +241,8 @@ expect(data.members).toEqual([]);
 expect(data.summary).toEqual({
 totalEvents: 0,
 totalMembers: 0,
-averageAttendance: 0
+averageAttendance: 0,
+sectionStats: {}
 });
 });
 

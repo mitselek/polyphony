@@ -226,6 +226,21 @@ export interface RosterSummary {
 	totalEvents: number;
 	totalMembers: number;
 	averageAttendance: number; // Percentage
+	sectionStats: Record<string, SectionSummaryStats>; // sectionId -> stats
+}
+
+/**
+ * Section-based summary statistics (Epic #73)
+ */
+export interface SectionSummaryStats {
+	sectionName: string;
+	sectionAbbr: string;
+	total: number; // Total members in section
+	yes: number; // Planned 'yes' across all upcoming events
+	no: number;
+	maybe: number;
+	late: number;
+	responded: number; // Total who responded (yes + no + maybe + late)
 }
 
 /**
