@@ -118,6 +118,17 @@ async function loadInviteRelations(
 	// Parse roles JSON
 	const roles = JSON.parse(inviteRow.roles) as Role[];
 
+	// Define interface for voice query result
+	interface VoiceRow {
+		id: string;
+		name: string;
+		abbreviation: string;
+		category: 'vocal' | 'instrumental';
+		range_group: string | null;
+		display_order: number;
+		is_active: number;
+	}
+
 	// Get voices
 	const voicesResult = await db
 		.prepare(
@@ -128,7 +139,7 @@ async function loadInviteRelations(
 			 ORDER BY iv.is_primary DESC, v.display_order ASC`
 		)
 		.bind(inviteRow.id)
-		.all<any>();
+		.all<VoiceRow>();
 
 	const voices: Voice[] = voicesResult.results.map((row) => ({
 		id: row.id,
@@ -140,6 +151,16 @@ async function loadInviteRelations(
 		isActive: row.is_active === 1
 	}));
 
+	// Define interface for section query result
+	interface SectionRow {
+		id: string;
+		name: string;
+		abbreviation: string;
+		parent_section_id: string | null;
+		display_order: number;
+		is_active: number;
+	}
+
 	// Get sections
 	const sectionsResult = await db
 		.prepare(
@@ -150,7 +171,7 @@ async function loadInviteRelations(
 			 ORDER BY isc.is_primary DESC, s.display_order ASC`
 		)
 		.bind(inviteRow.id)
-		.all<any>();
+		.all<SectionRow>();
 
 	const sections: Section[] = sectionsResult.results.map((row) => ({
 		id: row.id,
@@ -256,7 +277,7 @@ export async function acceptInvite(
 		return { success: false, error: 'Invite has expired' };
 	}
 
-	// Create member (no voice_part column)
+	// Create member record
 	const memberId = generateId();
 	await db
 		.prepare(
