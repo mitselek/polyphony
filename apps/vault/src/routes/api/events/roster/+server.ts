@@ -44,8 +44,8 @@ export async function GET(event: RequestEvent) {
 
 	// Build filters for roster view
 	const filters = {
-		startDate: start,
-		endDate: end,
+		start,
+		end,
 		...(sectionId && { sectionId })
 	};
 

@@ -1,25 +1,22 @@
 // Tests for GET /api/auth/callback endpoint with voices/sections transfer
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET } from '../../../../routes/api/auth/callback/+server';
 
-// Mock SvelteKit functions
-vi.mock('@sveltejs/kit', async () => {
-	const actual = await vi.importActual('@sveltejs/kit');
-	return {
-		...actual,
-		redirect: (status: number, location: string) => {
-			const err = new Error(`Redirect to ${location}`);
-			(err as any).status = status;
-			(err as any).location = location;
-			throw err;
-		},
-		error: (status: number, message: string) => {
-			const err = new Error(message);
-			(err as any).status = status;
-			throw err;
-		}
-	};
-});
+// Mock SvelteKit functions BEFORE importing the handler
+vi.mock('@sveltejs/kit', () => ({
+	redirect: (status: number, location: string) => {
+		const err = new Error(`Redirect to ${location}`);
+		(err as any).status = status;
+		(err as any).location = location;
+		throw err;
+	},
+	error: (status: number, message: string) => {
+		const err = new Error(message);
+		(err as any).status = status;
+		throw err;
+	}
+}));
+
+import { GET } from '../../../../routes/api/auth/callback/+server';
 
 // Mock members db
 vi.mock('$lib/server/db/members', () => ({
@@ -92,7 +89,7 @@ describe('GET /api/auth/callback', () => {
 		const mockPayload = {
 			email: 'newmember@test.com',
 			name: 'New Member',
-			aud: 'BQ6u9ENTnZk_danhhIbUB'
+			aud: 'localhost-dev-vault'  // Match expected vault ID
 		};
 
 		const mockMember = {
@@ -161,7 +158,7 @@ describe('GET /api/auth/callback', () => {
 		const mockPayload = {
 			email: 'nomember@test.com',
 			name: 'No Invite Member',
-			aud: 'BQ6u9ENTnZk_danhhIbUB'
+			aud: 'localhost-dev-vault'
 		};
 
 		const mockNewMember = {
@@ -221,7 +218,7 @@ describe('GET /api/auth/callback', () => {
 		const mockPayload = {
 			email: 'existing@test.com',
 			name: 'Existing Member',
-			aud: 'BQ6u9ENTnZk_danhhIbUB'
+			aud: 'localhost-dev-vault'
 		};
 
 		const mockExistingMember = {
@@ -271,7 +268,7 @@ describe('GET /api/auth/callback', () => {
 		const mockPayload = {
 			email: 'failinvite@test.com',
 			name: 'Failed Invite',
-			aud: 'BQ6u9ENTnZk_danhhIbUB'
+			aud: 'localhost-dev-vault'
 		};
 
 		const mockFallbackMember = {

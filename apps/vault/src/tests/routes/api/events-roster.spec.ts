@@ -43,25 +43,31 @@ function createMockDB() {
 					return null;
 				},
 				all: async () => {
-					// Mock events query
-					if (sql.includes('SELECT * FROM events')) {
+					// Mock events query - now uses explicit columns: id, title as name, starts_at as date, event_type as type
+					if (sql.includes('FROM events')) {
 						const results = Array.from(mockState.events.values());
-						// Apply date filtering if params provided
+						// Apply date filtering if params provided (uses starts_at column now)
+						// Convert to Date objects for proper comparison
 						if (params.length === 2 && params[0] && params[1]) {
 							return {
 								results: results.filter(
-									(e: any) => e.date >= params[0] && e.date <= params[1]
+									(e: any) => {
+										const eventDate = new Date(e.starts_at);
+										const startDate = new Date(params[0] as string);
+										const endDate = new Date(params[1] as string);
+										return eventDate >= startDate && eventDate <= endDate;
+									}
 								)
 							};
 						}
-						if (params.length === 1 && sql.includes('date >=')) {
+						if (params.length === 1 && sql.includes('starts_at >=')) {
 							return {
-								results: results.filter((e: any) => e.date >= params[0])
+								results: results.filter((e: any) => new Date(e.starts_at) >= new Date(params[0] as string))
 							};
 						}
-						if (params.length === 1 && sql.includes('date <=')) {
+						if (params.length === 1 && sql.includes('starts_at <=')) {
 							return {
-								results: results.filter((e: any) => e.date <= params[0])
+								results: results.filter((e: any) => new Date(e.starts_at) <= new Date(params[0] as string))
 							};
 						}
 						return { results };
@@ -218,84 +224,84 @@ it('returns roster data with events and members', async () => {
 seed.addEvent({
 id: 'evt-1',
 name: 'Rehearsal 1',
-date: '2024-01-15',
-type: 'rehearsal'
-});
+			starts_at: '2024-01-15',
+			type: 'rehearsal'
+		});
 
-seed.addMember({
-id: 'mem-1',
-email: 'singer@example.com',
-name: 'Test Singer'
-});
+		seed.addMember({
+			id: 'mem-1',
+			email: 'singer@example.com',
+			name: 'Test Singer'
+		});
 
-seed.addSection({
-id: 'section-1',
-name: 'Soprano 1',
-abbreviation: 'S1',
-parent_section_id: null,
-display_order: 1,
-is_active: 1
-});
+		seed.addSection({
+			id: 'section-1',
+			name: 'Soprano 1',
+			abbreviation: 'S1',
+			parent_section_id: null,
+			display_order: 1,
+			is_active: 1
+		});
 
-seed.addMemberSection({
-member_id: 'mem-1',
-section_id: 'section-1',
-is_primary: 1
-});
+		seed.addMemberSection({
+			member_id: 'mem-1',
+			section_id: 'section-1',
+			is_primary: 1
+		});
 
-seed.addParticipation({
-id: 'part-1',
-member_id: 'mem-1',
-event_id: 'evt-1',
-planned_status: 'yes',
-actual_status: 'present',
-recorded_at: '2024-01-15T10:00:00Z'
-});
+		seed.addParticipation({
+			id: 'part-1',
+			member_id: 'mem-1',
+			event_id: 'evt-1',
+			planned_status: 'yes',
+			actual_status: 'present',
+			recorded_at: '2024-01-15T10:00:00Z'
+		});
 
-const response = await GET(mockEvent);
+		const response = await GET(mockEvent);
 		const data = await response.json() as RosterView;
 
-expect(response.status).toBe(200);
-expect(data.events).toHaveLength(1);
-expect(data.events[0].id).toBe('evt-1');
-expect(data.events[0].name).toBe('Rehearsal 1');
-expect(data.members).toHaveLength(1);
-expect(data.members[0].id).toBe('mem-1');		expect(data.members[0].name).toBe('Test Singer');expect(data.members[0].primarySection).toBeDefined();
+		expect(response.status).toBe(200);
+		expect(data.events).toHaveLength(1);
+		expect(data.events[0].id).toBe('evt-1');
+		expect(data.events[0].name).toBe('Rehearsal 1');
+		expect(data.members).toHaveLength(1);
+		expect(data.members[0].id).toBe('mem-1');		expect(data.members[0].name).toBe('Test Singer');expect(data.members[0].primarySection).toBeDefined();
 		if (data.members[0].primarySection) {
 			expect(data.members[0].primarySection.id).toBe('section-1');
 		}
-expect(data.summary.totalEvents).toBe(1);
-expect(data.summary.totalMembers).toBe(1);
-});
+		expect(data.summary.totalEvents).toBe(1);
+		expect(data.summary.totalMembers).toBe(1);
+	});
 
-it('filters events by date range', async () => {
-seed.addEvent({
-id: 'evt-before',
-name: 'Before Range',
-date: '2023-12-15',
-type: 'rehearsal'
-});
+	it('filters events by date range', async () => {
+		seed.addEvent({
+			id: 'evt-before',
+			name: 'Before Range',
+			starts_at: '2023-12-15',
+			type: 'rehearsal'
+		});
 
-seed.addEvent({
-id: 'evt-during',
-name: 'During Range',
-date: '2024-01-15',
-type: 'rehearsal'
-});
+		seed.addEvent({
+			id: 'evt-during',
+			name: 'During Range',
+			starts_at: '2024-01-15',
+			type: 'rehearsal'
+		});
 
-seed.addEvent({
-id: 'evt-after',
-name: 'After Range',
-date: '2024-03-15',
-type: 'rehearsal'
-});
+		seed.addEvent({
+			id: 'evt-after',
+			name: 'After Range',
+			starts_at: '2024-03-15',
+			type: 'rehearsal'
+		});
 
-const response = await GET(mockEvent);
+		const response = await GET(mockEvent);
 		const data = await response.json() as RosterView;
 
-expect(data.events).toHaveLength(1);
-expect(data.events[0].id).toBe('evt-during');
-});
+		expect(data.events).toHaveLength(1);
+		expect(data.events[0].id).toBe('evt-during');
+	});
 
 it('accepts optional sectionId filter', async () => {
 mockEvent.url = new URL('http://localhost/api/events/roster?start=2024-01-01T00:00:00Z&end=2024-02-01T00:00:00Z&sectionId=soprano-1');

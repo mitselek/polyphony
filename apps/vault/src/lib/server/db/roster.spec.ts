@@ -22,26 +22,35 @@ function createMockDB(): D1Database & { __mockState: any } {
 				bind: (...params: any[]) => ({
 					first: async () => null,
 					all: async () => {
-						// Events query (with date filtering)
-						if (sql.includes('SELECT * FROM events') || sql.includes('FROM events WHERE')) {
+						// Events query - now uses explicit columns with aliases
+						// SELECT id, title as name, starts_at as date, event_type as type FROM events
+						if (sql.includes('FROM events')) {
 							let results = Array.from(mockState.events.values());
 
-							// Apply date filters
-							if (sql.includes('date >= ?') && sql.includes('date <= ?')) {
+							// Apply date filters (uses starts_at column)
+							if (sql.includes('starts_at >= ?') && sql.includes('starts_at <= ?')) {
 								const [start, end] = params;
 								results = results.filter(
-									(e) => e.date >= start && e.date <= end
+									(e) => new Date(e.starts_at) >= new Date(start) && new Date(e.starts_at) <= new Date(end)
 								);
-							} else if (sql.includes('date >= ?')) {
+							} else if (sql.includes('starts_at >= ?')) {
 								const [start] = params;
-								results = results.filter((e) => e.date >= start);
-							} else if (sql.includes('date <= ?')) {
+								results = results.filter((e) => new Date(e.starts_at) >= new Date(start));
+							} else if (sql.includes('starts_at <= ?')) {
 								const [end] = params;
-								results = results.filter((e) => e.date <= end);
+								results = results.filter((e) => new Date(e.starts_at) <= new Date(end));
 							}
 
-							// Sort by date DESC
-							results.sort((a, b) => b.date.localeCompare(a.date));
+							// Sort by starts_at ASC (implementation uses ORDER BY starts_at ASC)
+							results.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+							// Apply aliases to match SQL: title as name, starts_at as date, event_type as type
+							results = results.map(e => ({
+								id: e.id,
+								name: e.name,
+								date: e.starts_at,  // Alias: starts_at becomes date
+								type: e.type
+							}));
 
 							return { results };
 						}
@@ -179,7 +188,7 @@ describe('Roster View Database Functions', () => {
 
 		it('should list event with no members', async () => {
 			seedData(mockDb, {
-				events: [{ id: 'evt_1', name: 'Rehearsal 1', date: '2026-02-01', type: 'rehearsal' }]
+				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }]
 			});
 
 			const result = await getRosterView(mockDb);
@@ -203,7 +212,7 @@ describe('Roster View Database Functions', () => {
 
 		it('should show event and member with no participation', async () => {
 			seedData(mockDb, {
-				events: [{ id: 'evt_1', name: 'Rehearsal 1', date: '2026-02-01', type: 'rehearsal' }],
+				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }],
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }]
 			});
 
@@ -216,7 +225,7 @@ describe('Roster View Database Functions', () => {
 
 		it('should show planned participation without actual status', async () => {
 			seedData(mockDb, {
-				events: [{ id: 'evt_1', name: 'Rehearsal 1', date: '2026-02-01', type: 'rehearsal' }],
+				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }],
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }],
 				participation: [
 					{
@@ -239,7 +248,7 @@ describe('Roster View Database Functions', () => {
 
 		it('should show both planned and actual attendance', async () => {
 			seedData(mockDb, {
-				events: [{ id: 'evt_1', name: 'Rehearsal 1', date: '2026-02-01', type: 'rehearsal' }],
+				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }],
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }],
 				participation: [
 					{
@@ -261,20 +270,20 @@ describe('Roster View Database Functions', () => {
 			expect(status?.recordedAt).toBe('2026-02-01T10:00:00Z');
 		});
 
-		it('should sort multiple events by date DESC (newest first)', async () => {
-			seedData(mockDb, {
-				events: [
-					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
-					{ id: 'evt_2', name: 'Event 2', date: '2026-02-20', type: 'concert' },
-					{ id: 'evt_3', name: 'Event 3', date: '2026-01-30', type: 'rehearsal' }
-				]
-			});
+it('should sort multiple events by date ASC (chronological, oldest first)', async () => {
+		seedData(mockDb, {
+			events: [
+				{ id: 'evt_1', name: 'Event 1', starts_at: '2026-01-15', type: 'rehearsal' },
+				{ id: 'evt_2', name: 'Event 2', starts_at: '2026-02-20', type: 'concert' },
+				{ id: 'evt_3', name: 'Event 3', starts_at: '2026-01-30', type: 'rehearsal' }
+			]
+		});
 
-			const result = await getRosterView(mockDb);
+		const result = await getRosterView(mockDb);
 
-			expect(result.events[0].date).toBe('2026-02-20');
-			expect(result.events[1].date).toBe('2026-01-30');
-			expect(result.events[2].date).toBe('2026-01-15');
+		expect(result.events[0].date).toBe('2026-01-15');
+		expect(result.events[1].date).toBe('2026-01-30');
+		expect(result.events[2].date).toBe('2026-02-20');
 		});
 
 		it('should sort multiple members by name ASC (alphabetical)', async () => {
@@ -296,9 +305,9 @@ describe('Roster View Database Functions', () => {
 		it('should filter events by start date', async () => {
 			seedData(mockDb, {
 				events: [
-					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
-					{ id: 'evt_2', name: 'Event 2', date: '2026-02-20', type: 'concert' },
-					{ id: 'evt_3', name: 'Event 3', date: '2026-03-10', type: 'rehearsal' }
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-01-15', type: 'rehearsal' },
+					{ id: 'evt_2', name: 'Event 2', starts_at: '2026-02-20', type: 'concert' },
+					{ id: 'evt_3', name: 'Event 3', starts_at: '2026-03-10', type: 'rehearsal' }
 				]
 			});
 
@@ -312,9 +321,9 @@ describe('Roster View Database Functions', () => {
 		it('should filter events by end date', async () => {
 			seedData(mockDb, {
 				events: [
-					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
-					{ id: 'evt_2', name: 'Event 2', date: '2026-02-20', type: 'concert' },
-					{ id: 'evt_3', name: 'Event 3', date: '2026-03-10', type: 'rehearsal' }
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-01-15', type: 'rehearsal' },
+					{ id: 'evt_2', name: 'Event 2', starts_at: '2026-02-20', type: 'concert' },
+					{ id: 'evt_3', name: 'Event 3', starts_at: '2026-03-10', type: 'rehearsal' }
 				]
 			});
 
@@ -328,9 +337,9 @@ describe('Roster View Database Functions', () => {
 		it('should filter events by date range (both start and end)', async () => {
 			seedData(mockDb, {
 				events: [
-					{ id: 'evt_1', name: 'Event 1', date: '2026-01-15', type: 'rehearsal' },
-					{ id: 'evt_2', name: 'Event 2', date: '2026-02-20', type: 'concert' },
-					{ id: 'evt_3', name: 'Event 3', date: '2026-03-10', type: 'rehearsal' }
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-01-15', type: 'rehearsal' },
+					{ id: 'evt_2', name: 'Event 2', starts_at: '2026-02-20', type: 'concert' },
+					{ id: 'evt_3', name: 'Event 3', starts_at: '2026-03-10', type: 'rehearsal' }
 				]
 			});
 
@@ -378,8 +387,8 @@ describe('Roster View Database Functions', () => {
 		it('should calculate summary statistics correctly', async () => {
 			seedData(mockDb, {
 				events: [
-					{ id: 'evt_1', name: 'Event 1', date: '2026-02-01', type: 'rehearsal' },
-					{ id: 'evt_2', name: 'Event 2', date: '2026-02-15', type: 'rehearsal' }
+					{ id: 'evt_1', name: 'Event 1', starts_at: '2026-02-01', type: 'rehearsal' },
+					{ id: 'evt_2', name: 'Event 2', starts_at: '2026-02-15', type: 'rehearsal' }
 				],
 				members: [
 					{ id: 'mem_1', email: 'alice@example.com', name: 'Alice' },

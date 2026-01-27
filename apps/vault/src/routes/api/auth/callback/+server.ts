@@ -138,7 +138,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		});
 
 		// Redirect to library
-		return redirect(302, '/library');
+		throw redirect(302, '/library');
 	} catch (err) {
 		// Re-throw SvelteKit redirects and HTTP errors
 		if (err && typeof err === 'object' && 'status' in err) {
