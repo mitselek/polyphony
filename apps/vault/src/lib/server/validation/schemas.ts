@@ -85,6 +85,17 @@ export const addToProgramSchema = z.object({
 export type AddToProgramInput = z.infer<typeof addToProgramSchema>;
 
 /**
+ * Schema for roster view query parameters
+ */
+export const getRosterQuerySchema = z.object({
+	start: z.string().datetime({ message: 'start must be ISO 8601 datetime' }),
+	end: z.string().datetime({ message: 'end must be ISO 8601 datetime' }),
+	sectionId: z.string().optional()
+});
+
+export type GetRosterQueryInput = z.infer<typeof getRosterQuerySchema>;
+
+/**
  * Parse and validate request body against a Zod schema.
  * Throws SvelteKit error with appropriate status code on failure.
  */
