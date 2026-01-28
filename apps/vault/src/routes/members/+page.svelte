@@ -535,7 +535,12 @@
 						<div class="flex-1">
 							<div class="flex items-center gap-3">
 								<h3 class="text-lg font-semibold">
-								{member.name}
+									<a
+										href="/members/{member.id}"
+										class="hover:text-blue-600 hover:underline"
+									>
+										{member.name}
+									</a>
 								</h3>
 								{#if member.id === data.currentUserId}
 									<span 
