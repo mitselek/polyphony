@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import type { PlannedStatus, ActualStatus } from '$lib/types';
 
@@ -93,7 +94,7 @@
 		if (endDate) params.set('end', new Date(endDate).toISOString());
 		if (selectedSectionId) params.set('sectionId', selectedSectionId);
 
-		window.location.href = `/events/roster?${params.toString()}`;
+		goto(`/events/roster?${params.toString()}`);
 	}
 
 	// Build CSV export URL
@@ -134,6 +135,7 @@
 					id="start-date"
 					type="date"
 					bind:value={startDate}
+					onchange={applyFilters}
 					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				/>
 			</div>
@@ -146,6 +148,7 @@
 					id="end-date"
 					type="date"
 					bind:value={endDate}
+					onchange={applyFilters}
 					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				/>
 			</div>
@@ -158,6 +161,7 @@
 				<select
 					id="section-filter"
 					bind:value={selectedSectionId}
+					onchange={applyFilters}
 					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				>
 					<option value="">All Sections</option>
@@ -165,16 +169,6 @@
 						<option value={section.id}>{section.name}</option>
 					{/each}
 				</select>
-			</div>
-
-			<!-- Apply Filters Button -->
-			<div>
-				<button
-					onclick={applyFilters}
-					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-				>
-					Apply Filters
-				</button>
 			</div>
 
 			<!-- CSV Export Link -->
