@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { untrack } from "svelte";
+  import { untrack, onMount } from "svelte";
   import type { PageData } from "./$types";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
 
@@ -46,28 +46,9 @@
   // Local state for myParticipation for reactive RSVP updates
   let myParticipation = $state<typeof data.myParticipation>(untrack(() => data.myParticipation));
 
-  // Sync state when data changes (e.g., on navigation)
-  $effect(() => {
-    program = [...data.program];
-    availableScores = data.allScores.filter(
-      (s: any) => !program.some((p) => p.score_id === s.id),
-    );
-    editForm = {
-      title: data.event.title,
-      description: data.event.description || "",
-      location: data.event.location || "",
-      event_type: data.event.event_type,
-    };
-    myParticipation = data.myParticipation;
-  });
-  
-  // Load participation when event ID changes (separate effect to avoid infinite loop)
-  $effect(() => {
-    // Only track data.event.id changes
-    const eventId = data.event.id;
-    untrack(() => {
-      loadParticipation();
-    });
+  // Load participation data on mount only
+  onMount(() => {
+    loadParticipation();
   });
 
   // Format date and time
