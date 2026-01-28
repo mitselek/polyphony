@@ -1,8 +1,9 @@
 // Server load for members page - list all members with roles
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { getPendingInvites } from '$lib/server/db/invites';
-import { getAllMembers, getMemberById } from '$lib/server/db/members';
+import { getAllMembers } from '$lib/server/db/members';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 
@@ -12,16 +13,13 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		throw error(500, 'Database not available');
 	}
 
-	const memberId = cookies.get('member_id');
-	if (!memberId) {
-		throw error(401, 'Authentication required');
-	}
-
-	// Get current user to check permissions
-	const currentUser = await getMemberById(db, memberId);
-
-	if (!currentUser) {
-		throw error(401, 'Invalid session');
+	// Authenticate and get current user
+	let currentUser;
+	try {
+		currentUser = await getAuthenticatedMember(db, cookies);
+	} catch (err) {
+		// Not authenticated - redirect to login
+		redirect(302, '/login');
 	}
 
 	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
