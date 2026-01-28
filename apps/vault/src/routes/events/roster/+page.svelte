@@ -13,8 +13,16 @@
 
 	// Filter state
 	let selectedSectionId = $state(untrack(() => filters.sectionId ?? ''));
+	
+	// Default start date: one month ago
+	function getDefaultStartDate(): string {
+		const date = new Date();
+		date.setMonth(date.getMonth() - 1);
+		return date.toISOString().split('T')[0];
+	}
+	
 	let startDate = $state(
-		untrack(() => (filters.start ? new Date(filters.start).toISOString().split('T')[0] : ''))
+		untrack(() => (filters.start ? new Date(filters.start).toISOString().split('T')[0] : getDefaultStartDate()))
 	);
 	let endDate = $state(
 		untrack(() => (filters.end ? new Date(filters.end).toISOString().split('T')[0] : ''))
