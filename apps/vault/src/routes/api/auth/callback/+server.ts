@@ -61,7 +61,12 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		});
 
 		// Check the audience matches our vault ID
+		console.log('[AUTH DEBUG] platform:', !!platform);
+		console.log('[AUTH DEBUG] platform.env:', platform?.env ? Object.keys(platform.env) : 'undefined');
+		console.log('[AUTH DEBUG] VAULT_ID:', platform?.env?.VAULT_ID);
 		const expectedVaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
+		console.log('[AUTH DEBUG] expectedVaultId:', expectedVaultId);
+		console.log('[AUTH DEBUG] payload.aud:', payload.aud);
 		if (payload.aud !== expectedVaultId) {
 			throw error(403, `Token not issued for this vault (expected: ${expectedVaultId}, got: ${payload.aud})`);
 		}
