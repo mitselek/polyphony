@@ -680,7 +680,7 @@
 										This member cannot log in until invited. Send them an invitation to grant system access.
 									</p>
 									<a
-										href="/invite?name={encodeURIComponent(member.name)}&voices={member.voices.map(v => v.id).join(',')}&sections={member.sections.map(s => s.id).join(',')}"
+										href="/invite?rosterId={member.id}"
 										class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
 									>
 										Send Invitation

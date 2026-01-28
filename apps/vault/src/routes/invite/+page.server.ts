@@ -4,6 +4,7 @@ import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/middleware';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
+import { getMemberById } from '$lib/server/db/members';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -21,26 +22,30 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		getActiveSections(db)
 	]);
 
-	// Pre-fill from URL params (for roster member invitations)
-	const prefillName = url.searchParams.get('name') ?? '';
-	const prefillVoicesRaw = url.searchParams.get('voices')?.split(',').filter(Boolean) ?? [];
-	const prefillSectionsRaw = url.searchParams.get('sections')?.split(',').filter(Boolean) ?? [];
+	// Check for roster member ID (new flow - inviting existing roster member)
+	const rosterId = url.searchParams.get('rosterId');
+	let rosterMember = null;
 
-	// Only include prefill IDs that exist in active options
-	// (member may have inactive voices/sections assigned)
-	const activeVoiceIds = new Set(voices.map((v) => v.id));
-	const activeSectionIds = new Set(sections.map((s) => s.id));
-	const prefillVoices = prefillVoicesRaw.filter((id) => activeVoiceIds.has(id));
-	const prefillSections = prefillSectionsRaw.filter((id) => activeSectionIds.has(id));
+	if (rosterId) {
+		rosterMember = await getMemberById(db, rosterId);
+		if (!rosterMember) {
+			throw error(404, 'Roster member not found');
+		}
+		// Roster member must not be registered yet
+		if (rosterMember.email_id) {
+			throw error(400, 'Member is already registered');
+		}
+	}
 
 	return {
 		isOwner: isOwner(member),
 		voices,
 		sections,
-		prefill: {
-			name: prefillName,
-			voiceIds: prefillVoices,
-			sectionIds: prefillSections
-		}
+		rosterMember: rosterMember ? {
+			id: rosterMember.id,
+			name: rosterMember.name,
+			voices: rosterMember.voices,
+			sections: rosterMember.sections
+		} : null
 	};
 };
