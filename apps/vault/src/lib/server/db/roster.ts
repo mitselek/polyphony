@@ -12,6 +12,7 @@ import type {
 	Section,
 	Voice
 } from '$lib/types';
+import { queryMemberSections } from './queries/members';
 
 /**
  * Build events query with optional date filtering
@@ -60,39 +61,6 @@ function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: 
 	sql += ' ORDER BY s.display_order ASC, m.name ASC, m.email ASC';
 
 	return { sql, params };
-}
-
-/**
- * Load sections for a member (for roster view)
- */
-async function loadMemberSections(db: D1Database, memberId: string): Promise<Section[]> {
-	const result = await db
-		.prepare(
-			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
-			 FROM sections s
-			 JOIN member_sections ms ON s.id = ms.section_id
-			 WHERE ms.member_id = ?
-			 ORDER BY ms.is_primary DESC, s.display_order ASC`
-		)
-		.bind(memberId)
-		.all<{
-			id: string;
-			name: string;
-			abbreviation: string;
-			parent_section_id: string | null;
-			display_order: number;
-			is_active: number;
-			is_primary: number;
-		}>();
-
-	return result.results.map((s) => ({
-		id: s.id,
-		name: s.name,
-		abbreviation: s.abbreviation,
-		parentSectionId: s.parent_section_id,
-		displayOrder: s.display_order,
-		isActive: s.is_active === 1
-	}));
 }
 
 /**
@@ -256,7 +224,7 @@ export async function getRosterView(
 	// Build RosterMember objects with sections and voices
 	const rosterMembers: RosterMember[] = await Promise.all(
 		members.map(async (member) => {
-			const memberSections = await loadMemberSections(db, member.id);
+			const memberSections = await queryMemberSections(db, member.id);
 			const primarySection = memberSections.length > 0 ? memberSections[0] : null;
 
 			return {
