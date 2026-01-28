@@ -23,8 +23,15 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 
 	// Pre-fill from URL params (for roster member invitations)
 	const prefillName = url.searchParams.get('name') ?? '';
-	const prefillVoices = url.searchParams.get('voices')?.split(',').filter(Boolean) ?? [];
-	const prefillSections = url.searchParams.get('sections')?.split(',').filter(Boolean) ?? [];
+	const prefillVoicesRaw = url.searchParams.get('voices')?.split(',').filter(Boolean) ?? [];
+	const prefillSectionsRaw = url.searchParams.get('sections')?.split(',').filter(Boolean) ?? [];
+
+	// Only include prefill IDs that exist in active options
+	// (member may have inactive voices/sections assigned)
+	const activeVoiceIds = new Set(voices.map((v) => v.id));
+	const activeSectionIds = new Set(sections.map((s) => s.id));
+	const prefillVoices = prefillVoicesRaw.filter((id) => activeVoiceIds.has(id));
+	const prefillSections = prefillSectionsRaw.filter((id) => activeSectionIds.has(id));
 
 	return {
 		isOwner: isOwner(member),
