@@ -387,3 +387,36 @@ export async function setPrimarySection(
 		.bind(1, memberId, sectionId)
 		.run();
 }
+
+/**
+ * Update a member's name with uniqueness validation
+ */
+export async function updateMemberName(
+	db: D1Database,
+	memberId: string,
+	newName: string
+): Promise<Member> {
+	// Check uniqueness (case-insensitive, excluding current member)
+	const existing = await db
+		.prepare('SELECT id FROM members WHERE LOWER(name) = LOWER(?) AND id != ?')
+		.bind(newName, memberId)
+		.first();
+
+	if (existing) {
+		throw new Error(`Member with name "${newName}" already exists`);
+	}
+
+	// Update name
+	await db
+		.prepare('UPDATE members SET name = ? WHERE id = ?')
+		.bind(newName, memberId)
+		.run();
+
+	// Return updated member with all relations
+	const updated = await getMemberById(db, memberId);
+	if (!updated) {
+		throw new Error('Failed to retrieve updated member');
+	}
+
+	return updated;
+}
