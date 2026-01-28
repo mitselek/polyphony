@@ -126,7 +126,7 @@
 	<div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
 		<div class="flex flex-wrap items-end gap-4">
 			<!-- Date Range -->
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">
 					Start Date
 				</label>
@@ -138,7 +138,7 @@
 				/>
 			</div>
 
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">
 					End Date
 				</label>
@@ -151,7 +151,7 @@
 			</div>
 
 			<!-- Section Filter (Epic #73 requirement: section-based, not voice) -->
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="section-filter" class="block text-sm font-medium text-gray-700 mb-1">
 					Section
 				</label>
@@ -219,7 +219,7 @@
 
 						<!-- Sticky Section Column Header -->
 						<th
-							class="sticky left-[150px] top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-700"
+						class="sticky left-37.5 top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-700"
 							style="min-width: 120px;"
 						>
 							Section
@@ -269,7 +269,7 @@
 
 							<!-- Sticky Section Cell -->
 							<td
-								class="sticky left-[150px] z-20 border-r-2 border-gray-300 bg-white px-4 py-3 text-sm text-gray-700"
+								class="sticky left-37.5 z-20 border-r-2 border-gray-300 bg-white px-4 py-3 text-sm text-gray-700"
 							>
 								{#if member.primarySection}
 									<span
