@@ -287,7 +287,7 @@ export async function getPendingInvites(
 			        m.name as inviter_name, m.email as inviter_email
 			 FROM invites i
 			 JOIN members m ON i.invited_by = m.id
-			 WHERE datetime('now') < i.expires_at
+			 WHERE i.status = 'pending'
 			 ORDER BY i.created_at DESC`
 		)
 		.all<{ inviter_name: string | null; inviter_email: string; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
