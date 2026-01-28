@@ -53,6 +53,11 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	// Default date range: next 4 weeks from today
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
+	
+	// Default start: one month ago
+	const oneMonthAgo = new Date(today);
+	oneMonthAgo.setMonth(today.getMonth() - 1);
+	
 	const fourWeeksFromNow = new Date(today);
 	fourWeeksFromNow.setDate(today.getDate() + 28);
 
@@ -62,7 +67,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	if (startParam) {
 		filters.start = startParam;
 	} else {
-		filters.start = today.toISOString();
+		filters.start = oneMonthAgo.toISOString();
 	}
 
 	if (endParam) {
