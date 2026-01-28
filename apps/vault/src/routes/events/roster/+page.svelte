@@ -266,7 +266,12 @@
 							<td
 								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900"
 							>
-								{member.name}
+								<a
+									href="/members/{member.id}"
+									class="text-blue-600 hover:text-blue-800 hover:underline"
+								>
+									{member.name}
+								</a>
 							</td>
 
 							<!-- Sticky Section Cell -->
