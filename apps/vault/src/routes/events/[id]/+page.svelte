@@ -39,6 +39,9 @@
   let showParticipationDetails = $state(false);
   let recordingAttendance = $state<Record<string, boolean>>({});
   let bulkUpdatingAttendance = $state(false);
+  
+  // Local state for myParticipation for reactive RSVP updates
+  let myParticipation = $state<typeof data.myParticipation>(untrack(() => data.myParticipation));
 
   // Sync state when data changes (e.g., on navigation)
   $effect(() => {
@@ -52,6 +55,7 @@
       location: data.event.location || "",
       event_type: data.event.event_type,
     };
+    myParticipation = data.myParticipation;
     // Load participation data when component mounts or data changes
     loadParticipation();
   });
@@ -347,7 +351,15 @@
         throw new Error(errorData.message || "Failed to update RSVP");
       }
 
-      // Reload participation data
+      // Update local state for immediate reactivity
+      if (myParticipation) {
+        myParticipation = { ...myParticipation, plannedStatus: status };
+      } else {
+        // For new participation, just update the status (server handles full record)
+        myParticipation = { ...data.myParticipation, plannedStatus: status } as any;
+      }
+      
+      // Reload full participation data in background
       await loadParticipation();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to update RSVP";
@@ -695,7 +707,7 @@
           <button
             onclick={() => updateMyRsvp("yes")}
             disabled={updatingRsvp}
-            class="rounded-lg border px-4 py-2 text-sm font-medium transition {data.myParticipation?.plannedStatus === 'yes'
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus === 'yes'
               ? 'bg-green-600 text-white border-green-700'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
           >
@@ -704,7 +716,7 @@
           <button
             onclick={() => updateMyRsvp("no")}
             disabled={updatingRsvp}
-            class="rounded-lg border px-4 py-2 text-sm font-medium transition {data.myParticipation?.plannedStatus === 'no'
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus === 'no'
               ? 'bg-red-600 text-white border-red-700'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
           >
@@ -713,7 +725,7 @@
           <button
             onclick={() => updateMyRsvp("maybe")}
             disabled={updatingRsvp}
-            class="rounded-lg border px-4 py-2 text-sm font-medium transition {data.myParticipation?.plannedStatus === 'maybe'
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus === 'maybe'
               ? 'bg-yellow-600 text-white border-yellow-700'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
           >
@@ -722,7 +734,7 @@
           <button
             onclick={() => updateMyRsvp("late")}
             disabled={updatingRsvp}
-            class="rounded-lg border px-4 py-2 text-sm font-medium transition {data.myParticipation?.plannedStatus === 'late'
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus === 'late'
               ? 'bg-orange-600 text-white border-orange-700'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
           >
@@ -733,8 +745,8 @@
     {:else}
       <div class="mb-6 rounded-lg bg-gray-100 p-4">
         <p class="text-sm text-gray-600">
-          {#if data.myParticipation?.plannedStatus}
-            Your RSVP: <span class="font-medium capitalize">{data.myParticipation.plannedStatus}</span> (locked - event has started)
+          {#if myParticipation?.plannedStatus}
+            Your RSVP: <span class="font-medium capitalize">{myParticipation.plannedStatus}</span> (locked - event has started)
           {:else}
             RSVP is locked (event has started)
           {/if}
