@@ -7,30 +7,30 @@ import {
 } from '$lib/server/validation/schemas';
 
 describe('createInviteSchema', () => {
-	it('validates a valid invite', () => {
+	it('validates a valid invite with roster member ID', () => {
 		const result = createInviteSchema.safeParse({
-			name: 'John Doe',
+			rosterMemberId: 'member123',
 			roles: ['admin', 'librarian']
 		});
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.name).toBe('John Doe');
+			expect(result.data.rosterMemberId).toBe('member123');
 			expect(result.data.roles).toEqual(['admin', 'librarian']);
 		}
 	});
 
-	it('requires name', () => {
+	it('requires rosterMemberId', () => {
 		const result = createInviteSchema.safeParse({ roles: [] });
 		expect(result.success).toBe(false);
 	});
 
-	it('rejects empty name', () => {
-		const result = createInviteSchema.safeParse({ name: '', roles: [] });
+	it('rejects empty rosterMemberId', () => {
+		const result = createInviteSchema.safeParse({ rosterMemberId: '', roles: [] });
 		expect(result.success).toBe(false);
 	});
 
 	it('defaults roles to empty array', () => {
-		const result = createInviteSchema.safeParse({ name: 'Test' });
+		const result = createInviteSchema.safeParse({ rosterMemberId: 'member123' });
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.roles).toEqual([]);
@@ -39,7 +39,7 @@ describe('createInviteSchema', () => {
 
 	it('rejects invalid role', () => {
 		const result = createInviteSchema.safeParse({
-			name: 'Test',
+			rosterMemberId: 'member123',
 			roles: ['invalid_role']
 		});
 		expect(result.success).toBe(false);
@@ -77,12 +77,12 @@ describe('parseBody', () => {
 	it('parses valid JSON and validates', async () => {
 		const request = new Request('http://test', {
 			method: 'POST',
-			body: JSON.stringify({ name: 'Test', roles: ['admin'] }),
+			body: JSON.stringify({ rosterMemberId: 'member123', roles: ['admin'] }),
 			headers: { 'Content-Type': 'application/json' }
 		});
 
 		const result = await parseBody(request, createInviteSchema);
-		expect(result.name).toBe('Test');
+		expect(result.rosterMemberId).toBe('member123');
 		expect(result.roles).toEqual(['admin']);
 	});
 

@@ -26,12 +26,11 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		// Import createInvite from DB operations
 		const { createInvite } = await import('$lib/server/db/invites');
 
-		// Create invite with roles, voices, and sections
+		// Create invite linked to roster member
 		const invite = await createInvite(db, {
-			name: body.name,
+			rosterMemberId: body.rosterMemberId,
 			roles: body.roles,
-			voiceIds: body.voiceIds,
-			sectionIds: body.sectionIds,
+			emailHint: body.emailHint,
 			invited_by: member.id
 		});
 
@@ -41,17 +40,18 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		return json(
 			{
 				id: invite.id,
-				name: invite.name,
+				roster_member_id: invite.roster_member_id,
+				roster_member_name: invite.roster_member_name,
 				roles: invite.roles,
 				voices: invite.voices,
 				sections: invite.sections,
 				inviteLink,
-				message: `Invitation created. Share the link with ${body.name}.`
+				message: `Invitation created for ${invite.roster_member_name}.`
 			},
 			{ status: 201 }
 		);
 	} catch (err) {
 		console.error('Failed to create invite:', err);
-		throw error(500, 'Failed to create invite');
+		throw error(500, err instanceof Error ? err.message : 'Failed to create invite');
 	}
 };

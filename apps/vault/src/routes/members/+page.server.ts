@@ -49,13 +49,14 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = pendingInvites.map((inv) => ({
 		id: inv.id,
-		name: inv.name,
+		roster_member_id: inv.roster_member_id,
+		name: inv.roster_member_name,
 		roles: inv.roles,
 		voices: inv.voices,
 		sections: inv.sections,
 		createdAt: inv.created_at,
 		expiresAt: inv.expires_at,
-		invitedBy: inv.inviter_name ?? inv.inviter_email,
+		invitedBy: inv.inviter_name ?? inv.inviter_email ?? 'Unknown',
 		inviteLink: `${baseUrl}?token=${inv.token}`
 	}));
 

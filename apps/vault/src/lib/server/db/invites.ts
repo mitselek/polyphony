@@ -1,29 +1,29 @@
 // Invite database operations for member invitation system
 
 import type { Role, Voice, Section } from '$lib/types';
-import { queryInviteSections, queryInviteVoices } from './queries/members';
 
 export interface Invite {
 	id: string;
-	name: string; // Invitee name for tracking (not verified)
+	roster_member_id: string; // Links to roster member
+	roster_member_name: string; // For display (from JOIN)
 	token: string;
 	invited_by: string;
 	expires_at: string;
 	status: 'pending' | 'accepted'; // 'expired' derived from expires_at < now()
-	roles: Role[]; // JSON array stored as string
-	voices: Voice[]; // Invited voices (from junction table)
-	sections: Section[]; // Invited sections (from junction table)
+	roles: Role[]; // Roles to assign upon acceptance
+	voices: Voice[]; // Inherited from roster member (display only)
+	sections: Section[]; // Inherited from roster member (display only)
+	email_hint?: string; // Optional: suggested email for Registry
 	created_at: string;
 	accepted_at: string | null;
 	accepted_by_email: string | null; // Registry-verified email (filled when accepted)
 }
 
 export interface CreateInviteInput {
-	name: string;
-	roles: Role[];
+	rosterMemberId: string; // Required: which roster member to invite
+	roles: Role[]; // Roles to grant upon acceptance
 	invited_by: string;
-	voiceIds?: string[];
-	sectionIds?: string[];
+	emailHint?: string; // Optional: suggested email for Registry
 }
 
 export interface AcceptInviteResult {
@@ -50,12 +50,34 @@ function generateId(): string {
 }
 
 /**
- * Create a new invite
+ * Create a new invite linked to a roster member
  */
 export async function createInvite(
 	db: D1Database,
 	input: CreateInviteInput
 ): Promise<Invite> {
+	// 1. Verify roster member exists
+	const { getMemberById } = await import('./members');
+	const rosterMember = await getMemberById(db, input.rosterMemberId);
+	if (!rosterMember) {
+		throw new Error('Roster member not found');
+	}
+
+	// 2. Verify member is not already registered
+	if (rosterMember.email_id) {
+		throw new Error('Member is already registered');
+	}
+
+	// 3. Check for existing pending invite
+	const existingInvite = await db
+		.prepare('SELECT id FROM invites WHERE roster_member_id = ? AND status = "pending"')
+		.bind(input.rosterMemberId)
+		.first();
+	if (existingInvite) {
+		throw new Error('Member already has a pending invitation');
+	}
+
+	// 4. Create invite linked to roster member
 	const id = generateId();
 	const token = generateToken();
 	const now = new Date();
@@ -64,45 +86,22 @@ export async function createInvite(
 
 	await db
 		.prepare(
-			`INSERT INTO invites (id, name, token, invited_by, expires_at, status, roles, created_at)
-			 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`
+			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at)
+			 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
 		)
 		.bind(
 			id,
-			input.name,
+			input.rosterMemberId,
 			token,
 			input.invited_by,
 			expiresAt.toISOString(),
 			rolesJson,
+			input.emailHint ?? null,
 			now.toISOString()
 		)
 		.run();
 
-	// Insert voice assignments
-	if (input.voiceIds && input.voiceIds.length > 0) {
-		const voiceStatements = input.voiceIds.map((voiceId, index) =>
-			db
-				.prepare(
-					'INSERT INTO invite_voices (invite_id, voice_id, is_primary) VALUES (?, ?, ?)'
-				)
-				.bind(id, voiceId, index === 0 ? 1 : 0)
-		);
-		await db.batch(voiceStatements);
-	}
-
-	// Insert section assignments
-	if (input.sectionIds && input.sectionIds.length > 0) {
-		const sectionStatements = input.sectionIds.map((sectionId, index) =>
-			db
-				.prepare(
-					'INSERT INTO invite_sections (invite_id, section_id, is_primary) VALUES (?, ?, ?)'
-				)
-				.bind(id, sectionId, index === 0 ? 1 : 0)
-		);
-		await db.batch(sectionStatements);
-	}
-
-	const invite = await getInviteByToken(db, token);
+	const invite = await getInviteById(db, id);
 	if (!invite) {
 		throw new Error('Failed to create invite');
 	}
@@ -110,24 +109,31 @@ export async function createInvite(
 }
 
 /**
- * Helper to load voices and sections for an invite
+ * Helper to load roster member, voices, and sections for an invite
  */
 async function loadInviteRelations(
 	db: D1Database,
-	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections'> & { roles: string }
+	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'> & { roles: string; email_hint: string | null }
 ): Promise<Invite> {
 	// Parse roles JSON
 	const roles = JSON.parse(inviteRow.roles) as Role[];
 
-	// Get voices and sections using shared queries
-	const voices = await queryInviteVoices(db, inviteRow.id);
-	const sections = await queryInviteSections(db, inviteRow.id);
+	// Get roster member to load name, voices, and sections
+	const { getMemberById } = await import('./members');
+	const rosterMember = await getMemberById(db, inviteRow.roster_member_id);
+	if (!rosterMember) {
+		throw new Error('Roster member not found for invite');
+	}
 
+	// Build result with proper type conversions (null → undefined for email_hint)
+	const { email_hint, ...restRow } = inviteRow;
 	return {
-		...inviteRow,
+		...restRow,
+		roster_member_name: rosterMember.name,
 		roles,
-		voices,
-		sections
+		voices: rosterMember.voices,
+		sections: rosterMember.sections,
+		...(email_hint !== null && { email_hint }) // Only add if not null
 	};
 }
 
@@ -140,11 +146,11 @@ export async function getInviteByToken(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
+			`SELECT id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at, accepted_at, accepted_by_email
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
-		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
+		.first<{ roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
 
 	if (!result) return null;
 
@@ -160,11 +166,11 @@ export async function getInviteById(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
+			`SELECT id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at, accepted_at, accepted_by_email
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
-		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
+		.first<{ roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
 
 	if (!result) return null;
 
@@ -172,34 +178,13 @@ export async function getInviteById(
 }
 
 /**
- * Find a pending invite by name
- */
-export async function getInviteByName(
-	db: D1Database,
-	name: string
-): Promise<Invite | null> {
-	const result = await db
-		.prepare(
-			`SELECT id, name, token, invited_by, expires_at, status, roles, created_at, accepted_at, accepted_by_email
-			 FROM invites WHERE name = ? AND status = 'pending'`
-		)
-		.bind(name)
-		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
-
-	if (!result) return null;
-
-	return await loadInviteRelations(db, result);
-}
-
-/**
- * Accept an invite and create member (email from Registry OAuth)
- * Transfers roles, voices, and sections from invite to new member
+ * Accept an invite and upgrade roster member to registered
+ * Transfers roles from invite to member
  */
 export async function acceptInvite(
 	db: D1Database,
 	token: string,
-	email: string, // Verified email from Registry OAuth
-	name?: string // Optional name from OAuth
+	email: string // Verified email from Registry OAuth
 ): Promise<AcceptInviteResult> {
 	const invite = await getInviteByToken(db, token);
 
@@ -218,50 +203,24 @@ export async function acceptInvite(
 		return { success: false, error: 'Invite has expired' };
 	}
 
-	// Create member record
-	const memberId = generateId();
-	await db
-		.prepare(
-			`INSERT INTO members (id, email, name, invited_by)
-			 VALUES (?, ?, ?, ?)`
-		)
-		.bind(memberId, email, name ?? null, invite.invited_by)
-		.run();
+	// Upgrade roster member to registered
+	const { upgradeToRegistered } = await import('./members');
+	const member = await upgradeToRegistered(
+		db,
+		invite.roster_member_id,
+		email
+	);
 
-	// Insert roles from invite
+	// Transfer roles from invite to member
 	if (invite.roles.length > 0) {
 		const roleStatements = invite.roles.map((role) =>
 			db
 				.prepare(
 					'INSERT INTO member_roles (member_id, role, granted_by) VALUES (?, ?, ?)'
 				)
-				.bind(memberId, role, invite.invited_by)
+				.bind(member.id, role, invite.invited_by)
 		);
 		await db.batch(roleStatements);
-	}
-
-	// Transfer voices from invite to member
-	if (invite.voices.length > 0) {
-		const voiceStatements = invite.voices.map((voice, index) =>
-			db
-				.prepare(
-					'INSERT INTO member_voices (member_id, voice_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
-				)
-				.bind(memberId, voice.id, index === 0 ? 1 : 0, invite.invited_by)
-		);
-		await db.batch(voiceStatements);
-	}
-
-	// Transfer sections from invite to member
-	if (invite.sections.length > 0) {
-		const sectionStatements = invite.sections.map((section, index) =>
-			db
-				.prepare(
-					'INSERT INTO member_sections (member_id, section_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
-				)
-				.bind(memberId, section.id, index === 0 ? 1 : 0, invite.invited_by)
-		);
-		await db.batch(sectionStatements);
 	}
 
 	// Mark invite as accepted with verified email
@@ -272,25 +231,25 @@ export async function acceptInvite(
 		.bind(now.toISOString(), email, token)
 		.run();
 
-	return { success: true, memberId };
+	return { success: true, memberId: member.id };
 }
 
 /**
- * Get all pending invites with inviter info
+ * Get all pending invites with roster member and inviter info
  */
 export async function getPendingInvites(
 	db: D1Database
-): Promise<(Invite & { inviter_name: string | null; inviter_email: string })[]> {
+): Promise<(Invite & { inviter_name: string | null; inviter_email: string | null })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.name, i.token, i.invited_by, i.expires_at, i.status, i.roles, i.created_at, i.accepted_at, i.accepted_by_email,
-			        m.name as inviter_name, m.email as inviter_email
+			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.status, i.roles, i.email_hint, i.created_at, i.accepted_at, i.accepted_by_email,
+			        inviter.name as inviter_name, inviter.email_id as inviter_email
 			 FROM invites i
-			 JOIN members m ON i.invited_by = m.id
+			 JOIN members inviter ON i.invited_by = inviter.id
 			 WHERE i.status = 'pending'
 			 ORDER BY i.created_at DESC`
 		)
-		.all<{ inviter_name: string | null; inviter_email: string; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections'>>();
+		.all<{ inviter_name: string | null; inviter_email: string | null; roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
 
 	// Load relations for each invite
 	const invitesWithRelations = await Promise.all(
