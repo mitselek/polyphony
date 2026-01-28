@@ -9,6 +9,7 @@ declare global {
 				REGISTRY_CLIENT_SECRET: string;
 				REGISTRY_OAUTH_URL: string;
 				SESSION_SECRET: string;
+				VAULT_ID: string;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;

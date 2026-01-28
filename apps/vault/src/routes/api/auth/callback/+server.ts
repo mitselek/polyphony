@@ -61,10 +61,9 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		});
 
 		// Check the audience matches our vault ID
-		// TODO: Make vault ID configurable via environment variable
-		const expectedVaultId = 'localhost-dev-vault';
+		const expectedVaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
 		if (payload.aud !== expectedVaultId) {
-			throw error(403, 'Token not issued for this vault');
+			throw error(403, `Token not issued for this vault (expected: ${expectedVaultId}, got: ${payload.aud})`);
 		}
 
 		// Extract email from payload
