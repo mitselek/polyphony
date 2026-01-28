@@ -17,4 +17,4 @@ database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 
 [vars]
 REGISTRY_OAUTH_URL = "https://polyphony-registry.pages.dev"
-VAULT_ID = "BQ6u9ENTnZk_danhIhIbUB"  # Production vault ID (hardcoded - each vault deployment gets unique ID)
+VAULT_ID = "BQ6u9ENTnZk_danhhIbUB"  # Vault identifier (public, appears in JWT aud claim)
