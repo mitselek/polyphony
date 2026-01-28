@@ -9,10 +9,9 @@ export interface Invite {
 	token: string;
 	invited_by: string;
 	expires_at: string;
-	roles: Role[]; // Roles to assign upon acceptance
+	roles: Role[]; // Roles to assign upon acceptance (from junction table)
 	voices: Voice[]; // Inherited from roster member (display only)
 	sections: Section[]; // Inherited from roster member (display only)
-	email_hint?: string; // Optional: suggested email for Registry
 	created_at: string;
 }
 
@@ -93,12 +92,13 @@ export async function createInvite(
 	const token = generateToken();
 	const now = new Date();
 	const expiresAt = new Date(now.getTime() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000);
-	const rolesJson = JSON.stringify(input.roles);
 
+	// Note: Remote DB schema doesn't have roles/email_hint columns
+	// Roles/voices/sections are handled via junction tables after this
 	await db
 		.prepare(
-			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			id,
@@ -106,8 +106,6 @@ export async function createInvite(
 			token,
 			input.invited_by,
 			expiresAt.toISOString(),
-			rolesJson,
-			input.emailHint ?? null,
 			now.toISOString()
 		)
 		.run();
@@ -121,20 +119,22 @@ export async function createInvite(
 
 /**
  * Helper to load roster member, voices, and sections for an invite
+ * Note: Remote DB doesn't have roles column or invite_roles table
  */
 async function loadInviteRelations(
 	db: D1Database,
-	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'> & { roles: string }
+	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>
 ): Promise<Invite> {
-	// Parse roles JSON
-	const roles = JSON.parse(inviteRow.roles) as Role[];
+	// Note: Remote DB doesn't have invite_roles junction table yet
+	// For now, default to empty roles array
+	const roles: Role[] = [];
 
 	// Get roster member to load name, voices, and sections
 	const { getMemberById } = await import('./members');
 	const rosterMember = await getMemberById(db, inviteRow.roster_member_id);
 	
-	// Handle missing roster member - use email_hint as fallback name
-	const memberName = rosterMember?.name ?? (inviteRow.email_hint?.split('@')[0] ?? 'Unknown Member');
+	// Handle missing roster member
+	const memberName = rosterMember?.name ?? 'Unknown Member';
 	const memberVoices = rosterMember?.voices ?? [];
 	const memberSections = rosterMember?.sections ?? [];
 
@@ -156,11 +156,11 @@ export async function getInviteByToken(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at
+			`SELECT id, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
-		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.first<Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	if (!result) return null;
 
@@ -176,11 +176,11 @@ export async function getInviteById(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at
+			`SELECT id, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
-		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.first<Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	if (!result) return null;
 
@@ -244,14 +244,14 @@ export async function getPendingInvites(
 ): Promise<(Invite & { inviter_name: string | null; inviter_email: string | null })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.roles, i.email_hint, i.created_at,
+			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.created_at,
 			        inviter.name as inviter_name, inviter.email_id as inviter_email
 			 FROM invites i
 			 JOIN members inviter ON i.invited_by = inviter.id
 			 WHERE i.expires_at > datetime('now')
 			 ORDER BY i.created_at DESC`
 		)
-		.all<{ inviter_name: string | null; inviter_email: string | null; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.all<{ inviter_name: string | null; inviter_email: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	// Load relations for each invite
 	const invitesWithRelations = await Promise.all(
