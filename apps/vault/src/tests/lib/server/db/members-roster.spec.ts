@@ -33,9 +33,9 @@ const createMockDb = () => {
 				run: async () => {
 					// INSERT INTO members
 					if (sql.includes('INSERT INTO members')) {
-						// createMember: VALUES (?, ?, ?, NULL, ?) - email_contact is NULL
-						// createRosterMember: VALUES (?, ?, NULL, ?, ?) - email_id is NULL
-						if (sql.includes(', NULL, ?)')) {
+						// createMember: VALUES (?, ?, ?, NULL, ?) - email_contact is NULL (4th position)
+						// createRosterMember: VALUES (?, ?, NULL, ?, ?) - email_id is NULL (3rd position)
+						if (sql.includes('?, ?, NULL, ?, ?)')) {
 							// createRosterMember case: email_id=NULL, params=[id, name, email_contact, invited_by]
 							const [id, name, email_contact, invited_by] = params as [string, string, string | null, string | null];
 							members.set(id, {
@@ -46,7 +46,7 @@ const createMockDb = () => {
 								invited_by,
 								joined_at: new Date().toISOString()
 							});
-						} else {
+						} else if (sql.includes('?, ?, ?, NULL, ?)')) {
 							// createMember case: email_contact=NULL, params=[id, name, email_id, invited_by]
 							const [id, name, email_id, invited_by] = params as [string, string, string, string | null];
 							members.set(id, {
@@ -106,6 +106,37 @@ const createMockDb = () => {
 						const member_id = params[0] as string;
 						const roles = memberRoles.get(member_id) || [];
 						return { results: roles.map(role => ({ role })) };
+					}
+					// SELECT voices (queryMemberVoices)
+					if (sql.includes('FROM voices') && sql.includes('JOIN member_voices')) {
+						const member_id = params[0] as string;
+						const voices = memberVoices.get(member_id) || [];
+						// Return empty array for now - roster tests don't use voices
+						return { results: voices.map(v => ({
+							id: v.voice_id,
+							name: 'Test Voice',
+							abbreviation: 'TV',
+							category: 'vocal',
+							range_group: null,
+							display_order: 0,
+							is_active: 1,
+							is_primary: v.is_primary
+						})) };
+					}
+					// SELECT sections (queryMemberSections)
+					if (sql.includes('FROM sections') && sql.includes('JOIN member_sections')) {
+						const member_id = params[0] as string;
+						const sections = memberSections.get(member_id) || [];
+						// Return empty array for now - roster tests don't use sections
+						return { results: sections.map(s => ({
+							id: s.section_id,
+							name: 'Test Section',
+							abbreviation: 'TS',
+							parent_section_id: null,
+							display_order: 0,
+							is_active: 1,
+							is_primary: s.is_primary
+						})) };
 					}
 					return { results: [] };
 				}

@@ -65,14 +65,27 @@ const createMockDb = () => {
 					run: async () => {
 						// INSERT INTO members
 						if (sql.includes('INSERT INTO members')) {
-							const [id, name, email_id, email_contact, invited_by] = params as [
-								string,
-								string,
-								string | null,
-								string | null,
-								string | null
-							];
-							members.set(id, { id, name, email_id, email_contact, invited_by, joined_at: new Date().toISOString() });
+							// createMember: VALUES (?, ?, ?, NULL, ?) - email_contact is NULL (4 params)
+							// params = [id, name, email_id, invited_by]
+							if (sql.includes(', NULL, ?)')) {
+								const [id, name, email_id, invited_by] = params as [
+									string,
+									string,
+									string,
+									string | null
+								];
+								members.set(id, { id, name, email_id, email_contact: null, invited_by, joined_at: new Date().toISOString() });
+							} else {
+								// Old format or other INSERT (shouldn't happen)
+								const [id, name, email_id, email_contact, invited_by] = params as [
+									string,
+									string,
+									string | null,
+									string | null,
+									string | null
+								];
+								members.set(id, { id, name, email_id, email_contact, invited_by, joined_at: new Date().toISOString() });
+							}
 							return { success: true, meta: { changes: 1 } };
 						}
 						// INSERT INTO member_roles

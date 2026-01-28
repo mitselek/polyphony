@@ -20,7 +20,7 @@ import { GET } from '../../../../routes/api/auth/callback/+server';
 
 // Mock members db
 vi.mock('$lib/server/db/members', () => ({
-	getMemberByEmailIdId: vi.fn(),
+	getMemberByEmailId: vi.fn(),
 	createMember: vi.fn()
 }));
 
