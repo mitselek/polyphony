@@ -9,14 +9,11 @@ export interface Invite {
 	token: string;
 	invited_by: string;
 	expires_at: string;
-	status: 'pending' | 'accepted'; // 'expired' derived from expires_at < now()
 	roles: Role[]; // Roles to assign upon acceptance
 	voices: Voice[]; // Inherited from roster member (display only)
 	sections: Section[]; // Inherited from roster member (display only)
 	email_hint?: string; // Optional: suggested email for Registry
 	created_at: string;
-	accepted_at: string | null;
-	accepted_by_email: string | null; // Registry-verified email (filled when accepted)
 }
 
 export interface CreateInviteInput {
@@ -159,7 +156,7 @@ export async function getInviteByToken(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at, accepted_at, accepted_by_email
+			`SELECT id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
@@ -179,7 +176,7 @@ export async function getInviteById(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at, accepted_at, accepted_by_email
+			`SELECT id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
@@ -203,10 +200,6 @@ export async function acceptInvite(
 
 	if (!invite) {
 		return { success: false, error: 'Invalid invite token' };
-	}
-
-	if (invite.status === 'accepted') {
-		return { success: false, error: 'Invite already used' };
 	}
 
 	// Check expiration
@@ -234,14 +227,10 @@ export async function acceptInvite(
 		await db.batch(roleStatements);
 	}
 
-	// Mark invite as accepted
+	// Delete invite after successful acceptance (cleanup)
 	await db
-		.prepare(
-			`UPDATE invites 
-			 SET status = 'accepted', accepted_at = ?, accepted_by_email = ?
-			 WHERE token = ?`
-		)
-		.bind(new Date().toISOString(), email, token)
+		.prepare('DELETE FROM invites WHERE token = ?')
+		.bind(token)
 		.run();
 
 	return { success: true, memberId: member.id };
@@ -255,11 +244,11 @@ export async function getPendingInvites(
 ): Promise<(Invite & { inviter_name: string | null; inviter_email: string | null })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.status, i.roles, i.email_hint, i.created_at, i.accepted_at, i.accepted_by_email,
+			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.roles, i.email_hint, i.created_at,
 			        inviter.name as inviter_name, inviter.email_id as inviter_email
 			 FROM invites i
 			 JOIN members inviter ON i.invited_by = inviter.id
-			 WHERE i.status = 'pending'
+			 WHERE i.expires_at > datetime('now')
 			 ORDER BY i.created_at DESC`
 		)
 		.all<{ inviter_name: string | null; inviter_email: string | null; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
@@ -270,10 +259,6 @@ export async function getPendingInvites(
 			const invite = await loadInviteRelations(db, row);
 			return {
 				...invite,
-				status: 'pending' as const, // All non-expired invites are pending
-				accepted_at: null,
-				accepted_by_email: null,
-				email_hint: undefined,
 				inviter_name: row.inviter_name,
 				inviter_email: row.inviter_email
 			};

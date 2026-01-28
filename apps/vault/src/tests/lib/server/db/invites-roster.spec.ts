@@ -108,7 +108,7 @@ function createMockDb() {
 						return { meta: { changes: 1 } };
 					}
 
-					// Handle UPDATE invites (mark as accepted)
+					// Handle UPDATE invites (mark as accepted) - DEPRECATED
 					if (sql.startsWith('UPDATE invites') && sql.includes('accepted')) {
 						const [accepted_at, accepted_by_email, token] = params as any[];
 						const inviteId = invitesByToken.get(token as string);
@@ -122,6 +122,18 @@ function createMockDb() {
 							}
 						}
 						return { meta: { changes: 1 } };
+					}
+
+					// Handle DELETE invites (after acceptance)
+					if (sql.startsWith('DELETE FROM invites')) {
+						const [token] = params as any[];
+						const inviteId = invitesByToken.get(token as string);
+						if (inviteId) {
+							invites.delete(inviteId);
+							invitesByToken.delete(token as string);
+							return { meta: { changes: 1 } };
+						}
+						return { meta: { changes: 0 } };
 					}
 
 					// Handle UPDATE members (upgrade to registered)
@@ -439,7 +451,7 @@ describe('acceptInvite (roster upgrade)', () => {
 
 		const result = await acceptInvite(mockDb, inviteToken, 'another@test.com');
 		expect(result.success).toBe(false);
-		expect(result.error).toBe('Invite already used');
+		expect(result.error).toBe('Invalid invite token'); // Invite is deleted after acceptance
 	});
 
 	it('rejects expired invite', async () => {
