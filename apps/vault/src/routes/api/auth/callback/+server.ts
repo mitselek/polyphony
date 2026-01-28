@@ -109,6 +109,36 @@ async function handleLogin(
 	throw redirect(302, '/library');
 }
 
+function validateTokenParam(url: URL): string {
+	const token = url.searchParams.get('token');
+	if (!token) {
+		throw error(400, 'Missing token parameter');
+	}
+	return token;
+}
+
+function validateEmail(payload: JWTPayload): string {
+	const email = payload.email as string;
+	if (!email) {
+		throw error(400, 'Token missing email claim');
+	}
+	return email;
+}
+
+async function routeToHandler(
+	db: D1Database,
+	url: URL,
+	cookies: Cookies,
+	email: string,
+	name: string | undefined
+): Promise<never> {
+	const inviteToken = url.searchParams.get('invite');
+	if (inviteToken) {
+		return await handleInviteAcceptance(db, inviteToken, email, cookies);
+	}
+	return await handleLogin(db, email, name, cookies);
+}
+
 async function processAuthCallback(
 	db: D1Database,
 	url: URL,
@@ -116,25 +146,11 @@ async function processAuthCallback(
 	fetchFn: typeof fetch,
 	vaultId: string
 ): Promise<never> {
-	const token = url.searchParams.get('token');
-	if (!token) {
-		throw error(400, 'Missing token parameter');
-	}
-
+	const token = validateTokenParam(url);
 	const payload = await verifyJWT(token, fetchFn, vaultId);
-	const email = payload.email as string;
+	const email = validateEmail(payload);
 	const name = payload.name as string | undefined;
-
-	if (!email) {
-		throw error(400, 'Token missing email claim');
-	}
-
-	const inviteToken = url.searchParams.get('invite');
-	if (inviteToken) {
-		return await handleInviteAcceptance(db, inviteToken, email, cookies);
-	}
-
-	return await handleLogin(db, email, name, cookies);
+	return await routeToHandler(db, url, cookies, email, name);
 }
 
 export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelteKitFetch }) => {
