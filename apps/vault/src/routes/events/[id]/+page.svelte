@@ -20,6 +20,9 @@
   let removingScoreId = $state<string | null>(null);
   let reorderingProgram = $state(false);
   let error = $state("");
+  
+  // Derived state for button enablement
+  let canAddScore = $derived(!!selectedScoreId && !addingScore);
   let editingEventId = $state<string | null>(null);
   let editForm = $state(
     untrack(() => ({
@@ -1032,7 +1035,7 @@
             </select>
             <button
               onclick={addToProgram}
-              disabled={!selectedScoreId || addingScore}
+              disabled={!canAddScore}
               class="rounded-lg bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
               {addingScore ? "Adding..." : "Add"}
