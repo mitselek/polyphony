@@ -17,4 +17,8 @@ database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 
 [vars]
 REGISTRY_OAUTH_URL = "https://polyphony-registry.pages.dev"
-VAULT_ID = "localhost-dev-vault"  # Override in production via Cloudflare dashboard
+VAULT_ID = "localhost-dev-vault"
+
+# Production environment overrides
+[env.production.vars]
+VAULT_ID = "BQ6u9ENTnZk_danhIhIbUB"
