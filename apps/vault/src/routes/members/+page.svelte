@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
+	import { page } from '$app/stores';
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,6 +17,7 @@
 	let revokingInvite = $state<string | null>(null);
 	let renewingInvite = $state<string | null>(null);
 	let error = $state('');
+	let successMessage = $state('');
 	let showingVoiceDropdown = $state<string | null>(null);
 	let showingSectionDropdown = $state<string | null>(null);
 
@@ -23,6 +25,19 @@
 	$effect(() => {
 		members = data.members;
 		invites = data.invites;
+	});
+
+	// Check for success message from query param
+	$effect(() => {
+		const addedName = $page.url.searchParams.get('added');
+		if (addedName) {
+			successMessage = `Successfully added roster member "${addedName}"`;
+			setTimeout(() => (successMessage = ''), 5000);
+			// Remove query param from URL without reload
+			const url = new URL($page.url);
+			url.searchParams.delete('added');
+			history.replaceState({}, '', url);
+		}
 	});
 
 	// Helper to check if invite is expired
@@ -353,17 +368,31 @@
 			<h1 class="text-3xl font-bold">Manage Members</h1>
 			<p class="mt-2 text-gray-600">View and manage choir member roles and permissions</p>
 		</div>
-		<a
-			href="/invite"
-			class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-		>
-			Invite Member
-		</a>
+		<div class="flex gap-3">
+			<a
+				href="/members/add-roster"
+				class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 transition hover:bg-blue-50"
+			>
+				+ Add Roster Member
+			</a>
+			<a
+				href="/invite"
+				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+			>
+				Invite Member
+			</a>
+		</div>
 	</div>
 
 	{#if error}
 		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
 			{error}
+		</div>
+	{/if}
+
+	{#if successMessage}
+		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
+			{successMessage}
 		</div>
 	{/if}
 
@@ -514,6 +543,12 @@
 										title="This is your account"
 									>You</span>
 								{/if}
+								{#if !member.email_id}
+									<span 
+										class="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800"
+										title="Roster-only member - cannot log in until invited"
+									>ROSTER ONLY</span>
+								{/if}
 						</div>
 					{#if member.email}
 						<p class="text-sm text-gray-600">{member.email}</p>
@@ -633,36 +668,52 @@
 								{/if}
 							</div>
 						</div>
-							{#each ASSIGNABLE_ROLES as role}
-								{@const isDisabled = updatingMember === member.id || 
-									(member.id === data.currentUserId && role === 'owner') ||
-									(!data.isOwner && role === 'owner')}
-								{@const hasRole = member.roles.includes(role)}
-								<button
-									onclick={() => toggleRole(member.id, role)}
-									disabled={isDisabled}
-									class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {hasRole
-										? getRoleBadgeClass(role)
-										: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-									title={isDisabled && member.id === data.currentUserId && role === 'owner'
-										? 'Cannot remove your own owner role'
-										: isDisabled && !data.isOwner && role === 'owner'
-											? 'Only owners can manage owner role'
-											: hasRole 
-												? `Remove ${role} role`
-												: `Add ${role} role`}
-								aria-label="{hasRole ? 'Remove' : 'Add'} {role} role for {member.name}"
-								>
-									{#if member.roles.includes(role)}
-										✓ {role}
-									{:else}
-										+ {role}
-									{/if}
-								</button>
-							{/each}
+							{#if !member.email_id}
+								<!-- Roster-only member - show invitation button instead of roles -->
+								<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+									<p class="mb-2 text-sm text-amber-800">
+										This member cannot log in until invited. Send them an invitation to grant system access.
+									</p>
+									<a
+										href="/invite?name={encodeURIComponent(member.name)}"
+										class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+									>
+										Send Invitation
+									</a>
+								</div>
+							{:else}
+								<!-- Registered member - show role badges -->
+								{#each ASSIGNABLE_ROLES as role}
+									{@const isDisabled = updatingMember === member.id || 
+										(member.id === data.currentUserId && role === 'owner') ||
+										(!data.isOwner && role === 'owner')}
+									{@const hasRole = member.roles.includes(role)}
+									<button
+										onclick={() => toggleRole(member.id, role)}
+										disabled={isDisabled}
+										class="rounded-full border px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 {hasRole
+											? getRoleBadgeClass(role)
+											: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+										title={isDisabled && member.id === data.currentUserId && role === 'owner'
+											? 'Cannot remove your own owner role'
+											: isDisabled && !data.isOwner && role === 'owner'
+												? 'Only owners can manage owner role'
+												: hasRole 
+													? `Remove ${role} role`
+													: `Add ${role} role`}
+									aria-label="{hasRole ? 'Remove' : 'Add'} {role} role for {member.name}"
+									>
+										{#if member.roles.includes(role)}
+											✓ {role}
+										{:else}
+											+ {role}
+										{/if}
+									</button>
+								{/each}
 
-							{#if member.roles.length === 0}
-								<span class="text-sm text-gray-500">No roles assigned</span>
+								{#if member.roles.length === 0}
+									<span class="text-sm text-gray-500">No roles assigned</span>
+								{/if}
 							{/if}
 						</div>
 					</div>

@@ -36,7 +36,8 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	// Format for frontend
 	const members = allMembers.map((m) => ({
 		id: m.id,
-		email: m.email_id,
+		email: m.email_id, // For display
+		email_id: m.email_id, // For registration check (null = roster-only)
 		name: m.name,
 		voices: m.voices,
 		sections: m.sections,
