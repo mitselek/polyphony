@@ -16,6 +16,41 @@
 - Break down into implementation steps if needed
 - Create detailed task specification for Ada
 - Identify dependencies and blockers
+- **Add contextual guidance comment** before assignment
+
+**Contextual guidance pattern:**
+
+When assigning an issue, Lead adds a GitHub comment with:
+
+- **Current state**: "Issues #X-Y are now merged to main"
+- **Dependencies resolved**: "Database layer (#95) is complete and available"
+- **Starting point**: "Begin with migration file, then tests"
+- **Branch name**: "Create branch `feat/XX-description`"
+- **How this fits**: "This updates invitation logic only. Auth updates are in #97"
+
+**Why this matters:**
+
+- Issue body = Complete specification (timeless)
+- Assignment comment = Navigation aid (timely)
+- Keeps Ada oriented in epic progress without re-reading all prior issues
+
+**Example comment:**
+
+```markdown
+Ada, you're ready for #96 now that #94-#95 are merged.
+
+## Context
+Invitations need to link to roster members...
+
+## Key Changes
+1. Add `roster_member_id` to invites table
+2. Update `createInvite()` to accept optional roster_member_id
+...
+
+## TDD Workflow
+1. Create branch: `feat/96-invitation-roster-link`
+2. Write tests first...
+```
 
 **Ada receives:**
 
@@ -24,6 +59,7 @@
 - Acceptance criteria checklist
 - Code patterns to follow
 - Expected test coverage
+- **Contextual guidance comment** with current state
 
 ### 2. Feature Branch Creation
 
