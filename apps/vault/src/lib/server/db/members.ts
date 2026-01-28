@@ -1,5 +1,6 @@
 // Member database operations
 import type { Role, Voice, Section } from '$lib/types';
+import { queryMemberSections, queryMemberVoices } from './queries/members';
 
 export interface Member {
 	id: string;
@@ -144,71 +145,9 @@ async function loadMemberRelations(
 		.all<{ role: Role }>();
 	const roles = rolesResult.results.map((r) => r.role);
 
-	// Define interface for voice query result
-	interface VoiceRow {
-		id: string;
-		name: string;
-		abbreviation: string;
-		category: 'vocal' | 'instrumental';
-		range_group: string | null;
-		display_order: number;
-		is_active: number;
-		is_primary: number;
-	}
-
-	// Get voices with full details
-	const voicesResult = await db
-		.prepare(
-			`SELECT v.id, v.name, v.abbreviation, v.category, v.range_group, v.display_order, v.is_active, mv.is_primary
-			 FROM voices v
-			 JOIN member_voices mv ON v.id = mv.voice_id
-			 WHERE mv.member_id = ?
-			 ORDER BY mv.is_primary DESC, v.display_order ASC`
-		)
-		.bind(memberRow.id)
-		.all<VoiceRow>();
-
-	const voices: Voice[] = voicesResult.results.map((row) => ({
-		id: row.id,
-		name: row.name,
-		abbreviation: row.abbreviation,
-		category: row.category,
-		rangeGroup: row.range_group,
-		displayOrder: row.display_order,
-		isActive: row.is_active === 1
-	}));
-
-	// Define interface for section query result
-	interface SectionRow {
-		id: string;
-		name: string;
-		abbreviation: string;
-		parent_section_id: string | null;
-		display_order: number;
-		is_active: number;
-		is_primary: number;
-	}
-
-	// Get sections with full details
-	const sectionsResult = await db
-		.prepare(
-			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
-			 FROM sections s
-			 JOIN member_sections ms ON s.id = ms.section_id
-			 WHERE ms.member_id = ?
-			 ORDER BY ms.is_primary DESC, s.display_order ASC`
-		)
-		.bind(memberRow.id)
-		.all<SectionRow>();
-
-	const sections: Section[] = sectionsResult.results.map((row) => ({
-		id: row.id,
-		name: row.name,
-		abbreviation: row.abbreviation,
-		parentSectionId: row.parent_section_id,
-		displayOrder: row.display_order,
-		isActive: row.is_active === 1
-	}));
+	// Get voices and sections using shared queries
+	const voices = await queryMemberVoices(db, memberRow.id);
+	const sections = await queryMemberSections(db, memberRow.id);
 
 	return {
 		...memberRow,

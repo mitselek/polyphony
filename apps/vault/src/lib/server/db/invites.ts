@@ -1,6 +1,7 @@
 // Invite database operations for member invitation system
 
 import type { Role, Voice, Section } from '$lib/types';
+import { queryInviteSections, queryInviteVoices } from './queries/members';
 
 export interface Invite {
 	id: string;
@@ -118,69 +119,9 @@ async function loadInviteRelations(
 	// Parse roles JSON
 	const roles = JSON.parse(inviteRow.roles) as Role[];
 
-	// Define interface for voice query result
-	interface VoiceRow {
-		id: string;
-		name: string;
-		abbreviation: string;
-		category: 'vocal' | 'instrumental';
-		range_group: string | null;
-		display_order: number;
-		is_active: number;
-	}
-
-	// Get voices
-	const voicesResult = await db
-		.prepare(
-			`SELECT v.id, v.name, v.abbreviation, v.category, v.range_group, v.display_order, v.is_active
-			 FROM voices v
-			 JOIN invite_voices iv ON v.id = iv.voice_id
-			 WHERE iv.invite_id = ?
-			 ORDER BY iv.is_primary DESC, v.display_order ASC`
-		)
-		.bind(inviteRow.id)
-		.all<VoiceRow>();
-
-	const voices: Voice[] = voicesResult.results.map((row) => ({
-		id: row.id,
-		name: row.name,
-		abbreviation: row.abbreviation,
-		category: row.category,
-		rangeGroup: row.range_group,
-		displayOrder: row.display_order,
-		isActive: row.is_active === 1
-	}));
-
-	// Define interface for section query result
-	interface SectionRow {
-		id: string;
-		name: string;
-		abbreviation: string;
-		parent_section_id: string | null;
-		display_order: number;
-		is_active: number;
-	}
-
-	// Get sections
-	const sectionsResult = await db
-		.prepare(
-			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
-			 FROM sections s
-			 JOIN invite_sections isc ON s.id = isc.section_id
-			 WHERE isc.invite_id = ?
-			 ORDER BY isc.is_primary DESC, s.display_order ASC`
-		)
-		.bind(inviteRow.id)
-		.all<SectionRow>();
-
-	const sections: Section[] = sectionsResult.results.map((row) => ({
-		id: row.id,
-		name: row.name,
-		abbreviation: row.abbreviation,
-		parentSectionId: row.parent_section_id,
-		displayOrder: row.display_order,
-		isActive: row.is_active === 1
-	}));
+	// Get voices and sections using shared queries
+	const voices = await queryInviteVoices(db, inviteRow.id);
+	const sections = await queryInviteSections(db, inviteRow.id);
 
 	return {
 		...inviteRow,
