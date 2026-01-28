@@ -49,80 +49,27 @@ refactor/<issue-number>-short-description # Code refactoring
 
 ### 2.5. Pre-Work Complexity Assessment
 
-**MANDATORY: Before writing any code, evaluate existing complexity**  
+**MANDATORY:** Run `pnpm complexity <file>` before starting implementation.
 
-**Purpose:** Prevent technical debt accumulation by identifying refactoring needs while context is fresh.
+**ESLint thresholds** (see Appendix for details):
 
-**Process:**
+- Cyclomatic complexity >10
+- function >50 lines
+- nesting >4 levels
+- statements >15
+- params >5
 
-1. **Identify affected files** (from issue description or lead's guidance)
+**Decision matrix:**
 
-2. **Check file metrics:**
+| File Size     | ESLint Warnings | Action                  |
+| ------------- | --------------- | ----------------------- |
+| <200 lines    | 0 warnings      | ✅ Proceed              |
+| 200-400 lines | 1-3 warnings    | ⚠️ Review with lead     |
+| >400 lines    | >3 warnings     | 🔴 Flag for refactoring |
 
-   ```bash
-   # Automated complexity assessment (recommended)
-   .github/scripts/check-complexity.sh <file1> [file2]
-   
-   # Manual check
-   wc -l apps/vault/src/lib/server/db/*.ts
-   ```
+**Ada reports:** `"Issue #X: <file> is Y lines, Z warnings. Recommend: [Proceed/Review/Refactor]"`
 
-3. **Assess complexity indicators:**
-   - Functions >100 lines
-   - Multiple nested loops/conditions (>3 levels deep)
-   - Many database queries in one function (>5 queries)
-   - Duplicated code patterns (similar logic in 3+ places)
-   - File mixing multiple concerns
-
-4. **Decision matrix:**
-
-   | File Size     | Complexity | Action                                                                                     |
-   | ------------- | ---------- | ------------------------------------------------------------------------------------------ |
-   | <200 lines    | Simple     | ✅ **Proceed** with implementation                                                         |
-   | 200-400 lines | Medium     | ⚠️ **Review** - Ask lead: "File X is Y lines with Z complexity. Should we refactor first?" |
-   | >400 lines    | High       | 🔴 **Flag** - "File X needs refactoring. Should I do it now or create follow-up issue?"    |
-
-5. **Refactoring triggers** (any one = discuss with lead):
-   - Adding feature to file >400 lines
-   - Modifying function >100 lines
-   - File has >3 similar patterns (extraction candidate)
-   - Complexity will increase with new feature
-
-**Ada reports to lead:**
-
-```
-"Issue #X affects <file>:
-- Current size: Y lines
-- Main function: Z lines
-- Complexity: [Simple/Medium/High]
-- Recommendation: [Proceed/Refactor first/Follow-up issue]"
-```
-
-**Lead decides:**
-
-- **Refactor now**: Do it in same branch/PR (most common for high complexity)
-- **Proceed**: Current complexity acceptable
-- **Create follow-up issue**: Refactor not blocking, can be done later
-
-**Benefits:**
-
-- ✅ Never accumulate technical debt
-- ✅ Fresh context makes refactoring efficient (as seen in Issue #67: 15 minutes saved hours)
-- ✅ New features built on clean code
-- ✅ Easier code reviews and maintenance
-
-**Example (Issue #67):**
-
-```
-Ada: "Issue #67 will create roster.ts with getRosterView().
-      Estimated implementation: 200-250 lines (complex JOIN logic).
-      Should I plan for refactoring?"
-
-Lead: "Yes - implement first, then extract helper functions.
-       Target: 4 functions of 40-60 lines each."
-
-Result: 247 lines → 83 lines (main function), 15 min refactoring
-```
+**Lead decides:** Refactor now / Proceed / Follow-up issue
 
 ### 3. Test-Driven Development (TDD)
 
@@ -423,6 +370,12 @@ pnpm --filter vault test
 pnpm --filter vault dev
 ```
 
+**Complexity assessment:**
+
+```bash
+pnpm complexity <file>  # Run before starting work (see Section 2.5)
+```
+
 **Database migrations:**
 
 ```bash
@@ -447,6 +400,25 @@ wrangler d1 migrations apply DB
 - Multi-role system: [lib/server/auth/permissions.ts](apps/vault/src/lib/server/auth/permissions.ts)
 - Database operations: [lib/server/db/members.ts](apps/vault/src/lib/server/db/members.ts)
 - Svelte 5 reactivity: [routes/members/+page.svelte](apps/vault/src/routes/members/+page.svelte)
+
+---
+
+## Appendix: ESLint Complexity Rules
+
+| Rule                    | Threshold | Measures                                  | Fix                                  |
+| ----------------------- | --------- | ----------------------------------------- | ------------------------------------ |
+| `complexity`            | Max 10    | Independent code paths (if/loops/switch)  | Extract helper functions             |
+| `max-lines-per-function`| Max 50    | Lines of code in function body            | Split into smaller functions         |
+| `max-depth`             | Max 4     | Nesting levels (nested if/for/while)      | Early returns, guard clauses         |
+| `max-statements`        | Max 15    | Number of statements per function         | Extract related logic to helpers     |
+| `max-params`            | Max 5     | Function parameters                       | Use object parameter pattern         |
+
+**Common fixes:**
+
+- Too many paths → Extract validation/business logic to helpers
+- Long function → Split into query/fetch/transform steps
+- Deep nesting → Use early returns: `if (!valid) return;`
+- Many params → `function create(db: D1, input: CreateInput)`
 
 ---
 

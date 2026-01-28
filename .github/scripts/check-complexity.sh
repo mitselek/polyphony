@@ -1,6 +1,7 @@
 #!/bin/bash
 # Complexity assessment script for Polyphony development workflow
-# Usage: ./github/scripts/check-complexity.sh <file1> [file2] ...
+# Uses ESLint with complexity rules for accurate static analysis
+# Usage: ./.github/scripts/check-complexity.sh <file1> [file2] ...
 
 set -e
 
@@ -10,9 +11,20 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-echo "=== Polyphony Complexity Assessment ==="
+echo "=== Polyphony Complexity Assessment (ESLint) ==="
 echo ""
 
+# Run ESLint on all files and capture JSON output
+ESLINT_OUTPUT=$(npx eslint "$@" --format json 2>&1 || true)
+
+# Check if ESLint failed completely
+if [ $? -eq 2 ]; then
+    echo "❌ ESLint configuration error:"
+    echo "$ESLINT_OUTPUT"
+    exit 1
+fi
+
+# Parse JSON output for each file
 for file in "$@"; do
     if [ ! -f "$file" ]; then
         echo "⚠️  File not found: $file"
@@ -20,52 +32,77 @@ for file in "$@"; do
         continue
     fi
 
-    # Basic metrics
+    # Basic metrics (still useful)
     lines=$(wc -l < "$file")
-    
-    # Count functions (TypeScript/JavaScript)
-    functions=$(grep -cE "^export (async )?function|^(async )?function|^\s+(async )?[a-zA-Z_]+\s*\(" "$file" 2>/dev/null || echo 0)
-    
-    # Count exported items
     exports=$(grep -c "^export " "$file" 2>/dev/null || echo 0)
-    
-    # Count imports
     imports=$(grep -c "^import " "$file" 2>/dev/null || echo 0)
     
-    # Estimate nesting depth (opening braces)
-    max_nesting=$(grep -o "{" "$file" | wc -l)
+    # Extract ESLint results for this file
+    FILE_RESULT=$(echo "$ESLINT_OUTPUT" | jq -r ".[] | select(.filePath | endswith(\"$file\"))" 2>/dev/null || echo "{}")
     
-    # Count async/await usage
-    async_count=$(grep -c "async\|await" "$file" 2>/dev/null || echo 0)
+    if [ "$FILE_RESULT" = "{}" ]; then
+        echo "⚠️  No ESLint analysis available for: $file"
+        echo ""
+        continue
+    fi
     
-    # Count database queries
-    db_queries=$(grep -c "\.prepare\|\.all\|\.first\|\.run" "$file" 2>/dev/null || echo 0)
+    # Count complexity violations
+    complexity_warnings=$(echo "$FILE_RESULT" | jq '[.messages[] | select(.ruleId == "complexity")] | length' 2>/dev/null || echo 0)
+    max_lines_warnings=$(echo "$FILE_RESULT" | jq '[.messages[] | select(.ruleId == "max-lines-per-function")] | length' 2>/dev/null || echo 0)
+    max_depth_warnings=$(echo "$FILE_RESULT" | jq '[.messages[] | select(.ruleId == "max-depth")] | length' 2>/dev/null || echo 0)
+    max_statements_warnings=$(echo "$FILE_RESULT" | jq '[.messages[] | select(.ruleId == "max-statements")] | length' 2>/dev/null || echo 0)
+    max_params_warnings=$(echo "$FILE_RESULT" | jq '[.messages[] | select(.ruleId == "max-params")] | length' 2>/dev/null || echo 0)
     
-    # Determine complexity rating
+    total_warnings=$(echo "$FILE_RESULT" | jq '.warningCount' 2>/dev/null || echo 0)
+    total_errors=$(echo "$FILE_RESULT" | jq '.errorCount' 2>/dev/null || echo 0)
+    
+    # Determine complexity rating based on ESLint results
     complexity="Simple"
     recommend="Proceed ✅"
     
-    if [ "$lines" -gt 400 ] || [ "$functions" -gt 15 ]; then
+    if [ "$total_errors" -gt 0 ] || [ "$complexity_warnings" -gt 3 ] || [ "$max_lines_warnings" -gt 3 ]; then
         complexity="HIGH"
         recommend="Refactor first 🔴"
-    elif [ "$lines" -gt 200 ] || [ "$functions" -gt 8 ]; then
+    elif [ "$complexity_warnings" -gt 0 ] || [ "$max_lines_warnings" -gt 0 ] || [ "$lines" -gt 200 ]; then
         complexity="Medium"
         recommend="Review with lead ⚠️"
     fi
     
     echo "📄 $file"
     echo "   Lines: $lines"
-    echo "   Functions: ~$functions"
     echo "   Exports: $exports"
     echo "   Imports: $imports"
-    echo "   Async operations: $async_count"
-    echo "   DB queries: $db_queries"
+    echo ""
+    echo "   ESLint Complexity Analysis:"
+    echo "   ├─ Cyclomatic complexity warnings: $complexity_warnings"
+    echo "   ├─ Function length warnings: $max_lines_warnings"
+    echo "   ├─ Nesting depth warnings: $max_depth_warnings"
+    echo "   ├─ Statement count warnings: $max_statements_warnings"
+    echo "   └─ Parameter count warnings: $max_params_warnings"
+    echo ""
+    echo "   Total ESLint warnings: $total_warnings"
+    echo "   Total ESLint errors: $total_errors"
+    echo ""
     echo "   Complexity: $complexity"
     echo "   👉 $recommend"
+    
+    # Show detailed warnings if any
+    if [ "$total_warnings" -gt 0 ]; then
+        echo ""
+        echo "   ⚠️  Detailed warnings:"
+        echo "$FILE_RESULT" | jq -r '.messages[] | "      \(.ruleId): \(.message) (line \(.line))"' 2>/dev/null | head -10
+    fi
+    
     echo ""
 done
 
-echo "=== Complexity Thresholds ==="
-echo "Simple:  <200 lines, <8 functions"
-echo "Medium:  200-400 lines, 8-15 functions → Review"
-echo "High:    >400 lines, >15 functions → Refactor"
+echo "=== Complexity Thresholds (ESLint Rules) ==="
+echo "Cyclomatic complexity: max 10 (complexity rule)"
+echo "Function length: max 50 lines (max-lines-per-function)"
+echo "Nesting depth: max 4 levels (max-depth)"
+echo "Statement count: max 15 per function (max-statements)"
+echo "Parameter count: max 5 per function (max-params)"
+echo ""
+echo "Simple:  <200 lines, no ESLint warnings"
+echo "Medium:  200-400 lines OR 1-3 warnings → Review"
+echo "High:    >400 lines OR >3 warnings → Refactor"

@@ -10,9 +10,12 @@
     "test:unit": "pnpm -r test:unit",
     "check": "pnpm -r check",
     "validate": "pnpm check && pnpm test",
-    "precommit": "pnpm validate"
+    "precommit": "pnpm validate",
+    "complexity": "./.github/scripts/check-complexity.sh"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
     "eslint-plugin-complexity": "^1.0.2",
     "ts-complex": "^1.0.0",
     "typescript": "^5.7.0",
