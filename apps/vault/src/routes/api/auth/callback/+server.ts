@@ -153,6 +153,18 @@ async function processAuthCallback(
 	return await routeToHandler(db, url, cookies, email, name);
 }
 
+function handleAuthError(err: unknown): never {
+	// Re-throw SvelteKit redirects and HTTP errors
+	if (err && typeof err === 'object' && 'status' in err) {
+		throw err;
+	}
+	console.error('Auth callback error:', err);
+	if (err instanceof Error && err.message.includes('expired')) {
+		throw error(401, 'Token expired. Please try logging in again.');
+	}
+	throw error(401, 'Invalid or expired token');
+}
+
 export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelteKitFetch }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -163,14 +175,6 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		const vaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
 		return await processAuthCallback(db, url, cookies, svelteKitFetch, vaultId);
 	} catch (err) {
-		// Re-throw SvelteKit redirects and HTTP errors
-		if (err && typeof err === 'object' && 'status' in err) {
-			throw err;
-		}
-		console.error('Auth callback error:', err);
-		if (err instanceof Error && err.message.includes('expired')) {
-			throw error(401, 'Token expired. Please try logging in again.');
-		}
-		throw error(401, 'Invalid or expired token');
+		return handleAuthError(err);
 	}
 };
