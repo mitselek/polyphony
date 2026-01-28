@@ -49,12 +49,12 @@ function generateId(): string {
  * Create a new invite linked to a roster member
  */
 /**
- * Validate roster member for invitation
+ * Validate roster member for invitation and return the member
  */
 async function validateRosterMemberForInvite(
 	db: D1Database,
 	rosterMemberId: string
-): Promise<void> {
+): Promise<{ name: string }> {
 	const { getMemberById } = await import('./members');
 	const rosterMember = await getMemberById(db, rosterMemberId);
 	
@@ -75,6 +75,8 @@ async function validateRosterMemberForInvite(
 	if (existingInvite) {
 		throw new Error('Member already has a pending invitation');
 	}
+
+	return { name: rosterMember.name };
 }
 
 /**
@@ -84,8 +86,8 @@ export async function createInvite(
 	db: D1Database,
 	input: CreateInviteInput
 ): Promise<Invite> {
-	// Validate roster member
-	await validateRosterMemberForInvite(db, input.rosterMemberId);
+	// Validate roster member and get their name
+	const { name } = await validateRosterMemberForInvite(db, input.rosterMemberId);
 
 	// Create invite linked to roster member
 	const id = generateId();
@@ -93,16 +95,16 @@ export async function createInvite(
 	const now = new Date();
 	const expiresAt = new Date(now.getTime() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000);
 
-	// Note: Remote DB schema doesn't have roles/email_hint columns
-	// Roles/voices/sections are handled via junction tables after this
+	// Include name for backward compatibility with existing schema
 	await db
 		.prepare(
-			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
+			`INSERT INTO invites (id, roster_member_id, name, token, invited_by, expires_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			id,
 			input.rosterMemberId,
+			name,
 			token,
 			input.invited_by,
 			expiresAt.toISOString(),
