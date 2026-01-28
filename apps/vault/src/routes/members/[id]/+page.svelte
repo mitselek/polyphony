@@ -14,6 +14,10 @@
 	let showingVoiceDropdown = $state(false);
 	let showingSectionDropdown = $state(false);
 
+	// Inline name editing state
+	let isEditingName = $state(false);
+	let editedName = $state('');
+
 	// Watch for data changes and update local state
 	$effect(() => {
 		member = data.member;
@@ -33,6 +37,57 @@
 				return 'bg-teal-100 text-teal-800 border-teal-200';
 			default:
 				return 'bg-gray-100 text-gray-800 border-gray-200';
+		}
+	}
+
+	function startEditingName() {
+		if (!data.isAdmin) return;
+		editedName = member.name;
+		isEditingName = true;
+	}
+
+	async function saveName() {
+		const trimmedName = editedName.trim();
+		
+		// If unchanged or empty, just cancel
+		if (!trimmedName || trimmedName === member.name) {
+			isEditingName = false;
+			return;
+		}
+
+		updating = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${member.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: trimmedName })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed to update name');
+			}
+
+			// Update local state
+			member = { ...member, name: trimmedName };
+			isEditingName = false;
+			successMessage = 'Name updated successfully';
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to update name';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updating = false;
+		}
+	}
+
+	function handleNameKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			saveName();
+		} else if (event.key === 'Escape') {
+			isEditingName = false;
 		}
 	}
 
@@ -251,7 +306,27 @@
 	</a>
 
 	<div class="mb-8 flex items-center justify-between">
-		<h1 class="text-3xl font-bold">{member.name}</h1>
+		{#if isEditingName}
+			<!-- svelte-ignore a11y_autofocus -->
+			<input
+				type="text"
+				bind:value={editedName}
+				onblur={saveName}
+				onkeydown={handleNameKeydown}
+				disabled={updating}
+				class="text-3xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full max-w-md px-1 py-0.5"
+				autofocus
+			/>
+		{:else if data.isAdmin}
+			<button 
+				type="button"
+				onclick={startEditingName}
+				class="text-3xl font-bold cursor-pointer hover:text-blue-600 text-left"
+				title="Click to edit name"
+			>{member.name}</button>
+		{:else}
+			<h1 class="text-3xl font-bold">{member.name}</h1>
+		{/if}
 		
 		<!-- Remove button for admins (not for self or last owner) -->
 		{#if data.isOwner && member.id !== data.currentUserId}

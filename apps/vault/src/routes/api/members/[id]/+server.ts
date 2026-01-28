@@ -1,7 +1,63 @@
+// API endpoints for managing members
 // DELETE /api/members/[id] - Remove a member from the vault
+// PATCH /api/members/[id] - Update a member (admin only)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
+import { updateMemberName } from '$lib/server/db/members';
 
+interface UpdateMemberRequest {
+	name?: string;
+}
+
+// PATCH - Update member details (admin only)
+export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+	const db = platform?.env?.DB;
+	if (!db) {
+		throw error(500, 'Database not available');
+	}
+
+	// Auth: get member and check admin role
+	const currentMember = await getAuthenticatedMember(db, cookies);
+	assertAdmin(currentMember);
+
+	const targetMemberId = params.id;
+	if (!targetMemberId) {
+		throw error(400, 'Member ID is required');
+	}
+
+	// Parse request body
+	const body = (await request.json()) as UpdateMemberRequest;
+
+	// Validate name if provided
+	if (body.name !== undefined) {
+		if (typeof body.name !== 'string') {
+			return json({ error: 'Name must be a string' }, { status: 400 });
+		}
+
+		const trimmedName = body.name.trim();
+		if (trimmedName.length === 0) {
+			return json({ error: 'Name cannot be empty' }, { status: 400 });
+		}
+
+		try {
+			const updated = await updateMemberName(db, targetMemberId, trimmedName);
+			return json(updated);
+		} catch (err) {
+			if (err instanceof Error && err.message.includes('already exists')) {
+				return json({ error: 'A member with this name already exists' }, { status: 409 });
+			}
+			console.error('Failed to update member name:', err);
+			return json(
+				{ error: err instanceof Error ? err.message : 'Failed to update name' },
+				{ status: 500 }
+			);
+		}
+	}
+
+	return json({ error: 'No valid fields to update' }, { status: 400 });
+}
+
+// DELETE - Remove member from vault
 export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
