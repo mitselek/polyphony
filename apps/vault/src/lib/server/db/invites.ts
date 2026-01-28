@@ -121,18 +121,20 @@ async function loadInviteRelations(
 	// Get roster member to load name, voices, and sections
 	const { getMemberById } = await import('./members');
 	const rosterMember = await getMemberById(db, inviteRow.roster_member_id);
-	if (!rosterMember) {
-		throw new Error('Roster member not found for invite');
-	}
+	
+	// Handle missing roster member - use email_hint as fallback name
+	const memberName = rosterMember?.name ?? (inviteRow.email_hint?.split('@')[0] ?? 'Unknown Member');
+	const memberVoices = rosterMember?.voices ?? [];
+	const memberSections = rosterMember?.sections ?? [];
 
 	// Build result with proper type conversions (null → undefined for email_hint)
 	const { email_hint, ...restRow } = inviteRow;
 	return {
 		...restRow,
-		roster_member_name: rosterMember.name,
+		roster_member_name: memberName,
 		roles,
-		voices: rosterMember.voices,
-		sections: rosterMember.sections,
+		voices: memberVoices,
+		sections: memberSections,
 		...(email_hint !== null && { email_hint }) // Only add if not null
 	};
 }
