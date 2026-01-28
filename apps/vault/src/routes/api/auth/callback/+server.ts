@@ -109,35 +109,43 @@ async function handleLogin(
 	throw redirect(302, '/library');
 }
 
+async function processAuthCallback(
+	db: D1Database,
+	url: URL,
+	cookies: Cookies,
+	fetchFn: typeof fetch,
+	vaultId: string
+): Promise<never> {
+	const token = url.searchParams.get('token');
+	if (!token) {
+		throw error(400, 'Missing token parameter');
+	}
+
+	const payload = await verifyJWT(token, fetchFn, vaultId);
+	const email = payload.email as string;
+	const name = payload.name as string | undefined;
+
+	if (!email) {
+		throw error(400, 'Token missing email claim');
+	}
+
+	const inviteToken = url.searchParams.get('invite');
+	if (inviteToken) {
+		return await handleInviteAcceptance(db, inviteToken, email, cookies);
+	}
+
+	return await handleLogin(db, email, name, cookies);
+}
+
 export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelteKitFetch }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
-	const token = url.searchParams.get('token');
-	if (!token) {
-		throw error(400, 'Missing token parameter');
-	}
-
 	try {
-		const expectedVaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
-		const payload = await verifyJWT(token, svelteKitFetch, expectedVaultId);
-
-		const email = payload.email as string;
-		const name = payload.name as string | undefined;
-
-		if (!email) {
-			throw error(400, 'Token missing email claim');
-		}
-
-		// Check if there's an invite token
-		const inviteToken = url.searchParams.get('invite');
-		if (inviteToken) {
-			return await handleInviteAcceptance(db, inviteToken, email, cookies);
-		}
-
-		return await handleLogin(db, email, name, cookies);
+		const vaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
+		return await processAuthCallback(db, url, cookies, svelteKitFetch, vaultId);
 	} catch (err) {
 		// Re-throw SvelteKit redirects and HTTP errors
 		if (err && typeof err === 'object' && 'status' in err) {
