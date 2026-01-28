@@ -1,13 +1,15 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
-	let name = $state('');
+	// Initialize with prefill data from URL params
+	let name = $state(untrack(() => data.prefill?.name ?? ''));
 	let roles = $state<Set<Role>>(new Set());
-	let voiceIds = $state<Set<string>>(new Set());
-	let sectionIds = $state<Set<string>>(new Set());
+	let voiceIds = $state<Set<string>>(untrack(() => new Set(data.prefill?.voiceIds ?? [])));
+	let sectionIds = $state<Set<string>>(untrack(() => new Set(data.prefill?.sectionIds ?? [])));
 	let isSubmitting = $state(false);
 	let error = $state('');
 	let success = $state('');

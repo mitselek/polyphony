@@ -290,7 +290,7 @@
 					</div>
 					{#if data.isAdmin}
 						<a
-							href="/invite?name={encodeURIComponent(member.name)}"
+							href="/invite?name={encodeURIComponent(member.name)}&voices={member.voices.map(v => v.id).join(',')}&sections={member.sections.map(s => s.id).join(',')}"
 							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
 						>
 							Send Invitation

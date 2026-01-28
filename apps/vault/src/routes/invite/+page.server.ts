@@ -5,7 +5,7 @@ import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/m
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 
-export const load: PageServerLoad = async ({ platform, cookies }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -21,9 +21,19 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 		getActiveSections(db)
 	]);
 
+	// Pre-fill from URL params (for roster member invitations)
+	const prefillName = url.searchParams.get('name') ?? '';
+	const prefillVoices = url.searchParams.get('voices')?.split(',').filter(Boolean) ?? [];
+	const prefillSections = url.searchParams.get('sections')?.split(',').filter(Boolean) ?? [];
+
 	return {
 		isOwner: isOwner(member),
 		voices,
-		sections
+		sections,
+		prefill: {
+			name: prefillName,
+			voiceIds: prefillVoices,
+			sectionIds: prefillSections
+		}
 	};
 };
