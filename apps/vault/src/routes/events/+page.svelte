@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import type { EventType, PlannedStatus } from '$lib/types';
 
@@ -10,11 +11,19 @@
 	// RSVP state
 	let updatingRsvp = $state<Record<string, boolean>>({});
 
+	// Create local reactive copy of events for RSVP updates
+	let events = $state(untrack(() => data.events));
+	
+	// Sync with server data when it changes
+	$effect(() => {
+		events = data.events;
+	});
+
 	// Filtered events based on selected type
 	let filteredEvents = $derived(
 		selectedFilter === 'all'
-			? data.events
-			: data.events.filter((e) => e.event_type === selectedFilter)
+			? events
+			: events.filter((e) => e.event_type === selectedFilter)
 	);
 
 	// Format date and time
@@ -84,7 +93,7 @@
 				}
 
 				// Update local state
-				data.events = data.events.map((event) => {
+				events = events.map((event) => {
 					if (event.id === eventId) {
 						return { ...event, myRsvp: status };
 					}
