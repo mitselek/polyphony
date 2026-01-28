@@ -1,10 +1,10 @@
 // GET /api/auth/callback?token=xxx - Receive JWT from registry after OAuth
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { importJWK, jwtVerify } from 'jose';
-import { getMemberByEmailId, createMember } from '$lib/server/db/members';
+import { importJWK, jwtVerify, type JWTPayload } from 'jose';
+import { getMemberByEmailId } from '$lib/server/db/members';
 import { acceptInvite } from '$lib/server/db/invites';
-import type { Role } from '$lib/types';
+import type { Cookies } from '@sveltejs/kit';
 
 // Registry URL for fetching JWKS
 const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
@@ -29,6 +29,86 @@ async function fetchJWKS(fetchFn: typeof fetch): Promise<typeof jwksCache> {
 	return jwksCache;
 }
 
+async function verifyJWT(token: string, fetchFn: typeof fetch, expectedVaultId: string): Promise<JWTPayload> {
+	const jwks = await fetchJWKS(fetchFn);
+	if (!jwks || jwks.keys.length === 0) {
+		throw error(500, 'No signing keys available');
+	}
+
+	// Import JWK (fix alg if needed)
+	const jwk = { ...jwks.keys[0] };
+	if (jwk.alg === 'Ed25519') {
+		jwk.alg = 'EdDSA';
+	}
+	const publicKey = await importJWK(jwk, 'EdDSA');
+
+	// Verify token
+	const { payload } = await jwtVerify(token, publicKey, {
+		algorithms: ['EdDSA']
+	});
+
+	// Check audience
+	if (payload.aud !== expectedVaultId) {
+		throw error(403, `Token not issued for this vault (expected: ${expectedVaultId}, got: ${payload.aud})`);
+	}
+
+	return payload;
+}
+
+async function handleInviteAcceptance(
+	db: D1Database,
+	inviteToken: string,
+	email: string,
+	cookies: Cookies
+): Promise<never> {
+	const inviteResult = await acceptInvite(db, inviteToken, email);
+
+	if (!inviteResult.success) {
+		const errorMsg = inviteResult.error ?? 'Failed to accept invitation';
+		throw redirect(302, '/login?error=' + encodeURIComponent(errorMsg));
+	}
+
+	// Set session for newly registered member
+	cookies.set('member_id', inviteResult.memberId!, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: true,
+		maxAge: 60 * 60 * 24 * 30 // 30 days
+	});
+
+	throw redirect(302, '/profile?welcome=true');
+}
+
+async function handleLogin(
+	db: D1Database,
+	email: string,
+	name: string | undefined,
+	cookies: Cookies
+): Promise<never> {
+	let member = await getMemberByEmailId(db, email);
+
+	if (!member) {
+		throw redirect(302, '/login?error=not_registered');
+	}
+
+	// Update name if changed from OAuth provider
+	if (name && member.name !== name) {
+		await db.prepare('UPDATE members SET name = ? WHERE id = ?').bind(name, member.id).run();
+	}
+
+	// Create session cookie
+	cookies.set('member_id', member.id, {
+		path: '/',
+		httpOnly: true,
+		secure: true,
+		sameSite: 'lax',
+		maxAge: 60 * 60 * 24 * 7 // 1 week
+	});
+
+	throw redirect(302, '/library');
+}
+
 export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelteKitFetch }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
@@ -41,37 +121,9 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 	}
 
 	try {
-		// Fetch JWKS from registry
-		const jwks = await fetchJWKS(svelteKitFetch);
-		if (!jwks || jwks.keys.length === 0) {
-			throw error(500, 'No signing keys available');
-		}
-
-		// Import JWK directly using jose
-		// Fix alg field if it's "Ed25519" (WebCrypto) instead of "EdDSA" (jose/JWT)
-		const jwk = { ...jwks.keys[0] };
-		if (jwk.alg === 'Ed25519') {
-			jwk.alg = 'EdDSA';
-		}
-		const publicKey = await importJWK(jwk, 'EdDSA');
-
-		// Verify the token using jose
-		const { payload } = await jwtVerify(token, publicKey, {
-			algorithms: ['EdDSA']
-		});
-
-		// Check the audience matches our vault ID
-		console.log('[AUTH DEBUG] platform:', !!platform);
-		console.log('[AUTH DEBUG] platform.env:', platform?.env ? Object.keys(platform.env) : 'undefined');
-		console.log('[AUTH DEBUG] VAULT_ID:', platform?.env?.VAULT_ID);
 		const expectedVaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
-		console.log('[AUTH DEBUG] expectedVaultId:', expectedVaultId);
-		console.log('[AUTH DEBUG] payload.aud:', payload.aud);
-		if (payload.aud !== expectedVaultId) {
-			throw error(403, `Token not issued for this vault (expected: ${expectedVaultId}, got: ${payload.aud})`);
-		}
+		const payload = await verifyJWT(token, svelteKitFetch, expectedVaultId);
 
-		// Extract email from payload
 		const email = payload.email as string;
 		const name = payload.name as string | undefined;
 
@@ -79,58 +131,13 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 			throw error(400, 'Token missing email claim');
 		}
 
-		// Check if there's an invite token from URL parameter
+		// Check if there's an invite token
 		const inviteToken = url.searchParams.get('invite');
-
 		if (inviteToken) {
-			// Accepting invitation: upgrade roster member
-			const inviteResult = await acceptInvite(db, inviteToken, email);
-
-			if (!inviteResult.success) {
-				// Invite acceptance failed - redirect to login with error
-				const errorMsg = inviteResult.error ?? 'Failed to accept invitation';
-				throw redirect(302, '/login?error=' + encodeURIComponent(errorMsg));
-			}
-
-			// Set session for newly registered member
-			cookies.set('member_id', inviteResult.memberId!, {
-				path: '/',
-				httpOnly: true,
-				sameSite: 'lax',
-				secure: true,
-				maxAge: 60 * 60 * 24 * 30 // 30 days
-			});
-
-			throw redirect(302, '/profile?welcome=true');
+			return await handleInviteAcceptance(db, inviteToken, email, cookies);
 		}
 
-		// Regular login: find registered member by email_id
-		let member = await getMemberByEmailId(db, email);
-
-		if (!member) {
-			// No registered member with this email - must be invited first
-			throw redirect(302, '/login?error=not_registered');
-		}
-
-		// Update name if changed from OAuth provider
-		if (name && member.name !== name) {
-			await db
-				.prepare('UPDATE members SET name = ? WHERE id = ?')
-				.bind(name, member.id)
-				.run();
-		}
-
-		// Create session cookie
-		cookies.set('member_id', member.id, {
-			path: '/',
-			httpOnly: true,
-			secure: true,
-			sameSite: 'lax',
-			maxAge: 60 * 60 * 24 * 7 // 1 week
-		});
-
-		// Redirect to library
-		throw redirect(302, '/library');
+		return await handleLogin(db, email, name, cookies);
 	} catch (err) {
 		// Re-throw SvelteKit redirects and HTTP errors
 		if (err && typeof err === 'object' && 'status' in err) {
