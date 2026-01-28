@@ -44,11 +44,12 @@ const PERMISSIONS: Record<Role, Permission[]> = {
  * Permissions are union of all assigned roles
  */
 export function hasPermission(member: Member | null | undefined, permission: Permission): boolean {
-	if (!member) {
+	// Must be registered to have ANY permissions
+	if (!member || !member.email_id) {
 		return false;
 	}
 
-	// All authenticated members can view and download scores
+	// All authenticated (registered) members can view and download scores
 	if (permission === 'scores:view' || permission === 'scores:download') {
 		return true;
 	}

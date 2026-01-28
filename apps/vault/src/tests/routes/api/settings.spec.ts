@@ -45,7 +45,7 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 						// Return member without roles (roles come from separate query)
 						return {
 							id: memberData.id,
-							email: memberData.email,
+							email_id: memberData.email_id,
 							name: memberData.name,
 
 							invited_by: memberData.invited_by,
@@ -104,7 +104,7 @@ function createMockEvent(overrides?: Partial<RequestEvent>): RequestEvent {
 	const membersData = new Map();
 	membersData.set('admin123', {
 		id: 'admin123',
-		email: 'admin@example.com',
+		email_id: 'admin@example.com',
 		name: 'Admin User',
 		roles: ['admin'],
 		invited_by: null,
@@ -112,7 +112,7 @@ function createMockEvent(overrides?: Partial<RequestEvent>): RequestEvent {
 	});
 	membersData.set('member123', {
 		id: 'member123',
-		email: 'member@example.com',
+		email_id: 'member@example.com',
 		name: 'Regular Member',
 		roles: [],
 		invited_by: null,

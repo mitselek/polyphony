@@ -26,7 +26,7 @@ function createMockDb() {
 	const members = new Map([
 		['test-member', {
 			id: 'test-member',
-			email: 'conductor@example.com',
+			email_id: 'conductor@example.com',
 			name: 'Test Conductor',
 			roles: ['conductor'],
 			invited_by: null,
@@ -34,7 +34,7 @@ function createMockDb() {
 		}],
 		['librarian-member', {
 			id: 'librarian-member',
-			email: 'librarian@example.com',
+			email_id: 'librarian@example.com',
 			name: 'Test Librarian',
 			roles: ['librarian'],
 			invited_by: null,
