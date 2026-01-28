@@ -53,8 +53,8 @@ export async function GET(event: RequestEvent) {
 
 		return {
 			memberId: member.id,
-			memberName: member.name || member.email,
-			memberEmail: member.email,
+				memberName: member.name || member.email_id || 'Unknown',
+				memberEmail: member.email_id,
 			primarySection: primarySection
 				? {
 						id: primarySection.id,

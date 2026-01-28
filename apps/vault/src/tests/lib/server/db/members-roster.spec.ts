@@ -1,0 +1,372 @@
+// TDD: Two-tier member system tests (roster + registered)
+/// <reference types="@cloudflare/workers-types" />
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+	createMember,
+	createRosterMember,
+	upgradeToRegistered,
+	getMemberByEmailId,
+	getMemberByName,
+	isRegistered,
+	getAuthEmail,
+	getContactEmail,
+	type Member
+} from '../../../../lib/server/db/members.js';
+
+// Simplified mock D1 database for roster tests
+const createMockDb = () => {
+	const members = new Map<string, {
+		id: string;
+		name: string;
+		email_id: string | null;
+		email_contact: string | null;
+		invited_by: string | null;
+		joined_at: string;
+	}>();
+	const memberRoles = new Map<string, string[]>();
+	const memberVoices = new Map<string, { voice_id: string; is_primary: number }[]>();
+	const memberSections = new Map<string, { section_id: string; is_primary: number }[]>();
+
+	return {
+		prepare: (sql: string) => ({
+			bind: (...params: unknown[]) => ({
+				run: async () => {
+					// INSERT INTO members
+					if (sql.includes('INSERT INTO members')) {
+						// createMember: VALUES (?, ?, ?, NULL, ?) - email_contact is NULL
+						// createRosterMember: VALUES (?, ?, NULL, ?, ?) - email_id is NULL
+						if (sql.includes(', NULL, ?)')) {
+							// createRosterMember case: email_id=NULL, params=[id, name, email_contact, invited_by]
+							const [id, name, email_contact, invited_by] = params as [string, string, string | null, string | null];
+							members.set(id, {
+								id,
+								name,
+								email_id: null,
+								email_contact,
+								invited_by,
+								joined_at: new Date().toISOString()
+							});
+						} else {
+							// createMember case: email_contact=NULL, params=[id, name, email_id, invited_by]
+							const [id, name, email_id, invited_by] = params as [string, string, string, string | null];
+							members.set(id, {
+								id,
+								name,
+								email_id,
+								email_contact: null,
+								invited_by,
+								joined_at: new Date().toISOString()
+							});
+						}
+						return { success: true, meta: { changes: 1 } };
+					}
+					// UPDATE members SET email_id
+					if (sql.includes('UPDATE members SET email_id')) {
+						const [email_id, id] = params as [string, string];
+						const member = members.get(id);
+						if (member) {
+							member.email_id = email_id;
+							members.set(id, member);
+						}
+						return { success: true, meta: { changes: 1 } };
+					}
+					return { success: true };
+				},
+				first: async () => {
+					// SELECT id FROM members WHERE LOWER(name) = LOWER(?)
+					if (sql.includes('LOWER(name)')) {
+						const name = params[0] as string;
+						for (const member of members.values()) {
+							if (member.name.toLowerCase() === name.toLowerCase()) {
+								return { id: member.id };
+							}
+						}
+						return null;
+					}
+					// SELECT by email_id
+					if (sql.includes('WHERE email_id =')) {
+						const email_id = params[0] as string;
+						for (const member of members.values()) {
+							if (member.email_id === email_id) {
+								return member;
+							}
+						}
+						return null;
+					}
+					// SELECT by id
+					if (sql.includes('WHERE id =')) {
+						const id = params[0] as string;
+						return members.get(id) || null;
+					}
+					return null;
+				},
+				all: async () => {
+					// SELECT roles
+					if (sql.includes('FROM member_roles')) {
+						const member_id = params[0] as string;
+						const roles = memberRoles.get(member_id) || [];
+						return { results: roles.map(role => ({ role })) };
+					}
+					return { results: [] };
+				}
+			})
+		}),
+		batch: async (statements: any[]) => {
+			const results = [];
+			for (const stmt of statements) {
+				const result = await stmt.run();
+				results.push(result);
+			}
+			return results;
+		}
+	} as unknown as D1Database;
+};
+
+describe('Two-tier member system', () => {
+	let db: D1Database;
+
+	beforeEach(() => {
+		db = createMockDb();
+	});
+
+	describe('Helper functions', () => {
+		it('isRegistered should return true for OAuth members', async () => {
+			const member = await createMember(db, {
+				email: 'registered@choir.org',
+				name: 'Registered User',
+				roles: []
+			});
+
+			expect(isRegistered(member)).toBe(true);
+		});
+
+		it('isRegistered should return false for roster-only members', async () => {
+			const member = await createRosterMember(db, {
+				name: 'Roster Only',
+				addedBy: 'admin-id'
+			});
+
+			expect(isRegistered(member)).toBe(false);
+		});
+
+		it('getAuthEmail should return email_id for registered members', async () => {
+			const member = await createMember(db, {
+				email: 'auth@choir.org',
+				name: 'Auth User',
+				roles: []
+			});
+
+			expect(getAuthEmail(member)).toBe('auth@choir.org');
+		});
+
+		it('getAuthEmail should return null for roster-only members', async () => {
+			const member = await createRosterMember(db, {
+				name: 'Roster Member',
+				addedBy: 'admin-id'
+			});
+
+			expect(getAuthEmail(member)).toBeNull();
+		});
+
+		it('getContactEmail should prefer email_contact over email_id', async () => {
+			const member = await createRosterMember(db, {
+				name: 'Contact Test',
+				email_contact: 'contact@example.com',
+				addedBy: 'admin-id'
+			});
+
+			// After upgrade with different OAuth email
+			const upgraded = await upgradeToRegistered(db, member.id, 'oauth@provider.com');
+
+			expect(getContactEmail(upgraded)).toBe('contact@example.com');
+		});
+
+		it('getContactEmail should fallback to email_id if no contact email', async () => {
+			const member = await createMember(db, {
+				email: 'fallback@choir.org',
+				name: 'Fallback User',
+				roles: []
+			});
+
+			expect(getContactEmail(member)).toBe('fallback@choir.org');
+		});
+	});
+
+	describe('createRosterMember', () => {
+		it('should create a roster-only member without OAuth', async () => {
+			const member = await createRosterMember(db, {
+				name: 'Jane Doe',
+				addedBy: 'admin-123'
+			});
+
+			expect(member.name).toBe('Jane Doe');
+			expect(member.email_id).toBeNull();
+			expect(member.email_contact).toBeNull();
+			expect(member.invited_by).toBe('admin-123');
+			expect(member.roles).toEqual([]); // Roster-only members have no roles
+			expect(isRegistered(member)).toBe(false);
+		});
+
+		it('should create roster member with contact email', async () => {
+			const member = await createRosterMember(db, {
+				name: 'Contact Member',
+				email_contact: 'contact@personal.com',
+				addedBy: 'admin-123'
+			});
+
+			expect(member.email_contact).toBe('contact@personal.com');
+			expect(member.email_id).toBeNull();
+		});
+
+		it('should enforce case-insensitive name uniqueness', async () => {
+			await createRosterMember(db, {
+				name: 'Unique Name',
+				addedBy: 'admin-123'
+			});
+
+			await expect(
+				createRosterMember(db, {
+					name: 'UNIQUE NAME', // Different case
+					addedBy: 'admin-123'
+				})
+			).rejects.toThrow('Member with name "UNIQUE NAME" already exists');
+		});
+	});
+
+	describe('upgradeToRegistered', () => {
+		it('should add email_id to roster-only member', async () => {
+			const rosterMember = await createRosterMember(db, {
+				name: 'Upgrader',
+				addedBy: 'admin-123'
+			});
+
+			expect(rosterMember.email_id).toBeNull();
+
+			const upgraded = await upgradeToRegistered(db, rosterMember.id, 'verified@oauth.com');
+
+			expect(upgraded.email_id).toBe('verified@oauth.com');
+			expect(upgraded.name).toBe('Upgrader'); // Name unchanged
+			expect(isRegistered(upgraded)).toBe(true);
+		});
+
+		it('should prevent email_id collision', async () => {
+			// Create registered member
+			const existing = await createMember(db, {
+				email: 'taken@choir.org',
+				name: 'Existing',
+				roles: []
+			});
+
+			// Create roster member
+			const roster = await createRosterMember(db, {
+				name: 'Roster',
+				addedBy: 'admin-123'
+			});
+
+			// Try to upgrade with existing email
+			await expect(
+				upgradeToRegistered(db, roster.id, 'taken@choir.org')
+			).rejects.toThrow('Email already registered to another member');
+		});
+
+		it('should allow upgrading with same email (idempotent)', async () => {
+			const roster = await createRosterMember(db, {
+				name: 'Idempotent',
+				addedBy: 'admin-123'
+			});
+
+			const upgraded1 = await upgradeToRegistered(db, roster.id, 'email@example.com');
+			const upgraded2 = await upgradeToRegistered(db, roster.id, 'email@example.com');
+
+			expect(upgraded2.email_id).toBe('email@example.com');
+		});
+	});
+
+	describe('getMemberByEmailId', () => {
+		it('should find registered member by email_id', async () => {
+			const created = await createMember(db, {
+				email: 'find@choir.org',
+				name: 'Findable',
+				roles: []
+			});
+
+			const found = await getMemberByEmailId(db, 'find@choir.org');
+
+			expect(found).toBeDefined();
+			expect(found?.id).toBe(created.id);
+			expect(found?.email_id).toBe('find@choir.org');
+		});
+
+		it('should not find roster-only members by email_id', async () => {
+			await createRosterMember(db, {
+				name: 'Roster Only',
+				email_contact: 'contact@example.com',
+				addedBy: 'admin-123'
+			});
+
+			const found = await getMemberByEmailId(db, 'contact@example.com');
+
+			expect(found).toBeNull(); // Contact email is NOT email_id
+		});
+
+		it('should return null for unknown email_id', async () => {
+			const found = await getMemberByEmailId(db, 'nonexistent@choir.org');
+			expect(found).toBeNull();
+		});
+	});
+
+	describe('getMemberByName', () => {
+		it('should find member by exact name', async () => {
+			const created = await createRosterMember(db, {
+				name: 'Exact Match',
+				addedBy: 'admin-123'
+			});
+
+			const found = await getMemberByName(db, 'Exact Match');
+
+			expect(found).toBeDefined();
+			expect(found?.id).toBe(created.id);
+		});
+
+		it('should find member by case-insensitive name', async () => {
+			const created = await createRosterMember(db, {
+				name: 'Case Insensitive',
+				addedBy: 'admin-123'
+			});
+
+			const found = await getMemberByName(db, 'CASE INSENSITIVE');
+
+			expect(found).toBeDefined();
+			expect(found?.id).toBe(created.id);
+		});
+
+		it('should return null for unknown name', async () => {
+			const found = await getMemberByName(db, 'Nonexistent');
+			expect(found).toBeNull();
+		});
+	});
+
+	describe('Data migration workflow', () => {
+		it('should support complete workflow: roster → upgrade → roles', async () => {
+			// 1. Add to roster (before OAuth)
+			const roster = await createRosterMember(db, {
+				name: 'New Singer',
+				email_contact: 'personal@email.com',
+				addedBy: 'conductor-id'
+			});
+
+			expect(roster.roles).toEqual([]);
+			expect(isRegistered(roster)).toBe(false);
+
+			// 2. Member accepts invite and does OAuth
+			const registered = await upgradeToRegistered(db, roster.id, 'oauth@google.com');
+
+			expect(registered.email_id).toBe('oauth@google.com');
+			expect(registered.email_contact).toBe('personal@email.com');
+			expect(isRegistered(registered)).toBe(true);
+
+			// 3. Now they can be granted roles (future feature)
+			// This will be tested in integration tests once role management is updated
+		});
+	});
+});

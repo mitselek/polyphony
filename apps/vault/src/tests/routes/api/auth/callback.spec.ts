@@ -20,7 +20,7 @@ import { GET } from '../../../../routes/api/auth/callback/+server';
 
 // Mock members db
 vi.mock('$lib/server/db/members', () => ({
-	getMemberByEmail: vi.fn(),
+	getMemberByEmailIdId: vi.fn(),
 	createMember: vi.fn()
 }));
 
@@ -35,7 +35,7 @@ vi.mock('jose', () => ({
 	jwtVerify: vi.fn()
 }));
 
-import { getMemberByEmail, createMember } from '$lib/server/db/members';
+import { getMemberByEmailId, createMember } from '$lib/server/db/members';
 import { acceptInvite } from '$lib/server/db/invites';
 import { importJWK, jwtVerify } from 'jose';
 
@@ -175,7 +175,7 @@ describe('GET /api/auth/callback', () => {
 			protectedHeader: { alg: 'EdDSA' }
 		} as any);
 
-		vi.mocked(getMemberByEmail).mockResolvedValue(null);
+		vi.mocked(getMemberByEmailId).mockResolvedValue(null);
 		vi.mocked(createMember).mockResolvedValue(mockNewMember as any);
 
 		const cookies = createMockCookies(); // No invite token
@@ -239,7 +239,7 @@ describe('GET /api/auth/callback', () => {
 			protectedHeader: { alg: 'EdDSA' }
 		} as any);
 
-		vi.mocked(getMemberByEmail).mockResolvedValue(mockExistingMember as any);
+		vi.mocked(getMemberByEmailId).mockResolvedValue(mockExistingMember as any);
 
 		const cookies = createMockCookies(); // No invite token
 		const mockFetch = createMockFetch(mockJWKS);
@@ -292,7 +292,7 @@ describe('GET /api/auth/callback', () => {
 		} as any);
 
 		// Fall back to normal member creation
-		vi.mocked(getMemberByEmail).mockResolvedValue(null);
+		vi.mocked(getMemberByEmailId).mockResolvedValue(null);
 		vi.mocked(createMember).mockResolvedValue(mockFallbackMember as any);
 
 		const cookies = createMockCookies('bad-invite-token');

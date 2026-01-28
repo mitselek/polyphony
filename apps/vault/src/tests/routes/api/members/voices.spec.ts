@@ -34,7 +34,8 @@ const mockDb = {
 // Mock authenticated member (admin)
 const mockAdminMember = {
 	id: 'admin-id',
-	email: 'admin@test.com',
+	email_id: 'admin@test.com',
+	email_contact: null,
 	name: 'Admin User',
 	roles: ['admin' as const],
 	voices: [],
@@ -46,7 +47,8 @@ const mockAdminMember = {
 // Mock target member
 const mockTargetMember = {
 	id: 'member-id',
-	email: 'member@test.com',
+	email_id: 'member@test.com',
+	email_contact: null,
 	name: 'Test Member',
 	roles: [] as Role[],
 	voices: [],

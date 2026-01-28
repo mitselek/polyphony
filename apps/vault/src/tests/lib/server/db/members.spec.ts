@@ -3,9 +3,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
 	createMember,
-	getMemberByEmail,
+	createRosterMember,
+	upgradeToRegistered,
+	getMemberByEmailId,
+	getMemberByName,
 	getMemberById,
 	getAllMembers,
+	isRegistered,
+	getAuthEmail,
+	getContactEmail,
 	addMemberVoice,
 	removeMemberVoice,
 	setPrimaryVoice,
@@ -20,8 +26,9 @@ const createMockDb = () => {
 		string,
 		{
 			id: string;
-			email: string;
-			name: string | null;
+			name: string;
+			email_id: string | null;
+			email_contact: string | null;
 			invited_by: string | null;
 			joined_at: string;
 		}
@@ -49,7 +56,7 @@ const createMockDb = () => {
 			const result = {
 				all: async () => {
 					// SELECT all members (no WHERE clause, no bind needed)
-					if (sql.includes('SELECT id, email, name, invited_by, joined_at FROM members') && !sql.includes('WHERE')) {
+					if (sql.includes('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members') && !sql.includes('WHERE')) {
 						return { results: Array.from(members.values()) };
 					}
 					return { results: [] };
@@ -58,13 +65,14 @@ const createMockDb = () => {
 					run: async () => {
 						// INSERT INTO members
 						if (sql.includes('INSERT INTO members')) {
-							const [id, email, name, invited_by] = params as [
+							const [id, name, email_id, email_contact, invited_by] = params as [
 								string,
 								string,
 								string | null,
+								string | null,
 								string | null
 							];
-							members.set(id, { id, email, name, invited_by, joined_at: new Date().toISOString() });
+							members.set(id, { id, name, email_id, email_contact, invited_by, joined_at: new Date().toISOString() });
 							return { success: true, meta: { changes: 1 } };
 						}
 						// INSERT INTO member_roles
@@ -146,11 +154,19 @@ const createMockDb = () => {
 						return { success: true };
 					},
 					first: async () => {
-						// SELECT member by email
-						if (sql.includes('FROM members') && sql.includes('WHERE email =')) {
-							const email = params[0] as string;
+						// SELECT member by email_id
+						if (sql.includes('FROM members') && sql.includes('WHERE email_id =')) {
+							const email_id = params[0] as string;
 							for (const member of members.values()) {
-								if (member.email === email) return member;
+								if (member.email_id === email_id) return member;
+							}
+							return null;
+						}
+						// SELECT member by name (case-insensitive)
+						if (sql.includes('FROM members') && sql.includes('LOWER(name)')) {
+							const name = params[0] as string;
+							for (const member of members.values()) {
+								if (member.name.toLowerCase() === name.toLowerCase()) return member;
 							}
 							return null;
 						}
@@ -158,6 +174,16 @@ const createMockDb = () => {
 						if (sql.includes('FROM members') && sql.includes('WHERE id =')) {
 							const id = params[0] as string;
 							return members.get(id) || null;
+						}
+						// UPDATE members SET email_id (for upgradeToRegistered)
+						if (sql.includes('UPDATE members SET email_id')) {
+							const [email_id, id] = params as [string, string];
+							const member = members.get(id);
+							if (member) {
+								member.email_id = email_id;
+								members.set(id, member);
+							}
+							return null;
 						}
 						return null;
 					},
@@ -223,7 +249,7 @@ describe('Member database operations', () => {
 
 			expect(member).toBeDefined();
 			expect(member.id).toBeDefined();
-			expect(member.email).toBe('singer@choir.org');
+			expect(member.email_id).toBe('singer@choir.org');
 			expect(member.name).toBe('Test Singer');
 			expect(member.roles).toContain('librarian');
 			expect(member.voices).toEqual([]);
@@ -278,8 +304,8 @@ describe('Member database operations', () => {
 		});
 	});
 
-	describe('getMemberByEmail', () => {
-		it('should find member by email with voices and sections', async () => {
+	describe('getMemberByEmailId', () => {
+		it('should find member by email_id with voices and sections', async () => {
 			const created = await createMember(db, {
 				email: 'find@choir.org',
 				name: 'Findable',
@@ -288,10 +314,10 @@ describe('Member database operations', () => {
 				sectionIds: ['tenor-1']
 			});
 
-			const found = await getMemberByEmail(db, 'find@choir.org');
+			const found = await getMemberByEmailId(db, 'find@choir.org');
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
-			expect(found?.email).toBe('find@choir.org');
+			expect(found?.email_id).toBe('find@choir.org');
 			expect(found?.roles).toContain('admin');
 			expect(found?.voices).toHaveLength(1);
 			expect(found?.voices[0].id).toBe('tenor');
@@ -300,7 +326,7 @@ describe('Member database operations', () => {
 		});
 
 		it('should return null for unknown email', async () => {
-			const found = await getMemberByEmail(db, 'unknown@choir.org');
+			const found = await getMemberByEmailId(db, 'unknown@choir.org');
 			expect(found).toBeNull();
 		});
 	});
@@ -494,17 +520,17 @@ describe('Member database operations', () => {
 			expect(allMembers).toHaveLength(3);
 			
 			// Verify each member has their voices/sections loaded
-			const soprano = allMembers.find(m => m.email === 'soprano@choir.org');
-			expect(soprano?.voices).toHaveLength(1);
-			expect(soprano?.voices[0].id).toBe('soprano');
-			expect(soprano?.sections).toHaveLength(1);
-			expect(soprano?.sections[0].id).toBe('soprano');
+					const soprano = allMembers.find(m => m.email_id === 'soprano@choir.org');
+					expect(soprano?.voices).toHaveLength(1);
+					expect(soprano?.voices[0].id).toBe('soprano');
+					expect(soprano?.sections).toHaveLength(1);
+					expect(soprano?.sections[0].id).toBe('soprano');
 
-			const alto = allMembers.find(m => m.email === 'alto@choir.org');
-			expect(alto?.voices).toHaveLength(1);
-			expect(alto?.voices[0].id).toBe('alto');
+					const alto = allMembers.find(m => m.email_id === 'alto@choir.org');
+					expect(alto?.voices).toHaveLength(1);
+					expect(alto?.voices[0].id).toBe('alto');
 
-			const tenor = allMembers.find(m => m.email === 'tenor@choir.org');
+					const tenor = allMembers.find(m => m.email_id === 'tenor@choir.org');
 			expect(tenor?.voices).toHaveLength(1);
 			expect(tenor?.voices[0].id).toBe('tenor');
 			expect(tenor?.sections[0].id).toBe('tenor-1');

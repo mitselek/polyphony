@@ -36,7 +36,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	// Format for frontend
 	const members = allMembers.map((m) => ({
 		id: m.id,
-		email: m.email,
+		email: m.email_id,
 		name: m.name,
 		voices: m.voices,
 		sections: m.sections,

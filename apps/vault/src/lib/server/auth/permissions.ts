@@ -19,7 +19,7 @@ export type Permission =
 export interface Member {
 	id: string;
 	roles: Role[]; // Multi-role support
-	email: string;
+	email_id: string | null; // OAuth identity
 }
 
 export interface RequireRoleResult {
