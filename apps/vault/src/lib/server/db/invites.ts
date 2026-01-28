@@ -52,32 +52,46 @@ function generateId(): string {
 /**
  * Create a new invite linked to a roster member
  */
-export async function createInvite(
+/**
+ * Validate roster member for invitation
+ */
+async function validateRosterMemberForInvite(
 	db: D1Database,
-	input: CreateInviteInput
-): Promise<Invite> {
-	// 1. Verify roster member exists
+	rosterMemberId: string
+): Promise<void> {
 	const { getMemberById } = await import('./members');
-	const rosterMember = await getMemberById(db, input.rosterMemberId);
+	const rosterMember = await getMemberById(db, rosterMemberId);
+	
 	if (!rosterMember) {
 		throw new Error('Roster member not found');
 	}
 
-	// 2. Verify member is not already registered
 	if (rosterMember.email_id) {
 		throw new Error('Member is already registered');
 	}
 
-	// 3. Check for existing pending invite
+	// Check for existing pending invite (non-expired)
 	const existingInvite = await db
-		.prepare('SELECT id FROM invites WHERE roster_member_id = ? AND status = "pending"')
-		.bind(input.rosterMemberId)
+		.prepare('SELECT id FROM invites WHERE roster_member_id = ? AND expires_at > datetime("now")')
+		.bind(rosterMemberId)
 		.first();
+	
 	if (existingInvite) {
 		throw new Error('Member already has a pending invitation');
 	}
+}
 
-	// 4. Create invite linked to roster member
+/**
+ * Create a new invite for a roster-only member
+ */
+export async function createInvite(
+	db: D1Database,
+	input: CreateInviteInput
+): Promise<Invite> {
+	// Validate roster member
+	await validateRosterMemberForInvite(db, input.rosterMemberId);
+
+	// Create invite linked to roster member
 	const id = generateId();
 	const token = generateToken();
 	const now = new Date();
@@ -86,8 +100,8 @@ export async function createInvite(
 
 	await db
 		.prepare(
-			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at)
-			 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+			`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, roles, email_hint, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			id,
@@ -113,7 +127,7 @@ export async function createInvite(
  */
 async function loadInviteRelations(
 	db: D1Database,
-	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'> & { roles: string; email_hint: string | null }
+	inviteRow: Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'> & { roles: string }
 ): Promise<Invite> {
 	// Parse roles JSON
 	const roles = JSON.parse(inviteRow.roles) as Role[];
@@ -127,15 +141,12 @@ async function loadInviteRelations(
 	const memberVoices = rosterMember?.voices ?? [];
 	const memberSections = rosterMember?.sections ?? [];
 
-	// Build result with proper type conversions (null → undefined for email_hint)
-	const { email_hint, ...restRow } = inviteRow;
 	return {
-		...restRow,
+		...inviteRow,
 		roster_member_name: memberName,
 		roles,
 		voices: memberVoices,
-		sections: memberSections,
-		...(email_hint !== null && { email_hint }) // Only add if not null
+		sections: memberSections
 	};
 }
 
@@ -152,7 +163,7 @@ export async function getInviteByToken(
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
-		.first<{ roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
+		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	if (!result) return null;
 
@@ -172,7 +183,7 @@ export async function getInviteById(
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
-		.first<{ roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
+		.first<{ roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	if (!result) return null;
 
@@ -198,10 +209,8 @@ export async function acceptInvite(
 		return { success: false, error: 'Invite already used' };
 	}
 
-	// Check if expired by time (derived from expires_at)
-	const now = new Date();
-	const expiresAt = new Date(invite.expires_at);
-	if (now > expiresAt) {
+	// Check expiration
+	if (new Date(invite.expires_at) < new Date()) {
 		return { success: false, error: 'Invite has expired' };
 	}
 
@@ -225,12 +234,14 @@ export async function acceptInvite(
 		await db.batch(roleStatements);
 	}
 
-	// Mark invite as accepted with verified email
+	// Mark invite as accepted
 	await db
 		.prepare(
-			`UPDATE invites SET status = 'accepted', accepted_at = ?, accepted_by_email = ? WHERE token = ?`
+			`UPDATE invites 
+			 SET status = 'accepted', accepted_at = ?, accepted_by_email = ?
+			 WHERE token = ?`
 		)
-		.bind(now.toISOString(), email, token)
+		.bind(new Date().toISOString(), email, token)
 		.run();
 
 	return { success: true, memberId: member.id };
@@ -251,7 +262,7 @@ export async function getPendingInvites(
 			 WHERE i.status = 'pending'
 			 ORDER BY i.created_at DESC`
 		)
-		.all<{ inviter_name: string | null; inviter_email: string | null; roles: string; email_hint: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name' | 'email_hint'>>();
+		.all<{ inviter_name: string | null; inviter_email: string | null; roles: string } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	// Load relations for each invite
 	const invitesWithRelations = await Promise.all(
@@ -259,6 +270,10 @@ export async function getPendingInvites(
 			const invite = await loadInviteRelations(db, row);
 			return {
 				...invite,
+				status: 'pending' as const, // All non-expired invites are pending
+				accepted_at: null,
+				accepted_by_email: null,
+				email_hint: undefined,
 				inviter_name: row.inviter_name,
 				inviter_email: row.inviter_email
 			};
@@ -276,7 +291,7 @@ export async function revokeInvite(
 	inviteId: string
 ): Promise<boolean> {
 	const result = await db
-		.prepare(`DELETE FROM invites WHERE id = ? AND status = 'pending'`)
+		.prepare(`DELETE FROM invites WHERE id = ? AND expires_at > datetime('now')`)
 		.bind(inviteId)
 		.run();
 
@@ -296,7 +311,7 @@ export async function renewInvite(
 		.prepare(
 			`UPDATE invites 
 			 SET expires_at = ? 
-			 WHERE id = ? AND status = 'pending'`
+			 WHERE id = ? AND expires_at > datetime('now')`
 		)
 		.bind(newExpiresAt.toISOString(), inviteId)
 		.run();
