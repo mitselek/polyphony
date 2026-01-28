@@ -17,5 +17,4 @@ database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 
 [vars]
 REGISTRY_OAUTH_URL = "https://polyphony-registry.pages.dev"
-# VAULT_ID: Set via `pnpm wrangler pages secret put VAULT_ID` for production
-# Dev default: Use localhost OAuth flow or set VAULT_ID in .dev.vars
+VAULT_ID = "BQ6u9ENTnZk_danhIhIbUB"  # Production vault ID (hardcoded - each vault deployment gets unique ID)
