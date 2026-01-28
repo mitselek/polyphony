@@ -42,6 +42,7 @@
   let showParticipationDetails = $state(false);
   let recordingAttendance = $state<Record<string, boolean>>({});
   let bulkUpdatingAttendance = $state(false);
+  let currentEventId = $state(untrack(() => data.event.id));
   
   // Local state for myParticipation for reactive RSVP updates
   let myParticipation = $state<typeof data.myParticipation>(untrack(() => data.myParticipation));
@@ -59,8 +60,12 @@
       event_type: data.event.event_type,
     };
     myParticipation = data.myParticipation;
-    // Load participation data when component mounts or data changes
-    loadParticipation();
+    
+    // Only load participation when event ID changes
+    if (currentEventId !== data.event.id) {
+      currentEventId = data.event.id;
+      loadParticipation();
+    }
   });
 
   // Format date and time
@@ -324,6 +329,9 @@
 
   // Participation functions
   async function loadParticipation() {
+    // Prevent concurrent loads
+    if (loadingParticipation) return;
+    
     loadingParticipation = true;
     try {
       const response = await fetch(`/api/events/${data.event.id}/participation`);
