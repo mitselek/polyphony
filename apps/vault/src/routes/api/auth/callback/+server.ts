@@ -75,57 +75,45 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 			throw error(400, 'Token missing email claim');
 		}
 
-		// Check if there's an invite token from the accept flow
-		const inviteToken = cookies.get('invite_token');
+		// Check if there's an invite token from URL parameter
+		const inviteToken = url.searchParams.get('invite');
 
 		if (inviteToken) {
-			// Use acceptInvite function which upgrades roster member to registered
+			// Accepting invitation: upgrade roster member
 			const inviteResult = await acceptInvite(db, inviteToken, email);
 
-			if (inviteResult.success && inviteResult.memberId) {
-				// Clear the invite token cookie
-				cookies.delete('invite_token', { path: '/' });
-
-				// Set session for the new member
-				cookies.set('member_id', inviteResult.memberId, {
-					path: '/',
-					httpOnly: true,
-					sameSite: 'lax',
-					secure: true,
-					maxAge: 60 * 60 * 24 * 30 // 30 days
-				});
-
-				throw redirect(302, '/welcome');
+			if (!inviteResult.success) {
+				// Invite acceptance failed - redirect to login with error
+				const errorMsg = inviteResult.error ?? 'Failed to accept invitation';
+				throw redirect(302, '/login?error=' + encodeURIComponent(errorMsg));
 			}
 
-			// If invite acceptance failed, clear the cookie and fall through to normal login
-			cookies.delete('invite_token', { path: '/' });
+			// Set session for newly registered member
+			cookies.set('member_id', inviteResult.memberId!, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: true,
+				maxAge: 60 * 60 * 24 * 30 // 30 days
+			});
+
+			throw redirect(302, '/profile?welcome=true');
 		}
 
-		// Find or create member by email (no invite case)
+		// Regular login: find registered member by email_id
 		let member = await getMemberByEmailId(db, email);
 
 		if (!member) {
-			// Create new member with no roles or voices/sections
-			member = await createMember(db, {
-				email,
-				name,
-				roles: []
-			});
-		} else {
-			// Existing member - update name if changed
-			if (name && member.name !== name) {
-				await db
-					.prepare('UPDATE members SET name = ? WHERE id = ?')
-					.bind(name, member.id)
-					.run();
+			// No registered member with this email - must be invited first
+			throw redirect(302, '/login?error=not_registered');
+		}
 
-				// Reload member to get updated data
-				member = await getMemberByEmailId(db, email);
-				if (!member) {
-					throw error(500, 'Failed to reload member after name update');
-				}
-			}
+		// Update name if changed from OAuth provider
+		if (name && member.name !== name) {
+			await db
+				.prepare('UPDATE members SET name = ? WHERE id = ?')
+				.bind(name, member.id)
+				.run();
 		}
 
 		// Create session cookie

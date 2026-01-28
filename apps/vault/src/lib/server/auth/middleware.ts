@@ -93,6 +93,12 @@ export async function getAuthenticatedMember(
 		throw error(401, 'Invalid session');
 	}
 	
+	// Only REGISTERED members can be authenticated
+	// (roster-only members should never have a session cookie)
+	if (!member.email_id) {
+		throw error(401, 'Authentication required - roster-only member');
+	}
+	
 	return member;
 }
 
