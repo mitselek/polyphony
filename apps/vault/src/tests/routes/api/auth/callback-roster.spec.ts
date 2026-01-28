@@ -41,14 +41,17 @@ import { importJWK, jwtVerify } from 'jose';
 function createMockURL(token: string, inviteParam?: string) {
 	const url = new URL('http://localhost:5173/api/auth/callback');
 	url.searchParams.set('token', token);
-	if (inviteParam) {
-		url.searchParams.set('invite', inviteParam);
-	}
+	// Note: invite token is now passed via cookie, not URL param
 	return url;
 }
 
-function createMockCookies() {
+function createMockCookies(pendingInvite?: string) {
 	const cookies = new Map<string, string>();
+	
+	// Pre-set pending_invite cookie if provided
+	if (pendingInvite) {
+		cookies.set('pending_invite', pendingInvite);
+	}
 	
 	return {
 		get: vi.fn((name: string) => cookies.get(name)),
@@ -86,7 +89,7 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 		vi.mocked(importJWK).mockResolvedValue(mockPublicKey as any);
 	});
 
-	it('upgrades roster member when invite token present in URL', async () => {
+	it('upgrades roster member when invite token present in cookie', async () => {
 		const mockPayload = {
 			email: 'verified@oauth.com',
 			name: 'Verified User',
@@ -113,12 +116,13 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 			member: mockUpgradedMember
 		} as any);
 
-		const cookies = createMockCookies();
+		// Pass invite token via cookie instead of URL
+		const cookies = createMockCookies('invite-token-abc');
 		const mockFetch = createMockFetch(mockJWKS);
 
 		try {
 			await GET({
-				url: createMockURL('valid-jwt-token', 'invite-token-abc'),
+				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: {} } },
 				cookies,
 				fetch: mockFetch
@@ -137,6 +141,9 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 			'invite-token-abc',
 			'verified@oauth.com'
 		);
+
+		// Verify pending_invite cookie was deleted
+		expect(cookies.delete).toHaveBeenCalledWith('pending_invite', { path: '/' });
 
 		// Verify member_id cookie was set
 		expect(cookies.set).toHaveBeenCalledWith(
@@ -166,12 +173,13 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 			error: 'Invitation already used'
 		} as any);
 
-		const cookies = createMockCookies();
+		// Pass invite token via cookie instead of URL
+		const cookies = createMockCookies('used-invite-token');
 		const mockFetch = createMockFetch(mockJWKS);
 
 		try {
 			await GET({
-				url: createMockURL('valid-jwt-token', 'used-invite-token'),
+				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: {} } },
 				cookies,
 				fetch: mockFetch

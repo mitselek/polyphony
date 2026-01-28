@@ -127,13 +127,15 @@ function validateEmail(payload: JWTPayload): string {
 
 async function routeToHandler(
 	db: D1Database,
-	url: URL,
 	cookies: Cookies,
 	email: string,
 	name: string | undefined
 ): Promise<never> {
-	const inviteToken = url.searchParams.get('invite');
+	// Check for pending invite token in cookie (set by /api/auth/login)
+	const inviteToken = cookies.get('pending_invite');
 	if (inviteToken) {
+		// Clear the cookie
+		cookies.delete('pending_invite', { path: '/' });
 		return await handleInviteAcceptance(db, inviteToken, email, cookies);
 	}
 	return await handleLogin(db, email, name, cookies);
@@ -150,7 +152,7 @@ async function processAuthCallback(
 	const payload = await verifyJWT(token, fetchFn, vaultId);
 	const email = validateEmail(payload);
 	const name = payload.name as string | undefined;
-	return await routeToHandler(db, url, cookies, email, name);
+	return await routeToHandler(db, cookies, email, name);
 }
 
 function handleAuthError(err: unknown): never {
