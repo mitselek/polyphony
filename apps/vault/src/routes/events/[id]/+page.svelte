@@ -42,7 +42,6 @@
   let showParticipationDetails = $state(false);
   let recordingAttendance = $state<Record<string, boolean>>({});
   let bulkUpdatingAttendance = $state(false);
-  let currentEventId = $state(untrack(() => data.event.id));
   
   // Local state for myParticipation for reactive RSVP updates
   let myParticipation = $state<typeof data.myParticipation>(untrack(() => data.myParticipation));
@@ -60,12 +59,15 @@
       event_type: data.event.event_type,
     };
     myParticipation = data.myParticipation;
-    
-    // Only load participation when event ID changes
-    if (currentEventId !== data.event.id) {
-      currentEventId = data.event.id;
+  });
+  
+  // Load participation when event ID changes (separate effect to avoid infinite loop)
+  $effect(() => {
+    // Only track data.event.id changes
+    const eventId = data.event.id;
+    untrack(() => {
       loadParticipation();
-    }
+    });
   });
 
   // Format date and time
