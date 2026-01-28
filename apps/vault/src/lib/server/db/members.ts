@@ -4,8 +4,9 @@ import { queryMemberSections, queryMemberVoices } from './queries/members';
 
 export interface Member {
 	id: string;
-	email: string;
-	name: string | null;
+	name: string; // Now required (NOT NULL)
+	email_id: string | null; // OAuth identity (was: email)
+	email_contact: string | null; // Contact preference (NEW)
 	roles: Role[]; // Multiple roles via junction table
 	voices: Voice[]; // Member's vocal capabilities (what they CAN sing)
 	sections: Section[]; // Member's current assignments (where they DO sing)
@@ -14,12 +15,43 @@ export interface Member {
 }
 
 export interface CreateMemberInput {
-	email: string;
+	email: string; // For OAuth registration (becomes email_id)
 	name?: string;
 	roles: Role[]; // Can assign multiple roles on creation
 	voiceIds?: string[]; // Voice IDs to assign
 	sectionIds?: string[]; // Section IDs to assign
 	invited_by?: string;
+}
+
+export interface CreateRosterMemberInput {
+	name: string; // Required
+	email_contact?: string; // Optional contact email
+	voiceIds?: string[];
+	sectionIds?: string[];
+	addedBy: string; // Admin who added them
+}
+
+// Helper functions
+
+/**
+ * Check if member has completed OAuth registration
+ */
+export function isRegistered(member: Member): boolean {
+	return member.email_id !== null;
+}
+
+/**
+ * Get email for authentication (null for roster-only members)
+ */
+export function getAuthEmail(member: Member): string | null {
+	return member.email_id;
+}
+
+/**
+ * Get email for notifications (prefers contact, fallback to auth)
+ */
+export function getContactEmail(member: Member): string | null {
+	return member.email_contact ?? member.email_id;
 }
 
 // Simple ID generator (nanoid replacement for testing)
@@ -29,16 +61,17 @@ function generateId(): string {
 
 /**
  * Create a new member in the database with assigned roles, voices, and sections
+ * For OAuth registration (has email_id)
  */
 export async function createMember(db: D1Database, input: CreateMemberInput): Promise<Member> {
 	const id = generateId();
-	const name = input.name ?? null;
+	const name = input.name ?? input.email; // Default name to email
 	const invited_by = input.invited_by ?? null;
 
-	// Insert member record
+	// Insert member record with email as email_id
 	await db
-		.prepare('INSERT INTO members (id, email, name, invited_by) VALUES (?, ?, ?, ?)')
-		.bind(id, input.email, name, invited_by)
+		.prepare('INSERT INTO members (id, name, email_id, email_contact, invited_by) VALUES (?, ?, ?, NULL, ?)')
+		.bind(id, name, input.email, invited_by)
 		.run();
 
 	// Insert role records
@@ -84,12 +117,114 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 }
 
 /**
- * Find a member by email address with their roles, voices, and sections
+ * Create a roster-only member (no OAuth registration yet)
  */
-export async function getMemberByEmail(db: D1Database, email: string): Promise<Member | null> {
+export async function createRosterMember(
+	db: D1Database,
+	input: CreateRosterMemberInput
+): Promise<Member> {
+	// Check name uniqueness (case-insensitive)
+	const existing = await db
+		.prepare('SELECT id FROM members WHERE LOWER(name) = LOWER(?)')
+		.bind(input.name)
+		.first();
+
+	if (existing) {
+		throw new Error(`Member with name "${input.name}" already exists`);
+	}
+
+	const id = generateId();
+
+	// Insert member WITHOUT email_id (roster-only)
+	await db
+		.prepare('INSERT INTO members (id, name, email_id, email_contact, invited_by) VALUES (?, ?, NULL, ?, ?)')
+		.bind(id, input.name, input.email_contact ?? null, input.addedBy)
+		.run();
+
+	// NO roles inserted (roster-only members can't have roles)
+
+	// Insert voice assignments
+	if (input.voiceIds && input.voiceIds.length > 0) {
+		const voiceStatements = input.voiceIds.map((voiceId, index) =>
+			db
+				.prepare(
+					'INSERT INTO member_voices (member_id, voice_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
+				)
+				.bind(id, voiceId, index === 0 ? 1 : 0, input.addedBy)
+		);
+		await db.batch(voiceStatements);
+	}
+
+	// Insert section assignments
+	if (input.sectionIds && input.sectionIds.length > 0) {
+		const sectionStatements = input.sectionIds.map((sectionId, index) =>
+			db
+				.prepare(
+					'INSERT INTO member_sections (member_id, section_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
+				)
+				.bind(id, sectionId, index === 0 ? 1 : 0, input.addedBy)
+		);
+		await db.batch(sectionStatements);
+	}
+
+	// Return the created member
+	const member = await getMemberById(db, id);
+	if (!member) {
+		throw new Error('Failed to create roster member');
+	}
+	return member;
+}
+
+/**
+ * Upgrade a roster-only member to registered (add email_id)
+ */
+export async function upgradeToRegistered(
+	db: D1Database,
+	rosterMemberId: string,
+	verifiedEmailId: string
+): Promise<Member> {
+	// Verify no other member has this email_id
+	const existingEmail = await getMemberByEmailId(db, verifiedEmailId);
+	if (existingEmail && existingEmail.id !== rosterMemberId) {
+		throw new Error('Email already registered to another member');
+	}
+
+	// Add email_id (upgrades roster → registered)
+	await db
+		.prepare('UPDATE members SET email_id = ? WHERE id = ?')
+		.bind(verifiedEmailId, rosterMemberId)
+		.run();
+
+	const member = await getMemberById(db, rosterMemberId);
+	if (!member) {
+		throw new Error('Failed to upgrade roster member');
+	}
+	return member;
+}
+
+/**
+ * Find a member by email_id (OAuth identity) with their roles, voices, and sections
+ */
+export async function getMemberByEmailId(db: D1Database, emailId: string): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, email, name, invited_by, joined_at FROM members WHERE email = ?')
-		.bind(email)
+		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE email_id = ?')
+		.bind(emailId)
+		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
+
+	if (!memberRow) {
+		return null;
+	}
+
+	return await loadMemberRelations(db, memberRow);
+}
+
+/**
+ * Find a member by name (case-insensitive) with their roles, voices, and sections
+ */
+export async function getMemberByName(db: D1Database, name: string): Promise<Member | null> {
+	const memberRow = await db
+		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE LOWER(name) = LOWER(?)')
+		.bind(name)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
 	if (!memberRow) {
@@ -104,7 +239,7 @@ export async function getMemberByEmail(db: D1Database, email: string): Promise<M
  */
 export async function getMemberById(db: D1Database, id: string): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, email, name, invited_by, joined_at FROM members WHERE id = ?')
+		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
 		.bind(id)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
@@ -120,7 +255,7 @@ export async function getMemberById(db: D1Database, id: string): Promise<Member 
  */
 export async function getAllMembers(db: D1Database): Promise<Member[]> {
 	const { results: memberRows } = await db
-		.prepare('SELECT id, email, name, invited_by, joined_at FROM members')
+		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members')
 		.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
 	// Load relations for all members

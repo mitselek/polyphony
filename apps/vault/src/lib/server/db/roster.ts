@@ -58,7 +58,7 @@ function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: 
 		params.push(filters.sectionId);
 	}
 
-	sql += ' ORDER BY s.display_order ASC, m.name ASC, m.email ASC';
+	sql += ' ORDER BY s.display_order ASC, m.name ASC, m.email_id ASC';
 
 	return { sql, params };
 }
@@ -177,8 +177,8 @@ export async function getRosterView(
 		.bind(...membersQuery.params)
 		.all<{
 			id: string;
-			email: string;
-			name: string | null;
+			email_id: string | null;
+			name: string;
 		}>();
 
 	const members = membersResult.results;
@@ -229,8 +229,8 @@ export async function getRosterView(
 
 			return {
 				id: member.id,
-				name: member.name ?? member.email,
-				email: member.email,
+				name: member.name,
+				email: member.email_id,
 				primarySection,
 				allSections: memberSections,
 				primaryVoice: null // Not loaded for roster view

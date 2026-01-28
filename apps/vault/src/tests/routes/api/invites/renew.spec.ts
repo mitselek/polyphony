@@ -79,13 +79,13 @@ describe('POST /api/invites/[id]/renew', () => {
 		
 		adminMember = {
 			id: 'admin-123',
-			email: 'admin@example.com',
+			email_id: 'admin@example.com',
 			roles: ['admin']
 		};
 
 		regularMember = {
 			id: 'user-456',
-			email: 'user@example.com',
+			email_id: 'user@example.com',
 			roles: []
 		};
 
@@ -116,7 +116,7 @@ describe('POST /api/invites/[id]/renew', () => {
 
 			created_at: new Date().toISOString(),
 			accepted_at: new Date().toISOString(),
-			accepted_by_email: 'user@example.com'
+			accepted_by_email_id: 'user@example.com'
 		});
 	});
 
@@ -191,7 +191,7 @@ describe('POST /api/invites/[id]/renew', () => {
 	it('owner can renew invites', async () => {
 		const ownerMember: Member = {
 			id: 'owner-123',
-			email: 'owner@example.com',
+			email_id: 'owner@example.com',
 			roles: ['owner']
 		};
 		mockCurrentMember = ownerMember;

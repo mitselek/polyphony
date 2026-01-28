@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const { user } = await parent();
 
 	// Use permission system: only librarian and owner can upload
-	const canUpload = canUploadScores(user ? { id: user.id, email: user.email, roles: user.roles } : null);
+	const canUpload = canUploadScores(user ? { id: user.id, email_id: user.email, roles: user.roles } : null);
 
 	if (!canUpload) {
 		// Redirect unauthorized users to library

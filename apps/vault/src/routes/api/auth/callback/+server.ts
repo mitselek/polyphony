@@ -2,7 +2,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { importJWK, jwtVerify } from 'jose';
-import { getMemberByEmail, createMember } from '$lib/server/db/members';
+import { getMemberByEmailId, createMember } from '$lib/server/db/members';
 import { acceptInvite } from '$lib/server/db/invites';
 import type { Role } from '$lib/types';
 
@@ -103,7 +103,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		}
 
 		// Find or create member by email (no invite case)
-		let member = await getMemberByEmail(db, email);
+		let member = await getMemberByEmailId(db, email);
 
 		if (!member) {
 			// Create new member with no roles or voices/sections
@@ -121,7 +121,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 					.run();
 
 				// Reload member to get updated data
-				member = await getMemberByEmail(db, email);
+				member = await getMemberByEmailId(db, email);
 				if (!member) {
 					throw error(500, 'Failed to reload member after name update');
 				}

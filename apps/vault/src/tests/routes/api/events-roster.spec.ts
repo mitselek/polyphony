@@ -212,7 +212,7 @@ seed.clear();
 // Set up authenticated member
 adminMember = {
 			id: 'admin-123',
-			email: 'admin@example.com',
+			email_id: 'admin@example.com',
 			roles: ['admin']
 		};
 		mockCurrentMember = adminMember;

@@ -13,7 +13,7 @@ import {
 describe('Permission System', () => {
 	describe('hasPermission', () => {
 		it('owner has all permissions', () => {
-			const owner: Member = { id: '1', email: 'owner@test.com', roles: ['owner'] };
+			const owner: Member = { id: '1', email_id: 'owner@test.com', roles: ['owner'] };
 			expect(hasPermission(owner, 'scores:upload')).toBe(true);
 			expect(hasPermission(owner, 'scores:delete')).toBe(true);
 			expect(hasPermission(owner, 'scores:view')).toBe(true);
@@ -23,7 +23,7 @@ describe('Permission System', () => {
 		});
 
 		it('admin has score and member management permissions', () => {
-			const admin: Member = { id: '2', email: 'admin@test.com', roles: ['admin'] };
+			const admin: Member = { id: '2', email_id: 'admin@test.com', roles: ['admin'] };
 			expect(hasPermission(admin, 'scores:upload')).toBe(false); // Only librarian can upload
 			expect(hasPermission(admin, 'scores:delete')).toBe(false); // Only librarian can delete
 			expect(hasPermission(admin, 'scores:view')).toBe(true);
@@ -33,7 +33,7 @@ describe('Permission System', () => {
 		});
 
 		it('librarian has score management but not member management', () => {
-			const librarian: Member = { id: '3', email: 'librarian@test.com', roles: ['librarian'] };
+			const librarian: Member = { id: '3', email_id: 'librarian@test.com', roles: ['librarian'] };
 			expect(hasPermission(librarian, 'scores:upload')).toBe(true);
 			expect(hasPermission(librarian, 'scores:delete')).toBe(true);
 			expect(hasPermission(librarian, 'scores:view')).toBe(true);
@@ -43,7 +43,7 @@ describe('Permission System', () => {
 		});
 
 		it('singer has view-only permissions', () => {
-			const singer: Member = { id: '4', email: 'singer@test.com', roles: [] };
+			const singer: Member = { id: '4', email_id: 'singer@test.com', roles: [] };
 			expect(hasPermission(singer, 'scores:upload')).toBe(false);
 			expect(hasPermission(singer, 'scores:delete')).toBe(false);
 			expect(hasPermission(singer, 'scores:view')).toBe(true);
@@ -56,19 +56,19 @@ describe('Permission System', () => {
 
 	describe('requireRole', () => {
 		it('returns success when role meets minimum', () => {
-			const member: Member = { id: 'test-123', roles: ['admin'], email: 'test@example.com' };
+			const member: Member = { id: 'test-123', roles: ['admin'], email_id: 'test@example.com' };
 			const result = requireRole(member, 'admin');
 			expect(result.success).toBe(true);
 		});
 
 		it('returns success when role exceeds minimum', () => {
-			const member: Member = { id: 'test-123', roles: ['owner'], email: 'test@example.com' };
+			const member: Member = { id: 'test-123', roles: ['owner'], email_id: 'test@example.com' };
 			const result = requireRole(member, 'admin');
 			expect(result.success).toBe(true);
 		});
 
 		it('returns failure when role below minimum', () => {
-			const member: Member = { id: 'test-123', roles: [], email: 'test@example.com' };
+			const member: Member = { id: 'test-123', roles: [], email_id: 'test@example.com' };
 			const result = requireRole(member, 'admin');
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Insufficient permissions');
@@ -83,37 +83,37 @@ describe('Permission System', () => {
 
 	describe('permission helpers', () => {
 		it('canUploadScores returns true for admin+', () => {
-			expect(canUploadScores({ id: '1', roles: ['owner'], email: 't@t.com' })).toBe(true);
-			expect(canUploadScores({ id: '2', roles: ['admin'], email: 't@t.com' })).toBe(false); // Admin doesn't have upload
-			expect(canUploadScores({ id: '3', roles: ['librarian'], email: 't@t.com' })).toBe(true);
-			expect(canUploadScores({ id: '4', roles: [], email: 't@t.com' })).toBe(false);
+			expect(canUploadScores({ id: '1', roles: ['owner'], email_id: 't@t.com' })).toBe(true);
+			expect(canUploadScores({ id: '2', roles: ['admin'], email_id: 't@t.com' })).toBe(false); // Admin doesn't have upload
+			expect(canUploadScores({ id: '3', roles: ['librarian'], email_id: 't@t.com' })).toBe(true);
+			expect(canUploadScores({ id: '4', roles: [], email_id: 't@t.com' })).toBe(false);
 		});
 
 		it('canDeleteScores returns true for admin+', () => {
-			expect(canDeleteScores({ id: '1', roles: ['owner'], email: 't@t.com' })).toBe(true);
-			expect(canDeleteScores({ id: '2', roles: ['admin'], email: 't@t.com' })).toBe(false); // Admin doesn't have delete
-			expect(canDeleteScores({ id: '3', roles: ['librarian'], email: 't@t.com' })).toBe(true);
-			expect(canDeleteScores({ id: '4', roles: [], email: 't@t.com' })).toBe(false);
+			expect(canDeleteScores({ id: '1', roles: ['owner'], email_id: 't@t.com' })).toBe(true);
+			expect(canDeleteScores({ id: '2', roles: ['admin'], email_id: 't@t.com' })).toBe(false); // Admin doesn't have delete
+			expect(canDeleteScores({ id: '3', roles: ['librarian'], email_id: 't@t.com' })).toBe(true);
+			expect(canDeleteScores({ id: '4', roles: [], email_id: 't@t.com' })).toBe(false);
 		});
 
 		it('canInviteMembers returns true for admin+ only', () => {
-			expect(canInviteMembers({ id: '1', roles: ['owner'], email: 't@t.com' })).toBe(true);
-			expect(canInviteMembers({ id: '2', roles: ['admin'], email: 't@t.com' })).toBe(true);
-			expect(canInviteMembers({ id: '3', roles: ['librarian'], email: 't@t.com' })).toBe(false);
-			expect(canInviteMembers({ id: '4', roles: [], email: 't@t.com' })).toBe(false);
+			expect(canInviteMembers({ id: '1', roles: ['owner'], email_id: 't@t.com' })).toBe(true);
+			expect(canInviteMembers({ id: '2', roles: ['admin'], email_id: 't@t.com' })).toBe(true);
+			expect(canInviteMembers({ id: '3', roles: ['librarian'], email_id: 't@t.com' })).toBe(false);
+			expect(canInviteMembers({ id: '4', roles: [], email_id: 't@t.com' })).toBe(false);
 		});
 
 		it('canManageRoles returns true for admin+ only', () => {
-			expect(canManageRoles({ id: '1', roles: ['owner'], email: 't@t.com' })).toBe(true);
-			expect(canManageRoles({ id: '2', roles: ['admin'], email: 't@t.com' })).toBe(true);
-			expect(canManageRoles({ id: '3', roles: ['librarian'], email: 't@t.com' })).toBe(false);
-			expect(canManageRoles({ id: '4', roles: [], email: 't@t.com' })).toBe(false);
+			expect(canManageRoles({ id: '1', roles: ['owner'], email_id: 't@t.com' })).toBe(true);
+			expect(canManageRoles({ id: '2', roles: ['admin'], email_id: 't@t.com' })).toBe(true);
+			expect(canManageRoles({ id: '3', roles: ['librarian'], email_id: 't@t.com' })).toBe(false);
+			expect(canManageRoles({ id: '4', roles: [], email_id: 't@t.com' })).toBe(false);
 		});
 	});
 
 	describe('conductor role permissions', () => {
 		it('conductor has event management permissions', () => {
-			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			const conductor: Member = { id: '5', email_id: 'conductor@test.com', roles: ['conductor'] };
 			expect(hasPermission(conductor, 'events:create')).toBe(true);
 			expect(hasPermission(conductor, 'events:manage')).toBe(true);
 			expect(hasPermission(conductor, 'events:delete')).toBe(true);
@@ -121,26 +121,26 @@ describe('Permission System', () => {
 		});
 
 		it('conductor does not have score management permissions', () => {
-			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			const conductor: Member = { id: '5', email_id: 'conductor@test.com', roles: ['conductor'] };
 			expect(hasPermission(conductor, 'scores:upload')).toBe(false);
 			expect(hasPermission(conductor, 'scores:delete')).toBe(false);
 		});
 
 		it('conductor does not have member management permissions', () => {
-			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			const conductor: Member = { id: '5', email_id: 'conductor@test.com', roles: ['conductor'] };
 			expect(hasPermission(conductor, 'members:invite')).toBe(false);
 			expect(hasPermission(conductor, 'roles:manage')).toBe(false);
 			expect(hasPermission(conductor, 'vault:delete')).toBe(false);
 		});
 
 		it('conductor can view and download scores (implicit)', () => {
-			const conductor: Member = { id: '5', email: 'conductor@test.com', roles: ['conductor'] };
+			const conductor: Member = { id: '5', email_id: 'conductor@test.com', roles: ['conductor'] };
 			expect(hasPermission(conductor, 'scores:view')).toBe(true);
 			expect(hasPermission(conductor, 'scores:download')).toBe(true);
 		});
 
 		it('owner has all conductor permissions', () => {
-			const owner: Member = { id: '1', email: 'owner@test.com', roles: ['owner'] };
+			const owner: Member = { id: '1', email_id: 'owner@test.com', roles: ['owner'] };
 			expect(hasPermission(owner, 'events:create')).toBe(true);
 			expect(hasPermission(owner, 'events:manage')).toBe(true);
 			expect(hasPermission(owner, 'events:delete')).toBe(true);

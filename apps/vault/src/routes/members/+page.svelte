@@ -33,8 +33,8 @@
 	let filteredMembers = $derived(
 		members.filter(
 			(m: typeof members[0]) =>
-				m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				(m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+				(m.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+				m.name.toLowerCase().includes(searchQuery.toLowerCase())
 		)
 	);
 
@@ -490,11 +490,11 @@
 					<!-- Remove Button (top-right corner) -->
 					{#if member.id !== data.currentUserId && data.isOwner}
 						<button
-							onclick={() => removeMember(member.id, member.name ?? member.email)}
+							onclick={() => removeMember(member.id, member.name)}
 							disabled={removingMember === member.id}
 							class="absolute top-4 right-4 text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded hover:bg-red-50 transition"
-							title="Remove {member.name ?? member.email} from vault"
-							aria-label="Remove {member.name ?? member.email}"
+							title="Remove {member.name} from vault"
+							aria-label="Remove {member.name}"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -506,7 +506,7 @@
 						<div class="flex-1">
 							<div class="flex items-center gap-3">
 								<h3 class="text-lg font-semibold">
-									{member.name ?? member.email}
+								{member.name}
 								</h3>
 								{#if member.id === data.currentUserId}
 									<span 
@@ -515,8 +515,8 @@
 									>You</span>
 								{/if}
 						</div>
-						{#if member.name}
-							<p class="text-sm text-gray-600">{member.email}</p>
+					{#if member.email}
+						<p class="text-sm text-gray-600">{member.email}</p>
 						{/if}
 						<p class="mt-1 text-xs text-gray-500">
 							Joined {new Date(member.joinedAt).toLocaleDateString()}
@@ -651,7 +651,7 @@
 											: hasRole 
 												? `Remove ${role} role`
 												: `Add ${role} role`}
-									aria-label="{hasRole ? 'Remove' : 'Add'} {role} role for {member.name ?? member.email}"
+								aria-label="{hasRole ? 'Remove' : 'Add'} {role} role for {member.name}"
 								>
 									{#if member.roles.includes(role)}
 										✓ {role}
