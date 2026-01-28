@@ -79,8 +79,8 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 		const inviteToken = cookies.get('invite_token');
 
 		if (inviteToken) {
-			// Use acceptInvite function which handles voices/sections transfer
-			const inviteResult = await acceptInvite(db, inviteToken, email, name);
+			// Use acceptInvite function which upgrades roster member to registered
+			const inviteResult = await acceptInvite(db, inviteToken, email);
 
 			if (inviteResult.success && inviteResult.memberId) {
 				// Clear the invite token cookie

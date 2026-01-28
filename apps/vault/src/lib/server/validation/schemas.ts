@@ -11,15 +11,15 @@ const eventTypeSchema = z.enum(['rehearsal', 'concert', 'retreat']);
 
 /**
  * Schema for creating a new member invitation
+ * Linked to existing roster member (created via roster UI first)
  */
 export const createInviteSchema = z.object({
-	name: z.string().min(1, 'Name is required'),
+	rosterMemberId: z.string().min(1, 'Roster member ID is required'),
 	roles: z.array(roleSchema).optional().default([]),
-	voiceIds: z.array(z.string()).optional().default([]),
-	sectionIds: z.array(z.string()).optional().default([])
+	emailHint: z.string().email().optional()
 });
 
-export type CreateInviteInput = z.infer<typeof createInviteSchema>;
+export type CreateInviteInputSchema = z.infer<typeof createInviteSchema>;
 
 /**
  * Schema for updating member roles

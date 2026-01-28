@@ -33,6 +33,7 @@ vi.mock('@sveltejs/kit', async () => {
 // Create minimal mock D1 database for testing
 function createMockDb() {
 	const invites = new Map<string, any>();
+	const members = new Map<string, any>();
 	
 	return {
 		prepare: (sql: string) => ({
@@ -57,15 +58,21 @@ function createMockDb() {
 							return { ...invite, roles: JSON.stringify(invite.roles) };
 						}
 					}
+					// Handle SELECT from members
+					if (sql.includes('FROM members WHERE id = ?')) {
+						const memberId = params[0];
+						return members.get(memberId) ?? null;
+					}
 					return null;
 				},
 				all: async () => {
-					// Handle SELECT voices/sections for invite (empty results for test)
+					// Handle SELECT roles/voices/sections for member (empty results for test)
 					return { results: [] };
 				}
 			})
 		}),
-		_invites: invites
+		_invites: invites,
+		_members: members
 	};
 }
 
@@ -89,34 +96,54 @@ describe('POST /api/invites/[id]/renew', () => {
 			roles: []
 		};
 
-		// Add test invite
+		// Add roster member
+		mockDb._members.set('roster-1', {
+			id: 'roster-1',
+			name: 'Test User',
+			email_id: null,
+			email_contact: null,
+			invited_by: 'admin-123',
+			joined_at: new Date().toISOString()
+		});
+
+		// Add test invite linked to roster member
 		mockDb._invites.set('invite-1', {
 			id: 'invite-1',
-			name: 'Test User',
+			roster_member_id: 'roster-1',
 			token: 'test-token',
 			invited_by: 'admin-123',
 			expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 			status: 'pending',
 			roles: ['librarian'],
-
+			email_hint: null,
 			created_at: new Date().toISOString(),
 			accepted_at: null,
 			accepted_by_email: null
 		});
 
-		// Add accepted invite
+		// Add another roster member
+		mockDb._members.set('roster-2', {
+			id: 'roster-2',
+			name: 'Accepted User',
+			email_id: null,
+			email_contact: null,
+			invited_by: 'admin-123',
+			joined_at: new Date().toISOString()
+		});
+
+		// Add accepted invite linked to roster member
 		mockDb._invites.set('invite-2', {
 			id: 'invite-2',
-			name: 'Accepted User',
+			roster_member_id: 'roster-2',
 			token: 'accepted-token',
 			invited_by: 'admin-123',
 			expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 			status: 'accepted',
 			roles: ['librarian'],
-
+			email_hint: null,
 			created_at: new Date().toISOString(),
 			accepted_at: new Date().toISOString(),
-			accepted_by_email_id: 'user@example.com'
+			accepted_by_email: 'user@example.com'
 		});
 	});
 

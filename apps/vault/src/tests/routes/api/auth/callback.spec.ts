@@ -135,12 +135,11 @@ describe('GET /api/auth/callback', () => {
 			expect(err.status).toBe(302);
 		}
 
-		// Verify acceptInvite was called with correct parameters
+		// Verify acceptInvite was called with correct parameters (no name parameter)
 		expect(acceptInvite).toHaveBeenCalledWith(
 			{},
 			'invite-token-123',
-			'newmember@test.com',
-			'New Member'
+			'newmember@test.com'
 		);
 
 		// Verify invite token cookie was deleted
