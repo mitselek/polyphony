@@ -262,13 +262,13 @@
 						{/if}
 
 						<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<!-- Sticky Name Cell -->
+							<!-- Sticky Name Cell (clickable) -->
 							<td
-								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900"
+								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white text-sm font-medium text-gray-900 p-0"
 							>
 								<a
 									href="/members/{member.id}"
-									class="text-blue-600 hover:text-blue-800 hover:underline"
+									class="block px-4 py-3 hover:bg-blue-50 hover:text-blue-600"
 								>
 									{member.name}
 								</a>
