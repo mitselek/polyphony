@@ -10,26 +10,33 @@ import { getActiveSections } from '$lib/server/db/sections';
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
+		console.error('[members] Database not available');
 		throw error(500, 'Database not available');
 	}
 
 	// Authenticate and get current user
 	let currentUser;
 	try {
+		console.log('[members] Authenticating member...');
 		currentUser = await getAuthenticatedMember(db, cookies);
+		console.log('[members] Authentication successful:', { id: currentUser.id, name: currentUser.name, roles: currentUser.roles });
 	} catch (err) {
 		// Not authenticated - redirect to login
+		console.warn('[members] Authentication failed, redirecting to login:', err instanceof Error ? err.message : err);
 		redirect(302, '/login');
 	}
 
 	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
 
 	if (!canManage) {
+		console.warn('[members] User lacks admin/owner role:', { id: currentUser.id, roles: currentUser.roles });
 		throw error(403, 'Insufficient permissions - admin or owner role required');
 	}
 
 	// Get all members with their roles, voices, and sections
+	console.log('[members] Loading all members...');
 	const allMembers = await getAllMembers(db);
+	console.log('[members] Loaded members:', { count: allMembers.length });
 
 	// Format for frontend
 	const members = allMembers.map((m) => ({
@@ -44,7 +51,9 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	}));
 
 	// Get pending invites
+	console.log('[members] Loading pending invites...');
 	const pendingInvites = await getPendingInvites(db);
+	console.log('[members] Loaded invites:', { count: pendingInvites.length });
 	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = pendingInvites.map((inv) => ({
 		id: inv.id,
@@ -60,9 +69,12 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	}));
 
 	// Get available voices and sections for adding
+	console.log('[members] Loading available voices and sections...');
 	const availableVoices = await getActiveVoices(db);
 	const availableSections = await getActiveSections(db);
+	console.log('[members] Loaded:', { voices: availableVoices.length, sections: availableSections.length });
 
+	console.log('[members] Page load complete for user:', currentUser.id);
 	return {
 		members,
 		invites,
