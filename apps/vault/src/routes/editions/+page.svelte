@@ -128,7 +128,7 @@
 	<div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
 		<div class="flex flex-wrap gap-4">
 			<!-- Search -->
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
 				<input
 					id="search"
