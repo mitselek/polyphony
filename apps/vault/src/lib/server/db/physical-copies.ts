@@ -172,15 +172,12 @@ export async function getPhysicalCopiesByEdition(
 	return results.map(rowToCopy);
 }
 
-/**
- * Update a physical copy (condition, notes, acquired_at)
- */
-export async function updatePhysicalCopy(
-	db: D1Database,
-	id: string,
-	input: UpdatePhysicalCopyInput
-): Promise<PhysicalCopy | null> {
-	// Build dynamic update query
+interface UpdateQuery {
+	updates: string[];
+	values: (string | null)[];
+}
+
+function buildUpdateQuery(input: UpdatePhysicalCopyInput): UpdateQuery {
 	const updates: string[] = [];
 	const values: (string | null)[] = [];
 
@@ -196,13 +193,21 @@ export async function updatePhysicalCopy(
 		updates.push('acquired_at = ?');
 		values.push(input.acquiredAt);
 	}
+	return { updates, values };
+}
 
-	if (updates.length === 0) {
-		return getPhysicalCopyById(db, id);
-	}
+/**
+ * Update a physical copy (condition, notes, acquired_at)
+ */
+export async function updatePhysicalCopy(
+	db: D1Database,
+	id: string,
+	input: UpdatePhysicalCopyInput
+): Promise<PhysicalCopy | null> {
+	const { updates, values } = buildUpdateQuery(input);
+	if (updates.length === 0) return getPhysicalCopyById(db, id);
 
 	values.push(id);
-
 	await db
 		.prepare(`UPDATE physical_copies SET ${updates.join(', ')} WHERE id = ?`)
 		.bind(...values)
