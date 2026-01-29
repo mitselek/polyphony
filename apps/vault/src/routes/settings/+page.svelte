@@ -410,7 +410,7 @@
 			Manage vocal ranges for member assignment. Click left side to toggle active status, right side to delete or reassign.
 		</p>
 		
-		<div class="space-y-2">
+		<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
 			{#each voices as voice (voice.id)}
 				{@const isProcessing = togglingId === voice.id || deletingId === voice.id || reassigningId === voice.id}
 				<div class="flex items-center rounded-lg border {voice.isActive ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}">
@@ -418,11 +418,11 @@
 					<button
 						onclick={() => toggleVoice(voice)}
 						disabled={isProcessing}
-						class="flex flex-1 items-center justify-between px-4 py-3 text-left transition hover:bg-purple-100 disabled:opacity-50 rounded-l-lg"
+						class="flex flex-1 items-center justify-between px-3 py-2 text-left transition hover:bg-purple-100 disabled:opacity-50 rounded-l-lg"
 					>
-						<div class="flex items-center gap-2">
-							<span class="font-medium {voice.isActive ? '' : 'text-gray-500'}">{voice.name}</span>
-							<span class="text-sm text-gray-500">({voice.abbreviation})</span>
+						<div class="flex items-center gap-1 min-w-0">
+							<span class="font-medium truncate {voice.isActive ? '' : 'text-gray-500'}">{voice.name}</span>
+							<span class="text-xs text-gray-500 shrink-0">({voice.abbreviation})</span>
 							{#if voice.category === 'instrumental'}
 								<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">instr</span>
 							{/if}
@@ -445,7 +445,7 @@
 							<button
 								onclick={() => deleteVoice(voice)}
 								disabled={isProcessing}
-								class="px-3 py-3 text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-r-lg transition"
+								class="px-2 py-2 text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-r-lg transition"
 								title="Delete (no assignments)"
 							>
 								{#if deletingId === voice.id}
@@ -459,7 +459,7 @@
 							<button
 								onclick={() => openReassignDropdown = openReassignDropdown === voice.id ? null : voice.id}
 								disabled={isProcessing}
-								class="px-3 py-3 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-1"
+								class="px-2 py-2 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-0.5"
 								title="Reassign {voice.assignmentCount} member(s)"
 							>
 								{#if reassigningId === voice.id}
@@ -536,7 +536,7 @@
 			Manage sections for performance assignments. Click left side to toggle active status, right side to delete or reassign.
 		</p>
 		
-		<div class="space-y-2">
+		<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
 			{#each sections as section (section.id)}
 				{@const isProcessing = togglingId === section.id || deletingId === section.id || reassigningId === section.id}
 				<div class="flex items-center rounded-lg border {section.isActive ? 'border-teal-200 bg-teal-50' : 'border-gray-200 bg-gray-50'}">
@@ -544,11 +544,11 @@
 					<button
 						onclick={() => toggleSection(section)}
 						disabled={isProcessing}
-						class="flex flex-1 items-center justify-between px-4 py-3 text-left transition hover:bg-teal-100 disabled:opacity-50 rounded-l-lg"
+						class="flex flex-1 items-center justify-between px-3 py-2 text-left transition hover:bg-teal-100 disabled:opacity-50 rounded-l-lg"
 					>
-						<div class="flex items-center gap-2">
-							<span class="font-medium {section.isActive ? '' : 'text-gray-500'}">{section.name}</span>
-							<span class="text-sm text-gray-500">({section.abbreviation})</span>
+						<div class="flex items-center gap-1 min-w-0">
+							<span class="font-medium truncate {section.isActive ? '' : 'text-gray-500'}">{section.name}</span>
+							<span class="text-xs text-gray-500 shrink-0">({section.abbreviation})</span>
 						</div>
 						<span class="text-lg" title={section.isActive ? 'Active' : 'Inactive'}>
 							{#if togglingId === section.id}
@@ -568,7 +568,7 @@
 							<button
 								onclick={() => deleteSection(section)}
 								disabled={isProcessing}
-								class="px-3 py-3 text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-r-lg transition"
+								class="px-2 py-2 text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-r-lg transition"
 								title="Delete (no assignments)"
 							>
 								{#if deletingId === section.id}
@@ -582,7 +582,7 @@
 							<button
 								onclick={() => openReassignDropdown = openReassignDropdown === section.id ? null : section.id}
 								disabled={isProcessing}
-								class="px-3 py-3 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-1"
+								class="px-2 py-2 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-0.5"
 								title="Reassign {section.assignmentCount} member(s)"
 							>
 								{#if reassigningId === section.id}
