@@ -243,3 +243,18 @@ export async function deleteSection(db: D1Database, id: string): Promise<boolean
 
 	return (result.meta.changes ?? 0) > 0;
 }
+
+/**
+ * Reorder sections by updating display_order for each section
+ * @param sectionIds - Array of section IDs in desired order
+ */
+export async function reorderSections(db: D1Database, sectionIds: string[]): Promise<void> {
+	// Use batch to update all display orders atomically
+	const statements = sectionIds.map((id, index) =>
+		db
+			.prepare('UPDATE sections SET display_order = ? WHERE id = ?')
+			.bind(index + 1, id)
+	);
+
+	await db.batch(statements);
+}

@@ -28,6 +28,10 @@
 	let newVoiceCategory = $state<'vocal' | 'instrumental'>('vocal');
 	let newSectionName = $state('');
 	let newSectionAbbr = $state('');
+	
+	// Section rearrange mode
+	let rearrangingSections = $state(false);
+	let savingOrder = $state(false);
 
 	// Watch for data changes (e.g., on navigation)
 	$effect(() => {
@@ -346,6 +350,57 @@
 			creatingSection = false;
 		}
 	}
+	
+	function moveSectionUp(index: number) {
+		if (index <= 0) return;
+		const newSections = [...sections];
+		[newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+		sections = newSections;
+	}
+	
+	function moveSectionDown(index: number) {
+		if (index >= sections.length - 1) return;
+		const newSections = [...sections];
+		[newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+		sections = newSections;
+	}
+	
+	async function saveSectionOrder() {
+		savingOrder = true;
+		error = '';
+		
+		try {
+			const response = await fetch('/api/sections/reorder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sectionIds: sections.map((s) => s.id) })
+			});
+			
+			if (!response.ok) {
+				const data = (await response.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed to save section order');
+			}
+			
+			// Update local state with response
+			const updatedSections = (await response.json()) as SectionWithCount[];
+			sections = updatedSections;
+			
+			rearrangingSections = false;
+			success = 'Section order saved';
+			setTimeout(() => (success = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to save section order';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			savingOrder = false;
+		}
+	}
+	
+	function cancelRearrange() {
+		// Reset to original order from data
+		sections = data.sections;
+		rearrangingSections = false;
+	}
 </script>
 
 <svelte:head>
@@ -560,14 +615,76 @@
 
 	<!-- Sections Management -->
 	<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-xl font-semibold">Performance Sections</h2>
-		<p class="mb-4 text-sm text-gray-600">
-			Manage sections for performance assignments. Click left side to toggle active status, right side to delete or reassign.
-		</p>
+		<div class="mb-4 flex items-center justify-between">
+			<h2 class="text-xl font-semibold">Performance Sections</h2>
+			{#if !rearrangingSections}
+				<button
+					onclick={() => rearrangingSections = true}
+					class="rounded-md border border-teal-600 px-3 py-1 text-sm text-teal-600 transition hover:bg-teal-50"
+				>
+					Rearrange
+				</button>
+			{/if}
+		</div>
 		
-		<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-			{#each sections as section (section.id)}
-				{@const isProcessing = togglingId === section.id || deletingId === section.id || reassigningId === section.id}
+		{#if rearrangingSections}
+			<!-- Rearrange Mode -->
+			<p class="mb-4 text-sm text-gray-600">
+				Use the arrows to reorder sections. Click Save when done.
+			</p>
+			
+			<div class="space-y-2 max-w-md">
+				{#each sections as section, index (section.id)}
+					<div class="flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2">
+						<span class="flex-1 font-medium">{section.name}</span>
+						<span class="text-xs text-gray-500">({section.abbreviation})</span>
+						<div class="flex gap-1">
+							<button
+								onclick={() => moveSectionUp(index)}
+								disabled={index === 0 || savingOrder}
+								class="rounded px-2 py-1 text-sm font-bold text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed"
+								title="Move up"
+							>
+								↑
+							</button>
+							<button
+								onclick={() => moveSectionDown(index)}
+								disabled={index === sections.length - 1 || savingOrder}
+								class="rounded px-2 py-1 text-sm font-bold text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed"
+								title="Move down"
+							>
+								↓
+							</button>
+						</div>
+					</div>
+				{/each}
+			</div>
+			
+			<div class="mt-4 flex gap-2">
+				<button
+					onclick={saveSectionOrder}
+					disabled={savingOrder}
+					class="rounded-md bg-teal-600 px-4 py-2 text-sm text-white transition hover:bg-teal-700 disabled:opacity-50"
+				>
+					{savingOrder ? 'Saving...' : 'Save Order'}
+				</button>
+				<button
+					onclick={cancelRearrange}
+					disabled={savingOrder}
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+				>
+					Cancel
+				</button>
+			</div>
+		{:else}
+			<!-- Normal Mode -->
+			<p class="mb-4 text-sm text-gray-600">
+				Manage sections for performance assignments. Click left side to toggle active status, right side to delete or reassign.
+			</p>
+			
+			<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				{#each sections as section (section.id)}
+					{@const isProcessing = togglingId === section.id || deletingId === section.id || reassigningId === section.id}
 				<div class="flex items-center rounded-lg border {section.isActive ? 'border-teal-200 bg-teal-50' : 'border-gray-200 bg-gray-50'}">
 					<!-- Left side: Toggle active -->
 					<button
@@ -643,6 +760,7 @@
 				</div>
 			{/each}
 		</div>
+		{/if}
 		
 		<!-- Create new section form -->
 		<form onsubmit={createSection} class="mt-4 border-t pt-4">
