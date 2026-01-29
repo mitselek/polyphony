@@ -355,3 +355,65 @@ export interface UpdateEditionInput {
 	externalUrl?: string | null;
 	sectionIds?: string[];
 }
+
+// ============================================================================
+// PHYSICAL COPIES SYSTEM (Epic #106 Phase B)
+// ============================================================================
+
+export type CopyCondition = 'good' | 'fair' | 'poor' | 'lost';
+
+/**
+ * Physical copy of an edition (individual numbered copy)
+ */
+export interface PhysicalCopy {
+	id: string;
+	editionId: string;
+	copyNumber: string;
+	condition: CopyCondition;
+	acquiredAt: string | null;
+	notes: string | null;
+	createdAt: string;
+}
+
+/**
+ * Input for creating a single physical copy
+ */
+export interface CreatePhysicalCopyInput {
+	editionId: string;
+	copyNumber: string;
+	condition?: CopyCondition;
+	acquiredAt?: string;
+	notes?: string;
+}
+
+/**
+ * Input for batch creating physical copies
+ */
+export interface BatchCreateCopiesInput {
+	editionId: string;
+	count: number;
+	prefix?: string; // e.g., "M" → "M-01", "M-02", ...
+	startNumber?: number; // Default 1
+	condition?: CopyCondition;
+	acquiredAt?: string;
+}
+
+/**
+ * Input for updating a physical copy
+ */
+export interface UpdatePhysicalCopyInput {
+	condition?: CopyCondition;
+	notes?: string | null;
+	acquiredAt?: string | null;
+}
+
+/**
+ * Copy statistics for an edition
+ */
+export interface CopyStats {
+	total: number;
+	good: number;
+	fair: number;
+	poor: number;
+	lost: number;
+}
