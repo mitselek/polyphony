@@ -174,6 +174,41 @@ export async function getEditionsByWorkId(db: D1Database, workId: string): Promi
 	return results.map((row) => rowToEdition(row, []));
 }
 
+/** Edition with work info for list display */
+export interface EditionWithWork extends Edition {
+	workTitle: string;
+	workComposer: string | null;
+}
+
+interface EditionWithWorkRow extends EditionRow {
+	work_title: string;
+	work_composer: string | null;
+}
+
+/**
+ * Get all editions with work info (for global edition list)
+ */
+export async function getAllEditions(db: D1Database): Promise<EditionWithWork[]> {
+	const { results } = await db
+		.prepare(`
+			SELECT e.id, e.work_id, e.name, e.arranger, e.publisher, e.voicing,
+				e.edition_type, e.license_type, e.notes, e.external_url,
+				e.file_key, e.file_name, e.file_size, e.file_uploaded_at, e.file_uploaded_by,
+				e.created_at,
+				w.title as work_title, w.composer as work_composer
+			FROM editions e
+			JOIN works w ON e.work_id = w.id
+			ORDER BY w.title ASC, e.name ASC
+		`)
+		.all<EditionWithWorkRow>();
+
+	return results.map((row) => ({
+		...rowToEdition(row, []),
+		workTitle: row.work_title,
+		workComposer: row.work_composer
+	}));
+}
+
 // Field mappings for dynamic updates
 const EDITION_FIELD_MAP: Record<string, string> = {
 	name: 'name', arranger: 'arranger', publisher: 'publisher', voicing: 'voicing',
