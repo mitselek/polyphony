@@ -273,16 +273,15 @@
 						{/if}
 
 						<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<!-- Sticky Member Cell: Name + Section -->
+							<!-- Sticky Member Cell: Section badge (first row only) + Name (right-aligned) -->
 							<td
 								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white p-0"
 							>
 								<a
 									href="/members/{member.id}"
-									class="flex items-center justify-between gap-2 px-4 py-3 hover:bg-blue-50"
+									class="flex items-center gap-2 px-4 py-3 hover:bg-blue-50"
 								>
-									<span class="text-sm font-medium text-gray-900 hover:text-blue-600">{member.name}</span>
-									{#if member.primarySection}
+									{#if isNewSection && member.primarySection}
 										<span
 											class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800 shrink-0"
 											title={member.primarySection.name}
@@ -290,6 +289,7 @@
 											{member.primarySection.abbreviation}
 										</span>
 									{/if}
+									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto">{member.name}</span>
 								</a>
 							</td>
 
