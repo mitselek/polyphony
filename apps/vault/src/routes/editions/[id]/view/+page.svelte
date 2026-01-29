@@ -3,8 +3,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// PDF file URL
-	const pdfUrl = `/api/editions/${data.edition.id}/file`;
+	// PDF file URL (derived to capture data changes)
+	let pdfUrl = $derived(`/api/editions/${data.edition.id}/file`);
 </script>
 
 <svelte:head>
