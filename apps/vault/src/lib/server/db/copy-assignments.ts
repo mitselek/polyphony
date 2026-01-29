@@ -197,3 +197,107 @@ export async function getAssignmentById(
 
 	return row ? rowToAssignment(row) : null;
 }
+
+// ============================================================================
+// ENRICHED QUERIES (joins with works/editions for display)
+// ============================================================================
+
+/**
+ * Assigned copy with full work/edition info for display
+ */
+export interface AssignedCopyWithDetails {
+	assignmentId: string;
+	copyId: string;
+	copyNumber: string;
+	condition: string;
+	assignedAt: string;
+	notes: string | null;
+	edition: {
+		id: string;
+		name: string;
+		type: string;
+		fileKey: string | null;
+		externalUrl: string | null;
+	};
+	work: {
+		id: string;
+		title: string;
+		composer: string | null;
+	};
+}
+
+interface AssignedCopyRow {
+	assignment_id: string;
+	copy_id: string;
+	copy_number: string;
+	condition: string;
+	assigned_at: string;
+	notes: string | null;
+	edition_id: string;
+	edition_name: string;
+	edition_type: string;
+	file_key: string | null;
+	external_url: string | null;
+	work_id: string;
+	work_title: string;
+	composer: string | null;
+}
+
+function rowToAssignedCopyWithDetails(row: AssignedCopyRow): AssignedCopyWithDetails {
+	return {
+		assignmentId: row.assignment_id,
+		copyId: row.copy_id,
+		copyNumber: row.copy_number,
+		condition: row.condition,
+		assignedAt: row.assigned_at,
+		notes: row.notes,
+		edition: {
+			id: row.edition_id,
+			name: row.edition_name,
+			type: row.edition_type,
+			fileKey: row.file_key,
+			externalUrl: row.external_url
+		},
+		work: {
+			id: row.work_id,
+			title: row.work_title,
+			composer: row.composer
+		}
+	};
+}
+
+/**
+ * Get member's assigned copies with full work/edition details
+ * Joins: copy_assignments → physical_copies → editions → works
+ */
+export async function getMemberAssignedCopies(
+	db: D1Database,
+	memberId: string
+): Promise<AssignedCopyWithDetails[]> {
+	const query = `
+		SELECT 
+			ca.id as assignment_id,
+			pc.id as copy_id,
+			pc.copy_number,
+			pc.condition,
+			ca.assigned_at,
+			ca.notes,
+			e.id as edition_id,
+			e.name as edition_name,
+			e.edition_type,
+			e.file_key,
+			e.external_url,
+			w.id as work_id,
+			w.title as work_title,
+			w.composer
+		FROM copy_assignments ca
+		JOIN physical_copies pc ON ca.copy_id = pc.id
+		JOIN editions e ON pc.edition_id = e.id
+		JOIN works w ON e.work_id = w.id
+		WHERE ca.member_id = ? AND ca.returned_at IS NULL
+		ORDER BY ca.assigned_at DESC
+	`;
+
+	const { results } = await db.prepare(query).bind(memberId).all<AssignedCopyRow>();
+	return results.map(rowToAssignedCopyWithDetails);
+}
