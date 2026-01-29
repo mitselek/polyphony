@@ -204,6 +204,7 @@ export interface RosterEvent {
 export interface RosterMember {
 	id: string;
 	name: string;
+	nickname: string | null; // Optional compact display name
 	email: string | null; // OAuth email_id (null for roster-only members)
 	primarySection: Section | null;
 	allSections: Section[];

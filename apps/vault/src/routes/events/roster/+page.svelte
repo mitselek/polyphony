@@ -289,7 +289,7 @@
 											{member.primarySection.abbreviation}
 										</span>
 									{/if}
-									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto">{member.name}</span>
+									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto">{member.nickname || member.name}</span>
 								</a>
 							</td>
 
@@ -306,7 +306,7 @@
 
 								<td
 									class="border-r border-gray-200 px-3 py-3 text-center text-sm {statusClass}"
-									title="{member.name} - {event.name}: {status?.plannedStatus ?? 'No response'}"
+									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}: {status?.plannedStatus ?? 'No response'}"
 								>
 									{statusText}
 								</td>

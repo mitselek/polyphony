@@ -38,6 +38,7 @@ const mockMember = {
 	email_id: 'user@test.com',
 	email_contact: null,
 	name: 'Test User',
+	nickname: null,
 	roles: [],
 	voices: [],
 	sections: [],

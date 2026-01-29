@@ -38,6 +38,7 @@ const mockAdminMember = {
 	email_id: 'admin@test.com',
 	email_contact: null,
 	name: 'Admin User',
+	nickname: null,
 	roles: ['admin' as const],
 	voices: [],
 	sections: [],
@@ -94,6 +95,7 @@ describe('POST /api/members/roster', () => {
 		const newMember = {
 			id: 'new-member-id',
 			name: 'John Doe',
+			nickname: null,
 			email_id: null,
 			email_contact: null,
 			roles: [],
@@ -130,6 +132,7 @@ describe('POST /api/members/roster', () => {
 		const newMember = {
 			id: 'new-member-id',
 			name: 'Jane Smith',
+			nickname: null,
 			email_id: null,
 			email_contact: 'jane@example.com',
 			roles: [],
@@ -199,6 +202,7 @@ describe('POST /api/members/roster', () => {
 		vi.mocked(getMemberByName).mockResolvedValue({
 			id: 'existing-id',
 			name: 'John Doe',
+			nickname: null,
 			email_id: null,
 			email_contact: null,
 			roles: [],
@@ -260,6 +264,7 @@ describe('POST /api/members/roster', () => {
 		const newMember = {
 			id: 'new-member-id',
 			name: 'John Doe',
+			nickname: null,
 			email_id: null,
 			email_contact: 'john@example.com',
 			roles: [],
@@ -290,6 +295,7 @@ describe('POST /api/members/roster', () => {
 		const newMember = {
 			id: 'new-member-id',
 			name: 'John Doe',
+			nickname: null,
 			email_id: null,
 			email_contact: null,
 			roles: [],

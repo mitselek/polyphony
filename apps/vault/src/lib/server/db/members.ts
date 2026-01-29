@@ -5,6 +5,7 @@ import { queryMemberSections, queryMemberVoices } from './queries/members';
 export interface Member {
 	id: string;
 	name: string; // Now required (NOT NULL)
+	nickname: string | null; // Optional compact display name
 	email_id: string | null; // OAuth identity (was: email)
 	email_contact: string | null; // Contact preference (NEW)
 	roles: Role[]; // Multiple roles via junction table
@@ -207,7 +208,7 @@ export async function upgradeToRegistered(
  */
 export async function getMemberByEmailId(db: D1Database, emailId: string): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE email_id = ?')
+		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE email_id = ?')
 		.bind(emailId)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
@@ -223,7 +224,7 @@ export async function getMemberByEmailId(db: D1Database, emailId: string): Promi
  */
 export async function getMemberByName(db: D1Database, name: string): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE LOWER(name) = LOWER(?)')
+		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE LOWER(name) = LOWER(?)')
 		.bind(name)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
@@ -239,7 +240,7 @@ export async function getMemberByName(db: D1Database, name: string): Promise<Mem
  */
 export async function getMemberById(db: D1Database, id: string): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
+		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
 		.bind(id)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
@@ -255,7 +256,7 @@ export async function getMemberById(db: D1Database, id: string): Promise<Member 
  */
 export async function getAllMembers(db: D1Database): Promise<Member[]> {
 	const { results: memberRows } = await db
-		.prepare('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members')
+		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members')
 		.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
 	// Load relations for all members

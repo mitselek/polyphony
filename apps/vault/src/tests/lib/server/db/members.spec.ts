@@ -27,6 +27,7 @@ const createMockDb = () => {
 		{
 			id: string;
 			name: string;
+			nickname: string | null;
 			email_id: string | null;
 			email_contact: string | null;
 			invited_by: string | null;
@@ -56,7 +57,7 @@ const createMockDb = () => {
 			const result = {
 				all: async () => {
 					// SELECT all members (no WHERE clause, no bind needed)
-					if (sql.includes('SELECT id, name, email_id, email_contact, invited_by, joined_at FROM members') && !sql.includes('WHERE')) {
+					if (sql.includes('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members') && !sql.includes('WHERE')) {
 						return { results: Array.from(members.values()) };
 					}
 					return { results: [] };
@@ -74,7 +75,7 @@ const createMockDb = () => {
 									string,
 									string | null
 								];
-								members.set(id, { id, name, email_id, email_contact: null, invited_by, joined_at: new Date().toISOString() });
+								members.set(id, { id, name, nickname: null, email_id, email_contact: null, invited_by, joined_at: new Date().toISOString() });
 							} else {
 								// Old format or other INSERT (shouldn't happen)
 								const [id, name, email_id, email_contact, invited_by] = params as [
@@ -84,7 +85,7 @@ const createMockDb = () => {
 									string | null,
 									string | null
 								];
-								members.set(id, { id, name, email_id, email_contact, invited_by, joined_at: new Date().toISOString() });
+								members.set(id, { id, name, nickname: null, email_id, email_contact, invited_by, joined_at: new Date().toISOString() });
 							}
 							return { success: true, meta: { changes: 1 } };
 						}

@@ -179,6 +179,7 @@ export async function getRosterView(
 			id: string;
 			email_id: string | null;
 			name: string;
+			nickname: string | null;
 		}>();
 
 	const members = membersResult.results;
@@ -230,6 +231,7 @@ export async function getRosterView(
 			return {
 				id: member.id,
 				name: member.name,
+				nickname: member.nickname,
 				email: member.email_id,
 				primarySection,
 				allSections: memberSections,
