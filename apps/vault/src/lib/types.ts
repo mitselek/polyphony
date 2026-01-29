@@ -287,3 +287,71 @@ export interface UpdateWorkInput {
 	composer?: string | null;
 	lyricist?: string | null;
 }
+
+// Edition type categories
+export type EditionType =
+	| 'full_score'
+	| 'vocal_score'
+	| 'part'
+	| 'reduction'
+	| 'audio'
+	| 'video'
+	| 'supplementary';
+
+export type LicenseType = 'public_domain' | 'licensed' | 'owned';
+
+/**
+ * Edition: Specific publication or arrangement of a work
+ * Example: "Novello Vocal Score" of Messiah
+ */
+export interface Edition {
+	id: string;
+	workId: string;
+	name: string;
+	arranger: string | null;
+	publisher: string | null;
+	voicing: string | null;
+	editionType: EditionType;
+	licenseType: LicenseType;
+	notes: string | null;
+	externalUrl: string | null;
+	fileKey: string | null;
+	fileName: string | null;
+	fileSize: number | null;
+	fileUploadedAt: string | null;
+	fileUploadedBy: string | null;
+	createdAt: string;
+	// Joined data
+	sectionIds?: string[];
+}
+
+/**
+ * Input for creating a new edition
+ */
+export interface CreateEditionInput {
+	workId: string;
+	name: string;
+	arranger?: string;
+	publisher?: string;
+	voicing?: string;
+	editionType?: EditionType;
+	licenseType?: LicenseType;
+	notes?: string;
+	externalUrl?: string;
+	sectionIds?: string[];
+}
+
+/**
+ * Input for updating an edition
+ */
+export interface UpdateEditionInput {
+	name?: string;
+	arranger?: string | null;
+	publisher?: string | null;
+	voicing?: string | null;
+	editionType?: EditionType;
+	licenseType?: LicenseType;
+	notes?: string | null;
+	externalUrl?: string | null;
+	sectionIds?: string[];
+}
