@@ -90,7 +90,7 @@
 	<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
 		<!-- Name Section (Editable) -->
 		<div class="mb-6">
-			<label class="mb-2 block text-sm font-medium text-gray-700">Name</label>
+			<span id="name-label" class="mb-2 block text-sm font-medium text-gray-700">Name</span>
 			{#if isEditing}
 				<div class="flex items-center gap-2">
 					<input
@@ -99,7 +99,7 @@
 						class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 						placeholder="Enter your name"
 						disabled={isSaving}
-						aria-label="Edit name"
+						aria-labelledby="name-label"
 					/>
 					<button
 						onclick={saveName}
@@ -134,7 +134,7 @@
 
 		<!-- OAuth Email (Read-only) -->
 		<div class="mb-6">
-			<label class="mb-2 block text-sm font-medium text-gray-700">Email</label>
+			<span class="mb-2 block text-sm font-medium text-gray-700">Email</span>
 			<span class="text-gray-900">{member.email_id}</span>
 			<p class="mt-1 text-sm text-gray-500">Your OAuth login email</p>
 		</div>
@@ -142,7 +142,7 @@
 		<!-- Contact Email (Read-only, conditional) -->
 		{#if displayContactEmail}
 			<div class="mb-6">
-				<label class="mb-2 block text-sm font-medium text-gray-700">Contact Email</label>
+				<span class="mb-2 block text-sm font-medium text-gray-700">Contact Email</span>
 				<span class="text-gray-900">{member.email_contact}</span>
 				<p class="mt-1 text-sm text-gray-500">Your preferred contact email</p>
 			</div>
@@ -150,7 +150,7 @@
 
 		<!-- Roles (Read-only) -->
 		<div class="mb-6">
-			<label class="mb-2 block text-sm font-medium text-gray-700">Roles</label>
+			<span class="mb-2 block text-sm font-medium text-gray-700">Roles</span>
 			{#if member.roles.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each member.roles as role}
@@ -168,7 +168,7 @@
 
 		<!-- Voices (Read-only) -->
 		<div class="mb-6">
-			<label class="mb-2 block text-sm font-medium text-gray-700">Voices</label>
+			<span class="mb-2 block text-sm font-medium text-gray-700">Voices</span>
 			{#if member.voices.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each member.voices as voice, index}
@@ -188,7 +188,7 @@
 
 		<!-- Sections (Read-only) -->
 		<div class="mb-6">
-			<label class="mb-2 block text-sm font-medium text-gray-700">Sections</label>
+			<span class="mb-2 block text-sm font-medium text-gray-700">Sections</span>
 			{#if member.sections.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each member.sections as section, index}
@@ -208,7 +208,7 @@
 
 		<!-- Join Date (Read-only) -->
 		<div>
-			<label class="mb-2 block text-sm font-medium text-gray-700">Member Since</label>
+			<span class="mb-2 block text-sm font-medium text-gray-700">Member Since</span>
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
 	</div>

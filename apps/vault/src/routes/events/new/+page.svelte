@@ -294,10 +294,10 @@
 				</div>
 
 				<!-- Duration -->
-				<div class="col-span-2">
-					<label class="block text-sm font-medium text-gray-700">
+				<fieldset class="col-span-2">
+					<legend class="block text-sm font-medium text-gray-700">
 						Duration
-					</label>
+					</legend>
 					<div class="mt-1 flex items-center gap-3">
 						<div class="flex items-center gap-1">
 							<input
@@ -334,14 +334,14 @@
 							<span class="text-sm text-gray-600">min</span>
 						</div>
 					</div>
-				</div>
+				</fieldset>
 
 				<!-- Calculated End Date/Time (read-only display) -->
 				<div class="col-span-2">
-					<label class="block text-sm font-medium text-gray-700">
+					<span id="ends-at-label" class="block text-sm font-medium text-gray-700">
 						Ends at
-					</label>
-					<div class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
+					</span>
+					<div aria-labelledby="ends-at-label" class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
 						<span class="font-medium">{endDateTimeDisplay}</span>
 					</div>
 					<p class="mt-1 text-sm text-gray-500">

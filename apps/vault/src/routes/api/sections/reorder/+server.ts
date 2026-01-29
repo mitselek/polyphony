@@ -4,39 +4,34 @@ import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { reorderSections, getAllSectionsWithCounts } from '$lib/server/db/sections';
 
+/** Validate section IDs array from request body */
+function validateSectionIds(body: { sectionIds?: string[] }): string | null {
+	if (!Array.isArray(body.sectionIds) || body.sectionIds.length === 0) {
+		return 'sectionIds must be a non-empty array';
+	}
+	if (!body.sectionIds.every((id) => typeof id === 'string')) {
+		return 'All section IDs must be strings';
+	}
+	return null;
+}
+
 export async function POST({ request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
+	if (!db) throw error(500, 'Database not available');
 
-	// Auth: require admin
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// Parse request body
 	const body = (await request.json()) as { sectionIds?: string[] };
-
-	if (!Array.isArray(body.sectionIds) || body.sectionIds.length === 0) {
-		return json({ error: 'sectionIds must be a non-empty array' }, { status: 400 });
-	}
-
-	// Validate all IDs are strings
-	if (!body.sectionIds.every((id) => typeof id === 'string')) {
-		return json({ error: 'All section IDs must be strings' }, { status: 400 });
-	}
+	const validationError = validateSectionIds(body);
+	if (validationError) return json({ error: validationError }, { status: 400 });
 
 	try {
-		await reorderSections(db, body.sectionIds);
-
-		// Return updated sections list
+		await reorderSections(db, body.sectionIds!);
 		const sections = await getAllSectionsWithCounts(db);
 		return json(sections);
 	} catch (err) {
 		console.error('Failed to reorder sections:', err);
-		return json(
-			{ error: err instanceof Error ? err.message : 'Failed to reorder sections' },
-			{ status: 500 }
-		);
+		return json({ error: err instanceof Error ? err.message : 'Failed to reorder sections' }, { status: 500 });
 	}
 }

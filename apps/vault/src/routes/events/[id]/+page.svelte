@@ -66,10 +66,6 @@
     });
   }
 
-  // Initialize edit form with datetime fields
-  const initialDateTime = parseDateTime(data.event.starts_at);
-  const initialDuration = calculateDuration(data.event.starts_at, data.event.ends_at);
-  
   // Split duration into days/hours/minutes
   function splitDuration(totalMinutes: number): { days: number; hours: number; minutes: number } {
     const days = Math.floor(totalMinutes / (24 * 60));
@@ -78,7 +74,10 @@
     const minutes = remaining % 60;
     return { days, hours, minutes };
   }
-  
+
+  // Initialize edit form with datetime fields - use untrack to capture initial value
+  const initialDateTime = untrack(() => parseDateTime(data.event.starts_at));
+  const initialDuration = untrack(() => calculateDuration(data.event.starts_at, data.event.ends_at));
   const initialDurationParts = splitDuration(initialDuration);
   
   let editForm = $state(
@@ -691,8 +690,8 @@
         </div>
         
         <!-- Duration Row -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Duration</label>
+        <fieldset>
+          <legend class="block text-sm font-medium text-gray-700">Duration</legend>
           <div class="mt-1 flex items-center gap-3">
             <div class="flex items-center gap-1">
               <input
@@ -729,12 +728,12 @@
               <span class="text-sm text-gray-600">min</span>
             </div>
           </div>
-        </div>
+        </fieldset>
         
         <!-- Calculated End DateTime -->
         <div>
-          <label class="block text-sm font-medium text-gray-700">Ends at</label>
-          <div class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
+          <span id="ends-at-label" class="block text-sm font-medium text-gray-700">Ends at</span>
+          <div aria-labelledby="ends-at-label" class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
             <span class="font-medium">{editEndDateTimeDisplay}</span>
           </div>
         </div>
