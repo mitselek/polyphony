@@ -95,6 +95,12 @@
 		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	}
 
+	// Helper: Format time for display (e.g., "7:00 PM")
+	function formatTime(dateStr: string): string {
+		const date = new Date(dateStr);
+		return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+	}
+
 	// Apply filters by navigating with query params
 	function applyFilters() {
 		const params = new URLSearchParams();
@@ -238,9 +244,10 @@
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
 							>
-								<div class="flex flex-col gap-1">
+								<div class="flex flex-col gap-0.5">
 									<span class="font-semibold">{event.name}</span>
 									<span class="text-gray-500">{formatDate(event.date)}</span>
+									<span class="text-gray-400">{formatTime(event.date)}</span>
 								</div>
 							</th>
 						{/each}

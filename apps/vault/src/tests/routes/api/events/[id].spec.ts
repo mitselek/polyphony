@@ -91,8 +91,8 @@ function createMockDb() {
 				run: async () => {
 					// UPDATE event
 					if (query.includes('UPDATE events')) {
-						// Params order: title, description, location, starts_at, ends_at, id
-						const [title, description, location, starts_at, ends_at, id] = statement._params as any[];
+						// Params order: title, description, location, starts_at, ends_at, event_type, id
+						const [title, description, location, starts_at, ends_at, event_type, id] = statement._params as any[];
 						const event = events.get(id as string);
 						if (!event) {
 							return { success: false, meta: { changes: 0 } };
@@ -104,7 +104,8 @@ function createMockDb() {
 							description: description ?? event.description,
 							location: location ?? event.location,
 							starts_at: starts_at ?? event.starts_at,
-							ends_at: ends_at ?? event.ends_at
+							ends_at: ends_at ?? event.ends_at,
+							event_type: event_type ?? event.event_type
 						});
 						return { success: true, meta: { changes: 1 } };
 					}

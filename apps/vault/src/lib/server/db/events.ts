@@ -29,6 +29,7 @@ export interface UpdateEventInput {
 	location?: string;
 	starts_at?: string;
 	ends_at?: string;
+	event_type?: EventType;
 }
 
 /**
@@ -125,7 +126,7 @@ export async function updateEvent(
 
 	const result = await db
 		.prepare(
-			'UPDATE events SET title = ?, description = ?, location = ?, starts_at = ?, ends_at = ? WHERE id = ?'
+			'UPDATE events SET title = ?, description = ?, location = ?, starts_at = ?, ends_at = ?, event_type = ? WHERE id = ?'
 		)
 		.bind(
 			input.title ?? current.title,
@@ -133,6 +134,7 @@ export async function updateEvent(
 			input.location ?? current.location,
 			input.starts_at ?? current.starts_at,
 			input.ends_at ?? current.ends_at,
+			input.event_type ?? current.event_type,
 			id
 		)
 		.run();

@@ -24,13 +24,62 @@
   // Derived state for button enablement
   let canAddScore = $derived(!!selectedScoreId && !addingScore);
   let editingEventId = $state<string | null>(null);
+  
+  // Helper: Parse starts_at to date and time components
+  function parseDateTime(isoString: string): { date: string; time: string } {
+    const dt = new Date(isoString);
+    const date = dt.toISOString().split("T")[0];
+    const time = dt.toTimeString().slice(0, 5);
+    return { date, time };
+  }
+
+  // Helper: Calculate duration in minutes from start and end
+  function calculateDuration(startIso: string, endIso: string | null): number {
+    if (!endIso) return 120; // Default 2 hours
+    const startMs = new Date(startIso).getTime();
+    const endMs = new Date(endIso).getTime();
+    return Math.round((endMs - startMs) / (1000 * 60));
+  }
+
+  // Helper: Calculate end datetime from start + duration
+  function calculateEndDateTime(startDate: string, startTime: string, durationMinutes: number): string {
+    const startDateTime = new Date(`${startDate}T${startTime}:00`);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
+    return endDateTime.toISOString();
+  }
+
+  // Helper: Format end time with +1 day indicator
+  function formatEndTime(startDate: string, startTime: string, durationMinutes: number): { time: string; nextDay: boolean } {
+    const startDateTime = new Date(`${startDate}T${startTime}:00`);
+    const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
+    
+    const time = endDateTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const nextDay = endDateTime.getDate() !== startDateTime.getDate();
+    
+    return { time, nextDay };
+  }
+
+  // Initialize edit form with datetime fields
+  const initialDateTime = parseDateTime(data.event.starts_at);
+  const initialDuration = calculateDuration(data.event.starts_at, data.event.ends_at);
+  
   let editForm = $state(
     untrack(() => ({
       title: data.event.title,
       description: data.event.description || "",
       location: data.event.location || "",
       event_type: data.event.event_type,
+      date: initialDateTime.date,
+      time: initialDateTime.time,
+      duration: initialDuration,
     })),
+  );
+  
+  // Derived end time display for edit form
+  let editEndTimeDisplay = $derived(
+    editForm.date && editForm.time
+      ? formatEndTime(editForm.date, editForm.time, editForm.duration)
+      : { time: "", nextDay: false }
   );
   let updatingEvent = $state(false);
   let deletingEvent = $state(false);
@@ -103,11 +152,16 @@
   // Toggle edit mode
   function startEditEvent() {
     editingEventId = data.event.id;
+    const dt = parseDateTime(data.event.starts_at);
+    const dur = calculateDuration(data.event.starts_at, data.event.ends_at);
     editForm = {
       title: data.event.title,
       description: data.event.description || "",
       location: data.event.location || "",
       event_type: data.event.event_type,
+      date: dt.date,
+      time: dt.time,
+      duration: dur,
     };
   }
 
@@ -122,10 +176,21 @@
     error = "";
 
     try {
+      // Calculate starts_at and ends_at from date, time, duration
+      const startsAt = new Date(`${editForm.date}T${editForm.time}:00`).toISOString();
+      const endsAt = calculateEndDateTime(editForm.date, editForm.time, editForm.duration);
+      
       const response = await fetch(`/api/events/${data.event.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          title: editForm.title,
+          description: editForm.description,
+          location: editForm.location,
+          event_type: editForm.event_type,
+          starts_at: startsAt,
+          ends_at: endsAt,
+        }),
       });
 
       if (!response.ok) {
@@ -140,6 +205,8 @@
       data.event.description = updated.description;
       data.event.location = updated.location;
       data.event.event_type = updated.event_type;
+      data.event.starts_at = updated.starts_at;
+      data.event.ends_at = updated.ends_at;
 
       editingEventId = null;
     } catch (err) {
@@ -558,6 +625,70 @@
             class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
           />
         </div>
+        
+        <!-- Date & Time Section -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <!-- Date -->
+          <div>
+            <label for="edit-date" class="block text-sm font-medium text-gray-700">Date</label>
+            <input
+              type="date"
+              id="edit-date"
+              bind:value={editForm.date}
+              class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              required
+            />
+          </div>
+          
+          <!-- Start Time -->
+          <div>
+            <label for="edit-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+            <input
+              type="time"
+              id="edit-time"
+              bind:value={editForm.time}
+              class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              required
+            />
+          </div>
+          
+          <!-- Duration -->
+          <div>
+            <label for="edit-duration" class="block text-sm font-medium text-gray-700">Duration</label>
+            <select
+              id="edit-duration"
+              bind:value={editForm.duration}
+              class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+            >
+              <option value={30}>30 minutes</option>
+              <option value={45}>45 minutes</option>
+              <option value={60}>1 hour</option>
+              <option value={90}>1.5 hours</option>
+              <option value={120}>2 hours</option>
+              <option value={150}>2.5 hours</option>
+              <option value={180}>3 hours</option>
+              <option value={240}>4 hours</option>
+              <option value={360}>6 hours</option>
+              <option value={480}>8 hours</option>
+              <option value={720}>12 hours</option>
+              <option value={1440}>24 hours</option>
+              <option value={2880}>2 days</option>
+              <option value={4320}>3 days</option>
+            </select>
+          </div>
+          
+          <!-- Calculated End Time -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Ends at</label>
+            <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
+              <span class="font-medium">{editEndTimeDisplay.time}</span>
+              {#if editEndTimeDisplay.nextDay}
+                <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">+1 day</span>
+              {/if}
+            </div>
+          </div>
+        </div>
+        
         <div>
           <label
             for="edit-description"

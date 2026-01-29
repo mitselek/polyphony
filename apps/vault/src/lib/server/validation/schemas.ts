@@ -68,7 +68,8 @@ export const updateEventSchema = z.object({
 	description: z.string().optional(),
 	location: z.string().optional(),
 	starts_at: z.string().datetime('Invalid start time format').optional(),
-	ends_at: z.string().datetime('Invalid end time format').optional()
+	ends_at: z.string().datetime('Invalid end time format').optional(),
+	event_type: z.enum(['rehearsal', 'concert', 'retreat']).optional()
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
