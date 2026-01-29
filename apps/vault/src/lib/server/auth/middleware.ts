@@ -103,6 +103,16 @@ export async function getAuthenticatedMember(
 }
 
 /**
+ * Assert member has librarian, admin, or owner role, throw 403 if not
+ */
+export function assertLibrarian(member: Member): void {
+	const isLibrarian = member.roles.some((r) => ['librarian', 'admin', 'owner'].includes(r));
+	if (!isLibrarian) {
+		throw error(403, 'Librarian, admin, or owner role required');
+	}
+}
+
+/**
  * Assert member has admin or owner role, throw 403 if not
  */
 export function assertAdmin(member: Member): void {

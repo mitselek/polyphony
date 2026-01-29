@@ -253,3 +253,37 @@ export interface RosterViewFilters {
 	end?: string; // ISO datetime
 	sectionId?: string; // Filter members by section
 }
+
+// ============================================================================
+// SCORE LIBRARY SYSTEM (Epic #106)
+// ============================================================================
+
+/**
+ * Work: Abstract composition (independent of specific publications)
+ * Example: "Messiah" by Handel (may have many Editions)
+ */
+export interface Work {
+	id: string;
+	title: string;
+	composer: string | null;
+	lyricist: string | null;
+	createdAt: string;
+}
+
+/**
+ * Input for creating a new work
+ */
+export interface CreateWorkInput {
+	title: string;
+	composer?: string;
+	lyricist?: string;
+}
+
+/**
+ * Input for updating a work
+ */
+export interface UpdateWorkInput {
+	title?: string;
+	composer?: string | null;
+	lyricist?: string | null;
+}
