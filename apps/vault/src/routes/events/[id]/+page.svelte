@@ -139,20 +139,28 @@
   }
 
   // Format duration
-  function formatDuration(start: string, end: string): string {
+  function formatDuration(start: string, end: string | null): string {
+    if (!end) {
+      return "Not set";
+    }
     const startDt = new Date(start);
     const endDt = new Date(end);
     const durationMs = endDt.getTime() - startDt.getTime();
-    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    
+    if (durationMs <= 0) {
+      return "Not set";
+    }
+    
+    const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((durationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (hours > 0 && minutes > 0) {
-      return `${hours}h ${minutes}m`;
-    } else if (hours > 0) {
-      return `${hours} hours`;
-    } else {
-      return `${minutes} minutes`;
-    }
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    
+    return parts.length > 0 ? parts.join(' ') : "0m";
   }
 
   // Get event type badge color
@@ -801,7 +809,7 @@
             <div class="ml-7 text-sm text-gray-500">
               Duration: {formatDuration(
                 data.event.starts_at,
-                data.event.ends_at || data.event.starts_at,
+                data.event.ends_at,
               )}
             </div>
           </div>
