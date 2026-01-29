@@ -46,111 +46,123 @@ interface MockParticipation {
 	recorded_by: string | null;
 }
 
-// Mock database factory
-function createMockDb(options: {
+interface MockDbOptions {
 	members: MockMember[];
 	events: MockEvent[];
 	participation?: MockParticipation[];
-}) {
-	const participationRecords = new Map<string, MockParticipation>();
-	(options.participation ?? []).forEach((p) => {
-		participationRecords.set(`${p.member_id}:${p.event_id}`, p);
-	});
+}
+
+// Handler for member lookups
+function handleMemberLookup(members: MockMember[], memberId: string) {
+	const member = members.find((m) => m.id === memberId);
+	if (!member) return null;
+	return {
+		id: member.id,
+		name: member.name,
+		nickname: null,
+		email_id: member.email_id,
+		email_contact: null,
+		invited_by: null,
+		joined_at: new Date().toISOString()
+	};
+}
+
+// Handler for participation lookups
+function handleParticipationLookup(
+	records: Map<string, MockParticipation>,
+	memberId: string,
+	eventId: string
+) {
+	const record = records.get(`${memberId}:${eventId}`);
+	if (!record) return null;
+	return {
+		id: record.id,
+		member_id: record.member_id,
+		event_id: record.event_id,
+		planned_status: record.planned_status,
+		planned_at: null,
+		planned_notes: null,
+		actual_status: record.actual_status,
+		recorded_at: null,
+		recorded_by: record.recorded_by,
+		created_at: new Date().toISOString(),
+		updated_at: new Date().toISOString()
+	};
+}
+
+// Create first() handler
+function createFirstHandler(
+	query: string,
+	params: unknown[],
+	options: MockDbOptions,
+	records: Map<string, MockParticipation>
+) {
+	if (query.includes('FROM members WHERE id')) {
+		return handleMemberLookup(options.members, params[0] as string);
+	}
+	if (query.includes('FROM events WHERE id')) {
+		return options.events.find((e) => e.id === params[0]) || null;
+	}
+	if (query.includes('FROM participation') && query.includes('member_id')) {
+		return handleParticipationLookup(records, params[0] as string, params[1] as string);
+	}
+	return null;
+}
+
+// Create all() handler
+function createAllHandler(query: string, params: unknown[], options: MockDbOptions) {
+	if (query.includes('FROM member_roles')) {
+		const member = options.members.find((m) => m.id === params[0]);
+		return { results: member ? member.roles.map((role) => ({ role })) : [] };
+	}
+	if (query.includes('FROM member_voices') || query.includes('FROM member_sections')) {
+		return { results: [] };
+	}
+	return { results: [] };
+}
+
+// Create run() handler
+function createRunHandler(
+	query: string,
+	params: unknown[],
+	records: Map<string, MockParticipation>
+) {
+	if (query.includes('INSERT INTO participation')) {
+		const [id, memberId, eventId, plannedStatus] = params as string[];
+		records.set(`${memberId}:${eventId}`, {
+			id,
+			member_id: memberId,
+			event_id: eventId,
+			planned_status: plannedStatus ?? null,
+			actual_status: null,
+			recorded_by: null
+		});
+		return { success: true, meta: { changes: 1 } };
+	}
+	if (query.includes('UPDATE participation')) {
+		return { success: true, meta: { changes: 1 } };
+	}
+	return { success: true, meta: { changes: 0 } };
+}
+
+// Mock database factory
+function createMockDb(options: MockDbOptions) {
+	const records = new Map<string, MockParticipation>();
+	(options.participation ?? []).forEach((p) => records.set(`${p.member_id}:${p.event_id}`, p));
 
 	return {
 		prepare: (query: string) => {
+			let params: unknown[] = [];
 			const statement = {
-				_params: [] as unknown[],
-				bind: (...params: unknown[]) => {
-					statement._params = params;
+				bind: (...args: unknown[]) => {
+					params = args;
 					return statement;
 				},
-				first: async () => {
-					// Member lookup for authentication (getMemberById)
-					if (query.includes('FROM members WHERE id')) {
-						const memberId = statement._params?.[0] as string;
-						const member = options.members.find((m) => m.id === memberId);
-						if (member) {
-							return {
-								id: member.id,
-								name: member.name,
-								nickname: null,
-								email_id: member.email_id, // Required for auth
-								email_contact: null,
-								invited_by: null,
-								joined_at: new Date().toISOString()
-							};
-						}
-						return null;
-					}
-					// Event lookup
-					if (query.includes('FROM events WHERE id')) {
-						const eventId = statement._params?.[0] as string;
-						return options.events.find((e) => e.id === eventId) || null;
-					}
-					// Participation lookup (handles multi-line SQL with flexible whitespace)
-					if (query.includes('FROM participation') && query.includes('member_id')) {
-						const [memberId, eventId] = statement._params as string[];
-						const record = participationRecords.get(`${memberId}:${eventId}`);
-						if (record) {
-							return {
-								id: record.id,
-								member_id: record.member_id,
-								event_id: record.event_id,
-								planned_status: record.planned_status,
-								planned_at: null,
-								planned_notes: null,
-								actual_status: record.actual_status,
-								recorded_at: null,
-								recorded_by: record.recorded_by,
-								created_at: new Date().toISOString(),
-								updated_at: new Date().toISOString()
-							};
-						}
-						return null;
-					}
-					return null;
-				},
-				all: async () => {
-					// Member roles lookup
-					if (query.includes('FROM member_roles')) {
-						const memberId = statement._params?.[0] as string;
-						const member = options.members.find((m) => m.id === memberId);
-						if (member) {
-							return { results: member.roles.map((role) => ({ role })) };
-						}
-						return { results: [] };
-					}
-					// Member voices/sections (empty for these tests)
-					if (query.includes('FROM member_voices') || query.includes('FROM member_sections')) {
-						return { results: [] };
-					}
-					return { results: [] };
-				},
-				run: async () => {
-					// INSERT participation
-					// Params: [id, memberId, eventId, plannedStatus, plannedAt, plannedNotes]
-					if (query.includes('INSERT INTO participation')) {
-						const [id, memberId, eventId, plannedStatus] = statement._params as string[];
-						const newRecord: MockParticipation = {
-							id,
-							member_id: memberId,
-							event_id: eventId,
-							planned_status: plannedStatus ?? null,
-							actual_status: null,
-							recorded_by: null
-						};
-						participationRecords.set(`${memberId}:${eventId}`, newRecord);
-						return { success: true, meta: { changes: 1 } };
-					}
-					// UPDATE participation
-					if (query.includes('UPDATE participation')) {
-						return { success: true, meta: { changes: 1 } };
-					}
-					return { success: true, meta: { changes: 0 } };
-				}
-			} as any;
-			return statement;
+				first: async () => createFirstHandler(query, params, options, records),
+				all: async () => createAllHandler(query, params, options),
+				run: async () => createRunHandler(query, params, records)
+			};
+			return statement as any;
 		}
 	};
 }
