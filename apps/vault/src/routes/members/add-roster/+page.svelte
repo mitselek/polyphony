@@ -130,8 +130,8 @@
 
 			<fieldset>
 				<legend class="mb-2 block text-sm font-medium text-gray-700">
-					Vocal Range (optional)
-					<span class="ml-1 text-xs font-normal text-gray-500" title="What the member CAN sing - their vocal capabilities">ⓘ</span>
+					Vocal Range / Instrument
+					<span class="ml-1 text-xs font-normal text-gray-500" title="What the member CAN sing or play">ⓘ</span>
 				</legend>
 				<div class="space-y-2">
 					{#each data.availableVoices as voice}
