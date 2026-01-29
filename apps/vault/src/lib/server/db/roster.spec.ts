@@ -241,7 +241,7 @@ describe('Roster View Database Functions', () => {
 			expect(result.events).toEqual([]);
 		});
 
-		it('should show event and member with no participation', async () => {
+		it('should show event and member with no participation as null values', async () => {
 			seedData(mockDb, {
 				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }],
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }]
@@ -251,7 +251,12 @@ describe('Roster View Database Functions', () => {
 
 			expect(result.events.length).toBe(1);
 			expect(result.members.length).toBe(1);
-			expect(result.events[0].participation.get('mem_1')).toBeUndefined();
+			// Participation is normalized: all member×event combos have an entry with null values
+			expect(result.events[0].participation.get('mem_1')).toEqual({
+				plannedStatus: null,
+				actualStatus: null,
+				recordedAt: null
+			});
 		});
 
 		it('should show planned participation without actual status', async () => {

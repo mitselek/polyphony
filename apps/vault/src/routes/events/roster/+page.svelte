@@ -50,13 +50,23 @@
 			sectionName: string;
 			sectionAbbr: string;
 			displayOrder: number;
-			total: number;
-			yes: number;
-			no: number;
-			maybe: number;
-			late: number;
-			responded: number;
+			memberCount: number;
+			eventCount: number;
+			pastEventCount: number;
+			// RSVP counts (all events)
+			rsvpYes: number;
+			rsvpNo: number;
+			rsvpMaybe: number;
+			rsvpLate: number;
+			rsvpResponded: number;
+			// Attendance counts (past events only)
+			attPresent: number;
+			attAbsent: number;
+			attLate: number;
+			attRecorded: number;
 		}> = {};
+
+		const now = new Date();
 
 		// Build stats from current roster data
 		for (const member of roster.members) {
@@ -70,29 +80,45 @@
 					sectionName: member.primarySection.name,
 					sectionAbbr: member.primarySection.abbreviation,
 					displayOrder: member.primarySection.displayOrder,
-					total: 0,
-					yes: 0,
-					no: 0,
-					maybe: 0,
-					late: 0,
-					responded: 0
+					memberCount: 0,
+					eventCount: roster.events.length,
+					pastEventCount: roster.events.filter(e => new Date(e.date) < now).length,
+					rsvpYes: 0,
+					rsvpNo: 0,
+					rsvpMaybe: 0,
+					rsvpLate: 0,
+					rsvpResponded: 0,
+					attPresent: 0,
+					attAbsent: 0,
+					attLate: 0,
+					attRecorded: 0
 				};
 			}
 
-			stats[sectionId].total++;
+			stats[sectionId].memberCount++;
 
-			// Count RSVPs for this member across all events
+			// Count RSVPs and attendance for this member across all events
 			for (const event of roster.events) {
-				const participation = event.participation.get(member.id);
-				if (!participation) continue;
+				// Participation is guaranteed to exist for all members (normalized at server)
+				const participation = event.participation.get(member.id)!;
+				const isPast = new Date(event.date) < now;
 
-				const status = participation.plannedStatus;
-				if (status === 'yes') stats[sectionId].yes++;
-				else if (status === 'no') stats[sectionId].no++;
-				else if (status === 'maybe') stats[sectionId].maybe++;
-				else if (status === 'late') stats[sectionId].late++;
+				// RSVP (all events) - null means no response
+				const plannedStatus = participation.plannedStatus;
+				if (plannedStatus === 'yes') stats[sectionId].rsvpYes++;
+				else if (plannedStatus === 'no') stats[sectionId].rsvpNo++;
+				else if (plannedStatus === 'maybe') stats[sectionId].rsvpMaybe++;
+				else if (plannedStatus === 'late') stats[sectionId].rsvpLate++;
+				if (plannedStatus !== null) stats[sectionId].rsvpResponded++;
 
-				if (status !== null) stats[sectionId].responded++;
+				// Attendance (past events only) - null means not recorded
+				if (isPast) {
+					const actualStatus = participation.actualStatus;
+					if (actualStatus === 'present') stats[sectionId].attPresent++;
+					else if (actualStatus === 'absent') stats[sectionId].attAbsent++;
+					else if (actualStatus === 'late') stats[sectionId].attLate++;
+					if (actualStatus !== null) stats[sectionId].attRecorded++;
+				}
 			}
 		}
 
@@ -520,71 +546,47 @@
 					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 						{#each Object.entries(sectionStats).sort((a, b) => a[1].displayOrder - b[1].displayOrder) as [sectionId, stats]}
+							{@const rsvpOpportunities = stats.memberCount * stats.eventCount}
+							{@const attOpportunities = stats.memberCount * stats.pastEventCount}
 							<div class="rounded border border-gray-200 bg-gray-50 p-3">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium text-gray-700">{stats.sectionName}</span>
-									<span class="text-xs text-gray-500">{stats.sectionAbbr}</span>
+									<span class="text-xs text-gray-500">{stats.memberCount} singers</span>
 								</div>
-								<div class="space-y-1 text-xs text-gray-600">
-									<div class="flex justify-between">
-										<span>Total:</span>
-										<span class="font-medium">{stats.total}</span>
-									</div>
-									<div class="flex justify-between">
-										<span>Response rate:</span>
-										<span class="font-medium">
-											{stats.total > 0 ? ((stats.responded / stats.total) * 100).toFixed(0) : 0}%
-										</span>
-									</div>
-									<div class="flex justify-between items-center gap-2">
-										<span>Yes:</span>
-										<div class="flex items-center gap-1 flex-1">
-											<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
-												<div 
-													class="h-full bg-green-500 transition-all"
-													style="width: {stats.responded > 0 ? (stats.yes / stats.responded * 100) : 0}%"
-												></div>
-											</div>
-											<span class="font-medium w-8 text-right">{stats.yes}</span>
+								<div class="space-y-2 text-xs">
+									<!-- RSVP stacked bar -->
+									<div>
+										<div class="flex justify-between text-gray-600 mb-1">
+											<span>RSVP</span>
+											<span class="font-medium">
+												{rsvpOpportunities > 0 ? ((stats.rsvpResponded / rsvpOpportunities) * 100).toFixed(0) : 0}%
+											</span>
+										</div>
+										<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title="Yes: {stats.rsvpYes}, No: {stats.rsvpNo}, Maybe: {stats.rsvpMaybe}, Late: {stats.rsvpLate}, No response: {rsvpOpportunities - stats.rsvpResponded}">
+											{#if rsvpOpportunities > 0}
+												<div class="h-full bg-green-500 transition-all" style="width: {(stats.rsvpYes / rsvpOpportunities) * 100}%"></div>
+												<div class="h-full bg-red-500 transition-all" style="width: {(stats.rsvpNo / rsvpOpportunities) * 100}%"></div>
+												<div class="h-full bg-yellow-500 transition-all" style="width: {(stats.rsvpMaybe / rsvpOpportunities) * 100}%"></div>
+												<div class="h-full bg-orange-400 transition-all" style="width: {(stats.rsvpLate / rsvpOpportunities) * 100}%"></div>
+											{/if}
 										</div>
 									</div>
-									<div class="flex justify-between items-center gap-2">
-										<span>No:</span>
-										<div class="flex items-center gap-1 flex-1">
-											<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
-												<div 
-													class="h-full bg-red-500 transition-all"
-													style="width: {stats.responded > 0 ? (stats.no / stats.responded * 100) : 0}%"
-												></div>
+									
+									<!-- Attendance stacked bar (only if past events exist) -->
+									{#if stats.pastEventCount > 0}
+										<div>
+											<div class="flex justify-between text-gray-600 mb-1">
+												<span>Attendance</span>
+												<span class="font-medium">
+													{attOpportunities > 0 ? ((stats.attRecorded / attOpportunities) * 100).toFixed(0) : 0}%
+												</span>
 											</div>
-											<span class="font-medium w-8 text-right">{stats.no}</span>
-										</div>
-									</div>
-									{#if stats.maybe > 0}
-										<div class="flex justify-between items-center gap-2">
-											<span>Maybe:</span>
-											<div class="flex items-center gap-1 flex-1">
-												<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
-													<div 
-														class="h-full bg-yellow-500 transition-all"
-														style="width: {stats.responded > 0 ? (stats.maybe / stats.responded * 100) : 0}%"
-													></div>
-												</div>
-												<span class="font-medium w-8 text-right">{stats.maybe}</span>
-											</div>
-										</div>
-									{/if}
-									{#if stats.late > 0}
-										<div class="flex justify-between items-center gap-2">
-											<span>Late:</span>
-											<div class="flex items-center gap-1 flex-1">
-												<div class="flex-1 h-4 bg-gray-200 rounded-sm overflow-hidden">
-													<div 
-														class="h-full bg-orange-500 transition-all"
-														style="width: {stats.responded > 0 ? (stats.late / stats.responded * 100) : 0}%"
-													></div>
-												</div>
-												<span class="font-medium w-8 text-right">{stats.late}</span>
+											<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title="Present: {stats.attPresent}, Late: {stats.attLate}, Absent: {stats.attAbsent}, Not recorded: {attOpportunities - stats.attRecorded}">
+												{#if attOpportunities > 0}
+													<div class="h-full bg-green-500 transition-all" style="width: {(stats.attPresent / attOpportunities) * 100}%"></div>
+													<div class="h-full bg-orange-400 transition-all" style="width: {(stats.attLate / attOpportunities) * 100}%"></div>
+													<div class="h-full bg-red-500 transition-all" style="width: {(stats.attAbsent / attOpportunities) * 100}%"></div>
+												{/if}
 											</div>
 										</div>
 									{/if}

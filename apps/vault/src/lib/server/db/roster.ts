@@ -205,10 +205,20 @@ export async function getRosterView(
 	const participation = participationResult.results;
 
 	// Build RosterEvent objects with participation maps
+	// Pre-populate with null entries for all members to normalize "no record" vs "null value"
 	const rosterEvents: RosterEvent[] = events.map((event) => {
 		const participationMap = new Map<string, ParticipationStatus>();
 
-		// Find all participation records for this event
+		// Initialize all members with null status (no response)
+		members.forEach((member) => {
+			participationMap.set(member.id, {
+				plannedStatus: null,
+				actualStatus: null,
+				recordedAt: null
+			});
+		});
+
+		// Overwrite with actual participation records
 		participation
 			.filter((p) => p.event_id === event.id)
 			.forEach((p) => {
