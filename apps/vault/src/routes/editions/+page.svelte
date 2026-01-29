@@ -116,12 +116,6 @@
 			<h1 class="text-3xl font-bold">Editions</h1>
 			<p class="mt-2 text-gray-600">Browse all editions across works</p>
 		</div>
-		<a
-			href="/works"
-			class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
-		>
-			← Back to Works
-		</a>
 	</div>
 
 	<!-- Search and Filters -->

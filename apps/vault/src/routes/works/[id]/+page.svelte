@@ -265,11 +265,6 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
-	<!-- Breadcrumb -->
-	<div class="mb-4">
-		<a href="/works" class="text-blue-600 hover:underline">← Works Catalog</a>
-	</div>
-
 	<!-- Work Header -->
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold">{data.work.title}</h1>
