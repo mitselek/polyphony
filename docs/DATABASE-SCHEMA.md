@@ -2,42 +2,18 @@
 
 Vault D1 database schema (SQLite). Current state after migrations 0001-0012.
 
-## Entity-Relationship Diagram
+## Tables
+
+### Core Entities
 
 ```mermaid
 erDiagram
     members ||--o{ member_roles : "has"
-    members ||--o{ member_voices : "can sing"
-    members ||--o{ member_sections : "assigned to"
-    members ||--o{ scores : "uploads"
-    members ||--o{ invites : "invites"
-    members ||--o{ takedowns : "processes"
-    members ||--o{ access_log : "accesses"
-    members ||--o{ sessions : "authenticates"
-    members ||--o{ events : "creates"
-    members ||--o{ vault_settings : "updates"
-    members ||--o{ participation : "participates"
-
-    voices ||--o{ member_voices : "assigned to"
-    voices ||--o{ invite_voices : "pre-assigned"
-    sections ||--o{ member_sections : "contains"
-    sections ||--o{ invite_sections : "pre-assigned"
-    sections ||--o{ sections : "parent of"
-
-    invites ||--o{ invite_voices : "includes"
-    invites ||--o{ invite_sections : "includes"
-    invites }o--|| members : "for roster member"
-
-    scores ||--o{ score_files : "stored as"
-    scores ||--o{ score_chunks : "chunked as"
-    scores ||--o{ event_programs : "appears in"
-
-    events ||--o{ event_programs : "contains"
-    events ||--o{ participation : "tracks"
+    members ||--o{ members : "invites"
 
     members {
         TEXT id PK
-        TEXT name "NOT NULL"
+        TEXT name "NOT NULL, UNIQUE(LOWER)"
         TEXT nickname
         TEXT email_id UK
         TEXT email_contact
@@ -47,184 +23,25 @@ erDiagram
 
     member_roles {
         TEXT member_id PK,FK
-        TEXT role PK "owner|admin|librarian|conductor|section_leader"
+        TEXT role PK
         TEXT granted_at
         TEXT granted_by FK
     }
-
-    participation {
-        TEXT id PK
-        TEXT member_id FK "NOT NULL"
-        TEXT event_id FK "NOT NULL"
-        TEXT planned_status "yes|no|maybe|late"
-        TEXT planned_at
-        TEXT planned_notes
-        TEXT actual_status "present|absent|late"
-        TEXT recorded_at
-        TEXT recorded_by FK
-        TEXT created_at "NOT NULL"
-        TEXT updated_at "NOT NULL"
-    }
-
-    voices {
-        TEXT id PK
-        TEXT name UK "NOT NULL"
-        TEXT abbreviation "NOT NULL"
-        TEXT category "vocal|instrumental"
-        TEXT range_group "soprano|alto|tenor|bass|etc"
-        INTEGER display_order "NOT NULL"
-        INTEGER is_active "0|1"
-    }
-
-    sections {
-        TEXT id PK
-        TEXT name "NOT NULL"
-        TEXT abbreviation "NOT NULL"
-        TEXT parent_section_id FK
-        INTEGER display_order "NOT NULL"
-        INTEGER is_active "0|1"
-    }
-
-    member_voices {
-        TEXT member_id PK,FK
-        TEXT voice_id PK,FK
-        INTEGER is_primary "0|1"
-        TEXT assigned_at
-        TEXT assigned_by FK
-        TEXT notes
-    }
-
-    member_sections {
-        TEXT member_id PK,FK
-        TEXT section_id PK,FK
-        INTEGER is_primary "0|1"
-        TEXT joined_at
-        TEXT assigned_by FK
-        TEXT notes
-    }
-
-    scores {
-        TEXT id PK
-        TEXT title "NOT NULL"
-        TEXT composer
-        TEXT arranger
-        TEXT license_type "public_domain|licensed|owned|pending"
-        TEXT file_key "NOT NULL"
-        TEXT uploaded_by FK
-        TEXT uploaded_at
-        TEXT deleted_at "soft delete"
-    }
-
-    score_files {
-        TEXT score_id PK,FK
-        BLOB data "nullable if chunked"
-        INTEGER size "NOT NULL"
-        TEXT original_name
-        TEXT uploaded_at
-        INTEGER is_chunked "0|1"
-        INTEGER chunk_count "nullable"
-    }
-
-    score_chunks {
-        TEXT score_id PK,FK
-        INTEGER chunk_index PK
-        BLOB data "NOT NULL"
-        INTEGER size "NOT NULL"
-    }
-
-    invites {
-        TEXT id PK
-        TEXT token UK "NOT NULL"
-        TEXT name "NOT NULL"
-        TEXT invited_by FK "NOT NULL"
-        TEXT created_at "NOT NULL"
-        TEXT expires_at "NOT NULL"
-        TEXT roster_member_id FK
-    }
-
-    invite_voices {
-        TEXT invite_id PK,FK
-        TEXT voice_id PK,FK
-        INTEGER is_primary "0|1"
-    }
-
-    invite_sections {
-        TEXT invite_id PK,FK
-        TEXT section_id PK,FK
-        INTEGER is_primary "0|1"
-    }
-
-    vault_settings {
-        TEXT key PK
-        TEXT value "NOT NULL"
-        TEXT updated_by FK
-        TEXT updated_at
-    }
-
-    events {
-        TEXT id PK
-        TEXT title "NOT NULL"
-        TEXT description
-        TEXT location
-        TEXT starts_at "NOT NULL"
-        TEXT ends_at
-        TEXT event_type "rehearsal|concert|retreat"
-        TEXT created_by FK
-        TEXT created_at
-    }
-
-    event_programs {
-        TEXT event_id PK,FK
-        TEXT score_id PK,FK
-        INTEGER position
-        TEXT notes
-        TEXT added_at
-    }
-
-    sessions {
-        TEXT id PK
-        TEXT member_id FK
-        TEXT created_at
-        TEXT expires_at
-    }
-
-    takedowns {
-        INTEGER id PK
-        TEXT score_id FK
-        TEXT requester_email
-        TEXT reason
-        TEXT status "pending|approved|rejected"
-        TEXT submitted_at
-        TEXT processed_at
-        TEXT processed_by FK
-    }
-
-    access_log {
-        INTEGER id PK
-        TEXT member_id FK
-        TEXT score_id FK
-        TEXT action "download|view"
-        TEXT accessed_at
-    }
 ```
-
-## Tables
-
-### Core Entities
 
 #### members
 
 Vault members. Can be roster-only (no email_id) or registered via OAuth (has email_id).
 
-| Column        | Type | Constraints                | Description                                  |
-| ------------- | ---- | -------------------------- | -------------------------------------------- |
-| id            | TEXT | PK                         | Unique member ID                             |
-| name          | TEXT | NOT NULL, UNIQUE (LOWER)   | Display name (case-insensitive unique)       |
-| nickname      | TEXT |                            | Compact display name for roster              |
-| email_id      | TEXT | UNIQUE WHERE NOT NULL      | OAuth identity email (null for roster-only)  |
-| email_contact | TEXT |                            | Contact preference (optional)                |
-| invited_by    | TEXT | FK → members(id)           | Who invited this member                      |
-| joined_at     | TEXT | DEFAULT now()              | Timestamp                                    |
+| Column        | Type | Constraints              | Description                                 |
+| ------------- | ---- | ------------------------ | ------------------------------------------- |
+| id            | TEXT | PK                       | Unique member ID                            |
+| name          | TEXT | NOT NULL, UNIQUE (LOWER) | Display name (case-insensitive unique)      |
+| nickname      | TEXT |                          | Compact display name for roster             |
+| email_id      | TEXT | UNIQUE WHERE NOT NULL    | OAuth identity email (null for roster-only) |
+| email_contact | TEXT |                          | Contact preference (optional)               |
+| invited_by    | TEXT | FK → members(id)         | Who invited this member                     |
+| joined_at     | TEXT | DEFAULT now()            | Timestamp                                   |
 
 **Indexes:**
 
@@ -260,6 +77,43 @@ Multi-role support via junction table.
 ---
 
 ### Voices and Sections
+
+```mermaid
+erDiagram
+    members ||--o{ member_voices : "can sing"
+    members ||--o{ member_sections : "assigned to"
+    voices ||--o{ member_voices : "capability"
+    sections ||--o{ member_sections : "assignment"
+    sections ||--o{ sections : "parent of"
+
+    voices {
+        TEXT id PK
+        TEXT name UK
+        TEXT abbreviation
+        TEXT category
+        INTEGER display_order
+    }
+
+    sections {
+        TEXT id PK
+        TEXT name
+        TEXT abbreviation
+        TEXT parent_section_id FK
+        INTEGER display_order
+    }
+
+    member_voices {
+        TEXT member_id PK,FK
+        TEXT voice_id PK,FK
+        INTEGER is_primary
+    }
+
+    member_sections {
+        TEXT member_id PK,FK
+        TEXT section_id PK,FK
+        INTEGER is_primary
+    }
+```
 
 #### voices
 
@@ -358,6 +212,37 @@ Junction table: which sections each member is assigned to.
 
 ### Scores
 
+```mermaid
+erDiagram
+    members ||--o{ scores : "uploads"
+    scores ||--|| score_files : "stored as"
+    scores ||--o{ score_chunks : "chunked as"
+    scores ||--o{ access_log : "tracked in"
+    scores ||--o{ takedowns : "claimed by"
+
+    scores {
+        TEXT id PK
+        TEXT title
+        TEXT composer
+        TEXT license_type
+        TEXT file_key
+        TEXT uploaded_by FK
+    }
+
+    score_files {
+        TEXT score_id PK,FK
+        BLOB data
+        INTEGER size
+        INTEGER is_chunked
+    }
+
+    score_chunks {
+        TEXT score_id PK,FK
+        INTEGER chunk_index PK
+        BLOB data
+    }
+```
+
 #### scores
 
 Sheet music metadata.
@@ -422,19 +307,50 @@ Large file storage (>2MB files split into chunks).
 
 ### Invitations
 
+```mermaid
+erDiagram
+    members ||--o{ invites : "creates"
+    invites }o--|| members : "for roster member"
+    invites ||--o{ invite_voices : "includes"
+    invites ||--o{ invite_sections : "includes"
+    voices ||--o{ invite_voices : "pre-assigned"
+    sections ||--o{ invite_sections : "pre-assigned"
+
+    invites {
+        TEXT id PK
+        TEXT token UK
+        TEXT name
+        TEXT invited_by FK
+        TEXT expires_at
+        TEXT roster_member_id FK
+    }
+
+    invite_voices {
+        TEXT invite_id PK,FK
+        TEXT voice_id PK,FK
+        INTEGER is_primary
+    }
+
+    invite_sections {
+        TEXT invite_id PK,FK
+        TEXT section_id PK,FK
+        INTEGER is_primary
+    }
+```
+
 #### invites
 
 Pending member invitations (name-based, with optional pre-assigned voices/sections).
 
-| Column           | Type | Constraints           | Description                              |
-| ---------------- | ---- | --------------------- | ---------------------------------------- |
-| id               | TEXT | PK                    | Invite ID                                |
-| token            | TEXT | NOT NULL, UNIQUE      | Secret invite token                      |
-| name             | TEXT | NOT NULL              | Invitee name (tracking only)             |
-| invited_by       | TEXT | NOT NULL, FK → members(id) | Inviter                             |
-| created_at       | TEXT | NOT NULL, DEFAULT now() | Created timestamp                      |
-| expires_at       | TEXT | NOT NULL              | Expiration timestamp (48h default)       |
-| roster_member_id | TEXT | FK → members(id)      | Optional link to existing roster member  |
+| Column           | Type | Constraints                | Description                             |
+| ---------------- | ---- | -------------------------- | --------------------------------------- |
+| id               | TEXT | PK                         | Invite ID                               |
+| token            | TEXT | NOT NULL, UNIQUE           | Secret invite token                     |
+| name             | TEXT | NOT NULL                   | Invitee name (tracking only)            |
+| invited_by       | TEXT | NOT NULL, FK → members(id) | Inviter                                 |
+| created_at       | TEXT | NOT NULL, DEFAULT now()    | Created timestamp                       |
+| expires_at       | TEXT | NOT NULL                   | Expiration timestamp (48h default)      |
+| roster_member_id | TEXT | FK → members(id)           | Optional link to existing roster member |
 
 **Indexes:**
 
@@ -484,6 +400,44 @@ Junction table: sections to assign when invite is accepted.
 
 ### Supporting Tables
 
+```mermaid
+erDiagram
+    members ||--o{ sessions : "authenticates"
+    members ||--o{ vault_settings : "updates"
+    members ||--o{ access_log : "tracked"
+    members ||--o{ takedowns : "processes"
+    scores ||--o{ takedowns : "target"
+    scores ||--o{ access_log : "accessed"
+
+    sessions {
+        TEXT id PK
+        TEXT member_id FK
+        TEXT token UK
+        TEXT expires_at
+    }
+
+    vault_settings {
+        TEXT key PK
+        TEXT value
+        TEXT updated_by FK
+    }
+
+    takedowns {
+        TEXT id PK
+        TEXT score_id FK
+        TEXT claimant_email
+        TEXT status
+        TEXT processed_by FK
+    }
+
+    access_log {
+        INTEGER id PK
+        TEXT member_id FK
+        TEXT score_id FK
+        TEXT action
+    }
+```
+
 #### sessions
 
 Authentication sessions.
@@ -507,19 +461,19 @@ Authentication sessions.
 
 Copyright takedown requests.
 
-| Column           | Type    | Constraints                                     | Description                       |
-| ---------------- | ------- | ----------------------------------------------- | --------------------------------- |
-| id               | TEXT    | PK                                              | Takedown ID                       |
-| score_id         | TEXT    | NOT NULL, FK → scores(id)                       | Target score                      |
-| claimant_name    | TEXT    | NOT NULL                                        | Claimant's name                   |
-| claimant_email   | TEXT    | NOT NULL                                        | Claimant's email                  |
-| reason           | TEXT    | NOT NULL                                        | Takedown reason                   |
-| attestation      | INTEGER | NOT NULL, DEFAULT 0                             | Legal attestation checkbox        |
-| status           | TEXT    | NOT NULL, DEFAULT 'pending', CHECK              | `pending`, `approved`, `rejected` |
-| created_at       | TEXT    | NOT NULL, DEFAULT now()                         | Submission timestamp              |
-| processed_at     | TEXT    |                                                 | Processing timestamp              |
-| processed_by     | TEXT    | FK → members(id)                                | Admin who processed               |
-| resolution_notes | TEXT    |                                                 | Notes about resolution            |
+| Column           | Type    | Constraints                        | Description                       |
+| ---------------- | ------- | ---------------------------------- | --------------------------------- |
+| id               | TEXT    | PK                                 | Takedown ID                       |
+| score_id         | TEXT    | NOT NULL, FK → scores(id)          | Target score                      |
+| claimant_name    | TEXT    | NOT NULL                           | Claimant's name                   |
+| claimant_email   | TEXT    | NOT NULL                           | Claimant's email                  |
+| reason           | TEXT    | NOT NULL                           | Takedown reason                   |
+| attestation      | INTEGER | NOT NULL, DEFAULT 0                | Legal attestation checkbox        |
+| status           | TEXT    | NOT NULL, DEFAULT 'pending', CHECK | `pending`, `approved`, `rejected` |
+| created_at       | TEXT    | NOT NULL, DEFAULT now()            | Submission timestamp              |
+| processed_at     | TEXT    |                                    | Processing timestamp              |
+| processed_by     | TEXT    | FK → members(id)                   | Admin who processed               |
+| resolution_notes | TEXT    |                                    | Notes about resolution            |
 
 **Indexes:**
 
@@ -566,6 +520,39 @@ Configuration settings for the vault (key-value store with audit trail).
 ---
 
 ### Event Management
+
+```mermaid
+erDiagram
+    members ||--o{ events : "creates"
+    members ||--o{ participation : "RSVPs"
+    events ||--o{ event_programs : "has setlist"
+    events ||--o{ participation : "tracks attendance"
+    scores ||--o{ event_programs : "performed at"
+
+    events {
+        TEXT id PK
+        TEXT title
+        TEXT starts_at
+        TEXT ends_at
+        TEXT event_type
+        TEXT created_by FK
+    }
+
+    event_programs {
+        TEXT event_id PK,FK
+        TEXT score_id PK,FK
+        INTEGER position
+    }
+
+    participation {
+        TEXT id PK
+        TEXT member_id FK
+        TEXT event_id FK
+        TEXT planned_status
+        TEXT actual_status
+        TEXT recorded_by FK
+    }
+```
 
 #### events
 
@@ -617,19 +604,19 @@ Setlists linking scores to events in order.
 
 RSVP and attendance tracking for events.
 
-| Column         | Type | Constraints                             | Description                                |
-| -------------- | ---- | --------------------------------------- | ------------------------------------------ |
-| id             | TEXT | PK                                      | Participation record ID                    |
-| member_id      | TEXT | NOT NULL, FK → members(id) CASCADE      | Member reference                           |
-| event_id       | TEXT | NOT NULL, FK → events(id) CASCADE       | Event reference                            |
-| planned_status | TEXT | CHECK (`yes`, `no`, `maybe`, `late`)    | Member's RSVP response                     |
-| planned_at     | TEXT |                                         | When RSVP was set                          |
-| planned_notes  | TEXT |                                         | Optional notes with RSVP                   |
-| actual_status  | TEXT | CHECK (`present`, `absent`, `late`)     | Conductor-recorded attendance              |
-| recorded_at    | TEXT |                                         | When attendance was recorded               |
-| recorded_by    | TEXT | FK → members(id)                        | Who recorded attendance (conductor/leader) |
-| created_at     | TEXT | NOT NULL, DEFAULT now()                 | Record creation timestamp                  |
-| updated_at     | TEXT | NOT NULL, DEFAULT now()                 | Last update timestamp                      |
+| Column         | Type | Constraints                          | Description                                |
+| -------------- | ---- | ------------------------------------ | ------------------------------------------ |
+| id             | TEXT | PK                                   | Participation record ID                    |
+| member_id      | TEXT | NOT NULL, FK → members(id) CASCADE   | Member reference                           |
+| event_id       | TEXT | NOT NULL, FK → events(id) CASCADE    | Event reference                            |
+| planned_status | TEXT | CHECK (`yes`, `no`, `maybe`, `late`) | Member's RSVP response                     |
+| planned_at     | TEXT |                                      | When RSVP was set                          |
+| planned_notes  | TEXT |                                      | Optional notes with RSVP                   |
+| actual_status  | TEXT | CHECK (`present`, `absent`, `late`)  | Conductor-recorded attendance              |
+| recorded_at    | TEXT |                                      | When attendance was recorded               |
+| recorded_by    | TEXT | FK → members(id)                     | Who recorded attendance (conductor/leader) |
+| created_at     | TEXT | NOT NULL, DEFAULT now()              | Record creation timestamp                  |
+| updated_at     | TEXT | NOT NULL, DEFAULT now()              | Last update timestamp                      |
 
 **Indexes:**
 
@@ -649,52 +636,6 @@ RSVP and attendance tracking for events.
 - Both can be null: a member may not RSVP, or attendance may not be recorded yet
 
 ---
-
-## Key Relationships
-
-### Member → Roles (Many-to-Many)
-
-A member can have multiple roles (owner, admin, librarian, conductor, section_leader). Authenticated membership implies basic "singer" permissions (view/download).
-
-### Member → Voices (Many-to-Many)
-
-A member can have multiple voice capabilities (e.g., can sing both Tenor and Baritone). One voice is marked as primary. Managed via `member_voices` junction table.
-
-### Member → Sections (Many-to-Many)
-
-A member can be assigned to multiple sections (e.g., Tenor I for most pieces, but Full Choir for others). One section is marked as primary. Managed via `member_sections` junction table.
-
-### Member → Scores (One-to-Many)
-
-Each score is uploaded by one member. Members can upload multiple scores (if they have librarian role).
-
-### Score → Files (One-to-One with Optional Chunks)
-
-Each score has 1 metadata row in `score_files`. Large files (>2MB) also have N rows in `score_chunks`.
-
-### Member → Invites (One-to-Many)
-
-A member (admin/owner) can send multiple invitations. Invites can pre-assign voices and sections that transfer to the new member on acceptance.
-
-### Section → Section (Self-referential)
-
-Sections can have parent sections (e.g., "Soprano I" is a child of "Soprano"). This allows hierarchical organization.
-
-### Member → Events (One-to-Many)
-
-Each event is created by one member (with conductor/owner role). Members can create multiple events.
-
-### Event → Programs (One-to-Many)
-
-Each event has one program (setlist) with multiple scores. Scores are ordered by position.
-
-### Member → Participation (Many-to-Many via participation)
-
-Each member can participate in multiple events. Participation tracks both self-reported RSVP (planned_status) and conductor-recorded attendance (actual_status).
-
-### Event → Participation (One-to-Many)
-
-Each event has multiple participation records (one per member). Enables roster views and attendance tracking.
 
 ## Data Constraints
 
