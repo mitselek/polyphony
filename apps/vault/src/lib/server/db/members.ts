@@ -295,6 +295,7 @@ async function loadMemberRelations(
 
 /**
  * Add a voice to a member
+ * Note: If this is the member's first voice, it's automatically marked as primary
  */
 export async function addMemberVoice(
 	db: D1Database,
@@ -303,11 +304,19 @@ export async function addMemberVoice(
 	isPrimary: boolean = false,
 	assignedBy: string | null = null
 ): Promise<void> {
+	// Enforce: first voice must be primary (don't trust caller)
+	const existing = await db
+		.prepare('SELECT COUNT(*) as count FROM member_voices WHERE member_id = ?')
+		.bind(memberId)
+		.first<{ count: number }>();
+	
+	const shouldBePrimary = isPrimary || (existing?.count ?? 0) === 0;
+	
 	await db
 		.prepare(
 			'INSERT INTO member_voices (member_id, voice_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
 		)
-		.bind(memberId, voiceId, isPrimary ? 1 : 0, assignedBy)
+		.bind(memberId, voiceId, shouldBePrimary ? 1 : 0, assignedBy)
 		.run();
 }
 
@@ -343,6 +352,7 @@ export async function setPrimaryVoice(
 
 /**
  * Add a section to a member
+ * Note: If this is the member's first section, it's automatically marked as primary
  */
 export async function addMemberSection(
 	db: D1Database,
@@ -351,11 +361,19 @@ export async function addMemberSection(
 	isPrimary: boolean = false,
 	assignedBy: string | null = null
 ): Promise<void> {
+	// Enforce: first section must be primary (don't trust caller)
+	const existing = await db
+		.prepare('SELECT COUNT(*) as count FROM member_sections WHERE member_id = ?')
+		.bind(memberId)
+		.first<{ count: number }>();
+	
+	const shouldBePrimary = isPrimary || (existing?.count ?? 0) === 0;
+	
 	await db
 		.prepare(
 			'INSERT INTO member_sections (member_id, section_id, is_primary, assigned_by) VALUES (?, ?, ?, ?)'
 		)
-		.bind(memberId, sectionId, isPrimary ? 1 : 0, assignedBy)
+		.bind(memberId, sectionId, shouldBePrimary ? 1 : 0, assignedBy)
 		.run();
 }
 
