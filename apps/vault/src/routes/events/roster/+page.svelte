@@ -49,6 +49,7 @@
 		const stats: Record<string, {
 			sectionName: string;
 			sectionAbbr: string;
+			displayOrder: number;
 			total: number;
 			yes: number;
 			no: number;
@@ -68,6 +69,7 @@
 				stats[sectionId] = {
 					sectionName: member.primarySection.name,
 					sectionAbbr: member.primarySection.abbreviation,
+					displayOrder: member.primarySection.displayOrder,
 					total: 0,
 					yes: 0,
 					no: 0,
@@ -517,7 +519,7 @@
 				<div class="rounded-lg border border-gray-200 bg-white p-4">
 					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-						{#each Object.entries(sectionStats).sort((a, b) => a[1].sectionName.localeCompare(b[1].sectionName)) as [sectionId, stats]}
+						{#each Object.entries(sectionStats).sort((a, b) => a[1].displayOrder - b[1].displayOrder) as [sectionId, stats]}
 							<div class="rounded border border-gray-200 bg-gray-50 p-3">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium text-gray-700">{stats.sectionName}</span>
