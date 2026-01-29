@@ -396,11 +396,11 @@
 									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
 								>
 									{#if isPast}
-										<!-- Past event: dual cell (RSVP / Attendance) -->
-										<div class="flex h-full">
-											<!-- RSVP half -->
+										<!-- Past event: dual cell (RSVP / Attendance) as pill -->
+										<div class="flex h-full mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
+											<!-- RSVP half (left rounded) -->
 											<button
-												class="participation-cell flex-1 px-1 py-2 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default opacity-60'}"
+												class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
 												disabled={!canEditRsvp}
 												title="RSVP: {status?.plannedStatus ?? 'none'}"
@@ -408,9 +408,9 @@
 												{getRsvpText(status?.plannedStatus ?? null)}
 											</button>
 											<div class="w-px bg-gray-300"></div>
-											<!-- Attendance half -->
+											<!-- Attendance half (right rounded) -->
 											<button
-												class="participation-cell flex-1 px-1 py-2 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default opacity-60'}"
+												class="participation-cell flex-1 px-2 py-1 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 												onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
 												disabled={!canEditAtt}
 												title="Attendance: {status?.actualStatus ?? 'not recorded'}"
@@ -419,15 +419,17 @@
 											</button>
 										</div>
 									{:else}
-										<!-- Future event: RSVP only -->
-										<button
-											class="participation-cell w-full px-2 py-2 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default'}"
-											onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
-											disabled={!canEditRsvp}
-											title="RSVP: {status?.plannedStatus ?? 'none'}"
-										>
-											{getRsvpText(status?.plannedStatus ?? null)}
-										</button>
+										<!-- Future event: RSVP only (pill shape) -->
+										<div class="mx-1 my-1">
+											<button
+												class="participation-cell w-full rounded-full px-3 py-1 border border-gray-300 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}"
+												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
+												disabled={!canEditRsvp}
+												title="RSVP: {status?.plannedStatus ?? 'none'}"
+											>
+												{getRsvpText(status?.plannedStatus ?? null)}
+											</button>
+										</div>
 									{/if}
 								</td>
 							{/each}
