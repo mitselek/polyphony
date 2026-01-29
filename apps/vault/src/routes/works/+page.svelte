@@ -274,13 +274,12 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredWorks as work (work.id)}
-				<div
-					class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+				<a
+					href="/works/{work.id}"
+					class="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
 				>
 					<div class="flex-1">
-						<h2 class="text-lg font-semibold">
-							<a href="/works/{work.id}" class="hover:text-blue-600 hover:underline">{work.title}</a>
-						</h2>
+						<h2 class="text-lg font-semibold group-hover:text-blue-600">{work.title}</h2>
 						{#if work.composer}
 							<p class="text-gray-600">{work.composer}</p>
 						{/if}
@@ -294,13 +293,13 @@
 					{#if data.canManage}
 						<div class="flex gap-2">
 							<button
-								onclick={() => openEditForm(work)}
+								onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(work); }}
 								class="rounded-lg bg-gray-100 px-3 py-2 text-gray-700 transition hover:bg-gray-200"
 							>
 								Edit
 							</button>
 							<button
-								onclick={() => deleteWork(work)}
+								onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteWork(work); }}
 								disabled={deletingId === work.id}
 								class="rounded-lg bg-red-100 px-3 py-2 text-red-700 transition hover:bg-red-200 disabled:opacity-50"
 							>
@@ -308,7 +307,7 @@
 							</button>
 						</div>
 					{/if}
-				</div>
+				</a>
 			{/each}
 		</div>
 	{/if}
