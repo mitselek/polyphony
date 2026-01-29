@@ -1,21 +1,27 @@
 // Server load for root layout - provides auth state to all pages
 import { getMemberById } from '$lib/server/db/members';
+import { getSetting } from '$lib/server/db/settings';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 	const memberId = cookies.get('member_id');
 
 	if (!memberId || !platform?.env?.DB) {
-		return { user: null };
+		return { user: null, locale: 'system' };
 	}
 
 	try {
-		const member = await getMemberById(platform.env.DB, memberId);
+		const [member, localeSetting] = await Promise.all([
+			getMemberById(platform.env.DB, memberId),
+			getSetting(platform.env.DB, 'locale')
+		]);
+
+		const locale = localeSetting || 'system';
 
 		if (!member) {
 			// Invalid session - clear cookie
 			cookies.delete('member_id', { path: '/' });
-			return { user: null };
+			return { user: null, locale };
 		}
 
 		return {
@@ -26,9 +32,10 @@ export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 				roles: member.roles,
 				voices: member.voices,
 				sections: member.sections
-			}
+			},
+			locale
 		};
 	} catch {
-		return { user: null };
+		return { user: null, locale: 'system' };
 	}
 };

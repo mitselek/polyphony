@@ -3,8 +3,12 @@
   import { untrack, onMount } from "svelte";
   import type { PageData } from "./$types";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
+  import { getLocale } from "$lib/utils/locale";
 
   let { data }: { data: PageData } = $props();
+
+  // Get the locale for date formatting
+  let locale = $derived(getLocale(data.locale));
 
   // Local state for program editor - use untrack for initial values
   let program = $state(untrack(() => [...data.program]));
@@ -53,7 +57,7 @@
     const startDateTime = new Date(`${startDate}T${startTime}:00`);
     const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
     
-    const time = endDateTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const time = endDateTime.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
     const nextDay = endDateTime.getDate() !== startDateTime.getDate();
     
     return { time, nextDay };
@@ -103,7 +107,7 @@
   // Format date and time
   function formatDateTime(dateString: string): string {
     const dt = new Date(dateString);
-    return dt.toLocaleString(undefined, {
+    return dt.toLocaleString(locale, {
       weekday: "long",
       month: "long",
       day: "numeric",

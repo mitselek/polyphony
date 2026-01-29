@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import type { EventType, PlannedStatus } from '$lib/types';
+	import { getLocale } from '$lib/utils/locale';
 
 	let { data }: { data: PageData } = $props();
 
@@ -26,16 +27,19 @@
 			: events.filter((e) => e.event_type === selectedFilter)
 	);
 
+	// Get the locale for date formatting
+	let locale = $derived(getLocale(data.locale));
+
 	// Format date and time
 	function formatDateTime(dateString: string): { date: string; time: string } {
 		const dt = new Date(dateString);
-		const date = dt.toLocaleDateString(undefined, {
+		const date = dt.toLocaleDateString(locale, {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric'
 		});
-		const time = dt.toLocaleTimeString(undefined, {
+		const time = dt.toLocaleTimeString(locale, {
 			hour: 'numeric',
 			minute: '2-digit'
 		});

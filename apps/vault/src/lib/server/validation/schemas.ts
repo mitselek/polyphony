@@ -37,7 +37,8 @@ export type UpdateRolesInput = z.infer<typeof updateRolesSchema>;
  */
 export const updateSettingsSchema = z.object({
 	default_event_duration: z.coerce.number().int().positive().optional(),
-	conductor_id: z.string().optional()
+	conductor_id: z.string().optional(),
+	locale: z.string().optional() // 'system' or valid locale like 'et-EE', 'en-US'
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

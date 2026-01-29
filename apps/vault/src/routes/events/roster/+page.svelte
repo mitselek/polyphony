@@ -3,8 +3,12 @@
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import type { PlannedStatus, ActualStatus } from '$lib/types';
+	import { getLocale } from '$lib/utils/locale';
 
 	let { data }: { data: PageData } = $props();
+
+	// Get the locale for date formatting
+	let locale = $derived(getLocale(data.locale));
 
 	// Reactive copy of data for local updates
 	let roster = $state(untrack(() => data.roster));
@@ -92,13 +96,13 @@
 	// Helper: Format date for display
 	function formatDate(dateStr: string): string {
 		const date = new Date(dateStr);
-		return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+		return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 	}
 
 	// Helper: Format time for display (e.g., "7:00 PM")
 	function formatTime(dateStr: string): string {
 		const date = new Date(dateStr);
-		return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+		return date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
 	}
 
 	// Apply filters by navigating with query params
