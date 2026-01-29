@@ -223,7 +223,7 @@
 						<!-- Z-index layering: 30 for corner cells (sticky both directions) -->
 						<!-- Z-index 20 for sticky column headers, 10 for sticky row headers -->
 						<th
-							class="sticky left-0 top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-700"
+							class="sticky left-0 top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-center text-sm font-semibold text-gray-700"
 							style="min-width: 150px;"
 						>
 							Name
