@@ -229,14 +229,6 @@
 							Name
 						</th>
 
-						<!-- Sticky Section Column Header -->
-						<th
-						class="sticky left-37.5 top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-700"
-							style="min-width: 120px;"
-						>
-							Section
-						</th>
-
 						<!-- Event Column Headers (scrollable) -->
 						{#each roster.events as event}
 							<th
