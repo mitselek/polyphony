@@ -1,6 +1,6 @@
 # Database Schema
 
-Vault D1 database schema (SQLite). Current state after migrations 0001-0004.
+Vault D1 database schema (SQLite). Current state after migrations 0001-0012.
 
 ## Entity-Relationship Diagram
 
@@ -16,6 +16,7 @@ erDiagram
     members ||--o{ sessions : "authenticates"
     members ||--o{ events : "creates"
     members ||--o{ vault_settings : "updates"
+    members ||--o{ participation : "participates"
 
     voices ||--o{ member_voices : "assigned to"
     voices ||--o{ invite_voices : "pre-assigned"
@@ -25,17 +26,21 @@ erDiagram
 
     invites ||--o{ invite_voices : "includes"
     invites ||--o{ invite_sections : "includes"
+    invites }o--|| members : "for roster member"
 
     scores ||--o{ score_files : "stored as"
     scores ||--o{ score_chunks : "chunked as"
     scores ||--o{ event_programs : "appears in"
 
     events ||--o{ event_programs : "contains"
+    events ||--o{ participation : "tracks"
 
     members {
         TEXT id PK
-        TEXT email UK "NOT NULL"
-        TEXT name
+        TEXT name "NOT NULL"
+        TEXT nickname
+        TEXT email_id UK
+        TEXT email_contact
         TEXT invited_by FK
         TEXT joined_at
     }
@@ -45,6 +50,20 @@ erDiagram
         TEXT role PK "owner|admin|librarian|conductor|section_leader"
         TEXT granted_at
         TEXT granted_by FK
+    }
+
+    participation {
+        TEXT id PK
+        TEXT member_id FK "NOT NULL"
+        TEXT event_id FK "NOT NULL"
+        TEXT planned_status "yes|no|maybe|late"
+        TEXT planned_at
+        TEXT planned_notes
+        TEXT actual_status "present|absent|late"
+        TEXT recorded_at
+        TEXT recorded_by FK
+        TEXT created_at "NOT NULL"
+        TEXT updated_at "NOT NULL"
     }
 
     voices {
@@ -115,15 +134,12 @@ erDiagram
 
     invites {
         TEXT id PK
-        TEXT name "NOT NULL"
         TEXT token UK "NOT NULL"
-        TEXT invited_by FK
+        TEXT name "NOT NULL"
+        TEXT invited_by FK "NOT NULL"
+        TEXT created_at "NOT NULL"
         TEXT expires_at "NOT NULL"
-        TEXT status "pending|accepted"
-        TEXT roles "JSON array"
-        TEXT created_at
-        TEXT accepted_at
-        TEXT accepted_by_email "Registry-verified"
+        TEXT roster_member_id FK
     }
 
     invite_voices {
@@ -198,19 +214,25 @@ erDiagram
 
 #### members
 
-Vault members (authenticated users).
+Vault members. Can be roster-only (no email_id) or registered via OAuth (has email_id).
 
-| Column     | Type | Constraints      | Description             |
-| ---------- | ---- | ---------------- | ----------------------- |
-| id         | TEXT | PK               | Unique member ID        |
-| email      | TEXT | NOT NULL, UNIQUE | Email from Registry     |
-| name       | TEXT |                  | Display name            |
-| invited_by | TEXT | FK → members(id) | Who invited this member |
-| joined_at  | TEXT | DEFAULT now()    | Timestamp               |
+| Column        | Type | Constraints                | Description                                  |
+| ------------- | ---- | -------------------------- | -------------------------------------------- |
+| id            | TEXT | PK                         | Unique member ID                             |
+| name          | TEXT | NOT NULL, UNIQUE (LOWER)   | Display name (case-insensitive unique)       |
+| nickname      | TEXT |                            | Compact display name for roster              |
+| email_id      | TEXT | UNIQUE WHERE NOT NULL      | OAuth identity email (null for roster-only)  |
+| email_contact | TEXT |                            | Contact preference (optional)                |
+| invited_by    | TEXT | FK → members(id)           | Who invited this member                      |
+| joined_at     | TEXT | DEFAULT now()              | Timestamp                                    |
 
-**Indexes:** None additional (PK on id, UNIQUE on email)
+**Indexes:**
 
-**Note:** Voice capabilities and section assignments are stored in junction tables `member_voices` and `member_sections`.
+- `idx_members_name_lower` UNIQUE on LOWER(name)
+- `idx_members_email_id` UNIQUE on email_id WHERE email_id IS NOT NULL
+- `idx_members_nickname` on nickname WHERE nickname IS NOT NULL
+
+**Note:** Voice capabilities and section assignments are stored in junction tables `member_voices` and `member_sections`. Roster-only members (email_id IS NULL) can be upgraded to registered by setting email_id via invite acceptance.
 
 ---
 
@@ -402,29 +424,27 @@ Large file storage (>2MB files split into chunks).
 
 #### invites
 
-Pending member invitations (name-based, multi-role support, with pre-assigned voices/sections).
+Pending member invitations (name-based, with optional pre-assigned voices/sections).
 
-| Column            | Type | Constraints      | Description                                    |
-| ----------------- | ---- | ---------------- | ---------------------------------------------- |
-| id                | TEXT | PK               | Invite ID                                      |
-| name              | TEXT | NOT NULL         | Invitee name (tracking only, not verified)     |
-| token             | TEXT | NOT NULL, UNIQUE | Secret invite token                            |
-| invited_by        | TEXT | FK → members(id) | Inviter                                        |
-| expires_at        | TEXT | NOT NULL         | Expiration timestamp (48h default)             |
-| status            | TEXT | CHECK            | `pending`, `accepted`                          |
-| roles             | TEXT | NOT NULL         | JSON array of roles to grant                   |
-| created_at        | TEXT | DEFAULT now()    | Created timestamp                              |
-| accepted_at       | TEXT |                  | Acceptance timestamp                           |
-| accepted_by_email | TEXT |                  | Registry-verified email (filled on acceptance) |
+| Column           | Type | Constraints           | Description                              |
+| ---------------- | ---- | --------------------- | ---------------------------------------- |
+| id               | TEXT | PK                    | Invite ID                                |
+| token            | TEXT | NOT NULL, UNIQUE      | Secret invite token                      |
+| name             | TEXT | NOT NULL              | Invitee name (tracking only)             |
+| invited_by       | TEXT | NOT NULL, FK → members(id) | Inviter                             |
+| created_at       | TEXT | NOT NULL, DEFAULT now() | Created timestamp                      |
+| expires_at       | TEXT | NOT NULL              | Expiration timestamp (48h default)       |
+| roster_member_id | TEXT | FK → members(id)      | Optional link to existing roster member  |
 
 **Indexes:**
 
-- `idx_invites_token` on token
-- `idx_invites_status` on status
+- `sqlite_autoindex_invites_1` on id (PK)
+- `sqlite_autoindex_invites_2` on token (UNIQUE)
 
 **Notes:**
 
-- Email comes from Registry OAuth on acceptance (not stored in invite)
+- Simplified schema - roles are assigned after acceptance, not stored in invite
+- `roster_member_id` links to existing roster-only member for upgrade workflow
 - Voices and sections are stored in `invite_voices` and `invite_sections` junction tables
 - On acceptance, voices/sections are transferred to `member_voices` and `member_sections`
 
@@ -468,16 +488,18 @@ Junction table: sections to assign when invite is accepted.
 
 Authentication sessions.
 
-| Column     | Type | Constraints      | Description      |
-| ---------- | ---- | ---------------- | ---------------- |
-| id         | TEXT | PK               | Session ID       |
-| member_id  | TEXT | FK → members(id) | Member reference |
-| created_at | TEXT | DEFAULT now()    | Session start    |
-| expires_at | TEXT |                  | Session expiry   |
+| Column     | Type | Constraints                        | Description      |
+| ---------- | ---- | ---------------------------------- | ---------------- |
+| id         | TEXT | PK                                 | Session ID       |
+| member_id  | TEXT | NOT NULL, FK → members(id) CASCADE | Member reference |
+| token      | TEXT | NOT NULL, UNIQUE                   | Session token    |
+| expires_at | TEXT | NOT NULL                           | Session expiry   |
+| created_at | TEXT | NOT NULL, DEFAULT now()            | Session start    |
 
 **Indexes:**
 
-- `idx_sessions_member` on member_id
+- `sqlite_autoindex_sessions_1` on id (PK)
+- `sqlite_autoindex_sessions_2` on token (UNIQUE)
 
 ---
 
@@ -485,21 +507,23 @@ Authentication sessions.
 
 Copyright takedown requests.
 
-| Column          | Type    | Constraints      | Description                       |
-| --------------- | ------- | ---------------- | --------------------------------- |
-| id              | INTEGER | PK AUTOINCREMENT | Takedown ID                       |
-| score_id        | TEXT    | FK → scores(id)  | Target score                      |
-| requester_email | TEXT    |                  | Requester contact                 |
-| reason          | TEXT    |                  | Takedown reason                   |
-| status          | TEXT    | CHECK            | `pending`, `approved`, `rejected` |
-| submitted_at    | TEXT    | DEFAULT now()    | Submission timestamp              |
-| processed_at    | TEXT    |                  | Processing timestamp              |
-| processed_by    | TEXT    | FK → members(id) | Admin who processed               |
+| Column           | Type    | Constraints                                     | Description                       |
+| ---------------- | ------- | ----------------------------------------------- | --------------------------------- |
+| id               | TEXT    | PK                                              | Takedown ID                       |
+| score_id         | TEXT    | NOT NULL, FK → scores(id)                       | Target score                      |
+| claimant_name    | TEXT    | NOT NULL                                        | Claimant's name                   |
+| claimant_email   | TEXT    | NOT NULL                                        | Claimant's email                  |
+| reason           | TEXT    | NOT NULL                                        | Takedown reason                   |
+| attestation      | INTEGER | NOT NULL, DEFAULT 0                             | Legal attestation checkbox        |
+| status           | TEXT    | NOT NULL, DEFAULT 'pending', CHECK              | `pending`, `approved`, `rejected` |
+| created_at       | TEXT    | NOT NULL, DEFAULT now()                         | Submission timestamp              |
+| processed_at     | TEXT    |                                                 | Processing timestamp              |
+| processed_by     | TEXT    | FK → members(id)                                | Admin who processed               |
+| resolution_notes | TEXT    |                                                 | Notes about resolution            |
 
 **Indexes:**
 
-- `idx_takedowns_score` on score_id
-- `idx_takedowns_status` on status
+- None additional (uses PK index)
 
 ---
 
@@ -589,6 +613,43 @@ Setlists linking scores to events in order.
 
 ---
 
+#### participation
+
+RSVP and attendance tracking for events.
+
+| Column         | Type | Constraints                             | Description                                |
+| -------------- | ---- | --------------------------------------- | ------------------------------------------ |
+| id             | TEXT | PK                                      | Participation record ID                    |
+| member_id      | TEXT | NOT NULL, FK → members(id) CASCADE      | Member reference                           |
+| event_id       | TEXT | NOT NULL, FK → events(id) CASCADE       | Event reference                            |
+| planned_status | TEXT | CHECK (`yes`, `no`, `maybe`, `late`)    | Member's RSVP response                     |
+| planned_at     | TEXT |                                         | When RSVP was set                          |
+| planned_notes  | TEXT |                                         | Optional notes with RSVP                   |
+| actual_status  | TEXT | CHECK (`present`, `absent`, `late`)     | Conductor-recorded attendance              |
+| recorded_at    | TEXT |                                         | When attendance was recorded               |
+| recorded_by    | TEXT | FK → members(id)                        | Who recorded attendance (conductor/leader) |
+| created_at     | TEXT | NOT NULL, DEFAULT now()                 | Record creation timestamp                  |
+| updated_at     | TEXT | NOT NULL, DEFAULT now()                 | Last update timestamp                      |
+
+**Indexes:**
+
+- `idx_participation_member` on member_id
+- `idx_participation_event` on event_id
+- `idx_participation_planned` on planned_status
+- `idx_participation_actual` on actual_status
+
+**Constraints:**
+
+- `UNIQUE(member_id, event_id)` - One participation record per member per event
+
+**Notes:**
+
+- `planned_status` is set by member (self-service RSVP)
+- `actual_status` is set by conductor or section leader (attendance recording)
+- Both can be null: a member may not RSVP, or attendance may not be recorded yet
+
+---
+
 ## Key Relationships
 
 ### Member → Roles (Many-to-Many)
@@ -627,6 +688,14 @@ Each event is created by one member (with conductor/owner role). Members can cre
 
 Each event has one program (setlist) with multiple scores. Scores are ordered by position.
 
+### Member → Participation (Many-to-Many via participation)
+
+Each member can participate in multiple events. Participation tracks both self-reported RSVP (planned_status) and conductor-recorded attendance (actual_status).
+
+### Event → Participation (One-to-Many)
+
+Each event has multiple participation records (one per member). Enables roster views and attendance tracking.
+
 ## Data Constraints
 
 ### License Types
@@ -650,10 +719,18 @@ Each event has one program (setlist) with multiple scores. Scores are ordered by
 - `concert` - Performance event
 - `retreat` - Multi-day gathering
 
-### Invite Status
+### Planned Status (RSVP)
 
-- `pending` - Invite created, not yet accepted
-- `accepted` - Invite used to create member
+- `yes` - Will attend
+- `no` - Cannot attend
+- `maybe` - Uncertain
+- `late` - Will attend but arrive late
+
+### Actual Status (Attendance)
+
+- `present` - Attended
+- `absent` - Did not attend
+- `late` - Arrived late
 
 ## Migration History
 
@@ -663,6 +740,9 @@ Each event has one program (setlist) with multiple scores. Scores are ordered by
 | **0002**  | **Section leader role** - Added `section_leader` to member_roles CHECK constraint.                                                                                                                                           |
 | **0003**  | **Voices and sections** - Added voices, sections, member_voices, member_sections, invite_voices, invite_sections tables. Removed voice_part columns from members and invites. Added triggers for single-primary enforcement. |
 | **0004**  | **Remove default_voice_part** - Removed deprecated setting from vault_settings.                                                                                                                                              |
+| **0010**  | **Participation** - Added participation table for RSVP (planned_status) and attendance tracking (actual_status).                                                                                                             |
+| **0011**  | **Roster members** - Two-tier member system. Renamed `email` → `email_id`, added `email_contact`, made `name` required. Added `roster_member_id` to invites. Enables roster-only members without OAuth.                      |
+| **0012**  | **Member nickname** - Added `nickname` column to members for compact display in roster and constrained views.                                                                                                                |
 
 ## See Also
 
