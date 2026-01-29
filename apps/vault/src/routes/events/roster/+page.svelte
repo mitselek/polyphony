@@ -92,13 +92,13 @@
 	// Helper: Format date for display
 	function formatDate(dateStr: string): string {
 		const date = new Date(dateStr);
-		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+		return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 	}
 
 	// Helper: Format time for display (e.g., "7:00 PM")
 	function formatTime(dateStr: string): string {
 		const date = new Date(dateStr);
-		return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+		return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 	}
 
 	// Apply filters by navigating with query params

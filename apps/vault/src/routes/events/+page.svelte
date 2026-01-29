@@ -29,13 +29,13 @@
 	// Format date and time
 	function formatDateTime(dateString: string): { date: string; time: string } {
 		const dt = new Date(dateString);
-		const date = dt.toLocaleDateString('en-US', {
+		const date = dt.toLocaleDateString(undefined, {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric'
 		});
-		const time = dt.toLocaleTimeString('en-US', {
+		const time = dt.toLocaleTimeString(undefined, {
 			hour: 'numeric',
 			minute: '2-digit'
 		});

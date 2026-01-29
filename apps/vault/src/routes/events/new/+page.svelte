@@ -60,7 +60,7 @@
 	});
 
 	function formatDate(date: Date): string {
-		return date.toLocaleDateString('en-US', {
+		return date.toLocaleDateString(undefined, {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
