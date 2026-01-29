@@ -360,8 +360,21 @@
 									</p>
 								{/if}
 								{#if edition.fileName}
-									<p class="mt-2 text-sm text-gray-500">
-										📄 {edition.fileName}
+									<p class="mt-2 flex items-center gap-2 text-sm text-gray-500">
+										<span>📄 {edition.fileName}</span>
+										<a
+											href="/editions/{edition.id}/view"
+											class="rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
+										>
+											View
+										</a>
+										<a
+											href="/api/editions/{edition.id}/file"
+											download
+											class="rounded bg-gray-100 px-2 py-0.5 text-gray-700 hover:bg-gray-200"
+										>
+											Download
+										</a>
 									</p>
 								{/if}
 								{#if edition.notes}
