@@ -7,10 +7,10 @@ import { json } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { getEditionById, updateEditionFile, removeEditionFile } from '$lib/server/db/editions';
 import {
-	uploadScoreChunked,
-	getScoreFileChunked,
-	deleteScoreFileChunked
-} from '$lib/server/storage/d1-chunked-storage';
+	uploadEditionFile,
+	getEditionFile,
+	deleteEditionFile
+} from '$lib/server/storage/edition-storage';
 import type { Edition } from '$lib/types';
 
 // Helper: Get DB with error handling
@@ -46,7 +46,8 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 
 	if (!edition.fileKey) throw error(404, 'No file attached to this edition');
 
-	const file = await getScoreFileChunked(db, edition.fileKey);
+	// Use edition ID directly (fileKey stores the edition ID)
+	const file = await getEditionFile(db, params.id!);
 	if (!file) throw error(404, 'File not found in storage');
 
 	return buildPdfResponse(file.data, file.size, edition.fileName ?? 'score.pdf');
@@ -61,15 +62,14 @@ export async function POST({ params, request, platform, cookies }: RequestEvent)
 	const file = await extractAndValidateFile(request);
 
 	// Delete existing file if present
-	if (edition.fileKey) await deleteScoreFileChunked(db, edition.fileKey);
+	if (edition.fileKey) await deleteEditionFile(db, params.id!);
 
 	// Upload new file using edition ID as key
-	const fileKey = `edition-${params.id}`;
-	await uploadScoreChunked(db, fileKey, file);
+	await uploadEditionFile(db, params.id!, file);
 
-	// Update edition with file info
+	// Update edition with file info (use edition ID as fileKey)
 	const updated = await updateEditionFile(db, params.id!, {
-		fileKey,
+		fileKey: params.id!,
 		fileName: file.name,
 		fileSize: file.size,
 		uploadedBy: member.id
@@ -98,7 +98,7 @@ export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const edition = await getValidatedEdition(db, params.id);
 	if (!edition.fileKey) throw error(400, 'No file attached to this edition');
 
-	await deleteScoreFileChunked(db, edition.fileKey);
+	await deleteEditionFile(db, params.id!);
 
 	const updated = await removeEditionFile(db, params.id!);
 	if (!updated) throw error(500, 'Failed to remove file info from edition');

@@ -17,29 +17,29 @@ vi.mock('$lib/server/db/editions', () => ({
 }));
 
 // Mock the chunked storage
-vi.mock('$lib/server/storage/d1-chunked-storage', () => ({
-	uploadScoreChunked: vi.fn(),
-	getScoreFileChunked: vi.fn(),
-	deleteScoreFileChunked: vi.fn()
+vi.mock('$lib/server/storage/edition-storage', () => ({
+	uploadEditionFile: vi.fn(),
+	getEditionFile: vi.fn(),
+	deleteEditionFile: vi.fn()
 }));
 
 import { GET, POST, DELETE } from '../../../../routes/api/editions/[id]/file/+server';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { getEditionById, updateEditionFile, removeEditionFile } from '$lib/server/db/editions';
 import {
-	uploadScoreChunked,
-	getScoreFileChunked,
-	deleteScoreFileChunked
-} from '$lib/server/storage/d1-chunked-storage';
+	uploadEditionFile,
+	getEditionFile,
+	deleteEditionFile
+} from '$lib/server/storage/edition-storage';
 
 const mockGetAuthenticatedMember = vi.mocked(getAuthenticatedMember);
 const mockAssertLibrarian = vi.mocked(assertLibrarian);
 const mockGetEditionById = vi.mocked(getEditionById);
 const mockUpdateEditionFile = vi.mocked(updateEditionFile);
 const mockRemoveEditionFile = vi.mocked(removeEditionFile);
-const mockUploadScoreChunked = vi.mocked(uploadScoreChunked);
-const mockGetScoreFileChunked = vi.mocked(getScoreFileChunked);
-const mockDeleteScoreFileChunked = vi.mocked(deleteScoreFileChunked);
+const mockUploadEditionFile = vi.mocked(uploadEditionFile);
+const mockGetEditionFile = vi.mocked(getEditionFile);
+const mockDeleteEditionFile = vi.mocked(deleteEditionFile);
 
 // Mock member
 const mockMember = {
@@ -108,8 +108,8 @@ describe('GET /api/editions/[id]/file', () => {
 	it('returns PDF file with correct headers', async () => {
 		const fileData = new ArrayBuffer(1024);
 		mockGetEditionById.mockResolvedValue(mockEdition);
-		mockGetScoreFileChunked.mockResolvedValue({
-			scoreId: 'edition-edition-1',
+		mockGetEditionFile.mockResolvedValue({
+			editionId: 'edition-1',
 			data: fileData,
 			size: 1024,
 			originalName: 'test.pdf',
@@ -149,7 +149,7 @@ describe('GET /api/editions/[id]/file', () => {
 
 	it('returns 404 when file not found in storage', async () => {
 		mockGetEditionById.mockResolvedValue(mockEdition);
-		mockGetScoreFileChunked.mockResolvedValue(null);
+		mockGetEditionFile.mockResolvedValue(null);
 
 		const event = createMockEvent();
 
@@ -178,8 +178,8 @@ describe('POST /api/editions/[id]/file', () => {
 	it('uploads PDF file successfully', async () => {
 		const editionWithoutFile = { ...mockEdition, fileKey: null };
 		mockGetEditionById.mockResolvedValue(editionWithoutFile);
-		mockUploadScoreChunked.mockResolvedValue({
-			scoreId: 'edition-edition-1',
+		mockUploadEditionFile.mockResolvedValue({
+			editionId: 'edition-1',
 			size: 1024,
 			originalName: 'test.pdf',
 			isChunked: false
@@ -201,16 +201,16 @@ describe('POST /api/editions/[id]/file', () => {
 
 		expect(response.status).toBe(200);
 		expect(data.id).toBe('edition-1');
-		expect(mockUploadScoreChunked).toHaveBeenCalledWith(
+		expect(mockUploadEditionFile).toHaveBeenCalledWith(
 			expect.anything(),
-			'edition-edition-1',
+			'edition-1',
 			expect.any(File)
 		);
 		expect(mockUpdateEditionFile).toHaveBeenCalledWith(
 			expect.anything(),
 			'edition-1',
 			expect.objectContaining({
-				fileKey: 'edition-edition-1',
+				fileKey: 'edition-1',
 				fileName: 'test.pdf',
 				fileSize: 1024,
 				uploadedBy: 'member-1'
@@ -220,9 +220,9 @@ describe('POST /api/editions/[id]/file', () => {
 
 	it('replaces existing file', async () => {
 		mockGetEditionById.mockResolvedValue(mockEdition);
-		mockDeleteScoreFileChunked.mockResolvedValue(true);
-		mockUploadScoreChunked.mockResolvedValue({
-			scoreId: 'edition-edition-1',
+		mockDeleteEditionFile.mockResolvedValue(true);
+		mockUploadEditionFile.mockResolvedValue({
+			editionId: 'edition-1',
 			size: 2048,
 			originalName: 'new.pdf',
 			isChunked: false
@@ -242,9 +242,9 @@ describe('POST /api/editions/[id]/file', () => {
 		const response = await POST(event);
 
 		expect(response.status).toBe(200);
-		expect(mockDeleteScoreFileChunked).toHaveBeenCalledWith(
+		expect(mockDeleteEditionFile).toHaveBeenCalledWith(
 			expect.anything(),
-			'edition-edition-1'
+			'edition-1'
 		);
 	});
 
@@ -332,7 +332,7 @@ describe('DELETE /api/editions/[id]/file', () => {
 
 	it('deletes file successfully', async () => {
 		mockGetEditionById.mockResolvedValue(mockEdition);
-		mockDeleteScoreFileChunked.mockResolvedValue(true);
+		mockDeleteEditionFile.mockResolvedValue(true);
 		mockRemoveEditionFile.mockResolvedValue({ ...mockEdition, fileKey: null });
 
 		const event = createMockEvent({
@@ -346,9 +346,9 @@ describe('DELETE /api/editions/[id]/file', () => {
 
 		expect(response.status).toBe(200);
 		expect(data.fileKey).toBeNull();
-		expect(mockDeleteScoreFileChunked).toHaveBeenCalledWith(
+		expect(mockDeleteEditionFile).toHaveBeenCalledWith(
 			expect.anything(),
-			'edition-edition-1'
+			'edition-1'
 		);
 		expect(mockRemoveEditionFile).toHaveBeenCalledWith(expect.anything(), 'edition-1');
 	});
