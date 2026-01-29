@@ -2,8 +2,12 @@
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import type { EventType } from '$lib/types';
+	import { getLocale } from '$lib/utils/locale';
 
 	let { data }: { data: PageData } = $props();
+
+	// Get the locale for date formatting
+	let locale = $derived(getLocale(data.locale));
 
 	// Form state
 	let title = $state('');
@@ -12,7 +16,14 @@
 	let eventType = $state<EventType>('rehearsal');
 	let startDate = $state('');
 	let startTime = $state('19:00');
-	let duration = $state(120); // Duration in minutes
+	
+	// Duration split into days/hours/minutes
+	let durationDays = $state(0);
+	let durationHours = $state(2);
+	let durationMinutes = $state(0);
+	
+	// Computed total duration in minutes
+	let duration = $derived(durationDays * 24 * 60 + durationHours * 60 + durationMinutes);
 	
 	// Repeat picker state
 	let repeatFrequency = $state<'once' | 'weekly' | 'biweekly'>('once');
@@ -73,27 +84,30 @@
 		return new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 	}
 
-	// Format time for display (handles next-day gracefully)
-	function formatEndTime(startTime: string, durationMinutes: number): { time: string; nextDay: boolean } {
-		const [hours, minutes] = startTime.split(':').map(Number);
-		const startMinutes = hours * 60 + minutes;
-		const endMinutes = startMinutes + durationMinutes;
-		const nextDay = endMinutes >= 24 * 60;
-		const normalizedMinutes = endMinutes % (24 * 60);
-		const endHours = Math.floor(normalizedMinutes / 60);
-		const endMins = normalizedMinutes % 60;
-		return {
-			time: `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`,
-			nextDay
-		};
+	// Format full end date and time
+	function formatEndDateTime(startDateStr: string, startTimeStr: string, durationMinutes: number): string {
+		if (!startDateStr || !startTimeStr) return '--';
+		const startDateTime = new Date(`${startDateStr}T${startTimeStr}:00`);
+		const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
+		return endDateTime.toLocaleString(locale, {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit'
+		});
 	}
 
-	// Computed end time display
-	let endTimeDisplay = $derived(startTime ? formatEndTime(startTime, duration) : { time: '--:--', nextDay: false });
+	// Computed end datetime display
+	let endDateTimeDisplay = $derived(formatEndDateTime(startDate, startTime, duration));
 
-	// Initialize duration from settings
+	// Initialize duration parts from settings
 	$effect(() => {
-		duration = data.defaultDuration;
+		const defaultMins = data.defaultDuration;
+		durationDays = Math.floor(defaultMins / (24 * 60));
+		const remaining = defaultMins % (24 * 60);
+		durationHours = Math.floor(remaining / 60);
+		durationMinutes = remaining % 60;
 	});
 
 	async function handleSubmit(e: Event) {
@@ -280,42 +294,55 @@
 				</div>
 
 				<!-- Duration -->
-				<div>
-					<label for="duration" class="block text-sm font-medium text-gray-700">
+				<div class="col-span-2">
+					<label class="block text-sm font-medium text-gray-700">
 						Duration
 					</label>
-					<select
-						id="duration"
-						bind:value={duration}
-						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-					>
-						<option value={30}>30 minutes</option>
-						<option value={45}>45 minutes</option>
-						<option value={60}>1 hour</option>
-						<option value={90}>1.5 hours</option>
-						<option value={120}>2 hours</option>
-						<option value={150}>2.5 hours</option>
-						<option value={180}>3 hours</option>
-						<option value={240}>4 hours</option>
-						<option value={360}>6 hours</option>
-						<option value={480}>8 hours</option>
-						<option value={720}>12 hours</option>
-						<option value={1440}>24 hours</option>
-						<option value={2880}>2 days</option>
-						<option value={4320}>3 days</option>
-					</select>
+					<div class="mt-1 flex items-center gap-3">
+						<div class="flex items-center gap-1">
+							<input
+								type="number"
+								id="duration-days"
+								bind:value={durationDays}
+								min="0"
+								max="30"
+								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm text-gray-600">days</span>
+						</div>
+						<div class="flex items-center gap-1">
+							<input
+								type="number"
+								id="duration-hours"
+								bind:value={durationHours}
+								min="0"
+								max="23"
+								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm text-gray-600">hours</span>
+						</div>
+						<div class="flex items-center gap-1">
+							<input
+								type="number"
+								id="duration-minutes"
+								bind:value={durationMinutes}
+								min="0"
+								max="59"
+								step="5"
+								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm text-gray-600">min</span>
+						</div>
+					</div>
 				</div>
 
-				<!-- Calculated End Time (read-only display) -->
-				<div>
+				<!-- Calculated End Date/Time (read-only display) -->
+				<div class="col-span-2">
 					<label class="block text-sm font-medium text-gray-700">
 						Ends at
 					</label>
-					<div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
-						<span class="font-medium">{endTimeDisplay.time}</span>
-						{#if endTimeDisplay.nextDay}
-							<span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">+1 day</span>
-						{/if}
+					<div class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
+						<span class="font-medium">{endDateTimeDisplay}</span>
 					</div>
 					<p class="mt-1 text-sm text-gray-500">
 						Auto-calculated from start time + duration
@@ -414,7 +441,9 @@
 
 				<div class="space-y-2">
 					{#each generatedEvents as event, index (index)}
-						{@const eventEndTime = formatEndTime(event.time, duration)}
+						{@const startDateTime = new Date(`${event.datetime}`)}
+						{@const endDateTime = calculateEndDateTime(startDateTime, duration)}
+						{@const endDisplay = endDateTime.toLocaleString(locale, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
 						<label class="flex items-center gap-3 rounded-lg border p-3 transition {event.checked
 							? 'border-blue-200 bg-blue-50'
 							: 'border-gray-200 bg-white'} cursor-pointer hover:bg-gray-50">
@@ -427,7 +456,7 @@
 							<div class="flex-1">
 								<div class="font-medium text-gray-900">{event.date}</div>
 								<div class="text-sm text-gray-500">
-									{event.time} - {eventEndTime.time}{#if eventEndTime.nextDay} <span class="text-amber-600">(+1 day)</span>{/if}
+									{event.time} – {endDisplay}
 								</div>
 							</div>
 						</label>
