@@ -281,7 +281,7 @@
 											{member.primarySection.abbreviation}
 										</span>
 									{/if}
-									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto">{member.nickname || member.name}</span>
+									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto text-right">{member.nickname || member.name}</span>
 								</a>
 							</td>
 
