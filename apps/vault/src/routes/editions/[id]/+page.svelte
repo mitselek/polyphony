@@ -191,13 +191,21 @@
 									</p>
 								</div>
 							</div>
-							<a
-								href="/api/editions/{data.edition.id}/file"
-								class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-								download
-							>
-								Download
-							</a>
+							<div class="flex gap-2">
+								<a
+									href="/editions/{data.edition.id}/view"
+									class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
+								>
+									View
+								</a>
+								<a
+									href="/api/editions/{data.edition.id}/file"
+									class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+									download
+								>
+									Download
+								</a>
+							</div>
 						</div>
 					{/if}
 
