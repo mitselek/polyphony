@@ -180,6 +180,10 @@ export async function getRosterView(
 			email_id: string | null;
 			name: string;
 			nickname: string | null;
+			primary_section: string | null;
+			section_name: string | null;
+			section_abbr: string | null;
+			section_is_active: number | null;
 		}>();
 
 	const members = membersResult.results;
@@ -223,10 +227,23 @@ export async function getRosterView(
 	});
 
 	// Build RosterMember objects with sections and voices
+	// Note: Members are already sorted by s.display_order from the query
 	const rosterMembers: RosterMember[] = await Promise.all(
 		members.map(async (member) => {
 			const memberSections = await queryMemberSections(db, member.id);
-			const primarySection = memberSections.length > 0 ? memberSections[0] : null;
+			
+			// Use primary section from the query result (preserves sort order)
+			// The query already joined with primary section and ordered by display_order
+			const primarySection = member.primary_section && member.section_name
+				? {
+					id: member.primary_section,
+					name: member.section_name,
+					abbreviation: member.section_abbr ?? '',
+					parentSectionId: null,
+					displayOrder: 0, // Not needed for display
+					isActive: member.section_is_active === 1
+				}
+				: null;
 
 			return {
 				id: member.id,
