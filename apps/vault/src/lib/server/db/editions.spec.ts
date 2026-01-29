@@ -4,6 +4,7 @@ import {
 	createEdition,
 	getEditionById,
 	getEditionsByWorkId,
+	getAllEditions,
 	updateEdition,
 	deleteEdition
 } from './editions';
@@ -163,6 +164,43 @@ describe('Editions database layer', () => {
 			mockDb._setAllResults([]);
 			const result = await getEditionsByWorkId(mockDb, 'work-no-editions');
 			expect(result).toEqual([]);
+		});
+	});
+
+	describe('getAllEditions', () => {
+		it('returns all editions with work info', async () => {
+			const editionsWithWork = [
+				{ ...makeEditionRow({ id: 'ed-1', name: 'Full Score' }), work_title: 'Messiah', work_composer: 'Handel' },
+				{ ...makeEditionRow({ id: 'ed-2', name: 'Vocal Score' }), work_title: 'Requiem', work_composer: 'Mozart' }
+			];
+			mockDb._setAllResults(editionsWithWork);
+
+			const result = await getAllEditions(mockDb);
+
+			expect(result).toHaveLength(2);
+			expect(result[0].name).toBe('Full Score');
+			expect(result[0].workTitle).toBe('Messiah');
+			expect(result[0].workComposer).toBe('Handel');
+			expect(result[1].workTitle).toBe('Requiem');
+			expect(result[1].workComposer).toBe('Mozart');
+		});
+
+		it('returns empty array when no editions', async () => {
+			mockDb._setAllResults([]);
+			const result = await getAllEditions(mockDb);
+			expect(result).toEqual([]);
+		});
+
+		it('handles works without composer', async () => {
+			const editionsWithWork = [
+				{ ...makeEditionRow({ id: 'ed-1', name: 'Traditional' }), work_title: 'Anonymous Hymn', work_composer: null }
+			];
+			mockDb._setAllResults(editionsWithWork);
+
+			const result = await getAllEditions(mockDb);
+
+			expect(result[0].workTitle).toBe('Anonymous Hymn');
+			expect(result[0].workComposer).toBeNull();
 		});
 	});
 
