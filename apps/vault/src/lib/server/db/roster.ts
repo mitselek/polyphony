@@ -47,7 +47,8 @@ function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: 
 	       ms.section_id as primary_section, 
 	       s.name as section_name, 
 	       s.abbreviation as section_abbr,
-	       s.is_active as section_is_active
+	       s.is_active as section_is_active,
+	       s.display_order as section_display_order
 	FROM members m
 	LEFT JOIN member_sections ms ON m.id = ms.member_id AND ms.is_primary = 1
 	LEFT JOIN sections s ON ms.section_id = s.id`;
@@ -58,7 +59,7 @@ function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: 
 		params.push(filters.sectionId);
 	}
 
-	sql += ' ORDER BY s.display_order ASC, m.name ASC, m.email_id ASC';
+	sql += ' ORDER BY s.display_order ASC NULLS LAST, m.name ASC';
 
 	return { sql, params };
 }
@@ -184,6 +185,7 @@ export async function getRosterView(
 			section_name: string | null;
 			section_abbr: string | null;
 			section_is_active: number | null;
+			section_display_order: number | null;
 		}>();
 
 	const members = membersResult.results;
@@ -240,7 +242,7 @@ export async function getRosterView(
 					name: member.section_name,
 					abbreviation: member.section_abbr ?? '',
 					parentSectionId: null,
-					displayOrder: 0, // Not needed for display
+					displayOrder: member.section_display_order ?? 0,
 					isActive: member.section_is_active === 1
 				}
 				: null;
