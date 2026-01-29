@@ -439,3 +439,26 @@ export async function updateMemberName(
 
 	return updated;
 }
+
+/**
+ * Update a member's nickname (can be null to clear it)
+ */
+export async function updateMemberNickname(
+	db: D1Database,
+	memberId: string,
+	newNickname: string | null
+): Promise<Member> {
+	// Update nickname (null clears it)
+	await db
+		.prepare('UPDATE members SET nickname = ? WHERE id = ?')
+		.bind(newNickname, memberId)
+		.run();
+
+	// Return updated member with all relations
+	const updated = await getMemberById(db, memberId);
+	if (!updated) {
+		throw new Error('Failed to retrieve updated member');
+	}
+
+	return updated;
+}

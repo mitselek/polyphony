@@ -3,10 +3,11 @@
 // PATCH /api/members/[id] - Update a member (admin only)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
-import { updateMemberName } from '$lib/server/db/members';
+import { updateMemberName, updateMemberNickname } from '$lib/server/db/members';
 
 interface UpdateMemberRequest {
 	name?: string;
+	nickname?: string | null;
 }
 
 // PATCH - Update member details (admin only)
@@ -49,6 +50,28 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 			console.error('Failed to update member name:', err);
 			return json(
 				{ error: err instanceof Error ? err.message : 'Failed to update name' },
+				{ status: 500 }
+			);
+		}
+	}
+
+	// Validate nickname if provided (can be null to clear, or string)
+	if (body.nickname !== undefined) {
+		// Allow null (to clear) or string
+		if (body.nickname !== null && typeof body.nickname !== 'string') {
+			return json({ error: 'Nickname must be a string or null' }, { status: 400 });
+		}
+
+		// Trim if string, convert empty string to null
+		const trimmedNickname = body.nickname === null ? null : body.nickname.trim() || null;
+
+		try {
+			const updated = await updateMemberNickname(db, targetMemberId, trimmedNickname);
+			return json(updated);
+		} catch (err) {
+			console.error('Failed to update member nickname:', err);
+			return json(
+				{ error: err instanceof Error ? err.message : 'Failed to update nickname' },
 				{ status: 500 }
 			);
 		}

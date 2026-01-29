@@ -53,6 +53,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 			email: member.email_id,
 			email_id: member.email_id,
 			name: member.name,
+			nickname: member.nickname,
 			voices: member.voices,
 			sections: member.sections,
 			joined_at: member.joined_at,

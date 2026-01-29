@@ -18,6 +18,10 @@
 	let isEditingName = $state(false);
 	let editedName = $state('');
 
+	// Inline nickname editing state
+	let isEditingNickname = $state(false);
+	let editedNickname = $state('');
+
 	// Watch for data changes and update local state
 	$effect(() => {
 		member = data.member;
@@ -88,6 +92,57 @@
 			saveName();
 		} else if (event.key === 'Escape') {
 			isEditingName = false;
+		}
+	}
+
+	function startEditingNickname() {
+		if (!data.isAdmin) return;
+		editedNickname = member.nickname ?? '';
+		isEditingNickname = true;
+	}
+
+	async function saveNickname() {
+		const trimmedNickname = editedNickname.trim();
+		
+		// If unchanged, just cancel
+		if (trimmedNickname === (member.nickname ?? '')) {
+			isEditingNickname = false;
+			return;
+		}
+
+		updating = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/members/${member.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ nickname: trimmedNickname || null })
+			});
+
+			if (!response.ok) {
+				const data = (await response.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed to update nickname');
+			}
+
+			// Update local state
+			member = { ...member, nickname: trimmedNickname || null };
+			isEditingNickname = false;
+			successMessage = trimmedNickname ? 'Nickname updated' : 'Nickname cleared';
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to update nickname';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			updating = false;
+		}
+	}
+
+	function handleNicknameKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			saveNickname();
+		} else if (event.key === 'Escape') {
+			isEditingNickname = false;
 		}
 	}
 
@@ -337,6 +392,41 @@
 			>
 				Remove Member
 			</button>
+		{/if}
+	</div>
+
+	<!-- Nickname (editable by admin) -->
+	<div class="mb-6 -mt-4">
+		{#if isEditingNickname}
+			<div class="flex items-center gap-2">
+				<span class="text-sm text-gray-500">Nickname:</span>
+				<!-- svelte-ignore a11y_autofocus -->
+				<input
+					type="text"
+					bind:value={editedNickname}
+					onblur={saveNickname}
+					onkeydown={handleNicknameKeydown}
+					disabled={updating}
+					placeholder="Enter nickname..."
+					class="text-lg border-b-2 border-blue-500 bg-transparent outline-none px-1 py-0.5"
+					autofocus
+				/>
+			</div>
+		{:else if data.isAdmin}
+			<button 
+				type="button"
+				onclick={startEditingNickname}
+				class="text-gray-500 hover:text-blue-600 cursor-pointer text-sm"
+				title="Click to edit nickname"
+			>
+				{#if member.nickname}
+					<span class="text-gray-500">Nickname:</span> <span class="text-gray-700">{member.nickname}</span>
+				{:else}
+					<span class="italic">+ Add nickname</span>
+				{/if}
+			</button>
+		{:else if member.nickname}
+			<p class="text-sm text-gray-500">Nickname: <span class="text-gray-700">{member.nickname}</span></p>
 		{/if}
 	</div>
 
