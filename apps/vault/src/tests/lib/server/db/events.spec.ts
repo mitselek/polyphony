@@ -177,23 +177,29 @@ describe('Events Database', () => {
 
 	describe('getUpcomingEvents', () => {
 		it('returns events ordered by starts_at', async () => {
+			// Use relative dates to avoid test becoming flaky as time passes
+			const now = new Date();
+			const inOneMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+			const inTwoMonths = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString();
+			const inThreeMonths = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
 			// Create events in non-chronological order
 			await createEvents(
 				db,
 				[
 					{
 						title: 'Event C',
-						starts_at: '2026-03-01T19:00:00Z',
+						starts_at: inThreeMonths,
 						event_type: 'rehearsal' as EventType
 					},
 					{
 						title: 'Event A',
-						starts_at: '2026-01-29T19:00:00Z',
+						starts_at: inOneMonth,
 						event_type: 'rehearsal' as EventType
 					},
 					{
 						title: 'Event B',
-						starts_at: '2026-02-15T19:00:00Z',
+						starts_at: inTwoMonths,
 						event_type: 'concert' as EventType
 					}
 				],

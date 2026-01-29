@@ -348,6 +348,7 @@
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="edition-form-title"
+			tabindex="-1"
 			onclick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
 			onkeydown={(e) => { if (e.key === 'Escape') closeForm(); }}
 		>
