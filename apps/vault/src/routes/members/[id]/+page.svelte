@@ -632,4 +632,65 @@
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
 	</div>
+
+	<!-- My Scores Section - Only visible to profile owner or admins -->
+	{#if data.assignedCopies}
+		<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+			<h2 class="mb-4 text-xl font-semibold text-gray-900">
+				{data.isOwnProfile ? 'My Scores' : 'Assigned Scores'}
+			</h2>
+			
+			{#if data.assignedCopies.length === 0}
+				<p class="text-gray-500">
+					{data.isOwnProfile 
+						? 'You have no physical copies assigned to you yet.' 
+						: 'No physical copies assigned to this member.'}
+				</p>
+			{:else}
+				<div class="divide-y divide-gray-100">
+					{#each data.assignedCopies as copy (copy.assignmentId)}
+						<div class="py-4 first:pt-0 last:pb-0">
+							<div class="flex items-start justify-between">
+								<div>
+									<h3 class="font-medium text-gray-900">
+										{copy.work.title}
+									</h3>
+									{#if copy.work.composer}
+										<p class="text-sm text-gray-600">{copy.work.composer}</p>
+									{/if}
+									<p class="mt-1 text-sm text-gray-500">
+										{copy.edition.name} · Copy #{copy.copyNumber}
+									</p>
+									<p class="mt-1 text-xs text-gray-400">
+										Assigned {new Date(copy.assignedAt).toLocaleDateString()}
+									</p>
+								</div>
+								
+								<!-- Digital access link if available -->
+								{#if copy.edition.fileKey || copy.edition.externalUrl}
+									<a
+										href={copy.edition.fileKey 
+											? `/api/editions/${copy.edition.id}/download`
+											: copy.edition.externalUrl}
+										target={copy.edition.externalUrl ? '_blank' : undefined}
+										rel={copy.edition.externalUrl ? 'noopener noreferrer' : undefined}
+										class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+											{#if copy.edition.fileKey}
+												<path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+											{:else}
+												<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+											{/if}
+										</svg>
+										{copy.edition.fileKey ? 'Download' : 'View Online'}
+									</a>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>
