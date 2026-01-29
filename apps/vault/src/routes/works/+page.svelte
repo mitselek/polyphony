@@ -278,7 +278,9 @@
 					class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
 				>
 					<div class="flex-1">
-						<h2 class="text-lg font-semibold">{work.title}</h2>
+						<h2 class="text-lg font-semibold">
+							<a href="/works/{work.id}" class="hover:text-blue-600 hover:underline">{work.title}</a>
+						</h2>
 						{#if work.composer}
 							<p class="text-gray-600">{work.composer}</p>
 						{/if}
