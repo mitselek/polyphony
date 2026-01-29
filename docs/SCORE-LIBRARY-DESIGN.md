@@ -1,8 +1,8 @@
 # Score Library Design Document
 
-**Status**: Draft for Review  
+**Status**: Approved  
 **Date**: 2025-01-29  
-**Epic**: TBD
+**Epic**: [#106](https://github.com/mitselek/polyphony/issues/106)
 
 ---
 
@@ -466,4 +466,4 @@ CREATE TABLE event_work_editions (
 
 ---
 
-_Document ready for review. Feedback welcome before creating Epic issue._
+_Approved. Implementation tracked in [Epic #106](https://github.com/mitselek/polyphony/issues/106)._
