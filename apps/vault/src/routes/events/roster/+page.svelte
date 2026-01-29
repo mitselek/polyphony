@@ -44,6 +44,59 @@
 		filters = data.filters;
 	});
 
+	// Reactive section stats - recalculates when roster changes
+	let sectionStats = $derived.by(() => {
+		const stats: Record<string, {
+			sectionName: string;
+			sectionAbbr: string;
+			total: number;
+			yes: number;
+			no: number;
+			maybe: number;
+			late: number;
+			responded: number;
+		}> = {};
+
+		// Build stats from current roster data
+		for (const member of roster.members) {
+			if (!member.primarySection) continue;
+
+			const sectionId = member.primarySection.id;
+			
+			// Initialize section if not exists
+			if (!stats[sectionId]) {
+				stats[sectionId] = {
+					sectionName: member.primarySection.name,
+					sectionAbbr: member.primarySection.abbreviation,
+					total: 0,
+					yes: 0,
+					no: 0,
+					maybe: 0,
+					late: 0,
+					responded: 0
+				};
+			}
+
+			stats[sectionId].total++;
+
+			// Count RSVPs for this member across all events
+			for (const event of roster.events) {
+				const participation = event.participation.get(member.id);
+				if (!participation) continue;
+
+				const status = participation.plannedStatus;
+				if (status === 'yes') stats[sectionId].yes++;
+				else if (status === 'no') stats[sectionId].no++;
+				else if (status === 'maybe') stats[sectionId].maybe++;
+				else if (status === 'late') stats[sectionId].late++;
+
+				if (status !== null) stats[sectionId].responded++;
+			}
+		}
+
+		return stats;
+	});
+
 	// Helper: Check if event is in the past
 	function isPastEvent(eventDate: string): boolean {
 		return new Date(eventDate) < new Date();
@@ -459,12 +512,12 @@
 				</div>
 			</div>
 
-			<!-- Section Summary (Epic #73) -->
-			{#if Object.keys(roster.summary.sectionStats).length > 0}
+			<!-- Section Summary (Epic #73) - Reactive -->
+			{#if Object.keys(sectionStats).length > 0}
 				<div class="rounded-lg border border-gray-200 bg-white p-4">
 					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-						{#each Object.entries(roster.summary.sectionStats).sort((a, b) => a[1].sectionName.localeCompare(b[1].sectionName)) as [sectionId, stats]}
+						{#each Object.entries(sectionStats).sort((a, b) => a[1].sectionName.localeCompare(b[1].sectionName)) as [sectionId, stats]}
 							<div class="rounded border border-gray-200 bg-gray-50 p-3">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium text-gray-700">{stats.sectionName}</span>
