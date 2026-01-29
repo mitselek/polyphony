@@ -83,7 +83,6 @@ erDiagram
     members ||--o{ member_sections : "assigned to"
     voices ||--o{ member_voices : "capability"
     sections ||--o{ member_sections : "assignment"
-    sections ||--o{ sections : "parent of"
 
     voices {
         TEXT id PK
@@ -97,7 +96,7 @@ erDiagram
         TEXT id PK
         TEXT name
         TEXT abbreviation
-        TEXT parent_section_id FK
+        TEXT parent_section_id FK "hierarchical"
         INTEGER display_order
     }
 
