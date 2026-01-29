@@ -268,37 +268,29 @@
 						{#if isNewSection && index > 0}
 							<!-- Section Spacer -->
 							<tr class="h-2 bg-gray-50">
-								<td colspan={2 + roster.events.length} class="border-none"></td>
+								<td colspan={1 + roster.events.length} class="border-none"></td>
 							</tr>
 						{/if}
 
 						<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<!-- Sticky Name Cell (clickable) -->
+							<!-- Sticky Member Cell: Name + Section -->
 							<td
-								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white text-sm font-medium text-gray-900 p-0"
+								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white p-0"
 							>
 								<a
 									href="/members/{member.id}"
-									class="block px-4 py-3 hover:bg-blue-50 hover:text-blue-600"
+									class="flex items-center justify-between gap-2 px-4 py-3 hover:bg-blue-50"
 								>
-									{member.name}
+									<span class="text-sm font-medium text-gray-900 hover:text-blue-600">{member.name}</span>
+									{#if member.primarySection}
+										<span
+											class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800 shrink-0"
+											title={member.primarySection.name}
+										>
+											{member.primarySection.abbreviation}
+										</span>
+									{/if}
 								</a>
-							</td>
-
-							<!-- Sticky Section Cell -->
-							<td
-								class="sticky left-37.5 z-20 border-r-2 border-gray-300 bg-white px-4 py-3 text-sm text-gray-700"
-							>
-								{#if member.primarySection}
-									<span
-										class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
-										title={member.primarySection.name}
-									>
-										{member.primarySection.abbreviation}
-									</span>
-								{:else}
-									<span class="text-gray-400">-</span>
-								{/if}
 							</td>
 
 							<!-- Event Participation Cells (scrollable) -->
