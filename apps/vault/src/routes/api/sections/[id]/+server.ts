@@ -1,8 +1,9 @@
 // API endpoint for managing individual sections
 // PATCH /api/sections/[id] - Toggle section active status
+// DELETE /api/sections/[id] - Delete section (if no assignments)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
-import { toggleSectionActive, getSectionById } from '$lib/server/db/sections';
+import { toggleSectionActive, getSectionById, deleteSection } from '$lib/server/db/sections';
 
 export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
@@ -36,4 +37,33 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	// Return updated section
 	const section = await getSectionById(db, sectionId);
 	return json(section);
+}
+
+export async function DELETE({ params, platform, cookies }: RequestEvent) {
+	const db = platform?.env?.DB;
+	if (!db) {
+		throw error(500, 'Database not available');
+	}
+
+	// Auth: require admin
+	const member = await getAuthenticatedMember(db, cookies);
+	assertAdmin(member);
+
+	const sectionId = params.id;
+	if (!sectionId) {
+		throw error(400, 'Section ID is required');
+	}
+
+	try {
+		const deleted = await deleteSection(db, sectionId);
+		if (!deleted) {
+			throw error(404, 'Section not found');
+		}
+		return json({ success: true });
+	} catch (err) {
+		if (err instanceof Error && err.message.includes('assignments')) {
+			return json({ error: err.message }, { status: 400 });
+		}
+		throw err;
+	}
 }

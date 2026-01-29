@@ -10,6 +10,15 @@ interface SectionRow {
 	is_active: number;
 }
 
+interface SectionWithCountRow extends SectionRow {
+	assignment_count: number;
+}
+
+/** Section with assignment count for management UI */
+export interface SectionWithCount extends Section {
+	assignmentCount: number;
+}
+
 /**
  * Convert database row to Section interface (snake_case → camelCase)
  */
@@ -21,6 +30,16 @@ function rowToSection(row: SectionRow): Section {
 		parentSectionId: row.parent_section_id,
 		displayOrder: row.display_order,
 		isActive: row.is_active === 1
+	};
+}
+
+/**
+ * Convert database row to SectionWithCount
+ */
+function rowToSectionWithCount(row: SectionWithCountRow): SectionWithCount {
+	return {
+		...rowToSection(row),
+		assignmentCount: row.assignment_count
 	};
 }
 
@@ -102,6 +121,124 @@ export async function toggleSectionActive(
 	const result = await db
 		.prepare('UPDATE sections SET is_active = ? WHERE id = ?')
 		.bind(isActive ? 1 : 0, id)
+		.run();
+
+	return (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * Get all sections with assignment counts (member + invite assignments)
+ */
+export async function getAllSectionsWithCounts(db: D1Database): Promise<SectionWithCount[]> {
+	const { results } = await db
+		.prepare(`
+			SELECT s.*, 
+				(SELECT COUNT(*) FROM member_sections ms WHERE ms.section_id = s.id) +
+				(SELECT COUNT(*) FROM invite_sections ins WHERE ins.section_id = s.id) AS assignment_count
+			FROM sections s
+			ORDER BY s.display_order ASC
+		`)
+		.all<SectionWithCountRow>();
+
+	return results.map(rowToSectionWithCount);
+}
+
+/**
+ * Get assignment count for a specific section
+ */
+export async function getSectionAssignmentCount(db: D1Database, id: string): Promise<number> {
+	const result = await db
+		.prepare(`
+			SELECT 
+				(SELECT COUNT(*) FROM member_sections WHERE section_id = ?) +
+				(SELECT COUNT(*) FROM invite_sections WHERE section_id = ?) AS count
+		`)
+		.bind(id, id)
+		.first<{ count: number }>();
+
+	return result?.count ?? 0;
+}
+
+/**
+ * Reassign all section assignments from source to target
+ * Skips duplicates (member/invite already has target section)
+ * Preserves is_primary flag
+ * @returns number of assignments moved
+ */
+export async function reassignSection(
+	db: D1Database,
+	sourceId: string,
+	targetId: string
+): Promise<number> {
+	if (sourceId === targetId) {
+		throw new Error('Cannot reassign section to itself');
+	}
+
+	// Check target exists
+	const target = await getSectionById(db, targetId);
+	if (!target) {
+		throw new Error('Target section not found');
+	}
+
+	let movedCount = 0;
+
+	// Move member_sections (skip duplicates)
+	const memberResult = await db
+		.prepare(`
+			UPDATE member_sections 
+			SET section_id = ?
+			WHERE section_id = ?
+			AND member_id NOT IN (
+				SELECT member_id FROM member_sections WHERE section_id = ?
+			)
+		`)
+		.bind(targetId, sourceId, targetId)
+		.run();
+	movedCount += memberResult.meta.changes ?? 0;
+
+	// Delete remaining duplicates from source
+	await db
+		.prepare('DELETE FROM member_sections WHERE section_id = ?')
+		.bind(sourceId)
+		.run();
+
+	// Move invite_sections (skip duplicates)
+	const inviteResult = await db
+		.prepare(`
+			UPDATE invite_sections 
+			SET section_id = ?
+			WHERE section_id = ?
+			AND invite_id NOT IN (
+				SELECT invite_id FROM invite_sections WHERE section_id = ?
+			)
+		`)
+		.bind(targetId, sourceId, targetId)
+		.run();
+	movedCount += inviteResult.meta.changes ?? 0;
+
+	// Delete remaining duplicates from source
+	await db
+		.prepare('DELETE FROM invite_sections WHERE section_id = ?')
+		.bind(sourceId)
+		.run();
+
+	return movedCount;
+}
+
+/**
+ * Delete a section (only if no assignments exist)
+ * @returns true if deleted, false if not found
+ * @throws Error if section has assignments
+ */
+export async function deleteSection(db: D1Database, id: string): Promise<boolean> {
+	const count = await getSectionAssignmentCount(db, id);
+	if (count > 0) {
+		throw new Error(`Cannot delete section with ${count} assignments. Reassign first.`);
+	}
+
+	const result = await db
+		.prepare('DELETE FROM sections WHERE id = ?')
+		.bind(id)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
