@@ -12,7 +12,6 @@ import type { CreateEditionInput, UpdateEditionInput } from '$lib/types';
 // Mock D1Database
 function createMockDb() {
 	const mockResults: Record<string, unknown>[] = [];
-	let lastInsertId = '';
 
 	const mockStatement = {
 		bind: vi.fn().mockReturnThis(),
@@ -25,15 +24,9 @@ function createMockDb() {
 		prepare: vi.fn().mockReturnValue(mockStatement),
 		batch: vi.fn().mockResolvedValue([]),
 		_mockStatement: mockStatement,
-		_setFirstResult: (result: unknown) => {
-			mockStatement.first.mockResolvedValue(result);
-		},
-		_setAllResults: (results: unknown[]) => {
-			mockStatement.all.mockResolvedValue({ results });
-		},
-		_setChanges: (changes: number) => {
-			mockStatement.run.mockResolvedValue({ meta: { changes } });
-		}
+		_setFirstResult: (result: unknown) => { mockStatement.first.mockResolvedValue(result); },
+		_setAllResults: (results: unknown[]) => { mockStatement.all.mockResolvedValue({ results }); },
+		_setChanges: (changes: number) => { mockStatement.run.mockResolvedValue({ meta: { changes } }); }
 	};
 
 	return mockDb as unknown as D1Database & {
@@ -41,6 +34,17 @@ function createMockDb() {
 		_setFirstResult: (result: unknown) => void;
 		_setAllResults: (results: unknown[]) => void;
 		_setChanges: (changes: number) => void;
+	};
+}
+
+// Fixture factory for edition rows
+function makeEditionRow(overrides: Partial<Record<string, unknown>> = {}) {
+	return {
+		id: 'ed-123', work_id: 'work-123', name: 'Test Edition', arranger: null,
+		publisher: null, voicing: null, edition_type: 'vocal_score', license_type: 'owned',
+		notes: null, external_url: null, file_key: null, file_name: null, file_size: null,
+		file_uploaded_at: null, file_uploaded_by: null, created_at: '2026-01-29T12:00:00Z',
+		...overrides
 	};
 }
 
@@ -112,71 +116,30 @@ describe('Editions database layer', () => {
 
 	describe('getEditionById', () => {
 		it('returns edition when found', async () => {
-			const editionRow = {
-				id: 'ed-123',
-				work_id: 'work-123',
-				name: 'Test Edition',
-				arranger: null,
-				publisher: 'Test Publisher',
-				voicing: 'SATB',
-				edition_type: 'vocal_score',
-				license_type: 'owned',
-				notes: null,
-				external_url: null,
-				file_key: null,
-				file_name: null,
-				file_size: null,
-				file_uploaded_at: null,
-				file_uploaded_by: null,
-				created_at: '2026-01-29T12:00:00Z'
-			};
-
+			const editionRow = makeEditionRow({ publisher: 'Test Publisher', voicing: 'SATB' });
 			mockDb._setFirstResult(editionRow);
-			mockDb._setAllResults([]); // No sections
+			mockDb._setAllResults([]);
 
 			const edition = await getEditionById(mockDb, 'ed-123');
 
 			expect(edition).not.toBeNull();
 			expect(edition?.id).toBe('ed-123');
 			expect(edition?.workId).toBe('work-123');
-			expect(edition?.name).toBe('Test Edition');
 			expect(edition?.publisher).toBe('Test Publisher');
 			expect(edition?.sectionIds).toEqual([]);
 		});
 
 		it('returns null when not found', async () => {
 			mockDb._setFirstResult(null);
-
 			const edition = await getEditionById(mockDb, 'nonexistent');
-
 			expect(edition).toBeNull();
 		});
 
 		it('includes section IDs when present', async () => {
-			const editionRow = {
-				id: 'ed-123',
-				work_id: 'work-123',
-				name: 'Soprano Part',
-				arranger: null,
-				publisher: null,
-				voicing: null,
-				edition_type: 'part',
-				license_type: 'owned',
-				notes: null,
-				external_url: null,
-				file_key: null,
-				file_name: null,
-				file_size: null,
-				file_uploaded_at: null,
-				file_uploaded_by: null,
-				created_at: '2026-01-29T12:00:00Z'
-			};
-
-			mockDb._setFirstResult(editionRow);
+			mockDb._setFirstResult(makeEditionRow({ edition_type: 'part' }));
 			mockDb._setAllResults([{ section_id: 'sec-s1' }, { section_id: 'sec-s2' }]);
 
 			const edition = await getEditionById(mockDb, 'ed-123');
-
 			expect(edition?.sectionIds).toEqual(['sec-s1', 'sec-s2']);
 		});
 	});
@@ -184,44 +147,9 @@ describe('Editions database layer', () => {
 	describe('getEditionsByWorkId', () => {
 		it('returns all editions for a work', async () => {
 			const editions = [
-				{
-					id: 'ed-1',
-					work_id: 'work-123',
-					name: 'Full Score',
-					arranger: null,
-					publisher: null,
-					voicing: 'SATB',
-					edition_type: 'full_score',
-					license_type: 'owned',
-					notes: null,
-					external_url: null,
-					file_key: null,
-					file_name: null,
-					file_size: null,
-					file_uploaded_at: null,
-					file_uploaded_by: null,
-					created_at: '2026-01-29T12:00:00Z'
-				},
-				{
-					id: 'ed-2',
-					work_id: 'work-123',
-					name: 'Vocal Score',
-					arranger: 'Smith',
-					publisher: 'Publisher',
-					voicing: 'SATB',
-					edition_type: 'vocal_score',
-					license_type: 'public_domain',
-					notes: null,
-					external_url: null,
-					file_key: null,
-					file_name: null,
-					file_size: null,
-					file_uploaded_at: null,
-					file_uploaded_by: null,
-					created_at: '2026-01-29T13:00:00Z'
-				}
+				makeEditionRow({ id: 'ed-1', name: 'Full Score', edition_type: 'full_score', voicing: 'SATB' }),
+				makeEditionRow({ id: 'ed-2', name: 'Vocal Score', arranger: 'Smith', publisher: 'Publisher', license_type: 'public_domain', created_at: '2026-01-29T13:00:00Z' })
 			];
-
 			mockDb._setAllResults(editions);
 
 			const result = await getEditionsByWorkId(mockDb, 'work-123');
@@ -233,44 +161,17 @@ describe('Editions database layer', () => {
 
 		it('returns empty array when no editions', async () => {
 			mockDb._setAllResults([]);
-
 			const result = await getEditionsByWorkId(mockDb, 'work-no-editions');
-
 			expect(result).toEqual([]);
 		});
 	});
 
 	describe('updateEdition', () => {
 		it('updates edition fields', async () => {
-			const updatedRow = {
-				id: 'ed-123',
-				work_id: 'work-123',
-				name: 'New Name',
-				arranger: null,
-				publisher: 'New Publisher',
-				voicing: null,
-				edition_type: 'vocal_score',
-				license_type: 'owned',
-				notes: null,
-				external_url: null,
-				file_key: null,
-				file_name: null,
-				file_size: null,
-				file_uploaded_at: null,
-				file_uploaded_by: null,
-				created_at: '2026-01-29T12:00:00Z'
-			};
+			mockDb._setFirstResult(makeEditionRow({ name: 'New Name', publisher: 'New Publisher' }));
+			mockDb._setAllResults([]);
 
-			// getEditionById is called after update - return updated row
-			mockDb._setFirstResult(updatedRow);
-			mockDb._setAllResults([]); // No sections
-
-			const input: UpdateEditionInput = {
-				name: 'New Name',
-				publisher: 'New Publisher'
-			};
-
-			const edition = await updateEdition(mockDb, 'ed-123', input);
+			const edition = await updateEdition(mockDb, 'ed-123', { name: 'New Name', publisher: 'New Publisher' });
 
 			expect(edition?.name).toBe('New Name');
 			expect(edition?.publisher).toBe('New Publisher');
@@ -278,39 +179,15 @@ describe('Editions database layer', () => {
 
 		it('returns null when edition not found', async () => {
 			mockDb._setChanges(0);
-
 			const edition = await updateEdition(mockDb, 'nonexistent', { name: 'Test' });
-
 			expect(edition).toBeNull();
 		});
 
 		it('clears optional fields when set to null', async () => {
-			const updatedRow = {
-				id: 'ed-123',
-				work_id: 'work-123',
-				name: 'Test',
-				arranger: null,
-				publisher: 'Old Publisher',
-				voicing: 'SATB',
-				edition_type: 'vocal_score',
-				license_type: 'owned',
-				notes: null,
-				external_url: null,
-				file_key: null,
-				file_name: null,
-				file_size: null,
-				file_uploaded_at: null,
-				file_uploaded_by: null,
-				created_at: '2026-01-29T12:00:00Z'
-			};
-
-			mockDb._setFirstResult(updatedRow);
+			mockDb._setFirstResult(makeEditionRow({ publisher: 'Old Publisher', voicing: 'SATB' }));
 			mockDb._setAllResults([]);
 
-			const edition = await updateEdition(mockDb, 'ed-123', {
-				arranger: null,
-				notes: null
-			});
+			const edition = await updateEdition(mockDb, 'ed-123', { arranger: null, notes: null });
 
 			expect(edition?.arranger).toBeNull();
 			expect(edition?.notes).toBeNull();

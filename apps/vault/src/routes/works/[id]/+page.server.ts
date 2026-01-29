@@ -6,44 +6,27 @@ import { getWorkById } from '$lib/server/db/works';
 import { getEditionsByWorkId } from '$lib/server/db/editions';
 import { getAllSections } from '$lib/server/db/sections';
 
+async function checkCanManage(db: D1Database, memberId: string | undefined): Promise<boolean> {
+	if (!memberId) return false;
+	const member = await getMemberById(db, memberId);
+	return member ? canUploadScores(member) : false;
+}
+
 export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
+	if (!db) throw error(500, 'Database not available');
 
 	const workId = params.id;
-	if (!workId) {
-		throw error(400, 'Work ID is required');
-	}
+	if (!workId) throw error(400, 'Work ID is required');
 
-	// Get work
 	const work = await getWorkById(db, workId);
-	if (!work) {
-		throw error(404, 'Work not found');
-	}
+	if (!work) throw error(404, 'Work not found');
 
-	// Get editions for this work
-	const editions = await getEditionsByWorkId(db, workId);
+	const [editions, sections, canManage] = await Promise.all([
+		getEditionsByWorkId(db, workId),
+		getAllSections(db),
+		checkCanManage(db, cookies.get('member_id'))
+	]);
 
-	// Get all sections for edition form
-	const sections = await getAllSections(db);
-
-	// Get current user's permissions
-	let canManage = false;
-	const memberId = cookies.get('member_id');
-
-	if (memberId) {
-		const member = await getMemberById(db, memberId);
-		if (member) {
-			canManage = canUploadScores(member);
-		}
-	}
-
-	return {
-		work,
-		editions,
-		sections,
-		canManage
-	};
+	return { work, editions, sections, canManage };
 };

@@ -452,14 +452,14 @@
 
 						<!-- Sections (for part assignments) -->
 						{#if data.sections.length > 0}
-							<div>
-								<label class="mb-1 block text-sm font-medium text-gray-700">
+							<fieldset>
+								<legend class="mb-1 block text-sm font-medium text-gray-700">
 									Sections (for parts)
-								</label>
+								</legend>
 								<p class="mb-2 text-xs text-gray-500">
 									Leave empty for universal editions (full scores, audio)
 								</p>
-								<div class="flex flex-wrap gap-2">
+								<div class="flex flex-wrap gap-2" role="group" aria-label="Section assignments">
 									{#each data.sections as section}
 										<button
 											type="button"
@@ -474,7 +474,7 @@
 										</button>
 									{/each}
 								</div>
-							</div>
+							</fieldset>
 						{/if}
 
 						<!-- Notes -->

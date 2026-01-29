@@ -7,17 +7,30 @@ import { getWorkById } from '$lib/server/db/works';
 import { createEdition, getEditionsByWorkId } from '$lib/server/db/editions';
 import type { CreateEditionInput, EditionType, LicenseType } from '$lib/types';
 
-const VALID_EDITION_TYPES: EditionType[] = [
-	'full_score',
-	'vocal_score',
-	'part',
-	'reduction',
-	'audio',
-	'video',
-	'supplementary'
-];
-
+const VALID_EDITION_TYPES: EditionType[] = ['full_score', 'vocal_score', 'part', 'reduction', 'audio', 'video', 'supplementary'];
 const VALID_LICENSE_TYPES: LicenseType[] = ['public_domain', 'licensed', 'owned'];
+
+function validateCreateInput(body: Partial<CreateEditionInput>): string | null {
+	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) return 'Name is required';
+	if (body.editionType && !VALID_EDITION_TYPES.includes(body.editionType)) return 'Invalid edition type';
+	if (body.licenseType && !VALID_LICENSE_TYPES.includes(body.licenseType)) return 'Invalid license type';
+	if (body.sectionIds !== undefined && !Array.isArray(body.sectionIds)) return 'sectionIds must be an array';
+	return null;
+}
+
+function trimOrUndefined(value: unknown): string | undefined {
+	return typeof value === 'string' ? value.trim() || undefined : undefined;
+}
+
+function buildCreateInput(workId: string, body: Partial<CreateEditionInput>): CreateEditionInput {
+	return {
+		workId, name: body.name!.trim(), arranger: trimOrUndefined(body.arranger),
+		publisher: trimOrUndefined(body.publisher), voicing: trimOrUndefined(body.voicing),
+		editionType: body.editionType, licenseType: body.licenseType,
+		notes: trimOrUndefined(body.notes), externalUrl: trimOrUndefined(body.externalUrl),
+		sectionIds: body.sectionIds
+	};
+}
 
 export async function GET({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
@@ -45,63 +58,21 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 
 export async function POST({ params, request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
+	if (!db) throw error(500, 'Database not available');
 
-	// Auth: require librarian role
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
 
 	const workId = params.id;
-	if (!workId) {
-		throw error(400, 'Work ID is required');
-	}
+	if (!workId) throw error(400, 'Work ID is required');
 
-	// Verify work exists
 	const work = await getWorkById(db, workId);
-	if (!work) {
-		throw error(404, 'Work not found');
-	}
+	if (!work) throw error(404, 'Work not found');
 
-	// Parse request body
 	const body = (await request.json()) as Partial<CreateEditionInput>;
+	const validationError = validateCreateInput(body);
+	if (validationError) return json({ error: validationError }, { status: 400 });
 
-	// Validate required fields
-	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-		return json({ error: 'Name is required' }, { status: 400 });
-	}
-
-	// Validate edition type if provided
-	if (body.editionType && !VALID_EDITION_TYPES.includes(body.editionType)) {
-		return json({ error: 'Invalid edition type' }, { status: 400 });
-	}
-
-	// Validate license type if provided
-	if (body.licenseType && !VALID_LICENSE_TYPES.includes(body.licenseType)) {
-		return json({ error: 'Invalid license type' }, { status: 400 });
-	}
-
-	// Validate sectionIds if provided
-	if (body.sectionIds !== undefined && !Array.isArray(body.sectionIds)) {
-		return json({ error: 'sectionIds must be an array' }, { status: 400 });
-	}
-
-	// Build input
-	const input: CreateEditionInput = {
-		workId,
-		name: body.name.trim(),
-		arranger: typeof body.arranger === 'string' ? body.arranger.trim() || undefined : undefined,
-		publisher: typeof body.publisher === 'string' ? body.publisher.trim() || undefined : undefined,
-		voicing: typeof body.voicing === 'string' ? body.voicing.trim() || undefined : undefined,
-		editionType: body.editionType,
-		licenseType: body.licenseType,
-		notes: typeof body.notes === 'string' ? body.notes.trim() || undefined : undefined,
-		externalUrl:
-			typeof body.externalUrl === 'string' ? body.externalUrl.trim() || undefined : undefined,
-		sectionIds: body.sectionIds
-	};
-
-	const edition = await createEdition(db, input);
+	const edition = await createEdition(db, buildCreateInput(workId, body));
 	return json(edition, { status: 201 });
 }

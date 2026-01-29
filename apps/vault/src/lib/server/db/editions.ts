@@ -59,16 +59,51 @@ function generateId(): string {
 }
 
 /**
+ * Insert section assignments for an edition
+ */
+async function insertSectionAssignments(
+	db: D1Database,
+	editionId: string,
+	sectionIds: string[]
+): Promise<void> {
+	if (sectionIds.length === 0) return;
+	const statements = sectionIds.map((sectionId) =>
+		db.prepare('INSERT INTO edition_sections (edition_id, section_id) VALUES (?, ?)').bind(editionId, sectionId)
+	);
+	await db.batch(statements);
+}
+
+/**
+ * Build Edition object from input (for create response)
+ */
+function buildEditionFromInput(id: string, input: CreateEditionInput, createdAt: string): Edition {
+	return {
+		id,
+		workId: input.workId,
+		name: input.name,
+		arranger: input.arranger ?? null,
+		publisher: input.publisher ?? null,
+		voicing: input.voicing ?? null,
+		editionType: input.editionType ?? 'vocal_score',
+		licenseType: input.licenseType ?? 'owned',
+		notes: input.notes ?? null,
+		externalUrl: input.externalUrl ?? null,
+		fileKey: null,
+		fileName: null,
+		fileSize: null,
+		fileUploadedAt: null,
+		fileUploadedBy: null,
+		createdAt,
+		sectionIds: input.sectionIds ?? []
+	};
+}
+
+/**
  * Create a new edition
  */
-export async function createEdition(
-	db: D1Database,
-	input: CreateEditionInput
-): Promise<Edition> {
+export async function createEdition(db: D1Database, input: CreateEditionInput): Promise<Edition> {
 	const id = generateId();
 	const now = new Date().toISOString();
-	const editionType = input.editionType ?? 'vocal_score';
-	const licenseType = input.licenseType ?? 'owned';
 
 	await db
 		.prepare(`
@@ -78,49 +113,14 @@ export async function createEdition(
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
 		.bind(
-			id,
-			input.workId,
-			input.name,
-			input.arranger ?? null,
-			input.publisher ?? null,
-			input.voicing ?? null,
-			editionType,
-			licenseType,
-			input.notes ?? null,
-			input.externalUrl ?? null,
-			now
+			id, input.workId, input.name, input.arranger ?? null, input.publisher ?? null,
+			input.voicing ?? null, input.editionType ?? 'vocal_score', input.licenseType ?? 'owned',
+			input.notes ?? null, input.externalUrl ?? null, now
 		)
 		.run();
 
-	// Insert section assignments if provided
-	if (input.sectionIds && input.sectionIds.length > 0) {
-		const sectionStatements = input.sectionIds.map((sectionId) =>
-			db
-				.prepare('INSERT INTO edition_sections (edition_id, section_id) VALUES (?, ?)')
-				.bind(id, sectionId)
-		);
-		await db.batch(sectionStatements);
-	}
-
-	return {
-		id,
-		workId: input.workId,
-		name: input.name,
-		arranger: input.arranger ?? null,
-		publisher: input.publisher ?? null,
-		voicing: input.voicing ?? null,
-		editionType,
-		licenseType,
-		notes: input.notes ?? null,
-		externalUrl: input.externalUrl ?? null,
-		fileKey: null,
-		fileName: null,
-		fileSize: null,
-		fileUploadedAt: null,
-		fileUploadedBy: null,
-		createdAt: now,
-		sectionIds: input.sectionIds ?? []
-	};
+	await insertSectionAssignments(db, id, input.sectionIds ?? []);
+	return buildEditionFromInput(id, input, now);
 }
 
 /**
@@ -174,80 +174,50 @@ export async function getEditionsByWorkId(db: D1Database, workId: string): Promi
 	return results.map((row) => rowToEdition(row, []));
 }
 
+// Field mappings for dynamic updates
+const EDITION_FIELD_MAP: Record<string, string> = {
+	name: 'name', arranger: 'arranger', publisher: 'publisher', voicing: 'voicing',
+	editionType: 'edition_type', licenseType: 'license_type', notes: 'notes', externalUrl: 'external_url'
+};
+
+/**
+ * Build UPDATE clause from input
+ */
+function buildUpdateClause(input: UpdateEditionInput): { updates: string[]; values: (string | null)[] } {
+	const updates: string[] = [];
+	const values: (string | null)[] = [];
+	for (const [key, column] of Object.entries(EDITION_FIELD_MAP)) {
+		const value = input[key as keyof UpdateEditionInput];
+		if (value !== undefined) {
+			updates.push(`${column} = ?`);
+			values.push(value as string | null);
+		}
+	}
+	return { updates, values };
+}
+
+/**
+ * Update section assignments for an edition
+ */
+async function updateSectionAssignments(db: D1Database, editionId: string, sectionIds: string[]): Promise<void> {
+	await db.prepare('DELETE FROM edition_sections WHERE edition_id = ?').bind(editionId).run();
+	await insertSectionAssignments(db, editionId, sectionIds);
+}
+
 /**
  * Update an edition
  */
-export async function updateEdition(
-	db: D1Database,
-	id: string,
-	input: UpdateEditionInput
-): Promise<Edition | null> {
-	// Build SET clause dynamically
-	const updates: string[] = [];
-	const values: (string | number | null)[] = [];
-
-	if (input.name !== undefined) {
-		updates.push('name = ?');
-		values.push(input.name);
-	}
-	if (input.arranger !== undefined) {
-		updates.push('arranger = ?');
-		values.push(input.arranger);
-	}
-	if (input.publisher !== undefined) {
-		updates.push('publisher = ?');
-		values.push(input.publisher);
-	}
-	if (input.voicing !== undefined) {
-		updates.push('voicing = ?');
-		values.push(input.voicing);
-	}
-	if (input.editionType !== undefined) {
-		updates.push('edition_type = ?');
-		values.push(input.editionType);
-	}
-	if (input.licenseType !== undefined) {
-		updates.push('license_type = ?');
-		values.push(input.licenseType);
-	}
-	if (input.notes !== undefined) {
-		updates.push('notes = ?');
-		values.push(input.notes);
-	}
-	if (input.externalUrl !== undefined) {
-		updates.push('external_url = ?');
-		values.push(input.externalUrl);
-	}
+export async function updateEdition(db: D1Database, id: string, input: UpdateEditionInput): Promise<Edition | null> {
+	const { updates, values } = buildUpdateClause(input);
 
 	if (updates.length > 0) {
 		values.push(id);
-		const result = await db
-			.prepare(`UPDATE editions SET ${updates.join(', ')} WHERE id = ?`)
-			.bind(...values)
-			.run();
-
-		if ((result.meta.changes ?? 0) === 0) {
-			return null;
-		}
+		const result = await db.prepare(`UPDATE editions SET ${updates.join(', ')} WHERE id = ?`).bind(...values).run();
+		if ((result.meta.changes ?? 0) === 0) return null;
 	}
 
-	// Update section assignments if provided
 	if (input.sectionIds !== undefined) {
-		// Delete existing assignments
-		await db
-			.prepare('DELETE FROM edition_sections WHERE edition_id = ?')
-			.bind(id)
-			.run();
-
-		// Insert new assignments
-		if (input.sectionIds.length > 0) {
-			const sectionStatements = input.sectionIds.map((sectionId) =>
-				db
-					.prepare('INSERT INTO edition_sections (edition_id, section_id) VALUES (?, ?)')
-					.bind(id, sectionId)
-			);
-			await db.batch(sectionStatements);
-		}
+		await updateSectionAssignments(db, id, input.sectionIds);
 	}
 
 	return getEditionById(db, id);
@@ -266,33 +236,27 @@ export async function deleteEdition(db: D1Database, id: string): Promise<boolean
 	return (result.meta.changes ?? 0) > 0;
 }
 
+/** File info for updating an edition */
+export interface EditionFileInfo {
+	fileKey: string;
+	fileName: string;
+	fileSize: number;
+	uploadedBy: string;
+}
+
 /**
  * Update file info for an edition (used after file upload)
  */
-export async function updateEditionFile(
-	db: D1Database,
-	id: string,
-	fileKey: string,
-	fileName: string,
-	fileSize: number,
-	uploadedBy: string
-): Promise<Edition | null> {
+export async function updateEditionFile(db: D1Database, id: string, fileInfo: EditionFileInfo): Promise<Edition | null> {
 	const now = new Date().toISOString();
+	const { fileKey, fileName, fileSize, uploadedBy } = fileInfo;
 
 	const result = await db
-		.prepare(`
-			UPDATE editions
-			SET file_key = ?, file_name = ?, file_size = ?, file_uploaded_at = ?, file_uploaded_by = ?
-			WHERE id = ?
-		`)
+		.prepare(`UPDATE editions SET file_key = ?, file_name = ?, file_size = ?, file_uploaded_at = ?, file_uploaded_by = ? WHERE id = ?`)
 		.bind(fileKey, fileName, fileSize, now, uploadedBy, id)
 		.run();
 
-	if ((result.meta.changes ?? 0) === 0) {
-		return null;
-	}
-
-	return getEditionById(db, id);
+	return (result.meta.changes ?? 0) === 0 ? null : getEditionById(db, id);
 }
 
 /**
