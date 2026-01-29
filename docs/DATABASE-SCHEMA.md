@@ -9,7 +9,6 @@ Vault D1 database schema (SQLite). Current state after migrations 0001-0012.
 ```mermaid
 erDiagram
     members ||--o{ member_roles : "has"
-    members ||--o{ members : "invites"
 
     members {
         TEXT id PK
@@ -17,7 +16,7 @@ erDiagram
         TEXT nickname
         TEXT email_id UK
         TEXT email_contact
-        TEXT invited_by FK
+        TEXT invited_by FK "self-ref"
         TEXT joined_at
     }
 
