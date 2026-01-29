@@ -29,8 +29,10 @@
 	let newSectionName = $state('');
 	let newSectionAbbr = $state('');
 	
-	// Section rearrange mode
+	// Rearrange mode
+	let rearrangingVoices = $state(false);
 	let rearrangingSections = $state(false);
+	let savingVoiceOrder = $state(false);
 	let savingOrder = $state(false);
 
 	// Watch for data changes (e.g., on navigation)
@@ -401,6 +403,58 @@
 		sections = data.sections;
 		rearrangingSections = false;
 	}
+	
+	// Voice rearrange functions
+	function moveVoiceUp(index: number) {
+		if (index <= 0) return;
+		const newVoices = [...voices];
+		[newVoices[index - 1], newVoices[index]] = [newVoices[index], newVoices[index - 1]];
+		voices = newVoices;
+	}
+	
+	function moveVoiceDown(index: number) {
+		if (index >= voices.length - 1) return;
+		const newVoices = [...voices];
+		[newVoices[index], newVoices[index + 1]] = [newVoices[index + 1], newVoices[index]];
+		voices = newVoices;
+	}
+	
+	async function saveVoiceOrder() {
+		savingVoiceOrder = true;
+		error = '';
+		
+		try {
+			const response = await fetch('/api/voices/reorder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ voiceIds: voices.map((v) => v.id) })
+			});
+			
+			if (!response.ok) {
+				const data = (await response.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed to save voice order');
+			}
+			
+			// Update local state with response
+			const updatedVoices = (await response.json()) as VoiceWithCount[];
+			voices = updatedVoices;
+			
+			rearrangingVoices = false;
+			success = 'Voice order saved';
+			setTimeout(() => (success = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to save voice order';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			savingVoiceOrder = false;
+		}
+	}
+	
+	function cancelVoiceRearrange() {
+		// Reset to original order from data
+		voices = data.voices;
+		rearrangingVoices = false;
+	}
 </script>
 
 <svelte:head>
@@ -489,14 +543,79 @@
 
 	<!-- Voices Management -->
 	<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-xl font-semibold">Vocal Ranges</h2>
-		<p class="mb-4 text-sm text-gray-600">
-			Manage vocal ranges for member assignment. Click left side to toggle active status, right side to delete or reassign.
-		</p>
+		<div class="mb-4 flex items-center justify-between">
+			<h2 class="text-xl font-semibold">Vocal Ranges</h2>
+			{#if !rearrangingVoices}
+				<button
+					onclick={() => rearrangingVoices = true}
+					class="rounded-md border border-purple-600 px-3 py-1 text-sm text-purple-600 transition hover:bg-purple-50"
+				>
+					Rearrange
+				</button>
+			{/if}
+		</div>
 		
-		<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-			{#each voices as voice (voice.id)}
-				{@const isProcessing = togglingId === voice.id || deletingId === voice.id || reassigningId === voice.id}
+		{#if rearrangingVoices}
+			<!-- Rearrange Mode -->
+			<p class="mb-4 text-sm text-gray-600">
+				Use the arrows to reorder vocal ranges. Click Save when done.
+			</p>
+			
+			<div class="space-y-2 max-w-md">
+				{#each voices as voice, index (voice.id)}
+					<div class="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+						<span class="flex-1 font-medium">{voice.name}</span>
+						<span class="text-xs text-gray-500">({voice.abbreviation})</span>
+						{#if voice.category === 'instrumental'}
+							<span class="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">instr</span>
+						{/if}
+						<div class="flex gap-1">
+							<button
+								onclick={() => moveVoiceUp(index)}
+								disabled={index === 0 || savingVoiceOrder}
+								class="rounded px-2 py-1 text-sm font-bold text-purple-700 hover:bg-purple-100 disabled:opacity-30 disabled:cursor-not-allowed"
+								title="Move up"
+							>
+								↑
+							</button>
+							<button
+								onclick={() => moveVoiceDown(index)}
+								disabled={index === voices.length - 1 || savingVoiceOrder}
+								class="rounded px-2 py-1 text-sm font-bold text-purple-700 hover:bg-purple-100 disabled:opacity-30 disabled:cursor-not-allowed"
+								title="Move down"
+							>
+								↓
+							</button>
+						</div>
+					</div>
+				{/each}
+			</div>
+			
+			<div class="mt-4 flex gap-2">
+				<button
+					onclick={saveVoiceOrder}
+					disabled={savingVoiceOrder}
+					class="rounded-md bg-purple-600 px-4 py-2 text-sm text-white transition hover:bg-purple-700 disabled:opacity-50"
+				>
+					{savingVoiceOrder ? 'Saving...' : 'Save Order'}
+				</button>
+				<button
+					onclick={cancelVoiceRearrange}
+					disabled={savingVoiceOrder}
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+				>
+					Cancel
+				</button>
+			</div>
+		{:else}
+			<!-- Normal Mode -->
+			<p class="mb-4 text-sm text-gray-600">
+				Manage vocal ranges for member assignment. Click left side to toggle active status, right side to delete or reassign.
+			</p>
+			
+			<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				{#each voices as voice (voice.id)}
+					{@const isProcessing = togglingId === voice.id || deletingId === voice.id || reassigningId === voice.id}
 				<div class="flex items-center rounded-lg border {voice.isActive ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}">
 					<!-- Left side: Toggle active -->
 					<button
@@ -575,6 +694,7 @@
 				</div>
 			{/each}
 		</div>
+		{/if}
 		
 		<!-- Create new voice form -->
 		<form onsubmit={createVoice} class="mt-4 border-t pt-4">

@@ -247,3 +247,14 @@ export async function deleteVoice(db: D1Database, id: string): Promise<boolean> 
 
 	return (result.meta.changes ?? 0) > 0;
 }
+
+/**
+ * Reorder voices by updating display_order
+ * @param voiceIds Array of voice IDs in desired order
+ */
+export async function reorderVoices(db: D1Database, voiceIds: string[]): Promise<void> {
+	const statements = voiceIds.map((id, index) =>
+		db.prepare('UPDATE voices SET display_order = ? WHERE id = ?').bind(index + 1, id)
+	);
+	await db.batch(statements);
+}
