@@ -19,7 +19,8 @@
 				{#if data.user}
 					<a href="/events" class="text-gray-600 hover:text-gray-900">Events</a>
 					<a href="/events/roster" class="text-gray-600 hover:text-gray-900">Roster</a>
-					{#if data.user.roles?.some((r) => ['librarian', 'owner'].includes(r))}
+					{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
+						<a href="/works" class="text-gray-600 hover:text-gray-900">Works</a>
 						<a href="/upload" class="text-gray-600 hover:text-gray-900">Upload</a>
 					{/if}
 					{#if data.user.roles?.some((r) => ['admin', 'owner'].includes(r))}
@@ -64,7 +65,8 @@
 					{#if data.user}
 						<a href="/events" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Events</a>
 						<a href="/events/roster" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Roster</a>
-						{#if data.user.roles?.some((r) => ['librarian', 'owner'].includes(r))}
+						{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
+							<a href="/works" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Works</a>
 							<a href="/upload" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Upload</a>
 						{/if}
 						{#if data.user.roles?.some((r) => ['admin', 'owner'].includes(r))}
