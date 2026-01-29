@@ -76,7 +76,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
 
-	await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies);
 
 	const filters = buildFilters(url);
 
@@ -85,5 +85,16 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		getActiveSections(db)
 	]);
 
-	return { roster, sections, filters };
+	// Determine if current user can manage others' participation
+	const canManageParticipation = currentMember.roles.some(r => 
+		['conductor', 'section_leader', 'owner'].includes(r)
+	);
+
+	return { 
+		roster, 
+		sections, 
+		filters,
+		currentMemberId: currentMember.id,
+		canManageParticipation
+	};
 };

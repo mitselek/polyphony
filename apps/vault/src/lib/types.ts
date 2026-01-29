@@ -145,11 +145,12 @@ export interface CreateParticipationInput {
 
 /**
  * Input for updating participation (RSVP or recording attendance)
+ * Use null to clear a status, undefined to leave unchanged
  */
 export interface UpdateParticipationInput {
-	plannedStatus?: PlannedStatus;
-	plannedNotes?: string;
-	actualStatus?: ActualStatus;
+	plannedStatus?: PlannedStatus | null;
+	plannedNotes?: string | null;
+	actualStatus?: ActualStatus | null;
 	recordedBy?: string;
 }
 

@@ -32,6 +32,11 @@
 		untrack(() => (filters.end ? new Date(filters.end).toISOString().split('T')[0] : ''))
 	);
 
+	// Popup state
+	let activePopup = $state<{ memberId: string; eventId: string; type: 'rsvp' | 'attendance' } | null>(null);
+	let popupPosition = $state<{ x: number; y: number }>({ x: 0, y: 0 });
+	let updating = $state(false);
+
 	// Watch for data changes (e.g., on navigation) and update local state
 	$effect(() => {
 		roster = data.roster;
@@ -39,58 +44,144 @@
 		filters = data.filters;
 	});
 
-	// Helper: Get CSS class for status color coding
-	// Pattern Note: This could be extracted as a reusable component for future tables
-	// See Issue #90+ for pattern extraction after establishing base functionality
-	function getStatusClass(
-		plannedStatus: PlannedStatus | null,
-		actualStatus: ActualStatus | null,
-		eventDate: string
-	): string {
-		const isPastEvent = new Date(eventDate) < new Date();
+	// Helper: Check if event is in the past
+	function isPastEvent(eventDate: string): boolean {
+		return new Date(eventDate) < new Date();
+	}
 
-		// Past events: use actual status if recorded, otherwise show planned
-		if (isPastEvent) {
-			if (actualStatus === 'present') return 'status-yes';
-			if (actualStatus === 'absent') return 'status-no';
-			if (actualStatus === 'late') return 'status-late';
+	// Helper: Check if user can edit this cell
+	function canEditCell(memberId: string, eventDate: string, type: 'rsvp' | 'attendance'): boolean {
+		const isPast = isPastEvent(eventDate);
+		const isOwnRecord = memberId === data.currentMemberId;
+
+		if (type === 'attendance') {
+			// Only past events, only conductors/section leaders
+			return isPast && data.canManageParticipation;
 		}
 
-		// Future events or past without actual: show planned
+		// RSVP
+		if (isOwnRecord && !isPast) return true; // Own future RSVP
+		if (data.canManageParticipation) return true; // Managers can edit anyone's RSVP
+		return false;
+	}
+
+	// Open popup for editing
+	function openPopup(
+		e: MouseEvent, 
+		memberId: string, 
+		eventId: string, 
+		type: 'rsvp' | 'attendance'
+	) {
+		const rect = (e.target as HTMLElement).getBoundingClientRect();
+		popupPosition = { 
+			x: rect.left + rect.width / 2, 
+			y: rect.bottom + 4
+		};
+		activePopup = { memberId, eventId, type };
+	}
+
+	// Close popup
+	function closePopup() {
+		activePopup = null;
+	}
+
+	// Update participation
+	async function updateStatus(status: PlannedStatus | ActualStatus | null) {
+		if (!activePopup || updating) return;
+		
+		updating = true;
+		const { memberId, eventId, type } = activePopup;
+
+		try {
+			const body: Record<string, unknown> = { eventId, memberId };
+			if (type === 'rsvp') {
+				body.plannedStatus = status;
+			} else {
+				body.actualStatus = status;
+			}
+
+			const response = await fetch('/api/participation', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+
+			if (!response.ok) {
+				const errData = (await response.json()) as { message?: string };
+				throw new Error(errData.message ?? 'Failed to update');
+			}
+
+			// Update local state
+			roster = {
+				...roster,
+				events: roster.events.map(event => {
+					if (event.id !== eventId) return event;
+					
+					const newParticipation = new Map(event.participation);
+					const current = newParticipation.get(memberId) ?? { 
+						plannedStatus: null, 
+						actualStatus: null, 
+						recordedAt: null 
+					};
+					
+					if (type === 'rsvp') {
+						newParticipation.set(memberId, { 
+							...current, 
+							plannedStatus: status as PlannedStatus | null 
+						});
+					} else {
+						newParticipation.set(memberId, { 
+							...current, 
+							actualStatus: status as ActualStatus | null,
+							recordedAt: new Date().toISOString()
+						});
+					}
+					
+					return { ...event, participation: newParticipation };
+				})
+			};
+
+			closePopup();
+		} catch (err) {
+			console.error('Failed to update participation:', err);
+			alert(err instanceof Error ? err.message : 'Failed to update');
+		} finally {
+			updating = false;
+		}
+	}
+
+	// Helper: Get CSS class for RSVP status
+	function getRsvpClass(plannedStatus: PlannedStatus | null): string {
 		if (plannedStatus === 'yes') return 'status-yes';
 		if (plannedStatus === 'no') return 'status-no';
 		if (plannedStatus === 'maybe') return 'status-maybe';
 		if (plannedStatus === 'late') return 'status-late';
-
-		// No response
 		return 'status-none';
 	}
 
-	// Helper: Get display text for status
-	function getStatusText(
-		plannedStatus: PlannedStatus | null,
-		actualStatus: ActualStatus | null,
-		eventDate: string
-	): string {
-		const isPastEvent = new Date(eventDate) < new Date();
+	// Helper: Get CSS class for attendance status
+	function getAttendanceClass(actualStatus: ActualStatus | null): string {
+		if (actualStatus === 'present') return 'status-yes';
+		if (actualStatus === 'absent') return 'status-no';
+		if (actualStatus === 'late') return 'status-late';
+		return 'status-none';
+	}
 
-		if (isPastEvent) {
-			if (actualStatus === 'present') return '✓';
-			if (actualStatus === 'absent') return '✗';
-			if (actualStatus === 'late') return '⏰';
-			// Show planned if actual not recorded
-			if (plannedStatus === 'yes') return '✓?';
-			if (plannedStatus === 'no') return '✗?';
-			if (plannedStatus === 'maybe') return '?';
-			if (plannedStatus === 'late') return '⏰?';
-		} else {
-			if (plannedStatus === 'yes') return '✓';
-			if (plannedStatus === 'no') return '✗';
-			if (plannedStatus === 'maybe') return '?';
-			if (plannedStatus === 'late') return '⏰';
-		}
+	// Helper: Get display text for RSVP
+	function getRsvpText(plannedStatus: PlannedStatus | null): string {
+		if (plannedStatus === 'yes') return '✓';
+		if (plannedStatus === 'no') return '✗';
+		if (plannedStatus === 'maybe') return '?';
+		if (plannedStatus === 'late') return '⏰';
+		return '·';
+	}
 
-		return '-';
+	// Helper: Get display text for attendance
+	function getAttendanceText(actualStatus: ActualStatus | null): string {
+		if (actualStatus === 'present') return '✓';
+		if (actualStatus === 'absent') return '✗';
+		if (actualStatus === 'late') return '⏰';
+		return '·';
 	}
 
 	// Helper: Format date for display
@@ -130,6 +221,13 @@
 		window.location.href = `/events/${eventId}`;
 	}
 </script>
+
+<!-- Close popup when clicking outside -->
+<svelte:window onclick={(e) => {
+	if (activePopup && !(e.target as HTMLElement).closest('.participation-popup, .participation-cell')) {
+		closePopup();
+	}
+}} />
 
 <svelte:head>
 	<title>Roster | Polyphony Vault</title>
@@ -289,18 +387,48 @@
 							{#each roster.events as event}
 								{@const participationMap = event.participation}
 								{@const status = participationMap.get(member.id)}
-								{@const statusClass = status
-									? getStatusClass(status.plannedStatus, status.actualStatus, event.date)
-									: 'status-none'}
-								{@const statusText = status
-									? getStatusText(status.plannedStatus, status.actualStatus, event.date)
-									: '-'}
-
+								{@const isPast = isPastEvent(event.date)}
+								{@const canEditRsvp = canEditCell(member.id, event.date, 'rsvp')}
+								{@const canEditAtt = canEditCell(member.id, event.date, 'attendance')}
+								
 								<td
-									class="border-r border-gray-200 px-3 py-3 text-center text-sm {statusClass}"
-									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}: {status?.plannedStatus ?? 'No response'}"
+									class="border-r border-gray-200 p-0 text-center text-sm"
+									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
 								>
-									{statusText}
+									{#if isPast}
+										<!-- Past event: dual cell (RSVP / Attendance) -->
+										<div class="flex h-full">
+											<!-- RSVP half -->
+											<button
+												class="participation-cell flex-1 px-1 py-2 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default opacity-60'}"
+												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
+												disabled={!canEditRsvp}
+												title="RSVP: {status?.plannedStatus ?? 'none'}"
+											>
+												{getRsvpText(status?.plannedStatus ?? null)}
+											</button>
+											<div class="w-px bg-gray-300"></div>
+											<!-- Attendance half -->
+											<button
+												class="participation-cell flex-1 px-1 py-2 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default opacity-60'}"
+												onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
+												disabled={!canEditAtt}
+												title="Attendance: {status?.actualStatus ?? 'not recorded'}"
+											>
+												{getAttendanceText(status?.actualStatus ?? null)}
+											</button>
+										</div>
+									{:else}
+										<!-- Future event: RSVP only -->
+										<button
+											class="participation-cell w-full px-2 py-2 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:bg-opacity-80' : 'cursor-default'}"
+											onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
+											disabled={!canEditRsvp}
+											title="RSVP: {status?.plannedStatus ?? 'none'}"
+										>
+											{getRsvpText(status?.plannedStatus ?? null)}
+										</button>
+									{/if}
 								</td>
 							{/each}
 						</tr>
@@ -407,6 +535,101 @@
 							</div>
 						{/each}
 					</div>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- RSVP/Attendance Popup -->
+	{#if activePopup}
+		<div 
+			class="participation-popup fixed z-50 rounded-lg border border-gray-200 bg-white shadow-lg"
+			style="left: {popupPosition.x}px; top: {popupPosition.y}px; transform: translateX(-50%);"
+		>
+			{#if activePopup.type === 'rsvp'}
+				<!-- RSVP Popup: 2x2 grid [yes,no],[late,?] -->
+				<div class="p-2">
+					<div class="text-xs text-gray-500 text-center mb-2 font-medium">RSVP</div>
+					<div class="grid grid-cols-2 gap-1">
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-green-100'} bg-green-50 text-green-700"
+							onclick={() => updateStatus('yes')}
+							disabled={updating}
+							title="Yes, I'll be there"
+						>
+							✓
+						</button>
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-red-100'} bg-red-50 text-red-700"
+							onclick={() => updateStatus('no')}
+							disabled={updating}
+							title="No, I can't attend"
+						>
+							✗
+						</button>
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-orange-100'} bg-orange-50 text-orange-700"
+							onclick={() => updateStatus('late')}
+							disabled={updating}
+							title="I'll be late"
+						>
+							⏰
+						</button>
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-yellow-100'} bg-yellow-50 text-yellow-700"
+							onclick={() => updateStatus('maybe')}
+							disabled={updating}
+							title="Maybe"
+						>
+							?
+						</button>
+					</div>
+					<button
+						class="mt-2 w-full text-xs text-gray-400 hover:text-gray-600 py-1"
+						onclick={() => updateStatus(null)}
+						disabled={updating}
+					>
+						Clear
+					</button>
+				</div>
+			{:else}
+				<!-- Attendance Popup: 2x2 grid [present,absent],[late,empty] -->
+				<div class="p-2">
+					<div class="text-xs text-gray-500 text-center mb-2 font-medium">Attendance</div>
+					<div class="grid grid-cols-2 gap-1">
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-green-100'} bg-green-50 text-green-700"
+							onclick={() => updateStatus('present')}
+							disabled={updating}
+							title="Present"
+						>
+							✓
+						</button>
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-red-100'} bg-red-50 text-red-700"
+							onclick={() => updateStatus('absent')}
+							disabled={updating}
+							title="Absent"
+						>
+							✗
+						</button>
+						<button
+							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-orange-100'} bg-orange-50 text-orange-700"
+							onclick={() => updateStatus('late')}
+							disabled={updating}
+							title="Late"
+						>
+							⏰
+						</button>
+						<div class="w-10 h-10"></div><!-- Empty cell -->
+					</div>
+					<button
+						class="mt-2 w-full text-xs text-gray-400 hover:text-gray-600 py-1"
+						onclick={() => updateStatus(null)}
+						disabled={updating}
+					>
+						Clear
+					</button>
 				</div>
 			{/if}
 		</div>
