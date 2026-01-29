@@ -1,8 +1,8 @@
 // Settings page server load function
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { getAllSettings } from '$lib/server/db/settings';
-import { getAllVoices } from '$lib/server/db/voices';
-import { getAllSections } from '$lib/server/db/sections';
+import { getAllVoicesWithCounts } from '$lib/server/db/voices';
+import { getAllSectionsWithCounts } from '$lib/server/db/sections';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, cookies }) => {
@@ -13,11 +13,11 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// Load settings, voices, and sections
+	// Load settings, voices (with counts), and sections (with counts)
 	const [settings, voices, sections] = await Promise.all([
 		getAllSettings(db),
-		getAllVoices(db),
-		getAllSections(db)
+		getAllVoicesWithCounts(db),
+		getAllSectionsWithCounts(db)
 	]);
 
 	return {
