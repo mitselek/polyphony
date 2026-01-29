@@ -342,9 +342,17 @@
 
 	<!-- Edition Form Modal -->
 	{#if showEditionForm}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="edition-form-title"
+			onclick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
+			onkeydown={(e) => { if (e.key === 'Escape') closeForm(); }}
+		>
 			<div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-				<h2 class="mb-4 text-xl font-semibold">
+				<h2 id="edition-form-title" class="mb-4 text-xl font-semibold">
 					{editingEdition ? 'Edit Edition' : 'Add New Edition'}
 				</h2>
 				<form onsubmit={handleSubmit}>
