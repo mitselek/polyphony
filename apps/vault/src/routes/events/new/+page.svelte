@@ -12,7 +12,7 @@
 	let eventType = $state<EventType>('rehearsal');
 	let startDate = $state('');
 	let startTime = $state('19:00');
-	let endTime = $state('21:00');
+	let duration = $state(120); // Duration in minutes
 	
 	// Repeat picker state
 	let repeatFrequency = $state<'once' | 'weekly' | 'biweekly'>('once');
@@ -68,19 +68,32 @@
 		});
 	}
 
-	function calculateEndTime(startTime: string, durationMinutes: number): string {
-		const [hours, minutes] = startTime.split(':').map(Number);
-		const totalMinutes = hours * 60 + minutes + durationMinutes;
-		const endHours = Math.floor(totalMinutes / 60) % 24;
-		const endMinutes = totalMinutes % 60;
-		return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+	// Calculate end datetime from start + duration
+	function calculateEndDateTime(startDateTime: Date, durationMinutes: number): Date {
+		return new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
 	}
 
-	// Auto-calculate end time when start time changes
+	// Format time for display (handles next-day gracefully)
+	function formatEndTime(startTime: string, durationMinutes: number): { time: string; nextDay: boolean } {
+		const [hours, minutes] = startTime.split(':').map(Number);
+		const startMinutes = hours * 60 + minutes;
+		const endMinutes = startMinutes + durationMinutes;
+		const nextDay = endMinutes >= 24 * 60;
+		const normalizedMinutes = endMinutes % (24 * 60);
+		const endHours = Math.floor(normalizedMinutes / 60);
+		const endMins = normalizedMinutes % 60;
+		return {
+			time: `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`,
+			nextDay
+		};
+	}
+
+	// Computed end time display
+	let endTimeDisplay = $derived(startTime ? formatEndTime(startTime, duration) : { time: '--:--', nextDay: false });
+
+	// Initialize duration from settings
 	$effect(() => {
-		if (startTime) {
-			endTime = calculateEndTime(startTime, data.defaultDuration);
-		}
+		duration = data.defaultDuration;
 	});
 
 	async function handleSubmit(e: Event) {
@@ -104,17 +117,16 @@
 			const events = generatedEvents
 				.filter(e => e.checked)
 				.map(e => {
-					const startsAt = e.datetime;
-					const endsAt = new Date(e.datetime);
-					const [endHours, endMinutes] = endTime.split(':').map(Number);
-					endsAt.setHours(endHours, endMinutes);
+					const startsAt = new Date(e.datetime);
+					// Calculate end time by adding duration (handles overnight correctly)
+					const endsAt = calculateEndDateTime(startsAt, duration);
 
 					return {
 						title,
 						description: description || undefined,
 						location: location || undefined,
 						event_type: eventType,
-						starts_at: startsAt,
+						starts_at: startsAt.toISOString(),
 						ends_at: endsAt.toISOString()
 					};
 				});
@@ -267,20 +279,46 @@
 					/>
 				</div>
 
-				<!-- End Time -->
-				<div class="md:col-span-2">
-					<label for="end-time" class="block text-sm font-medium text-gray-700">
-						End Time
+				<!-- Duration -->
+				<div>
+					<label for="duration" class="block text-sm font-medium text-gray-700">
+						Duration
 					</label>
-					<input
-						type="time"
-						id="end-time"
-						bind:value={endTime}
-						step="60"
+					<select
+						id="duration"
+						bind:value={duration}
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-					/>
+					>
+						<option value={30}>30 minutes</option>
+						<option value={45}>45 minutes</option>
+						<option value={60}>1 hour</option>
+						<option value={90}>1.5 hours</option>
+						<option value={120}>2 hours</option>
+						<option value={150}>2.5 hours</option>
+						<option value={180}>3 hours</option>
+						<option value={240}>4 hours</option>
+						<option value={360}>6 hours</option>
+						<option value={480}>8 hours</option>
+						<option value={720}>12 hours</option>
+						<option value={1440}>24 hours</option>
+						<option value={2880}>2 days</option>
+						<option value={4320}>3 days</option>
+					</select>
+				</div>
+
+				<!-- Calculated End Time (read-only display) -->
+				<div>
+					<label class="block text-sm font-medium text-gray-700">
+						Ends at
+					</label>
+					<div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
+						<span class="font-medium">{endTimeDisplay.time}</span>
+						{#if endTimeDisplay.nextDay}
+							<span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">+1 day</span>
+						{/if}
+					</div>
 					<p class="mt-1 text-sm text-gray-500">
-						Auto-calculated based on default duration ({data.defaultDuration} minutes)
+						Auto-calculated from start time + duration
 					</p>
 				</div>
 			</div>
@@ -376,6 +414,7 @@
 
 				<div class="space-y-2">
 					{#each generatedEvents as event, index (index)}
+						{@const eventEndTime = formatEndTime(event.time, duration)}
 						<label class="flex items-center gap-3 rounded-lg border p-3 transition {event.checked
 							? 'border-blue-200 bg-blue-50'
 							: 'border-gray-200 bg-white'} cursor-pointer hover:bg-gray-50">
@@ -387,7 +426,9 @@
 							/>
 							<div class="flex-1">
 								<div class="font-medium text-gray-900">{event.date}</div>
-								<div class="text-sm text-gray-500">{event.time} - {endTime}</div>
+								<div class="text-sm text-gray-500">
+									{event.time} - {eventEndTime.time}{#if eventEndTime.nextDay} <span class="text-amber-600">(+1 day)</span>{/if}
+								</div>
 							</div>
 						</label>
 					{/each}
