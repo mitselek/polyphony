@@ -24,6 +24,8 @@
 	let formNotes = $state('');
 	let formExternalUrl = $state('');
 	let formSectionIds = $state<string[]>([]);
+	let formFile = $state<File | null>(null);
+	let uploadingFile = $state(false);
 
 	const EDITION_TYPES: { value: EditionType; label: string }[] = [
 		{ value: 'full_score', label: 'Full Score' },
@@ -77,6 +79,7 @@
 	function closeForm() {
 		showEditionForm = false;
 		editingEdition = null;
+		formFile = null;
 	}
 
 	function toggleSection(sectionId: string) {
@@ -85,6 +88,32 @@
 		} else {
 			formSectionIds = [...formSectionIds, sectionId];
 		}
+	}
+
+	async function uploadFileToEdition(editionId: string, file: File): Promise<void> {
+		uploadingFile = true;
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+			
+			const response = await fetch(`/api/editions/${editionId}/file`, {
+				method: 'POST',
+				body: formData
+			});
+			
+			if (!response.ok) {
+				const data = (await response.json()) as { error?: string };
+				throw new Error(data.error ?? 'Failed to upload file');
+			}
+		} finally {
+			uploadingFile = false;
+		}
+	}
+
+	async function fetchEdition(editionId: string): Promise<Edition | null> {
+		const response = await fetch(`/api/editions/${editionId}`);
+		if (!response.ok) return null;
+		return (await response.json()) as Edition;
 	}
 
 	async function handleSubmit(e: Event) {
@@ -123,7 +152,19 @@
 				}
 
 				const updated = (await response.json()) as Edition;
-				editions = editions.map((ed) => (ed.id === updated.id ? updated : ed));
+				
+				// Upload file if a new one was selected
+				if (formFile) {
+					await uploadFileToEdition(updated.id, formFile);
+					// Refresh the edition to get file info
+					const refreshed = await fetchEdition(updated.id);
+					if (refreshed) {
+						editions = editions.map((ed) => (ed.id === refreshed.id ? refreshed : ed));
+					}
+				} else {
+					editions = editions.map((ed) => (ed.id === updated.id ? updated : ed));
+				}
+				
 				success = `"${updated.name}" updated successfully`;
 			} else {
 				// Create new edition
@@ -150,6 +191,17 @@
 
 				const created = (await response.json()) as Edition;
 				editions = [...editions, created];
+				
+				// Upload file if selected
+				if (formFile) {
+					await uploadFileToEdition(created.id, formFile);
+					// Refresh the edition to get file info
+					const refreshed = await fetchEdition(created.id);
+					if (refreshed) {
+						editions = editions.map((ed) => (ed.id === refreshed.id ? refreshed : ed));
+					}
+				}
+				
 				success = `"${created.name}" created successfully`;
 			}
 
@@ -459,6 +511,35 @@
 							/>
 						</div>
 
+						<!-- PDF File Upload -->
+						<div>
+							<label for="pdfFile" class="mb-1 block text-sm font-medium text-gray-700">
+								PDF File
+							</label>
+							{#if editingEdition?.fileName}
+								<div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
+									<span>📄 {editingEdition.fileName}</span>
+									<span class="text-gray-400">
+										({Math.round((editingEdition.fileSize ?? 0) / 1024)} KB)
+									</span>
+								</div>
+								<p class="mb-1 text-xs text-gray-500">
+									Upload a new file to replace the current one
+								</p>
+							{/if}
+							<input
+								id="pdfFile"
+								type="file"
+								accept="application/pdf"
+								onchange={(e) => {
+									const target = e.target as HTMLInputElement;
+									formFile = target.files?.[0] ?? null;
+								}}
+								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+							/>
+							<p class="mt-1 text-xs text-gray-500">Max 9.5 MB. PDF files only.</p>
+						</div>
+
 						<!-- Sections (for part assignments) -->
 						{#if data.sections.length > 0}
 							<fieldset>
@@ -510,10 +591,16 @@
 						</button>
 						<button
 							type="submit"
-							disabled={saving}
+							disabled={saving || uploadingFile}
 							class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 						>
-							{saving ? 'Saving...' : editingEdition ? 'Update' : 'Create'}
+							{#if uploadingFile}
+								Uploading...
+							{:else if saving}
+								Saving...
+							{:else}
+								{editingEdition ? 'Update' : 'Create'}
+							{/if}
 						</button>
 					</div>
 				</form>
