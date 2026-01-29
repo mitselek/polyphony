@@ -457,7 +457,7 @@
 						{:else}
 							<!-- Has assignments: show reassign dropdown -->
 							<button
-								onclick={() => openReassignDropdown = openReassignDropdown === voice.id ? null : voice.id}
+								onclick={() => openReassignDropdown = openReassignDropdown === `voice:${voice.id}` ? null : `voice:${voice.id}`}
 								disabled={isProcessing}
 								class="px-2 py-2 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-0.5"
 								title="Reassign {voice.assignmentCount} member(s)"
@@ -471,7 +471,7 @@
 								{/if}
 							</button>
 							
-							{#if openReassignDropdown === voice.id}
+							{#if openReassignDropdown === `voice:${voice.id}`}
 								<div class="absolute right-0 top-full z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
 									<div class="py-1">
 										<div class="px-3 py-2 text-xs text-gray-500 border-b">Reassign to:</div>
@@ -580,7 +580,7 @@
 						{:else}
 							<!-- Has assignments: show reassign dropdown -->
 							<button
-								onclick={() => openReassignDropdown = openReassignDropdown === section.id ? null : section.id}
+								onclick={() => openReassignDropdown = openReassignDropdown === `section:${section.id}` ? null : `section:${section.id}`}
 								disabled={isProcessing}
 								class="px-2 py-2 text-blue-600 hover:bg-blue-50 disabled:opacity-50 rounded-r-lg transition flex items-center gap-0.5"
 								title="Reassign {section.assignmentCount} member(s)"
@@ -594,7 +594,7 @@
 								{/if}
 							</button>
 							
-							{#if openReassignDropdown === section.id}
+							{#if openReassignDropdown === `section:${section.id}`}
 								<div class="absolute right-0 top-full z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
 									<div class="py-1">
 										<div class="px-3 py-2 text-xs text-gray-500 border-b">Reassign to:</div>
