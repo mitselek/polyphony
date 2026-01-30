@@ -19,14 +19,22 @@
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
 	<!-- Header -->
-	<div class="mb-8">
-		<nav class="mb-4 text-sm text-gray-500">
-			<a href="/works" class="hover:text-blue-600">Library</a>
-			<span class="mx-2">›</span>
-			<span>Inventory</span>
-		</nav>
-		<h1 class="text-3xl font-bold">Inventory Reports</h1>
-		<p class="mt-2 text-gray-600">Physical copy inventory summary per edition</p>
+	<div class="mb-8 flex items-start justify-between">
+		<div>
+			<nav class="mb-4 text-sm text-gray-500">
+				<a href="/works" class="hover:text-blue-600">Library</a>
+				<span class="mx-2">›</span>
+				<span>Inventory</span>
+			</nav>
+			<h1 class="text-3xl font-bold">Inventory Reports</h1>
+			<p class="mt-2 text-gray-600">Physical copy inventory summary per edition</p>
+		</div>
+		<a
+			href="/library/reports/missing-copies"
+			class="rounded-lg bg-amber-600 px-4 py-2 text-white transition hover:bg-amber-700"
+		>
+			Missing Copies Report
+		</a>
 	</div>
 
 	<!-- Summary Stats -->
