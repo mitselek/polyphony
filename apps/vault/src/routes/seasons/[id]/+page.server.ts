@@ -4,7 +4,8 @@ import { getMemberById } from '$lib/server/db/members';
 import { canManageEvents, canUploadScores } from '$lib/server/auth/permissions';
 import type { Season } from '$lib/server/db/seasons';
 import type { Event } from '$lib/server/db/events';
-import type { SeasonRepertoire, Work } from '$lib/types';
+import type { SeasonRepertoire, Work, Edition } from '$lib/types';
+import { getEditionsByWorkId } from '$lib/server/db/editions';
 
 interface SeasonWithEvents extends Season {
 	events: Event[];
@@ -45,11 +46,20 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 	const db = platform?.env?.DB;
 	const memberId = cookies.get('member_id');
 
+	// Build map of work editions (editions available per work for adding to repertoire)
+	const workEditionsMap: Record<string, Edition[]> = {};
+	
 	if (db && memberId) {
 		const member = await getMemberById(db, memberId);
 		if (member) {
 			canManage = canManageEvents(member);
 			canManageLibrary = canUploadScores(member);
+		}
+		
+		// Load editions for each work in repertoire (for edition management UI)
+		for (const repWork of repertoire.works) {
+			const editions = await getEditionsByWorkId(db, repWork.work.id);
+			workEditionsMap[repWork.work.id] = editions;
 		}
 	}
 
@@ -62,6 +72,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 		events: season.events ?? [],
 		repertoire,
 		availableWorks,
+		workEditionsMap,
 		canManage,
 		canManageLibrary
 	};

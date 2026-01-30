@@ -289,29 +289,29 @@
 			{#each seasons as season, index (season.id)}
 				{@const endDate = getSeasonEndDate(season, index)}
 				{@const isCurrent = isCurrentSeason(season, index)}
-				<a href="/seasons/{season.id}" class="block">
-					<Card variant="interactive" padding="lg">
-						<div class="flex items-center justify-between">
-							<div class="flex-1">
-								<div class="flex items-center gap-3">
-									<h3 class="text-lg font-semibold">
-										{season.name}
-									</h3>
-									{#if isCurrent}
-										<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-											Current
-										</span>
-									{/if}
-								</div>
-								<p class="mt-1 text-sm text-gray-600">
-									{formatDate(season.start_date)}
-									{#if endDate}
-										<span class="text-gray-400">→</span>
-										{formatDate(endDate)}
-									{/if}
-								</p>
+				<Card variant="clickable" href="/seasons/{season.id}" padding="lg">
+					<div class="flex items-center justify-between">
+						<div class="flex-1">
+							<div class="flex items-center gap-3">
+								<h3 class="text-lg font-semibold">
+									{season.name}
+								</h3>
+								{#if isCurrent}
+									<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+										Current
+									</span>
+								{/if}
 							</div>
-							{#if data.canManage}
+							<p class="mt-1 text-sm text-gray-600">
+								{formatDate(season.start_date)}
+								{#if endDate}
+									<span class="text-gray-400">→</span>
+									{formatDate(endDate)}
+								{/if}
+							</p>
+						</div>
+						{#if data.canManage}
+							{#snippet actions()}
 								<div class="flex items-center gap-2">
 									<button
 										onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(season); }}
@@ -327,10 +327,11 @@
 										{deletingId === season.id ? 'Deleting...' : 'Delete'}
 									</button>
 								</div>
-							{/if}
-						</div>
-					</Card>
-				</a>
+							{/snippet}
+							{@render actions()}
+						{/if}
+					</div>
+				</Card>
 			{/each}
 		</div>
 

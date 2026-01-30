@@ -2,13 +2,15 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
-	import type { SeasonRepertoireWork, SeasonRepertoire, Work } from '$lib/types';
+	import SortableList from '$lib/components/SortableList.svelte';
+	import type { SeasonRepertoireWork, SeasonRepertoire, Work, Edition } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
-	// Local state for repertoire (reactive copy) - explicit types for filter/find callbacks
+	// Local state for repertoire (reactive copy)
 	let repertoire: SeasonRepertoire = $state(untrack(() => data.repertoire));
 	let availableWorks: Work[] = $state(untrack(() => data.availableWorks));
+	let workEditionsMap: Record<string, Edition[]> = $state(untrack(() => data.workEditionsMap));
 
 	// State for UI interactions
 	let selectedWorkId = $state('');
@@ -16,11 +18,26 @@
 	let removingWorkId = $state<string | null>(null);
 	let error = $state('');
 	let expandedWorkId = $state<string | null>(null);
+	
+	// Edition management
+	let addingEditionTo = $state<string | null>(null);
+	let selectedEditionId = $state('');
+	let removingEditionId = $state<string | null>(null);
+	let settingPrimaryId = $state<string | null>(null);
+	
+	// Notes editing
+	let editingNotesFor = $state<string | null>(null);
+	let notesInput = $state('');
+	let savingNotes = $state(false);
+	
+	// Reordering
+	let isReordering = $state(false);
 
 	// Sync on navigation
 	$effect(() => {
 		repertoire = data.repertoire;
 		availableWorks = data.availableWorks;
+		workEditionsMap = data.workEditionsMap;
 	});
 
 	function formatDateTime(isoString: string): string {
@@ -48,6 +65,23 @@
 		}
 	}
 
+	function getLicenseBadge(licenseType: string): { bg: string; text: string } {
+		switch (licenseType) {
+			case 'public_domain':
+				return { bg: 'bg-green-100', text: 'text-green-800' };
+			case 'licensed':
+				return { bg: 'bg-amber-100', text: 'text-amber-800' };
+			case 'owned':
+				return { bg: 'bg-blue-100', text: 'text-blue-800' };
+			default:
+				return { bg: 'bg-gray-100', text: 'text-gray-800' };
+		}
+	}
+
+	// ============================================================================
+	// WORK OPERATIONS
+	// ============================================================================
+
 	async function addWorkToSeason() {
 		if (!selectedWorkId) return;
 
@@ -62,7 +96,8 @@
 			});
 
 			if (!response.ok) {
-			const result = await response.json() as { error?: string };
+				const result = await response.json() as { error?: string };
+				throw new Error(result.error ?? 'Failed to add work');
 			}
 
 			// Refresh repertoire
@@ -111,22 +146,203 @@
 		}
 	}
 
+	async function handleReorderWorks(newOrder: string[]) {
+		isReordering = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/seasons/${data.season.id}/works/reorder`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ seasonWorkIds: newOrder })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to reorder works');
+			}
+
+			// Update local state
+			const reorderedWorks = newOrder.map(id => 
+				repertoire.works.find(w => w.seasonWorkId === id)!
+			).filter(Boolean);
+			repertoire = { ...repertoire, works: reorderedWorks };
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to reorder works';
+			// Refresh to get correct order
+			const repertoireResponse = await fetch(`/api/seasons/${data.season.id}/works`);
+			if (repertoireResponse.ok) {
+				repertoire = await repertoireResponse.json();
+			}
+		} finally {
+			isReordering = false;
+		}
+	}
+
 	function toggleExpanded(seasonWorkId: string) {
 		expandedWorkId = expandedWorkId === seasonWorkId ? null : seasonWorkId;
 	}
 
-	function getLicenseBadge(licenseType: string): { bg: string; text: string } {
-		switch (licenseType) {
-			case 'public_domain':
-				return { bg: 'bg-green-100', text: 'text-green-800' };
-			case 'licensed':
-				return { bg: 'bg-amber-100', text: 'text-amber-800' };
-			case 'owned':
-				return { bg: 'bg-blue-100', text: 'text-blue-800' };
-			default:
-				return { bg: 'bg-gray-100', text: 'text-gray-800' };
+	// ============================================================================
+	// NOTES OPERATIONS
+	// ============================================================================
+
+	function startEditingNotes(repWork: SeasonRepertoireWork) {
+		editingNotesFor = repWork.seasonWorkId;
+		notesInput = repWork.notes ?? '';
+	}
+
+	function cancelEditingNotes() {
+		editingNotesFor = null;
+		notesInput = '';
+	}
+
+	async function saveNotes(seasonWorkId: string) {
+		savingNotes = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/seasons/${data.season.id}/works/${seasonWorkId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ notes: notesInput.trim() || null })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to save notes');
+			}
+
+			// Update local state
+			repertoire = {
+				...repertoire,
+				works: repertoire.works.map(w => 
+					w.seasonWorkId === seasonWorkId 
+						? { ...w, notes: notesInput.trim() || null }
+						: w
+				)
+			};
+			editingNotesFor = null;
+			notesInput = '';
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to save notes';
+		} finally {
+			savingNotes = false;
 		}
 	}
+
+	// ============================================================================
+	// EDITION OPERATIONS
+	// ============================================================================
+
+	function getAvailableEditionsForWork(repWork: SeasonRepertoireWork): Edition[] {
+		const allEditions = workEditionsMap[repWork.work.id] ?? [];
+		const selectedEditionIds = new Set(repWork.editions.map(e => e.edition.id));
+		return allEditions.filter(e => !selectedEditionIds.has(e.id));
+	}
+
+	async function addEditionToWork(seasonWorkId: string) {
+		if (!selectedEditionId) return;
+
+		addingEditionTo = seasonWorkId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/seasons/${data.season.id}/works/${seasonWorkId}/editions`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ editionId: selectedEditionId })
+			});
+
+			if (!response.ok) {
+				const result = await response.json() as { error?: string };
+				throw new Error(result.error ?? 'Failed to add edition');
+			}
+
+			// Refresh repertoire to get updated editions
+			const repertoireResponse = await fetch(`/api/seasons/${data.season.id}/works`);
+			if (repertoireResponse.ok) {
+				repertoire = await repertoireResponse.json();
+			}
+			selectedEditionId = '';
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to add edition';
+		} finally {
+			addingEditionTo = null;
+		}
+	}
+
+	async function removeEditionFromWork(seasonWorkId: string, workEditionId: string) {
+		removingEditionId = workEditionId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/seasons/${data.season.id}/works/${seasonWorkId}/editions/${workEditionId}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to remove edition');
+			}
+
+			// Update local state
+			repertoire = {
+				...repertoire,
+				works: repertoire.works.map(w => 
+					w.seasonWorkId === seasonWorkId 
+						? { ...w, editions: w.editions.filter(e => e.workEditionId !== workEditionId) }
+						: w
+				)
+			};
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to remove edition';
+		} finally {
+			removingEditionId = null;
+		}
+	}
+
+	async function setPrimaryEdition(seasonWorkId: string, workEditionId: string) {
+		settingPrimaryId = workEditionId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/seasons/${data.season.id}/works/${seasonWorkId}/editions/${workEditionId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ isPrimary: true })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to set primary edition');
+			}
+
+			// Update local state - set this as primary, others as not
+			repertoire = {
+				...repertoire,
+				works: repertoire.works.map(w => 
+					w.seasonWorkId === seasonWorkId 
+						? { 
+							...w, 
+							editions: w.editions.map(e => ({
+								...e,
+								isPrimary: e.workEditionId === workEditionId
+							}))
+						}
+						: w
+				)
+			};
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to set primary edition';
+		} finally {
+			settingPrimaryId = null;
+		}
+	}
+
+	// Convert repertoire works to sortable format (need `id` property)
+	let sortableWorks = $derived(
+		repertoire.works.map(w => ({
+			id: w.seasonWorkId,
+			...w
+		}))
+	);
 </script>
 
 <svelte:head>
@@ -193,7 +409,7 @@
 					<p>No works in this season's repertoire yet.</p>
 					{#if availableWorks.length === 0}
 						<p class="mt-2">
-							<a href="/library/works/new" class="text-blue-600 hover:underline">
+							<a href="/works" class="text-blue-600 hover:underline">
 								Add works to the library first
 							</a>
 						</p>
@@ -201,93 +417,200 @@
 				</div>
 			</Card>
 		{:else}
-			<div class="space-y-3">
-				{#each repertoire.works as repWork (repWork.seasonWorkId)}
+			<SortableList 
+				items={sortableWorks} 
+				onReorder={handleReorderWorks}
+				disabled={!data.canManageLibrary || isReordering}
+			>
+				{#snippet item(repWork, index, dragHandle)}
+					{@const typedWork = repWork as unknown as SeasonRepertoireWork & { id: string }}
+					{@const availableEditions = getAvailableEditionsForWork(typedWork)}
 					<Card padding="md">
-						<div class="flex items-start justify-between">
+						<div class="flex items-start gap-2">
+							<!-- Drag handle -->
+							{#if data.canManageLibrary}
+								{@render dragHandle()}
+							{/if}
+							
 							<div class="flex-1">
-								<button
-									onclick={() => toggleExpanded(repWork.seasonWorkId)}
-									class="flex items-center gap-2 text-left hover:text-blue-600"
-								>
-									<span class="text-gray-400 transition-transform" class:rotate-90={expandedWorkId === repWork.seasonWorkId}>
-										▶
-									</span>
-									<h3 class="font-medium">{repWork.work.title}</h3>
-								</button>
-								{#if repWork.work.composer}
-									<p class="ml-6 text-sm text-gray-600">{repWork.work.composer}</p>
-								{/if}
-								{#if repWork.notes}
-									<p class="ml-6 mt-1 text-sm italic text-gray-500">{repWork.notes}</p>
-								{/if}
-								
-								<!-- Editions summary -->
-								<div class="ml-6 mt-1 text-xs text-gray-500">
-									{#if repWork.editions.length === 0}
-										<span class="text-amber-600">No editions selected</span>
-									{:else if repWork.editions.length === 1}
-										<span>1 edition</span>
-									{:else}
-										<span>{repWork.editions.length} editions</span>
+								<div class="flex items-start justify-between">
+									<div class="flex-1">
+										<button
+											onclick={() => toggleExpanded(typedWork.seasonWorkId)}
+											class="flex items-center gap-2 text-left hover:text-blue-600"
+										>
+											<span class="text-gray-400 transition-transform" class:rotate-90={expandedWorkId === typedWork.seasonWorkId}>
+												▶
+											</span>
+											<h3 class="font-medium">{typedWork.work.title}</h3>
+										</button>
+										{#if typedWork.work.composer}
+											<p class="ml-6 text-sm text-gray-600">{typedWork.work.composer}</p>
+										{/if}
+										
+										<!-- Notes display/edit -->
+										{#if editingNotesFor === typedWork.seasonWorkId}
+											<div class="ml-6 mt-2 flex gap-2">
+												<input
+													type="text"
+													bind:value={notesInput}
+													placeholder="Add a note..."
+													class="flex-1 rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+												/>
+												<button
+													onclick={() => saveNotes(typedWork.seasonWorkId)}
+													disabled={savingNotes}
+													class="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+												>
+													{savingNotes ? '...' : 'Save'}
+												</button>
+												<button
+													onclick={cancelEditingNotes}
+													class="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+												>
+													Cancel
+												</button>
+											</div>
+										{:else if typedWork.notes}
+											<p class="ml-6 mt-1 text-sm italic text-gray-500">
+												{typedWork.notes}
+												{#if data.canManageLibrary}
+													<button
+														onclick={() => startEditingNotes(typedWork)}
+														class="ml-1 text-blue-600 hover:underline"
+													>
+														edit
+													</button>
+												{/if}
+											</p>
+										{:else if data.canManageLibrary}
+											<button
+												onclick={() => startEditingNotes(typedWork)}
+												class="ml-6 mt-1 text-xs text-gray-400 hover:text-blue-600"
+											>
+												+ Add note
+											</button>
+										{/if}
+										
+										<!-- Editions summary -->
+										<div class="ml-6 mt-1 text-xs text-gray-500">
+											{#if typedWork.editions.length === 0}
+												<span class="text-amber-600">No editions selected</span>
+											{:else if typedWork.editions.length === 1}
+												<span>1 edition</span>
+											{:else}
+												<span>{typedWork.editions.length} editions</span>
+											{/if}
+										</div>
+									</div>
+
+									{#if data.canManageLibrary}
+										<button
+											onclick={() => removeWorkFromSeason(typedWork.seasonWorkId, typedWork.work.id)}
+											disabled={removingWorkId === typedWork.seasonWorkId}
+											class="text-red-600 hover:text-red-800 disabled:opacity-50"
+											title="Remove from repertoire"
+										>
+											{removingWorkId === typedWork.seasonWorkId ? '...' : '✕'}
+										</button>
 									{/if}
 								</div>
-							</div>
 
-							{#if data.canManageLibrary}
-								<button
-									onclick={() => removeWorkFromSeason(repWork.seasonWorkId, repWork.work.id)}
-									disabled={removingWorkId === repWork.seasonWorkId}
-									class="text-red-600 hover:text-red-800 disabled:opacity-50"
-									title="Remove from repertoire"
-								>
-									{removingWorkId === repWork.seasonWorkId ? '...' : '✕'}
-								</button>
-							{/if}
-						</div>
-
-						<!-- Expanded editions list -->
-						{#if expandedWorkId === repWork.seasonWorkId}
-							<div class="ml-6 mt-4 border-t pt-4">
-								<h4 class="mb-2 text-sm font-medium text-gray-700">Editions:</h4>
-								{#if repWork.editions.length === 0}
-									<p class="text-sm text-gray-500">
-										No editions selected. 
-										<a href="/library/works/{repWork.work.id}" class="text-blue-600 hover:underline">
-											View work editions
-										</a>
-									</p>
-								{:else}
-									<ul class="space-y-2">
-										{#each repWork.editions as ed (ed.workEditionId)}
-											{@const badge = getLicenseBadge(ed.edition.licenseType)}
-											<li class="flex items-center gap-2 text-sm">
-												{#if ed.isPrimary}
-													<span class="text-amber-500" title="Primary edition">★</span>
-												{:else}
-													<span class="text-gray-300">☆</span>
-												{/if}
-												<a 
-													href="/library/editions/{ed.edition.id}" 
-													class="hover:text-blue-600 hover:underline"
+								<!-- Expanded editions list -->
+								{#if expandedWorkId === typedWork.seasonWorkId}
+									<div class="ml-6 mt-4 border-t pt-4">
+										<h4 class="mb-2 text-sm font-medium text-gray-700">Editions:</h4>
+										
+										<!-- Add edition dropdown -->
+										{#if data.canManageLibrary && availableEditions.length > 0}
+											<div class="mb-3 flex gap-2">
+												<select
+													bind:value={selectedEditionId}
+													class="flex-1 rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+													disabled={addingEditionTo === typedWork.seasonWorkId}
 												>
-													{ed.edition.name}
-												</a>
-												<span class="{badge.bg} {badge.text} rounded px-1.5 py-0.5 text-xs">
-													{ed.edition.licenseType.replace('_', ' ')}
-												</span>
-												{#if ed.edition.voicing}
-													<span class="text-gray-400">({ed.edition.voicing})</span>
+													<option value="">Select edition to add...</option>
+													{#each availableEditions as edition (edition.id)}
+														<option value={edition.id}>
+															{edition.name}{edition.voicing ? ` (${edition.voicing})` : ''}
+														</option>
+													{/each}
+												</select>
+												<button
+													onclick={() => addEditionToWork(typedWork.seasonWorkId)}
+													disabled={!selectedEditionId || addingEditionTo === typedWork.seasonWorkId}
+													class="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+												>
+													{addingEditionTo === typedWork.seasonWorkId ? '...' : 'Add'}
+												</button>
+											</div>
+										{/if}
+										
+										{#if typedWork.editions.length === 0}
+											<p class="text-sm text-gray-500">
+												No editions selected.
+												{#if availableEditions.length === 0}
+													<a href="/works/{typedWork.work.id}" class="text-blue-600 hover:underline">
+														Add editions to this work first
+													</a>
 												{/if}
-											</li>
-										{/each}
-									</ul>
+											</p>
+										{:else}
+											<ul class="space-y-2">
+												{#each typedWork.editions as ed (ed.workEditionId)}
+													{@const badge = getLicenseBadge(ed.edition.licenseType)}
+													<li class="flex items-center gap-2 text-sm">
+														<!-- Primary star toggle -->
+														{#if data.canManageLibrary}
+															<button
+																onclick={() => setPrimaryEdition(typedWork.seasonWorkId, ed.workEditionId)}
+																disabled={settingPrimaryId === ed.workEditionId || ed.isPrimary}
+																class="transition-colors disabled:cursor-default {ed.isPrimary ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'}"
+																title={ed.isPrimary ? 'Primary edition' : 'Set as primary'}
+															>
+																{settingPrimaryId === ed.workEditionId ? '...' : (ed.isPrimary ? '★' : '☆')}
+															</button>
+														{:else}
+															<span class={ed.isPrimary ? 'text-amber-500' : 'text-gray-300'}>
+																{ed.isPrimary ? '★' : '☆'}
+															</span>
+														{/if}
+														
+														<a 
+															href="/editions/{ed.edition.id}" 
+															class="hover:text-blue-600 hover:underline"
+														>
+															{ed.edition.name}
+														</a>
+														<span class="{badge.bg} {badge.text} rounded px-1.5 py-0.5 text-xs">
+															{ed.edition.licenseType.replace('_', ' ')}
+														</span>
+														{#if ed.edition.voicing}
+															<span class="text-gray-400">({ed.edition.voicing})</span>
+														{/if}
+														
+														<!-- Remove edition button -->
+														{#if data.canManageLibrary}
+															<button
+																onclick={() => removeEditionFromWork(typedWork.seasonWorkId, ed.workEditionId)}
+																disabled={removingEditionId === ed.workEditionId}
+																class="ml-auto text-red-500 hover:text-red-700 disabled:opacity-50"
+																title="Remove edition"
+															>
+																{removingEditionId === ed.workEditionId ? '...' : '×'}
+															</button>
+														{/if}
+													</li>
+												{/each}
+											</ul>
+										{/if}
+									</div>
 								{/if}
 							</div>
-						{/if}
+						</div>
 					</Card>
-				{/each}
-			</div>
+				{/snippet}
+			</SortableList>
 
 			<p class="mt-4 text-sm text-gray-500">
 				{repertoire.works.length} work{repertoire.works.length === 1 ? '' : 's'} in repertoire
