@@ -1,5 +1,5 @@
-// Remove score from program API endpoint
-// DELETE /api/events/[id]/program/[score_id]
+// Remove edition from program API endpoint
+// DELETE /api/events/[id]/program/[edition_id]
 
 import { json, error } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -8,8 +8,8 @@ import { canManageEvents } from '$lib/server/auth/permissions';
 import { removeFromProgram } from '$lib/server/db/programs';
 
 /**
- * DELETE /api/events/[id]/program/[score_id]
- * Removes a score from the event program
+ * DELETE /api/events/[id]/program/[edition_id]
+ * Removes an edition from the event program
  * Requires: Conductor/admin role
  */
 export async function DELETE(event: RequestEvent) {
@@ -24,16 +24,16 @@ export async function DELETE(event: RequestEvent) {
 	}
 
 	const eventId = params.id;
-	const scoreId = params.score_id;
+	const editionId = params.edition_id;
 	
-	if (!eventId || !scoreId) {
-		throw error(400, 'Event ID and Score ID required');
+	if (!eventId || !editionId) {
+		throw error(400, 'Event ID and Edition ID required');
 	}
 
-	const success = await removeFromProgram(db, eventId, scoreId);
+	const success = await removeFromProgram(db, eventId, editionId);
 	
 	if (!success) {
-		throw error(404, 'Score not found in program');
+		throw error(404, 'Edition not found in program');
 	}
 
 	return json({ success: true });

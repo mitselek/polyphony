@@ -16,7 +16,7 @@
   let availableScores = $state(
     untrack(() =>
       data.allEditions.filter(
-        (s: any) => !program.some((p) => p.score_id === s.id),
+        (s: any) => !program.some((p) => p.edition_id === s.id),
       ),
     ),
   );
@@ -295,7 +295,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          score_id: selectedScoreId,
+          edition_id: selectedScoreId,
           position: program.length,
         }),
       });
@@ -311,7 +311,7 @@
 
       // Update available scores
       availableScores = data.allEditions.filter(
-        (s: any) => !program.some((p) => p.score_id === s.id),
+        (s: any) => !program.some((p) => p.edition_id === s.id),
       );
       selectedScoreId = "";
     } catch (err) {
@@ -346,11 +346,11 @@
       }
 
       // Update local state
-      program = program.filter((p) => p.score_id !== scoreId);
+      program = program.filter((p) => p.edition_id !== scoreId);
 
       // Update available scores
       availableScores = data.allEditions.filter(
-        (s: any) => !program.some((p) => p.score_id === s.id),
+        (s: any) => !program.some((p) => p.edition_id === s.id),
       );
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to remove score";
@@ -394,7 +394,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            score_ids: program.map((p) => p.score_id),
+            edition_ids: program.map((p) => p.edition_id),
           }),
         },
       );
@@ -1090,8 +1090,8 @@
       </div>
     {:else}
       <div class="space-y-2">
-        {#each program as entry, index (entry.score_id)}
-          {@const score = getScoreById(entry.score_id)}
+        {#each program as entry, index (entry.edition_id)}
+          {@const score = getScoreById(entry.edition_id)}
           {#if score}
             <div
               class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4"
@@ -1156,8 +1156,8 @@
                     </svg>
                   </button>
                   <button
-                    onclick={() => removeFromProgram(entry.score_id)}
-                    disabled={removingScoreId === entry.score_id}
+                    onclick={() => removeFromProgram(entry.edition_id)}
+                    disabled={removingScoreId === entry.edition_id}
                     class="rounded p-1 text-red-600 hover:bg-red-100 disabled:opacity-50"
                     title="Remove from program"
                   >
