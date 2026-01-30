@@ -24,10 +24,19 @@
 		xl: 'max-w-xl'
 	};
 
-	function handleBackdropClick(e: MouseEvent) {
-		if (e.target === e.currentTarget) {
+	// Track where mousedown started to prevent closing on drag-out
+	let mouseDownTarget: EventTarget | null = null;
+
+	function handleMouseDown(e: MouseEvent) {
+		mouseDownTarget = e.target;
+	}
+
+	function handleMouseUp(e: MouseEvent) {
+		// Only close if both mousedown and mouseup were on the backdrop itself
+		if (e.target === e.currentTarget && mouseDownTarget === e.currentTarget) {
 			onclose();
 		}
+		mouseDownTarget = null;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -48,7 +57,8 @@
 		aria-modal="true"
 		aria-labelledby={titleId}
 		tabindex="-1"
-		onclick={handleBackdropClick}
+		onmousedown={handleMouseDown}
+		onmouseup={handleMouseUp}
 		onkeydown={handleKeydown}
 	>
 		<div class="max-h-[90vh] w-full {widthClasses[maxWidth]} overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
