@@ -204,105 +204,109 @@
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each filteredEvents as event (event.id)}
 				{@const { date, time } = formatDateTime(event.starts_at)}
-				<Card variant="interactive" padding="lg">
-					<a href="/events/{event.id}" class="block mb-4">
-						<!-- Event Type Badge -->
-						<div class="mb-3">
-							<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(event.event_type)}">
-								{event.event_type}
-							</span>
+				<Card variant="clickable" href="/events/{event.id}" padding="lg">
+					<!-- Event Type Badge -->
+					<div class="mb-3">
+						<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(event.event_type)}">
+							{event.event_type}
+						</span>
+					</div>
+
+					<!-- Title -->
+					<h3 class="mb-2 text-lg font-semibold text-gray-900 group-hover:text-blue-600">
+						{event.title}
+					</h3>
+
+					<!-- Date and Time -->
+					<div class="mb-3 space-y-1 text-sm text-gray-600">
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+							</svg>
+							<span>{date}</span>
 						</div>
-
-						<!-- Title -->
-						<h3 class="mb-2 text-lg font-semibold text-gray-900">
-							{event.title}
-						</h3>
-
-						<!-- Date and Time -->
-						<div class="mb-3 space-y-1 text-sm text-gray-600">
-							<div class="flex items-center gap-2">
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-								</svg>
-								<span>{date}</span>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-								</svg>
-								<span>{time}</span>
-							</div>
+						<div class="flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+							</svg>
+							<span>{time}</span>
 						</div>
+					</div>
 
-						<!-- Location (if provided) -->
-						{#if event.location}
-							<div class="mb-3 flex items-start gap-2 text-sm text-gray-600">
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mt-0.5">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-									<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-								</svg>
-								<span class="flex-1">{event.location}</span>
-							</div>
-						{/if}
-
-						<!-- Description Preview (if provided) -->
-						{#if event.description}
-							<p class="text-sm text-gray-500 line-clamp-2">
-								{event.description}
-							</p>
-						{/if}
-					</a>
-
-					<!-- RSVP Buttons -->
-					{#if !event.rsvpLocked}
-						<div class="border-t border-gray-200 pt-4">
-							<p class="text-xs text-gray-500 mb-2">Your RSVP:</p>
-							<div class="grid grid-cols-4 gap-2">
-								<button
-									onclick={updateRsvp(event.id, 'yes')}
-									disabled={updatingRsvp[event.id]}
-									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'yes')} disabled:opacity-50"
-									title="I'll be there"
-								>
-									Yes
-								</button>
-								<button
-									onclick={updateRsvp(event.id, 'no')}
-									disabled={updatingRsvp[event.id]}
-									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'no')} disabled:opacity-50"
-									title="Can't make it"
-								>
-									No
-								</button>
-								<button
-									onclick={updateRsvp(event.id, 'maybe')}
-									disabled={updatingRsvp[event.id]}
-									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'maybe')} disabled:opacity-50"
-									title="Not sure yet"
-								>
-									Maybe
-								</button>
-								<button
-									onclick={updateRsvp(event.id, 'late')}
-									disabled={updatingRsvp[event.id]}
-									class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
-									title="I'll be late"
-								>
-									Late
-								</button>
-							</div>
-						</div>
-					{:else}
-						<div class="border-t border-gray-200 pt-4">
-							<p class="text-xs text-gray-500 text-center">
-								{#if event.myRsvp}
-									Your RSVP: <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
-								{:else}
-									RSVP locked (event started)
-								{/if}
-							</p>
+					<!-- Location (if provided) -->
+					{#if event.location}
+						<div class="mb-3 flex items-start gap-2 text-sm text-gray-600">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mt-0.5">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+								<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+							</svg>
+							<span class="flex-1">{event.location}</span>
 						</div>
 					{/if}
+
+					<!-- Description Preview (if provided) -->
+					{#if event.description}
+						<p class="text-sm text-gray-500 line-clamp-2 mb-4">
+							{event.description}
+						</p>
+					{/if}
+
+					<!-- RSVP Buttons -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						onclick={(e) => e.stopPropagation()}
+						onkeydown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
+					>
+						{#if !event.rsvpLocked}
+							<div class="border-t border-gray-200 pt-4">
+								<p class="text-xs text-gray-500 mb-2">Your RSVP:</p>
+								<div class="grid grid-cols-4 gap-2">
+									<button
+										onclick={updateRsvp(event.id, 'yes')}
+										disabled={updatingRsvp[event.id]}
+										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'yes')} disabled:opacity-50"
+										title="I'll be there"
+									>
+										Yes
+									</button>
+									<button
+										onclick={updateRsvp(event.id, 'no')}
+										disabled={updatingRsvp[event.id]}
+										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'no')} disabled:opacity-50"
+										title="Can't make it"
+									>
+										No
+									</button>
+									<button
+										onclick={updateRsvp(event.id, 'maybe')}
+										disabled={updatingRsvp[event.id]}
+										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'maybe')} disabled:opacity-50"
+										title="Not sure yet"
+									>
+										Maybe
+									</button>
+									<button
+										onclick={updateRsvp(event.id, 'late')}
+										disabled={updatingRsvp[event.id]}
+										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
+										title="I'll be late"
+									>
+										Late
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="border-t border-gray-200 pt-4">
+								<p class="text-xs text-gray-500 text-center">
+									{#if event.myRsvp}
+										Your RSVP: <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
+									{:else}
+										RSVP locked (event started)
+									{/if}
+								</p>
+							</div>
+						{/if}
+					</div>
 				</Card>
 			{/each}
 		</div>
