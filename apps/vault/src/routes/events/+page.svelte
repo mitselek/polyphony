@@ -3,6 +3,8 @@
 	import type { PageData } from './$types';
 	import type { EventType, PlannedStatus } from '$lib/types';
 	import { getLocale } from '$lib/utils/locale';
+	import { formatDateTimeComponents } from '$lib/utils/formatters';
+	import { getEventTypeBadgeClass } from '$lib/utils/badges';
 	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -30,36 +32,6 @@
 
 	// Get the locale for date formatting
 	let locale = $derived(getLocale(data.locale));
-
-	// Format date and time
-	function formatDateTime(dateString: string): { date: string; time: string } {
-		const dt = new Date(dateString);
-		const date = dt.toLocaleDateString(locale, {
-			weekday: 'short',
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric'
-		});
-		const time = dt.toLocaleTimeString(locale, {
-			hour: 'numeric',
-			minute: '2-digit'
-		});
-		return { date, time };
-	}
-
-	// Get event type badge color
-	function getEventTypeColor(type: EventType): string {
-		switch (type) {
-			case 'rehearsal':
-				return 'bg-blue-100 text-blue-800 border-blue-200';
-			case 'concert':
-				return 'bg-purple-100 text-purple-800 border-purple-200';
-			case 'retreat':
-				return 'bg-green-100 text-green-800 border-green-200';
-			default:
-				return 'bg-gray-100 text-gray-800 border-gray-200';
-		}
-	}
 
 	// Get RSVP button styles
 	function getRsvpButtonStyle(currentStatus: PlannedStatus | null, buttonStatus: PlannedStatus): string {
@@ -203,11 +175,11 @@
 	{:else}
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each filteredEvents as event (event.id)}
-				{@const { date, time } = formatDateTime(event.starts_at)}
+				{@const { date, time } = formatDateTimeComponents(event.starts_at, locale)}
 				<Card variant="clickable" href="/events/{event.id}" padding="lg">
 					<!-- Event Type Badge -->
 					<div class="mb-3">
-						<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(event.event_type)}">
+						<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeBadgeClass(event.event_type)}">
 							{event.event_type}
 						</span>
 					</div>

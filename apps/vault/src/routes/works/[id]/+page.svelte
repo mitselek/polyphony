@@ -5,6 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { getLicenseBadgeClass } from '$lib/utils/badges';
 
 	let { data }: { data: PageData } = $props();
 
@@ -247,19 +248,6 @@
 
 	function getLicenseTypeLabel(type: LicenseType): string {
 		return LICENSE_TYPES.find((t) => t.value === type)?.label ?? type;
-	}
-
-	function getLicenseBadgeClass(type: LicenseType): string {
-		switch (type) {
-			case 'public_domain':
-				return 'bg-green-100 text-green-800';
-			case 'licensed':
-				return 'bg-blue-100 text-blue-800';
-			case 'owned':
-				return 'bg-gray-100 text-gray-800';
-			default:
-				return 'bg-gray-100 text-gray-800';
-		}
 	}
 </script>
 

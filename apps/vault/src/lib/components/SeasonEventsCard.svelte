@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import { formatDateTimeMedium } from '$lib/utils/formatters';
+	import { getEventTypeBadge } from '$lib/utils/badges';
 
 	interface Event {
 		id: string;
@@ -17,37 +19,12 @@
 
 	let { seasonId, events, canManage }: Props = $props();
 
-	function formatDateTime(isoString: string): string {
-		const date = new Date(isoString);
-		return date.toLocaleDateString('en-US', {
-			weekday: 'short',
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: 'numeric',
-			minute: '2-digit'
-		});
-	}
-
-	function getEventTypeBadge(eventType: string): { bg: string; text: string } {
-		switch (eventType) {
-			case 'concert':
-				return { bg: 'bg-purple-100', text: 'text-purple-800' };
-			case 'rehearsal':
-				return { bg: 'bg-blue-100', text: 'text-blue-800' };
-			case 'retreat':
-				return { bg: 'bg-green-100', text: 'text-green-800' };
-			default:
-				return { bg: 'bg-gray-100', text: 'text-gray-800' };
-		}
-	}
-
 	// ============================================================================
 	// TODAY BOOKMARK FOR EVENTS LIST
 	// ============================================================================
 	
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
+	import { startOfDay } from '$lib/utils/formatters';
+	const today = startOfDay(new Date());
 	
 	// Find where "today" falls in the sorted events list
 	// Returns the index AFTER which to show the bookmark (-1 if before all, events.length if after all)
@@ -140,7 +117,7 @@
 									</span>
 								</div>
 								<p class="mt-1 text-sm text-gray-600">
-									{formatDateTime(event.starts_at)}
+									{formatDateTimeMedium(event.starts_at)}
 									{#if event.location}
 										<span class="text-gray-400">•</span>
 										{event.location}

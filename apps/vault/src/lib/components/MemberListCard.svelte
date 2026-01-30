@@ -2,6 +2,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import type { Role, Voice, Section } from '$lib/types';
+	import { getRoleBadgeClass } from '$lib/utils/badges';
 
 	export interface DisplayMember {
 		id: string;
@@ -60,23 +61,6 @@
 				m.name.toLowerCase().includes(searchQuery.toLowerCase())
 		)
 	);
-
-	function getRoleBadgeClass(role: string): string {
-		switch (role) {
-			case 'owner':
-				return 'bg-purple-100 text-purple-800 border-purple-200';
-			case 'admin':
-				return 'bg-blue-100 text-blue-800 border-blue-200';
-			case 'librarian':
-				return 'bg-green-100 text-green-800 border-green-200';
-			case 'conductor':
-				return 'bg-amber-100 text-amber-800 border-amber-200';
-			case 'section_leader':
-				return 'bg-teal-100 text-teal-800 border-teal-200';
-			default:
-				return 'bg-gray-100 text-gray-800 border-gray-200';
-		}
-	}
 
 	function handleAddVoice(memberId: string, voiceId: string, hasNoVoices: boolean) {
 		showingVoiceDropdown = null;

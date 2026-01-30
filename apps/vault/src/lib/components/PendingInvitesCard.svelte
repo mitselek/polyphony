@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Voice, Section, Role } from '$lib/types';
+	import { isExpired } from '$lib/utils/formatters';
 
 	export interface Invite {
 		id: string;
@@ -29,10 +30,6 @@
 		revokingInvite,
 		renewingInvite
 	}: Props = $props();
-
-	function isInviteExpired(expiresAt: string): boolean {
-		return new Date(expiresAt) < new Date();
-	}
 </script>
 
 {#if invites.length > 0}
@@ -42,7 +39,7 @@
 		</h2>
 		<div class="space-y-3">
 			{#each invites as invite (invite.id)}
-				{@const expired = isInviteExpired(invite.expiresAt)}
+				{@const expired = isExpired(invite.expiresAt)}
 				<div class="flex items-center justify-between rounded-lg border p-4 {expired ? 'border-red-200 bg-red-50 opacity-75' : 'border-amber-200 bg-amber-50'}">
 					<div class="flex-1">
 						<div class="flex items-center gap-3">

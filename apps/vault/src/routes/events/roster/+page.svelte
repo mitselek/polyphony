@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import type { PlannedStatus, ActualStatus } from '$lib/types';
 	import { getLocale } from '$lib/utils/locale';
+	import { formatDateShort, formatTime, isPast } from '$lib/utils/formatters';
 	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -126,23 +127,18 @@
 		return stats;
 	});
 
-	// Helper: Check if event is in the past
-	function isPastEvent(eventDate: string): boolean {
-		return new Date(eventDate) < new Date();
-	}
-
 	// Helper: Check if user can edit this cell
 	function canEditCell(memberId: string, eventDate: string, type: 'rsvp' | 'attendance'): boolean {
-		const isPast = isPastEvent(eventDate);
+		const eventIsPast = isPast(eventDate);
 		const isOwnRecord = memberId === data.currentMemberId;
 
 		if (type === 'attendance') {
 			// Only past events, only conductors/section leaders
-			return isPast && data.canManageParticipation;
+			return eventIsPast && data.canManageParticipation;
 		}
 
 		// RSVP
-		if (isOwnRecord && !isPast) return true; // Own future RSVP
+		if (isOwnRecord && !eventIsPast) return true; // Own future RSVP
 		if (data.canManageParticipation) return true; // Managers can edit anyone's RSVP
 		return false;
 	}
@@ -264,18 +260,6 @@
 		if (actualStatus === 'absent') return '✗';
 		if (actualStatus === 'late') return '⏰';
 		return '·';
-	}
-
-	// Helper: Format date for display
-	function formatDate(dateStr: string): string {
-		const date = new Date(dateStr);
-		return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
-	}
-
-	// Helper: Format time for display (e.g., "7:00 PM")
-	function formatTime(dateStr: string): string {
-		const date = new Date(dateStr);
-		return date.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
 	}
 
 	// Apply filters by navigating with query params
@@ -422,8 +406,8 @@
 							>
 								<div class="flex flex-col gap-0.5">
 									<span class="font-semibold">{event.name}</span>
-									<span class="text-gray-500">{formatDate(event.date)}</span>
-									<span class="text-gray-400">{formatTime(event.date)}</span>
+									<span class="text-gray-500">{formatDateShort(event.date, locale)}</span>
+									<span class="text-gray-400">{formatTime(event.date, locale)}</span>
 								</div>
 							</th>
 						{/each}
@@ -469,7 +453,7 @@
 							{#each roster.events as event}
 								{@const participationMap = event.participation}
 								{@const status = participationMap.get(member.id)}
-								{@const isPast = isPastEvent(event.date)}
+								{@const eventIsPast = isPast(event.date)}
 								{@const canEditRsvp = canEditCell(member.id, event.date, 'rsvp')}
 								{@const canEditAtt = canEditCell(member.id, event.date, 'attendance')}
 								
@@ -477,7 +461,7 @@
 									class="border-r border-gray-200 p-0 text-center text-sm"
 									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
 								>
-									{#if isPast}
+									{#if eventIsPast}
 										<!-- Past event: dual cell (RSVP / Attendance) as pill -->
 										<div class="flex h-full mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
 											<!-- RSVP half (left rounded) -->

@@ -4,6 +4,7 @@
 	import type { Season } from '$lib/server/db/seasons';
 	import Modal from '$lib/components/Modal.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { formatDateLong } from '$lib/utils/formatters';
 
 	let { data }: { data: PageData } = $props();
 
@@ -141,15 +142,6 @@
 		} finally {
 			deletingId = null;
 		}
-	}
-
-	function formatDate(dateStr: string): string {
-		const date = new Date(dateStr + 'T00:00:00');
-		return date.toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		});
 	}
 
 	function getSeasonEndDate(season: Season, index: number): string | null {
@@ -303,10 +295,10 @@
 								{/if}
 							</div>
 							<p class="mt-1 text-sm text-gray-600">
-								{formatDate(season.start_date)}
+								{formatDateLong(season.start_date)}
 								{#if endDate}
 									<span class="text-gray-400">→</span>
-									{formatDate(endDate)}
+									{formatDateLong(endDate)}
 								{/if}
 							</p>
 						</div>

@@ -2,6 +2,8 @@
   import Card from "$lib/components/Card.svelte";
   import type { EventType } from "$lib/types";
   import { goto } from "$app/navigation";
+  import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes } from "$lib/utils/formatters";
+  import { getEventTypeBadgeClass } from "$lib/utils/badges";
 
   interface EventData {
     id: string;
@@ -65,12 +67,6 @@
     return { date, time };
   }
 
-  function calculateDuration(startIso: string, endIso: string): number {
-    const start = new Date(startIso);
-    const end = new Date(endIso);
-    return Math.round((end.getTime() - start.getTime()) / 60000);
-  }
-
   function splitDuration(totalMinutes: number): {
     days: number;
     hours: number;
@@ -89,45 +85,12 @@
     return endDate.toISOString();
   }
 
-  function formatDateTime(isoString: string): string {
-    const d = new Date(isoString);
-    return d.toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" });
-  }
-
-  function formatDuration(startIso: string, endIso: string | null): string {
-    if (!endIso) return "-";
-    const minutes = calculateDuration(startIso, endIso);
-    const days = Math.floor(minutes / (24 * 60));
-    const remainingAfterDays = minutes % (24 * 60);
-    const hours = Math.floor(remainingAfterDays / 60);
-    const mins = remainingAfterDays % 60;
-
-    const parts: string[] = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (mins > 0) parts.push(`${mins}m`);
-    return parts.join(" ") || "0m";
-  }
-
-  function getEventTypeColor(type: EventType): string {
-    switch (type) {
-      case "rehearsal":
-        return "bg-blue-100 text-blue-700 border-blue-300";
-      case "concert":
-        return "bg-purple-100 text-purple-700 border-purple-300";
-      case "retreat":
-        return "bg-green-100 text-green-700 border-green-300";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-300";
-    }
-  }
-
   // Toggle edit mode
   function startEditEvent() {
     editingEventId = event.id;
     const dt = parseDateTime(event.starts_at);
     // Default to 2 hours duration if ends_at is null
-    const dur = event.ends_at ? calculateDuration(event.starts_at, event.ends_at) : 120;
+    const dur = event.ends_at ? calculateDurationMinutes(event.starts_at, event.ends_at) : 120;
     const durParts = splitDuration(dur);
     editForm = {
       title: event.title,
@@ -374,7 +337,7 @@
         <!-- Event Type Badge -->
         <div class="mb-3">
           <span
-            class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeColor(
+            class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeBadgeClass(
               event.event_type
             )}"
           >
@@ -398,10 +361,10 @@
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <span>{formatDateTime(event.starts_at)}</span>
+            <span>{formatDateTimeFull(event.starts_at)}</span>
           </div>
           <div class="ml-7 text-sm text-gray-500">
-            Duration: {formatDuration(event.starts_at, event.ends_at)}
+            Duration: {event.ends_at ? formatDurationBetween(event.starts_at, event.ends_at) : '-'}
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import SortableList from '$lib/components/SortableList.svelte';
 	import type { SeasonRepertoireWork, SeasonRepertoire, Work, Edition } from '$lib/types';
+	import { getLicenseBadge } from '$lib/utils/badges';
 
 	interface Props {
 		seasonId: string;
@@ -44,19 +45,6 @@
 	
 	// Reordering
 	let isReordering = $state(false);
-
-	function getLicenseBadge(licenseType: string): { bg: string; text: string } {
-		switch (licenseType) {
-			case 'public_domain':
-				return { bg: 'bg-green-100', text: 'text-green-800' };
-			case 'licensed':
-				return { bg: 'bg-amber-100', text: 'text-amber-800' };
-			case 'owned':
-				return { bg: 'bg-blue-100', text: 'text-blue-800' };
-			default:
-				return { bg: 'bg-gray-100', text: 'text-gray-800' };
-		}
-	}
 
 	// ============================================================================
 	// WORK OPERATIONS
