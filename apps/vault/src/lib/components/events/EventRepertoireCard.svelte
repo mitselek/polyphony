@@ -448,7 +448,7 @@
 								<p class="text-sm text-gray-500">
 									{#if !workEditionsMap[repWork.work.id] || workEditionsMap[repWork.work.id].length === 0}
 										No editions available for this work.
-										<a href="/library/works/{repWork.work.id}" class="text-blue-600 hover:underline">
+										<a href="/works/{repWork.work.id}" class="text-blue-600 hover:underline">
 											Add editions in the library
 										</a>
 									{:else}
@@ -471,7 +471,7 @@
 			{#if availableWorks.length === 0}
 				<p class="text-sm text-gray-500">
 					All works have been added.
-					<a href="/library/works/new" class="text-blue-600 hover:underline">Create a new work</a>
+					<a href="/works" class="text-blue-600 hover:underline">Create a new work</a>
 				</p>
 			{:else}
 				<div class="flex gap-2">

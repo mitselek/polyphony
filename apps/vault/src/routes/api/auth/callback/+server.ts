@@ -106,7 +106,7 @@ async function handleLogin(
 		maxAge: 60 * 60 * 24 * 7 // 1 week
 	});
 
-	throw redirect(302, '/library');
+	throw redirect(302, '/');
 }
 
 function validateTokenParam(url: URL): string {

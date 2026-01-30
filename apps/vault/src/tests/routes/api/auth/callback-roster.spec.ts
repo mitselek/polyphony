@@ -237,8 +237,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 			
 			expect.fail('Expected redirect to be thrown');
 		} catch (err: any) {
-			// Verify redirect to library
-			expect(err.location).toBe('/library');
+			// Verify redirect to home
+			expect(err.location).toBe('/');
 			expect(err.status).toBe(302);
 		}
 
@@ -337,7 +337,7 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 			
 			expect.fail('Expected redirect to be thrown');
 		} catch (err: any) {
-			expect(err.location).toBe('/library');
+			expect(err.location).toBe('/');
 		}
 
 		// Verify name was updated

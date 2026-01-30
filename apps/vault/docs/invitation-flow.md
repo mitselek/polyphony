@@ -150,7 +150,7 @@ sequenceDiagram
     end
     Callback->>DB: Create session
     Callback-->>Invitee: Set session cookie
-    Callback->>Invitee: Redirect to /library
+    Callback->>Invitee: Redirect to /
 ```
 
 ### Key Design Points
@@ -187,7 +187,7 @@ sequenceDiagram
   - Set voice part from invite
   - Mark invite as accepted
 - Create vault session
-- Redirect to `/library`
+- Redirect to `/`
 
 ## Security Considerations
 
