@@ -6,7 +6,7 @@ import { getWorkById } from '$lib/server/db/works';
 import { getAllSections } from '$lib/server/db/sections';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getPhysicalCopiesByEdition } from '$lib/server/db/physical-copies';
-import { getActiveAssignments } from '$lib/server/db/copy-assignments';
+import { getActiveAssignments, getEditionAssignmentHistory, type AssignmentHistoryEntry } from '$lib/server/db/copy-assignments';
 
 interface CopyWithAssignment {
 	id: string;
@@ -67,11 +67,16 @@ async function checkCanManage(db: D1Database, memberId: string | undefined): Pro
 
 async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean) {
 	if (!canManage) {
-		return { copies: [] as CopyWithAssignment[], members: [] as MemberForAssignment[] };
+		return { 
+			copies: [] as CopyWithAssignment[], 
+			members: [] as MemberForAssignment[],
+			assignmentHistory: [] as AssignmentHistoryEntry[]
+		};
 	}
-	const [copies, members] = await Promise.all([
+	const [copies, members, assignmentHistory] = await Promise.all([
 		loadCopiesWithAssignments(db, editionId),
-		getAllMembers(db)
+		getAllMembers(db),
+		getEditionAssignmentHistory(db, editionId)
 	]);
 	// Transform members for assignment dropdown with section info
 	const membersForAssignment: MemberForAssignment[] = members.map((m) => ({
@@ -84,7 +89,7 @@ async function loadLibrarianData(db: D1Database, editionId: string, canManage: b
 			displayOrder: m.sections[0].displayOrder
 		} : null
 	}));
-	return { copies, members: membersForAssignment };
+	return { copies, members: membersForAssignment, assignmentHistory };
 }
 
 export const load: PageServerLoad = async ({ params, platform, cookies }) => {
@@ -110,6 +115,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 		sections,
 		canManage,
 		copies: librarianData.copies,
-		members: librarianData.members
+		members: librarianData.members,
+		assignmentHistory: librarianData.assignmentHistory
 	};
 };

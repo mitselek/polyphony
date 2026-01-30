@@ -301,3 +301,116 @@ export async function getMemberAssignedCopies(
 	const { results } = await db.prepare(query).bind(memberId).all<AssignedCopyRow>();
 	return results.map(rowToAssignedCopyWithDetails);
 }
+
+// ============================================================================
+// ASSIGNMENT HISTORY QUERIES (Issue #124)
+// ============================================================================
+
+/**
+ * Assignment history entry with member name
+ */
+export interface AssignmentHistoryEntry {
+	id: string;
+	copyId: string;
+	copyNumber: string;
+	memberId: string;
+	memberName: string;
+	assignedAt: string;
+	assignedById: string | null;
+	assignedByName: string | null;
+	returnedAt: string | null;
+	notes: string | null;
+}
+
+interface AssignmentHistoryRow {
+	id: string;
+	copy_id: string;
+	copy_number: string;
+	member_id: string;
+	member_name: string;
+	assigned_at: string;
+	assigned_by_id: string | null;
+	assigned_by_name: string | null;
+	returned_at: string | null;
+	notes: string | null;
+}
+
+function rowToHistoryEntry(row: AssignmentHistoryRow): AssignmentHistoryEntry {
+	return {
+		id: row.id,
+		copyId: row.copy_id,
+		copyNumber: row.copy_number,
+		memberId: row.member_id,
+		memberName: row.member_name,
+		assignedAt: row.assigned_at,
+		assignedById: row.assigned_by_id,
+		assignedByName: row.assigned_by_name,
+		returnedAt: row.returned_at,
+		notes: row.notes
+	};
+}
+
+/**
+ * Get assignment history for a single copy with member names
+ * Issue #124 - Copy-level history view
+ */
+export async function getCopyAssignmentHistory(
+	db: D1Database,
+	copyId: string
+): Promise<AssignmentHistoryEntry[]> {
+	const query = `
+		SELECT 
+			ca.id,
+			ca.copy_id,
+			pc.copy_number,
+			ca.member_id,
+			m.name as member_name,
+			ca.assigned_at,
+			ca.assigned_by as assigned_by_id,
+			ab.name as assigned_by_name,
+			ca.returned_at,
+			ca.notes
+		FROM copy_assignments ca
+		JOIN physical_copies pc ON ca.copy_id = pc.id
+		JOIN members m ON ca.member_id = m.id
+		LEFT JOIN members ab ON ca.assigned_by = ab.id
+		WHERE ca.copy_id = ?
+		ORDER BY ca.assigned_at DESC
+	`;
+
+	const { results } = await db.prepare(query).bind(copyId).all<AssignmentHistoryRow>();
+	return results.map(rowToHistoryEntry);
+}
+
+/**
+ * Get assignment history for all copies of an edition
+ * Issue #124 - Edition-level history view
+ */
+export async function getEditionAssignmentHistory(
+	db: D1Database,
+	editionId: string
+): Promise<AssignmentHistoryEntry[]> {
+	const query = `
+		SELECT 
+			ca.id,
+			ca.copy_id,
+			pc.copy_number,
+			ca.member_id,
+			m.name as member_name,
+			ca.assigned_at,
+			ca.assigned_by as assigned_by_id,
+			ab.name as assigned_by_name,
+			ca.returned_at,
+			ca.notes
+		FROM copy_assignments ca
+		JOIN physical_copies pc ON ca.copy_id = pc.id
+		JOIN members m ON ca.member_id = m.id
+		LEFT JOIN members ab ON ca.assigned_by = ab.id
+		WHERE pc.edition_id = ?
+		ORDER BY ca.assigned_at DESC
+	`;
+
+	const { results } = await db.prepare(query).bind(editionId).all<AssignmentHistoryRow>();
+	return results.map(rowToHistoryEntry);
+}
+
