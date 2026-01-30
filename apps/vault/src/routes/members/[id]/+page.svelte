@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
+	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -667,37 +668,12 @@
 								</div>
 								
 								<!-- Digital access link if available -->
-								{#if copy.edition.fileKey || copy.edition.externalUrl}
-									<div class="flex items-center gap-2">
-										{#if copy.edition.fileKey}
-											<a
-												href={`/api/editions/${copy.edition.id}/file`}
-												target="_blank"
-												class="inline-flex items-center gap-1 rounded border border-blue-600 bg-white px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 transition"
-											>
-												View
-											</a>
-											<a
-												href={`/api/editions/${copy.edition.id}/file?download=1`}
-												class="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
-											>
-												Download
-											</a>
-										{:else}
-											<a
-												href={copy.edition.externalUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
-											>
-												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-												</svg>
-												View Online
-											</a>
-										{/if}
-									</div>
-								{/if}
+								<EditionFileActions
+									editionId={copy.edition.id}
+									fileKey={copy.edition.fileKey}
+									externalUrl={copy.edition.externalUrl}
+									size="sm"
+								/>
 							</div>
 						</div>
 					{/each}

@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { EditionType, LicenseType } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
+	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -437,9 +438,8 @@
 									View
 								</a>
 								<a
-									href="/api/editions/{data.edition.id}/file"
+									href="/api/editions/{data.edition.id}/file?download=1"
 									class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-									download
 								>
 									Download
 								</a>

@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { Edition, EditionType, LicenseType, Section } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
+	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -363,24 +364,12 @@
 								{#if edition.fileName}
 									<p class="mt-2 flex items-center gap-2 text-sm text-gray-500">
 										<span>📄 {edition.fileName}</span>
-										<span
-											onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/editions/${edition.id}/view`; }}
-											onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = `/editions/${edition.id}/view`; } }}
-											role="link"
-											tabindex="0"
-											class="cursor-pointer rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
-										>
-											View
-										</span>
-										<span
-											onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/api/editions/${edition.id}/file`; }}
-											onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = `/api/editions/${edition.id}/file`; } }}
-											role="link"
-											tabindex="0"
-											class="cursor-pointer rounded bg-gray-100 px-2 py-0.5 text-gray-700 hover:bg-gray-200"
-										>
-											Download
-										</span>
+										<EditionFileActions
+											editionId={edition.id}
+											fileKey={edition.fileKey}
+											size="sm"
+											stopPropagation={true}
+										/>
 									</p>
 								{/if}
 								{#if edition.notes}

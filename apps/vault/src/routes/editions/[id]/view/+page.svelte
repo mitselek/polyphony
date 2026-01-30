@@ -5,6 +5,7 @@
 
 	// PDF file URL (derived to capture data changes)
 	let pdfUrl = $derived(`/api/editions/${data.edition.id}/file`);
+	let downloadUrl = $derived(`/api/editions/${data.edition.id}/file?download=1`);
 </script>
 
 <svelte:head>
@@ -33,8 +34,7 @@
 		<div class="flex items-center gap-2">
 			<!-- Download button -->
 			<a
-				href={pdfUrl}
-				download={data.edition.fileName}
+				href={downloadUrl}
 				class="flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700"
 			>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
