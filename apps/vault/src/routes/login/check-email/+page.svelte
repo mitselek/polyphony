@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { REGISTRY_URL } from '$lib/config';
 
 	const email = $derived($page.url.searchParams.get('email') || '');
+	const inviteToken = $derived($page.url.searchParams.get('invite') || '');
 	let code = $state('');
 	let isVerifying = $state(false);
-
-	// Configuration
-	const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
 
 	function handleCodeInput(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -28,8 +27,8 @@
 	}
 
 	async function resendCode() {
-		// Go back to login to request a new code
-		window.location.href = '/login';
+		// Go back to login to request a new code (preserve invite token)
+		window.location.href = inviteToken ? `/login?invite=${encodeURIComponent(inviteToken)}` : '/login';
 	}
 </script>
 

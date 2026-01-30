@@ -46,7 +46,7 @@ export async function load({ url, platform }: RequestEvent) {
 		throw error(400, 'This invitation has already been used');
 	}
 
-	// Redirect to auth/login with invite token parameter
-	// The login endpoint will pass it through the OAuth flow
-	throw redirect(302, `/api/auth/login?invite=${encodeURIComponent(token)}`);
+	// Redirect to login page with invite token
+	// Login page will set cookie and pass through whichever auth method user chooses
+	throw redirect(302, `/login?invite=${encodeURIComponent(token)}`);
 };

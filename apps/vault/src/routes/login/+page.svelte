@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { REGISTRY_URL, VAULT_ID } from '$lib/config';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let email = $state('');
 	let isSubmitting = $state(false);
@@ -8,9 +12,8 @@
 	// Get error from query params (e.g., from failed invite acceptance)
 	const queryError = $derived($page.url.searchParams.get('error'));
 
-	// Configuration - these should match the registry config
-	const REGISTRY_URL = 'https://polyphony-registry.pages.dev';
-	const VAULT_ID = 'BQ6u9ENTnZk_danhhIbUB';
+	// Invite token is set as cookie by +page.server.ts, passed to check-email for resend
+	const inviteToken = $derived(data.invite);
 
 	async function sendMagicLink() {
 		if (!email || isSubmitting) return;
@@ -38,8 +41,9 @@
 				return;
 			}
 
-			// Redirect to check-email page
-			window.location.href = `/login/check-email?email=${encodeURIComponent(email)}`;
+			// Redirect to check-email page (preserve invite token if present)
+			const checkEmailUrl = `/login/check-email?email=${encodeURIComponent(email)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ''}`;
+			window.location.href = checkEmailUrl;
 		} catch (err) {
 			error = 'Network error. Please try again.';
 		} finally {
@@ -48,7 +52,7 @@
 	}
 
 	function signInWithGoogle() {
-		// Redirect to existing OAuth flow
+		// Redirect to OAuth flow (cookie already set by +page.server.ts if invite present)
 		window.location.href = '/api/auth/login';
 	}
 </script>
