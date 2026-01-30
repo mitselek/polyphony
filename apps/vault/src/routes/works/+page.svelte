@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import type { Work } from '$lib/types';
+	import Modal from '$lib/components/Modal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -180,22 +181,8 @@
 	{/if}
 
 	<!-- Create/Edit Form Modal -->
-	{#if showCreateForm}
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="work-form-title"
-			tabindex="-1"
-			onclick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
-			onkeydown={(e) => { if (e.key === 'Escape') closeForm(); }}
-		>
-			<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-				<h2 id="work-form-title" class="mb-4 text-xl font-semibold">
-					{editingWork ? 'Edit Work' : 'Add New Work'}
-				</h2>
-				<form onsubmit={handleSubmit}>
+	<Modal open={showCreateForm} title={editingWork ? 'Edit Work' : 'Add New Work'} onclose={closeForm}>
+		<form onsubmit={handleSubmit}>
 					<div class="mb-4">
 						<label for="title" class="mb-1 block text-sm font-medium text-gray-700">
 							Title <span class="text-red-500">*</span>
@@ -249,10 +236,8 @@
 							{saving ? 'Saving...' : editingWork ? 'Update' : 'Create'}
 						</button>
 					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
+		</form>
+	</Modal>
 
 	<!-- Search -->
 	<div class="mb-6">

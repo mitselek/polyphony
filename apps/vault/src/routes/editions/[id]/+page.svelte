@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { EditionType, LicenseType } from '$lib/types';
+	import Modal from '$lib/components/Modal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -184,6 +185,11 @@
 		selectedCopyId = copyId;
 		selectedMemberId = '';
 		showAssignModal = true;
+	}
+
+	function closeAssignModal() {
+		showAssignModal = false;
+		memberSearchQuery = '';
 	}
 
 	async function assignCopy() {
@@ -623,68 +629,53 @@
 </div>
 
 <!-- Assign Copy Modal -->
-{#if showAssignModal}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="assign-modal-title"
-		tabindex="-1"
-		onclick={(e) => { if (e.target === e.currentTarget) { showAssignModal = false; memberSearchQuery = ''; } }}
-		onkeydown={(e) => { if (e.key === 'Escape') { showAssignModal = false; memberSearchQuery = ''; } }}
-	>
-		<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-			<h3 id="assign-modal-title" class="mb-4 text-lg font-semibold">Assign Copy</h3>
-			
-			<!-- Search filter -->
-			<div class="mb-3">
-				<input
-					type="text"
-					bind:value={memberSearchQuery}
-					placeholder="Filter by name..."
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-				/>
-			</div>
-
-			<div class="mb-4">
-				<label for="member" class="block text-sm font-medium text-gray-700">Select Member</label>
-				<select
-					id="member"
-					bind:value={selectedMemberId}
-					class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-					size="8"
-				>
-					{#each membersBySection() as [sectionName, members]}
-						<optgroup label={sectionName}>
-							{#each members as member}
-								<option value={member.id}>
-									{member.nickname || member.name}
-								</option>
-							{/each}
-						</optgroup>
-					{/each}
-				</select>
-				{#if filteredMembers().length === 0}
-					<p class="mt-2 text-sm text-gray-500">No members match your search</p>
-				{/if}
-			</div>
-
-			<div class="flex justify-end gap-3">
-				<button
-					onclick={() => { showAssignModal = false; memberSearchQuery = ''; }}
-					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
-				>
-					Cancel
-				</button>
-				<button
-					onclick={assignCopy}
-					disabled={!selectedMemberId || assigning}
-					class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-				>
-					{assigning ? 'Assigning...' : 'Assign'}
-				</button>
-			</div>
-		</div>
+<Modal open={showAssignModal} title="Assign Copy" onclose={closeAssignModal}>
+	<!-- Search filter -->
+	<div class="mb-3">
+		<input
+			type="text"
+			bind:value={memberSearchQuery}
+			placeholder="Filter by name..."
+			class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+		/>
 	</div>
-{/if}
+
+	<div class="mb-4">
+		<label for="member" class="block text-sm font-medium text-gray-700">Select Member</label>
+		<select
+			id="member"
+			bind:value={selectedMemberId}
+			class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+			size="8"
+		>
+			{#each membersBySection() as [sectionName, members]}
+				<optgroup label={sectionName}>
+					{#each members as member}
+						<option value={member.id}>
+							{member.nickname || member.name}
+						</option>
+					{/each}
+				</optgroup>
+			{/each}
+		</select>
+		{#if filteredMembers().length === 0}
+			<p class="mt-2 text-sm text-gray-500">No members match your search</p>
+		{/if}
+	</div>
+
+	<div class="flex justify-end gap-3">
+		<button
+			onclick={closeAssignModal}
+			class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+		>
+			Cancel
+		</button>
+		<button
+			onclick={assignCopy}
+			disabled={!selectedMemberId || assigning}
+			class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+		>
+			{assigning ? 'Assigning...' : 'Assign'}
+		</button>
+	</div>
+</Modal>

@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import type { Edition, EditionType, LicenseType, Section } from '$lib/types';
+	import Modal from '$lib/components/Modal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -411,25 +412,11 @@
 	</div>
 
 	<!-- Edition Form Modal -->
-	{#if showEditionForm}
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="edition-form-title"
-			tabindex="-1"
-			onclick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
-			onkeydown={(e) => { if (e.key === 'Escape') closeForm(); }}
-		>
-			<div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-				<h2 id="edition-form-title" class="mb-4 text-xl font-semibold">
-					{editingEdition ? 'Edit Edition' : 'Add New Edition'}
-				</h2>
-				<form onsubmit={handleSubmit}>
-					<div class="space-y-4">
-						<!-- Name -->
-						<div>
+	<Modal open={showEditionForm} title={editingEdition ? 'Edit Edition' : 'Add New Edition'} onclose={closeForm} maxWidth="lg">
+		<form onsubmit={handleSubmit}>
+			<div class="space-y-4">
+				<!-- Name -->
+				<div>
 							<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
 								Name <span class="text-red-500">*</span>
 							</label>
@@ -620,9 +607,7 @@
 								{editingEdition ? 'Update' : 'Create'}
 							{/if}
 						</button>
-					</div>
-				</form>
 			</div>
-		</div>
-	{/if}
+		</form>
+	</Modal>
 </div>
