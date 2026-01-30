@@ -8,6 +8,7 @@ import { getEventProgram } from '$lib/server/db/programs';
 import { getAllEditions, getEditionsByWorkId } from '$lib/server/db/editions';
 import { getParticipation } from '$lib/server/db/participation';
 import { getEventRepertoire } from '$lib/server/db/event-repertoire';
+import { getEventMaterialsForMember } from '$lib/server/db/event-materials';
 import { getAllWorks } from '$lib/server/db/works';
 import type { Edition } from '$lib/types';
 
@@ -84,6 +85,13 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 		}
 	}
 
+	// ============================================================================
+	// WHAT TO BRING (Issue #122)
+	// ============================================================================
+	
+	// Load personalized materials for the current member
+	const myMaterials = await getEventMaterialsForMember(db, eventId, member.id);
+
 	return {
 		event,
 		program,
@@ -98,6 +106,8 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 		repertoire,
 		availableWorks,
 		seasonWorkIds,
-		workEditionsMap
+		workEditionsMap,
+		// What to bring (Issue #122)
+		myMaterials
 	};
 };

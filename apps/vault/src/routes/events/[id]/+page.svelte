@@ -7,6 +7,7 @@
   import Card from "$lib/components/Card.svelte";
   import EventRepertoireCard from "$lib/components/events/EventRepertoireCard.svelte";
   import EventProgramCard from "$lib/components/events/EventProgramCard.svelte";
+  import WhatToBringCard from "$lib/components/events/WhatToBringCard.svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -932,6 +933,14 @@
       </div>
     {/if}
   </Card>
+
+  <!-- What to Bring (Personalized Materials for Singer) -->
+  {#if data.myMaterials.materials.length > 0}
+    <WhatToBringCard
+      materials={data.myMaterials}
+      eventId={data.event.id}
+    />
+  {/if}
 
   <!-- Event Repertoire Section (Works + Editions) -->
   <EventRepertoireCard
