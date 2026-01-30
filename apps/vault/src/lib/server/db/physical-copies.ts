@@ -96,6 +96,25 @@ export async function createPhysicalCopy(
 }
 
 /**
+ * Generate copy number entries for batch creation
+ */
+function generateCopyNumbers(
+	startNumber: number,
+	count: number,
+	prefix: string
+): { id: string; copyNumber: string }[] {
+	const maxNumber = startNumber + count - 1;
+	const padWidth = String(maxNumber).length;
+
+	return Array.from({ length: count }, (_, i) => {
+		const num = startNumber + i;
+		const paddedNum = String(num).padStart(padWidth, '0');
+		const copyNumber = prefix ? `${prefix}-${paddedNum}` : paddedNum;
+		return { id: generateId(), copyNumber };
+	});
+}
+
+/**
  * Create multiple physical copies with auto-generated numbers
  * Numbers are zero-padded based on total count (e.g., 01-99 for count < 100)
  * If startNumber is not specified, automatically finds the next available number
@@ -110,24 +129,8 @@ export async function batchCreatePhysicalCopies(
 		throw new Error('Count must be positive');
 	}
 
-	// Find the next available start number if not specified
-	let startNumber = input.startNumber ?? 1;
-	if (!input.startNumber) {
-		startNumber = await getNextAvailableCopyNumber(db, editionId, prefix);
-	}
-
-	// Calculate zero-padding width
-	const maxNumber = startNumber + count - 1;
-	const padWidth = String(maxNumber).length;
-
-	const copies: { id: string; copyNumber: string }[] = [];
-
-	for (let i = 0; i < count; i++) {
-		const num = startNumber + i;
-		const paddedNum = String(num).padStart(padWidth, '0');
-		const copyNumber = prefix ? `${prefix}-${paddedNum}` : paddedNum;
-		copies.push({ id: generateId(), copyNumber });
-	}
+	const startNumber = input.startNumber ?? await getNextAvailableCopyNumber(db, editionId, prefix);
+	const copies = generateCopyNumbers(startNumber, count, prefix);
 
 	// Batch insert
 	const statements = copies.map((copy) =>
@@ -141,7 +144,6 @@ export async function batchCreatePhysicalCopies(
 
 	await db.batch(statements);
 
-	// Return created copies
 	return getPhysicalCopiesByEdition(db, editionId);
 }
 
