@@ -417,3 +417,37 @@ export interface CopyStats {
 	poor: number;
 	lost: number;
 }
+
+// ============================================================================
+// SEASON REPERTOIRE SYSTEM (Epic #106 Phase C)
+// ============================================================================
+
+/**
+ * Season repertoire work with editions
+ * Used by API/UI to display a work in a season's repertoire
+ */
+export interface SeasonRepertoireWork {
+	seasonWorkId: string; // season_works.id
+	work: Work;
+	displayOrder: number;
+	notes: string | null;
+	editions: SeasonRepertoireEdition[];
+}
+
+/**
+ * Edition selected for a work in a season
+ */
+export interface SeasonRepertoireEdition {
+	workEditionId: string; // season_work_editions.id
+	edition: Edition;
+	isPrimary: boolean;
+	notes: string | null;
+}
+
+/**
+ * Full season repertoire (works + editions tree)
+ */
+export interface SeasonRepertoire {
+	seasonId: string;
+	works: SeasonRepertoireWork[];
+}
