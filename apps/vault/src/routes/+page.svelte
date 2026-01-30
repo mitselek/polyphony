@@ -9,11 +9,6 @@
 	onMount(() => {
 		mounted = true;
 	});
-
-	// Check if user can upload (librarian or owner)
-	const canUpload = $derived(
-		data.user?.roles?.some((r) => ['librarian', 'owner'].includes(r)) ?? false
-	);
 </script>
 
 <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -27,19 +22,11 @@
 			<div class="bg-white rounded-lg shadow-md p-8">
 				<div class="flex gap-4 justify-center mb-8">
 					<a
-						href="/library"
+						href="/works"
 						class="rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition"
 					>
 						Browse Library
 					</a>
-					{#if canUpload}
-						<a
-							href="/upload"
-							class="rounded-lg bg-gray-100 px-6 py-3 text-gray-700 font-medium hover:bg-gray-200 transition"
-						>
-							Upload Score
-						</a>
-					{/if}
 				</div>
 
 				<h2 class="text-2xl font-semibold text-gray-800 mb-4">Phase 1: MVP</h2>

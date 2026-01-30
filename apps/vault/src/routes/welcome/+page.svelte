@@ -10,7 +10,7 @@
 			Your account has been created successfully. You can now access your choir's sheet music library.
 		</p>
 		<a
-			href="/library"
+			href="/works"
 			class="inline-block rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
 		>
 			Browse Library

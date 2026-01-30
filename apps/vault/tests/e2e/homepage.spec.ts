@@ -15,11 +15,11 @@ test.describe('Homepage', () => {
 		await page.goto('/');
 		
 		// Check for common navigation elements
-		const hasLibraryLink = await page.locator('a[href="/library"]').isVisible().catch(() => false);
+		const hasWorksLink = await page.locator('a[href="/works"]').isVisible().catch(() => false);
 		const hasAboutLink = await page.locator('a[href="/about"]').isVisible().catch(() => false);
 		
 		// At least some navigation should exist
-		expect(hasLibraryLink || hasAboutLink || true).toBeTruthy();
+		expect(hasWorksLink || hasAboutLink || true).toBeTruthy();
 	});
 });
 

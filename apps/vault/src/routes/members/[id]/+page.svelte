@@ -670,7 +670,7 @@
 								{#if copy.edition.fileKey || copy.edition.externalUrl}
 									<a
 										href={copy.edition.fileKey 
-											? `/api/editions/${copy.edition.id}/download`
+											? `/api/editions/${copy.edition.id}/file`
 											: copy.edition.externalUrl}
 										target={copy.edition.externalUrl ? '_blank' : undefined}
 										rel={copy.edition.externalUrl ? 'noopener noreferrer' : undefined}
