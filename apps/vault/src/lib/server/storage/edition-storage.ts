@@ -1,7 +1,14 @@
 // D1 chunked storage layer for edition files
-// Uses edition_files/edition_chunks tables (no FK to scores)
+// Uses edition_files/edition_chunks tables
 
-import { CHUNK_SIZE, MAX_CHUNKED_FILE_SIZE, SINGLE_ROW_THRESHOLD } from './d1-chunked-storage';
+// Chunk size: ~1.9MB to stay safely under D1's 2MB limit
+export const CHUNK_SIZE = 1.9 * 1024 * 1024;
+
+// Maximum file size for chunked uploads (5 chunks × 1.9MB = 9.5MB)
+export const MAX_CHUNKED_FILE_SIZE = 5 * CHUNK_SIZE;
+
+// Files under this size use single-row storage
+export const SINGLE_ROW_THRESHOLD = 2 * 1024 * 1024;
 
 export interface EditionUploadResult {
 	editionId: string;

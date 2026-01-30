@@ -5,7 +5,7 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canManageEvents, canRecordAttendance } from '$lib/server/auth/permissions';
 import { getEventById } from '$lib/server/db/events';
 import { getEventProgram } from '$lib/server/db/programs';
-import { listScores } from '$lib/server/db/scores';
+import { getAllEditions } from '$lib/server/db/editions';
 import { getParticipation } from '$lib/server/db/participation';
 
 export const load: PageServerLoad = async ({ platform, cookies, params }) => {
@@ -26,11 +26,11 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 		throw error(404, 'Event not found');
 	}
 
-	// Load event program (scores on setlist)
+	// Load event program (editions on setlist)
 	const program = await getEventProgram(db, eventId);
 
-	// Load available scores (for adding to program)
-	const allScores = await listScores(db);
+	// Load available editions (for adding to program)
+	const allEditions = await getAllEditions(db);
 
 	// Check if user can manage this event
 	const canManage = canManageEvents(member);
@@ -49,7 +49,7 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 	return {
 		event,
 		program,
-		allScores,
+		allEditions,
 		canManage,
 		myParticipation,
 		hasStarted,

@@ -80,13 +80,13 @@ const PERMISSIONS: Record<Role, Permission[]> = {
 
 PDFs stored in D1 to avoid R2 billing requirement (see issue #33). Files >9.5MB split into chunks:
 
-- Small files: Single BLOB in `score_files.data`
-- Large files: `is_chunked=1`, chunks in `score_chunks` table (indexed by `score_id` + `chunk_index`)
+- Small files: Single BLOB in `edition_files.data`
+- Large files: `is_chunked=1`, chunks in `edition_chunks` table (indexed by `edition_id` + `chunk_index`)
 
-**Implementation**: [src/lib/server/storage/d1-chunked-storage.ts](../apps/vault/src/lib/server/storage/d1-chunked-storage.ts)
+**Implementation**: [src/lib/server/storage/edition-storage.ts](../apps/vault/src/lib/server/storage/edition-storage.ts)
 
 ```typescript
-const CHUNK_SIZE = 9 * 1024 * 1024; // 9MB per chunk
+const CHUNK_SIZE = 1.9 * 1024 * 1024; // ~1.9MB per chunk
 ```
 
 ### 4. EdDSA JWT Authentication (Phase 0)
@@ -140,17 +140,19 @@ $effect(() => { localState = data.value; }); // Sync on navigation
 - **member_sections**: Member section assignments (junction table with sections, migration 0003)
 - **voices**: Vocal ranges (Soprano, Alto, Tenor, Bass, etc., migration 0003)
 - **sections**: Performance sections (S1, S2, T1, T2, Full Choir, etc., migration 0003)
-- **scores**: Sheet music metadata (id, title, composer, license_type, file_key)
-- **score_files**: PDF BLOBs or chunking metadata
-- **score_chunks**: File chunks for large PDFs
+- **works**: Abstract compositions (title, composer, lyricist)
+- **editions**: Specific publications of works (name, arranger, license_type, file_key)
+- **edition_files**: PDF BLOBs or chunking metadata
+- **edition_chunks**: File chunks for large PDFs
+- **physical_copies**: Individual numbered copies of editions
+- **copy_assignments**: Who has which physical copy checked out
 - **invites**: Name-based invitations (migration 0009 - email verified by Registry OAuth)
 - **invite_voices**: Voice assignments for invites (junction table, migration 0003)
 - **invite_sections**: Section assignments for invites (junction table, migration 0003)
 - **takedowns**: DMCA/DSA takedown requests
-- **access_log**: Score view/download audit trail
 
-**Role types**: `'owner' | 'admin' | 'librarian'` (see [types.ts](../apps/vault/src/lib/types.ts))  
-**License types**: `'public_domain' | 'licensed' | 'owned' | 'pending'`  
+**Role types**: `'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader'` (see [types.ts](../apps/vault/src/lib/types.ts))  
+**License types**: `'public_domain' | 'licensed' | 'owned'`  
 **Invite flow**: Invites use name (not email) - email comes from Registry OAuth on acceptance (migration 0009)
 
 ## Development Workflows
@@ -235,7 +237,7 @@ pnpm run test:e2e      # Playwright only
 ### Vault
 
 - [apps/vault/src/lib/server/db/members.ts](../apps/vault/src/lib/server/db/members.ts) - Member CRUD operations (multi-role aware)
-- [apps/vault/src/lib/server/storage/d1-chunked-storage.ts](../apps/vault/src/lib/server/storage/d1-chunked-storage.ts) - Chunked BLOB storage
+- [apps/vault/src/lib/server/storage/edition-storage.ts](../apps/vault/src/lib/server/storage/edition-storage.ts) - Chunked BLOB storage
 - [apps/vault/src/routes/members/+page.svelte](../apps/vault/src/routes/members/+page.svelte) - Member management UI (role toggles)
 
 ## Documentation Structure
