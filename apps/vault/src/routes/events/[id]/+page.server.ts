@@ -4,8 +4,7 @@ import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canManageEvents, canRecordAttendance, canUploadScores } from '$lib/server/auth/permissions';
 import { getEventById } from '$lib/server/db/events';
-import { getEventProgram } from '$lib/server/db/programs';
-import { getAllEditions, getEditionsByWorkId } from '$lib/server/db/editions';
+import { getEditionsByWorkId } from '$lib/server/db/editions';
 import { getParticipation } from '$lib/server/db/participation';
 import { getEventRepertoire } from '$lib/server/db/event-repertoire';
 import { getEventMaterialsForMember } from '$lib/server/db/event-materials';
@@ -29,12 +28,6 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 	if (!event) {
 		throw error(404, 'Event not found');
 	}
-
-	// Load event program (legacy editions on setlist)
-	const program = await getEventProgram(db, eventId);
-
-	// Load available editions (for adding to program - legacy)
-	const allEditions = await getAllEditions(db);
 
 	// Check if user can manage this event
 	const canManage = canManageEvents(member);
@@ -94,8 +87,6 @@ export const load: PageServerLoad = async ({ platform, cookies, params }) => {
 
 	return {
 		event,
-		program,
-		allEditions,
 		canManage,
 		canManageLibrary,
 		myParticipation,

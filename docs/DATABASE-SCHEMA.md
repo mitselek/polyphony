@@ -523,9 +523,11 @@ Configuration settings for the vault (key-value store with audit trail).
 erDiagram
     members ||--o{ events : "creates"
     members ||--o{ participation : "RSVPs"
-    events ||--o{ event_programs : "has setlist"
+    events ||--o{ event_works : "has repertoire"
     events ||--o{ participation : "tracks attendance"
-    editions ||--o{ event_programs : "performed at"
+    works ||--o{ event_works : "performed at"
+    event_works ||--o{ event_work_editions : "uses editions"
+    editions ||--o{ event_work_editions : "selected for"
 
     events {
         TEXT id PK
@@ -536,10 +538,20 @@ erDiagram
         TEXT created_by FK
     }
 
-    event_programs {
-        TEXT event_id PK,FK
-        TEXT edition_id PK,FK
-        INTEGER position
+    event_works {
+        TEXT id PK
+        TEXT event_id FK
+        TEXT work_id FK
+        INTEGER display_order
+        TEXT notes
+    }
+
+    event_work_editions {
+        TEXT id PK
+        TEXT event_work_id FK
+        TEXT edition_id FK
+        INTEGER is_primary
+        TEXT notes
     }
 
     participation {
@@ -575,26 +587,53 @@ Rehearsals, concerts, and other choir events.
 
 ---
 
-#### event_programs
+#### event_works
 
-Setlists linking editions to events in order.
+Works assigned to an event (event repertoire).
 
-| Column     | Type    | Constraints                             | Description                |
-| ---------- | ------- | --------------------------------------- | -------------------------- |
-| event_id   | TEXT    | PK, FK → events(id) ON DELETE CASCADE   | Event reference            |
-| edition_id | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference          |
-| position   | INTEGER | NOT NULL, DEFAULT 0                     | Order in program (0-based) |
-| notes      | TEXT    |                                         | Notes about this piece     |
-| added_at   | TEXT    | DEFAULT now()                           | When added to program      |
+| Column        | Type    | Constraints                             | Description                |
+| ------------- | ------- | --------------------------------------- | -------------------------- |
+| id            | TEXT    | PK                                      | Assignment ID              |
+| event_id      | TEXT    | FK → events(id) ON DELETE CASCADE       | Event reference            |
+| work_id       | TEXT    | FK → works(id) ON DELETE CASCADE        | Work reference             |
+| display_order | INTEGER | NOT NULL, DEFAULT 0                     | Order in repertoire        |
+| notes         | TEXT    |                                         | Notes about this work      |
+| added_at      | TEXT    | DEFAULT now()                           | When added                 |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL     | Who added it               |
 
 **Indexes:**
 
-- `idx_event_programs_event` on event_id
-- `idx_event_programs_edition` on edition_id
+- `idx_event_works_event` on (event_id, display_order)
+- `idx_event_works_work` on work_id
 
 **Constraints:**
 
-- Composite primary key (event_id, edition_id) prevents duplicate editions in same event
+- UNIQUE(event_id, work_id) prevents duplicate works in same event
+
+---
+
+#### event_work_editions
+
+Editions selected for each event-work pairing.
+
+| Column        | Type    | Constraints                                 | Description               |
+| ------------- | ------- | ------------------------------------------- | ------------------------- |
+| id            | TEXT    | PK                                          | Assignment ID             |
+| event_work_id | TEXT    | FK → event_works(id) ON DELETE CASCADE      | Event-work reference      |
+| edition_id    | TEXT    | FK → editions(id) ON DELETE CASCADE         | Edition reference         |
+| is_primary    | INTEGER | NOT NULL, DEFAULT 0                         | Mark the main edition     |
+| notes         | TEXT    |                                             | Notes about this edition  |
+| added_at      | TEXT    | DEFAULT now()                               | When added                |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL         | Who added it              |
+
+**Indexes:**
+
+- `idx_event_work_editions_ew` on event_work_id
+- `idx_event_work_editions_edition` on edition_id
+
+**Constraints:**
+
+- UNIQUE(event_work_id, edition_id) prevents duplicate editions per event-work
 
 ---
 
@@ -675,7 +714,7 @@ RSVP and attendance tracking for events.
 
 | Migration | Description                                                                                                                                                                                                                  |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0001**  | **Complete schema** - Consolidated base schema with members, member_roles, scores, score_files, score_chunks, invites, sessions, takedowns, access_log, vault_settings, events, event_programs.                              |
+| **0001**  | **Complete schema** - Consolidated base schema with members, member_roles, scores, score_files, score_chunks, invites, sessions, takedowns, access_log, vault_settings, events.                                              |
 | **0002**  | **Section leader role** - Added `section_leader` to member_roles CHECK constraint.                                                                                                                                           |
 | **0003**  | **Voices and sections** - Added voices, sections, member_voices, member_sections, invite_voices, invite_sections tables. Removed voice_part columns from members and invites. Added triggers for single-primary enforcement. |
 | **0004**  | **Remove default_voice_part** - Removed deprecated setting from vault_settings.                                                                                                                                              |
@@ -688,7 +727,11 @@ RSVP and attendance tracking for events.
 | **0016**  | **Physical copies** - Added physical_copies table for inventory tracking.                                                                                                                                                    |
 | **0017**  | **Copy assignments** - Added copy_assignments table for tracking who has which physical copy.                                                                                                                                |
 | **0020**  | **Drop legacy scores** - Removed scores, score_files, score_chunks, access_log tables after migration to works/editions.                                                                                                     |
-| **0021**  | **Event programs edition_id** - Renamed `score_id` → `edition_id` in event_programs table.                                                                                                                                   |
+| **0021**  | **Event programs edition_id** - Renamed `score_id` → `edition_id` in event_programs table (deprecated).                                                                                                                      |
+| **0022**  | **Seasons** - Added seasons table for annual/term-based repertoire organization.                                                                                                                                             |
+| **0023**  | **Season repertoire** - Added season_works and season_work_editions tables for season-level repertoire.                                                                                                                      |
+| **0024**  | **Event repertoire** - Added event_works and event_work_editions tables for event-level repertoire (replaces event_programs).                                                                                                |
+| **0025**  | **Drop event_programs** - Removed deprecated event_programs table after migration to event_works/event_work_editions.                                                                                                        |
 
 ## See Also
 
