@@ -103,6 +103,133 @@ export async function getMissingCopiesForEvent(
 	};
 }
 
+// ============================================================================
+// COLLECTION REMINDERS (Issue #126)
+// ============================================================================
+
+/**
+ * Outstanding copy that needs to be collected
+ */
+export interface OutstandingCopy {
+	assignmentId: string;
+	memberId: string;
+	memberName: string;
+	editionId: string;
+	editionName: string;
+	workTitle: string;
+	copyId: string;
+	copyNumber: string;
+	assignedAt: string;
+}
+
+/**
+ * Outstanding copies grouped by member
+ */
+export interface OutstandingCopiesByMember {
+	memberId: string;
+	memberName: string;
+	copies: OutstandingCopy[];
+}
+
+interface OutstandingCopyRow {
+	assignment_id: string;
+	member_id: string;
+	member_name: string;
+	edition_id: string;
+	edition_name: string;
+	work_title: string;
+	copy_id: string;
+	copy_number: string;
+	assigned_at: string;
+}
+
+/**
+ * Get all unreturned copies for editions in a season's repertoire
+ *
+ * Logic:
+ * 1. Get all editions in season repertoire (season_works → season_work_editions)
+ * 2. Find physical copies of those editions
+ * 3. Return assignments that are still active (returned_at IS NULL)
+ */
+export async function getOutstandingCopiesForSeason(
+	db: D1Database,
+	seasonId: string
+): Promise<OutstandingCopiesByMember[]> {
+	const query = `
+		SELECT 
+			ca.id as assignment_id,
+			m.id as member_id,
+			m.name as member_name,
+			e.id as edition_id,
+			e.name as edition_name,
+			w.title as work_title,
+			pc.id as copy_id,
+			pc.copy_number,
+			ca.assigned_at
+		FROM season_works sw
+		JOIN season_work_editions swe ON swe.season_work_id = sw.id
+		JOIN editions e ON e.id = swe.edition_id
+		JOIN works w ON w.id = e.work_id
+		JOIN physical_copies pc ON pc.edition_id = e.id
+		JOIN copy_assignments ca ON ca.copy_id = pc.id
+		JOIN members m ON m.id = ca.member_id
+		WHERE sw.season_id = ?
+			AND ca.returned_at IS NULL
+		ORDER BY m.name, w.title, e.name, pc.copy_number COLLATE NOCASE
+	`;
+
+	const { results } = await db.prepare(query).bind(seasonId).all<OutstandingCopyRow>();
+
+	// Group by member
+	const byMember = new Map<string, OutstandingCopiesByMember>();
+
+	for (const row of results) {
+		const copy: OutstandingCopy = {
+			assignmentId: row.assignment_id,
+			memberId: row.member_id,
+			memberName: row.member_name,
+			editionId: row.edition_id,
+			editionName: row.edition_name,
+			workTitle: row.work_title,
+			copyId: row.copy_id,
+			copyNumber: row.copy_number,
+			assignedAt: row.assigned_at
+		};
+
+		if (!byMember.has(row.member_id)) {
+			byMember.set(row.member_id, {
+				memberId: row.member_id,
+				memberName: row.member_name,
+				copies: []
+			});
+		}
+		byMember.get(row.member_id)!.copies.push(copy);
+	}
+
+	return Array.from(byMember.values());
+}
+
+/**
+ * Bulk return multiple copies
+ * Returns count of assignments actually marked as returned
+ */
+export async function bulkReturnCopies(
+	db: D1Database,
+	assignmentIds: string[]
+): Promise<number> {
+	if (assignmentIds.length === 0) return 0;
+
+	const placeholders = assignmentIds.map(() => '?').join(',');
+	const result = await db
+		.prepare(
+			`UPDATE copy_assignments SET returned_at = datetime('now') WHERE id IN (${placeholders}) AND returned_at IS NULL`
+		)
+		.bind(...assignmentIds)
+		.run();
+
+	return result.meta.changes ?? 0;
+}
+
 /**
  * Get missing copies for a season
  * Uses season_works → season_work_editions instead of event_works
