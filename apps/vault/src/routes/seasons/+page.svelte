@@ -162,6 +162,24 @@
 		endDate.setDate(endDate.getDate() - 1);
 		return endDate.toISOString().split('T')[0];
 	}
+
+	/**
+	 * Check if today falls within the season's date range
+	 */
+	function isCurrentSeason(season: Season, index: number): boolean {
+		const today = new Date().toISOString().split('T')[0];
+		const startDate = season.start_date;
+		const endDate = getSeasonEndDate(season, index);
+
+		// Today must be >= start date
+		if (today < startDate) return false;
+
+		// If no end date (most recent season), today just needs to be >= start
+		if (!endDate) return true;
+
+		// Today must be <= end date
+		return today <= endDate;
+	}
 </script>
 
 <svelte:head>
@@ -270,6 +288,7 @@
 		<div class="space-y-4">
 			{#each seasons as season, index (season.id)}
 				{@const endDate = getSeasonEndDate(season, index)}
+				{@const isCurrent = isCurrentSeason(season, index)}
 				<Card variant={data.canManage ? 'interactive' : 'static'} padding="lg">
 					<div class="flex items-center justify-between">
 						<div class="flex-1">
@@ -282,7 +301,7 @@
 										{season.name}
 									</a>
 								</h3>
-								{#if index === 0}
+								{#if isCurrent}
 									<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
 										Current
 									</span>
@@ -293,8 +312,6 @@
 								{#if endDate}
 									<span class="text-gray-400">→</span>
 									{formatDate(endDate)}
-								{:else}
-									<span class="text-gray-400">→ ongoing</span>
 								{/if}
 							</p>
 						</div>

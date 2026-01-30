@@ -19,6 +19,7 @@
 					<a href="/works" class="text-gray-600 hover:text-gray-900">Library</a>
 					<a href="/events" class="text-gray-600 hover:text-gray-900">Events</a>
 					<a href="/events/roster" class="text-gray-600 hover:text-gray-900">Roster</a>
+					<a href="/seasons" class="text-gray-600 hover:text-gray-900">Seasons</a>
 					{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
 						<a href="/editions" class="text-gray-600 hover:text-gray-900">Editions</a>
 					{/if}
@@ -64,6 +65,7 @@
 						<a href="/works" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Library</a>
 						<a href="/events" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Events</a>
 						<a href="/events/roster" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Roster</a>
+						<a href="/seasons" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Seasons</a>
 						{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
 							<a href="/editions" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>Editions</a>
 						{/if}
