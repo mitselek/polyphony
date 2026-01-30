@@ -42,80 +42,71 @@ export const OPTIONS: RequestHandler = async () => {
 	return new Response(null, { status: 204, headers: CORS_HEADERS });
 };
 
-export const POST: RequestHandler = async ({ request, platform, url }) => {
-	const env = (platform as CloudflarePlatform | undefined)?.env;
-	const db = env?.DB;
-	const resendKey = env?.RESEND_API_KEY;
+interface Vault { id: string; name: string; callback_url: string; }
 
-	if (!db) {
-		return corsJson({ success: false, error: 'Database unavailable' }, { status: 500 });
-	}
-
-	if (!resendKey) {
-		console.error('RESEND_API_KEY not configured');
-		return corsJson({ success: false, error: 'Email service unavailable' }, { status: 500 });
-	}
-
-	// Parse request body
-	let body: EmailAuthRequest;
-	try {
-		body = await request.json();
-	} catch {
-		return corsJson({ success: false, error: 'Invalid JSON' }, { status: 400 });
-	}
-
-	const { email, vault_id, callback } = body;
-
-	// Validate email format
+/** Validate request body and return parsed data or error response */
+function validateRequest(body: unknown): { data?: EmailAuthRequest; error?: Response } {
+	const { email, vault_id, callback } = body as EmailAuthRequest;
 	if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
-		return corsJson({ success: false, error: 'Invalid email address' }, { status: 400 });
+		return { error: corsJson({ success: false, error: 'Invalid email address' }, { status: 400 }) };
 	}
-
-	// Validate required fields
 	if (!vault_id || typeof vault_id !== 'string') {
-		return corsJson({ success: false, error: 'Missing vault_id' }, { status: 400 });
+		return { error: corsJson({ success: false, error: 'Missing vault_id' }, { status: 400 }) };
 	}
-
 	if (!callback || typeof callback !== 'string') {
-		return corsJson({ success: false, error: 'Missing callback' }, { status: 400 });
+		return { error: corsJson({ success: false, error: 'Missing callback' }, { status: 400 }) };
 	}
+	return { data: { email, vault_id, callback } };
+}
 
-	// Verify vault exists and callback matches
+/** Lookup vault and verify callback matches */
+async function lookupVault(db: D1Database, vaultId: string, callback: string): Promise<Vault | null> {
 	const vault = await db
 		.prepare('SELECT id, name, callback_url FROM vaults WHERE id = ? AND active = 1')
-		.bind(vault_id)
-		.first<{ id: string; name: string; callback_url: string }>();
+		.bind(vaultId)
+		.first<Vault>();
+	return vault?.callback_url === callback ? vault : null;
+}
 
-	if (!vault || vault.callback_url !== callback) {
-		// Don't reveal if vault exists - return generic success
-		// This prevents enumeration attacks
-		return corsJson({ success: true, message: 'If valid, check your email' });
-	}
+interface SendMagicLinkContext {
+	db: D1Database;
+	resendKey: string;
+	origin: string;
+	email: string;
+	vaultId: string;
+	callback: string;
+	vaultName: string;
+}
 
-	// Create auth code (includes rate limiting)
-	const codeResult = await createAuthCode(db, email, vault_id, callback);
+/** Create auth code and send magic link email, return response */
+async function createAndSendMagicLink(ctx: SendMagicLinkContext): Promise<Response> {
+	const codeResult = await createAuthCode(ctx.db, ctx.email, ctx.vaultId, ctx.callback);
+	if (!codeResult.success) return corsJson({ success: false, error: codeResult.error }, { status: 429 });
 
-	if (!codeResult.success) {
-		// Rate limit error - return 429
-		return corsJson({ success: false, error: codeResult.error }, { status: 429 });
-	}
+	const verifyUrl = `${ctx.origin}/auth/verify?code=${codeResult.code}&email=${encodeURIComponent(ctx.email.toLowerCase())}`;
+	const emailResult = await sendMagicLink(ctx.resendKey, { to: ctx.email, code: codeResult.code!, verifyUrl, vaultName: ctx.vaultName });
 
-	// Build verification URL
-	const verifyUrl = `${url.origin}/auth/verify?code=${codeResult.code}&email=${encodeURIComponent(email.toLowerCase())}`;
-
-	// Send magic link email
-	const emailResult = await sendMagicLink(resendKey, {
-		to: email,
-		code: codeResult.code!,
-		verifyUrl,
-		vaultName: vault.name
-	});
-
-	if (!emailResult.success) {
-		console.error('Failed to send magic link:', emailResult.error);
-		// Don't expose internal error details
-		return corsJson({ success: false, error: 'Failed to send email. Please try again.' }, { status: 500 });
-	}
-
+	if (!emailResult.success) return corsJson({ success: false, error: 'Failed to send email. Please try again.' }, { status: 500 });
 	return corsJson({ success: true, message: 'Check your email for a magic link' });
+}
+
+export const POST: RequestHandler = async ({ request, platform, url }) => {
+	const env = (platform as CloudflarePlatform | undefined)?.env;
+	if (!env?.DB) return corsJson({ success: false, error: 'Database unavailable' }, { status: 500 });
+	if (!env.RESEND_API_KEY) return corsJson({ success: false, error: 'Email service unavailable' }, { status: 500 });
+
+	let body: unknown;
+	try { body = await request.json(); } catch { return corsJson({ success: false, error: 'Invalid JSON' }, { status: 400 }); }
+
+	const validation = validateRequest(body);
+	if (validation.error) return validation.error;
+	const { email, vault_id, callback } = validation.data!;
+
+	const vault = await lookupVault(env.DB, vault_id, callback);
+	if (!vault) return corsJson({ success: true, message: 'If valid, check your email' });
+
+	return createAndSendMagicLink({
+		db: env.DB, resendKey: env.RESEND_API_KEY, origin: url.origin,
+		email, vaultId: vault_id, callback, vaultName: vault.name
+	});
 };

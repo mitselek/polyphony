@@ -2,21 +2,15 @@
 // Issue #156 - Email Authentication
 
 const CODE_LENGTH = 6;
-// Exclude confusing characters: 0/O, 1/I/L
-const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // Exclude 0/O, 1/I/L
 const CODE_EXPIRY_MINUTES = 10;
 const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_HOURS = 1;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
-/**
- * Generate a random 6-character verification code
- * Uses characters that are easy to read and type
- */
+/** Generate a random 6-character verification code */
 export function generateCode(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
-	return Array.from(bytes)
-		.map((b) => CODE_CHARS[b % CODE_CHARS.length])
-		.join('');
+	return Array.from(bytes).map((b) => CODE_CHARS[b % CODE_CHARS.length]).join('');
 }
 
 export interface CreateCodeResult {
@@ -25,75 +19,71 @@ export interface CreateCodeResult {
 	error?: string;
 }
 
-/**
- * Create a new auth code for email verification
- * Enforces rate limiting: 3 attempts per email per hour
- */
-export async function createAuthCode(
-	db: D1Database,
-	email: string,
-	vaultId: string,
-	callbackUrl: string
-): Promise<CreateCodeResult> {
-	const normalizedEmail = email.toLowerCase().trim();
+interface RateLimitRecord {
+	attempts: number;
+	window_start: string;
+}
 
-	// Check rate limit
-	const rateLimit = await db
+/** Check rate limit and return error message if exceeded */
+async function checkRateLimit(db: D1Database, email: string): Promise<string | null> {
+	const record = await db
 		.prepare('SELECT attempts, window_start FROM email_rate_limits WHERE email = ?')
-		.bind(normalizedEmail)
-		.first<{ attempts: number; window_start: string }>();
+		.bind(email)
+		.first<RateLimitRecord>();
 
-	if (rateLimit) {
-		const windowStart = new Date(rateLimit.window_start + 'Z'); // Ensure UTC
-		const windowEnd = new Date(windowStart.getTime() + RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000);
-		const now = new Date();
+	if (!record) return null;
 
-		if (now < windowEnd && rateLimit.attempts >= RATE_LIMIT_MAX) {
-			const minutesLeft = Math.ceil((windowEnd.getTime() - now.getTime()) / 60000);
-			return {
-				success: false,
-				error: `Too many attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}.`
-			};
-		}
+	const windowEnd = new Date(record.window_start + 'Z').getTime() + RATE_LIMIT_WINDOW_MS;
+	const now = Date.now();
 
-		if (now >= windowEnd) {
-			// Reset window
-			await db
-				.prepare(
-					"UPDATE email_rate_limits SET attempts = 1, window_start = datetime('now') WHERE email = ?"
-				)
-				.bind(normalizedEmail)
-				.run();
-		} else {
-			// Increment attempts
-			await db
-				.prepare('UPDATE email_rate_limits SET attempts = attempts + 1 WHERE email = ?')
-				.bind(normalizedEmail)
-				.run();
-		}
-	} else {
-		// First attempt - create rate limit record
-		await db
-			.prepare(
-				"INSERT INTO email_rate_limits (email, attempts, window_start) VALUES (?, 1, datetime('now'))"
-			)
-			.bind(normalizedEmail)
-			.run();
+	if (now < windowEnd && record.attempts >= RATE_LIMIT_MAX) {
+		const minutesLeft = Math.ceil((windowEnd - now) / 60000);
+		return `Too many attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}.`;
+	}
+	return null;
+}
+
+/** Update or create rate limit record */
+async function updateRateLimit(db: D1Database, email: string): Promise<void> {
+	const record = await db
+		.prepare('SELECT attempts, window_start FROM email_rate_limits WHERE email = ?')
+		.bind(email)
+		.first<RateLimitRecord>();
+
+	if (!record) {
+		await db.prepare("INSERT INTO email_rate_limits (email, attempts, window_start) VALUES (?, 1, datetime('now'))")
+			.bind(email).run();
+		return;
 	}
 
-	// Generate unique code
-	const code = generateCode();
+	const windowEnd = new Date(record.window_start + 'Z').getTime() + RATE_LIMIT_WINDOW_MS;
+	if (Date.now() >= windowEnd) {
+		await db.prepare("UPDATE email_rate_limits SET attempts = 1, window_start = datetime('now') WHERE email = ?")
+			.bind(email).run();
+	} else {
+		await db.prepare('UPDATE email_rate_limits SET attempts = attempts + 1 WHERE email = ?')
+			.bind(email).run();
+	}
+}
+
+/** Store a new auth code in the database */
+async function storeAuthCode(db: D1Database, email: string, code: string, vaultId: string, callbackUrl: string): Promise<void> {
 	const id = crypto.randomUUID();
 	const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
+	await db.prepare(`INSERT INTO email_auth_codes (id, email, code, vault_id, callback_url, expires_at) VALUES (?, ?, ?, ?, ?, ?)`)
+		.bind(id, email, code, vaultId, callbackUrl, expiresAt).run();
+}
 
-	// Store code
-	await db
-		.prepare(
-			`INSERT INTO email_auth_codes (id, email, code, vault_id, callback_url, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-		)
-		.bind(id, normalizedEmail, code, vaultId, callbackUrl, expiresAt)
-		.run();
+/** Create a new auth code for email verification (with rate limiting) */
+export async function createAuthCode(db: D1Database, email: string, vaultId: string, callbackUrl: string): Promise<CreateCodeResult> {
+	const normalizedEmail = email.toLowerCase().trim();
+
+	const rateLimitError = await checkRateLimit(db, normalizedEmail);
+	if (rateLimitError) return { success: false, error: rateLimitError };
+
+	await updateRateLimit(db, normalizedEmail);
+	const code = generateCode();
+	await storeAuthCode(db, normalizedEmail, code, vaultId, callbackUrl);
 
 	return { success: true, code };
 }

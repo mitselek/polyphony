@@ -14,64 +14,38 @@ interface CloudflarePlatform {
 	};
 }
 
+/** Get active signing key from database */
+async function getSigningKey(db: D1Database): Promise<string> {
+	const key = await db
+		.prepare('SELECT private_key FROM signing_keys WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT 1')
+		.first<{ private_key: string }>();
+	if (!key) throw error(500, 'Authentication service misconfigured');
+	return key.private_key;
+}
+
+/** Create signed JWT for verified user */
+async function createAuthToken(db: D1Database, email: string, vaultId: string): Promise<string> {
+	const privateKey = await getSigningKey(db);
+	return signToken({ iss: 'https://registry.polyphony.app', sub: email, aud: vaultId, nonce: nanoid(), email }, privateKey);
+}
+
 export const GET: RequestHandler = async ({ url, platform }) => {
 	const db = (platform as CloudflarePlatform | undefined)?.env?.DB;
-
-	if (!db) {
-		throw error(500, 'Database unavailable');
-	}
+	if (!db) throw error(500, 'Database unavailable');
 
 	const code = url.searchParams.get('code');
 	const email = url.searchParams.get('email');
+	if (!code || !email) throw redirect(303, `/auth/error?message=${encodeURIComponent('Missing code or email')}`);
 
-	if (!code || !email) {
-		throw redirect(303, `/auth/error?message=${encodeURIComponent('Missing code or email')}`);
-	}
-
-	// Verify the code
 	const result = await verifyCode(db, code, email);
-
 	if (!result.success) {
-		// Redirect to error page with message and callback for retry
-		const errorParams = new URLSearchParams({
-			message: result.error || 'Verification failed'
-		});
-
-		if (result.callbackUrl) {
-			errorParams.set('callback', result.callbackUrl);
-		}
-
-		throw redirect(303, `/auth/error?${errorParams.toString()}`);
+		const params = new URLSearchParams({ message: result.error || 'Verification failed' });
+		if (result.callbackUrl) params.set('callback', result.callbackUrl);
+		throw redirect(303, `/auth/error?${params.toString()}`);
 	}
 
-	// Get signing key
-	const signingKey = await db
-		.prepare(
-			'SELECT private_key FROM signing_keys WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT 1'
-		)
-		.first<{ private_key: string }>();
-
-	if (!signingKey) {
-		console.error('No active signing key found');
-		throw error(500, 'Authentication service misconfigured');
-	}
-
-	// Sign JWT (same format as Google OAuth callback)
-	const token = await signToken(
-		{
-			iss: 'https://registry.polyphony.app',
-			sub: result.email!,
-			aud: result.vaultId!,
-			nonce: nanoid(),
-			email: result.email!
-			// No name/picture for email auth (unlike Google OAuth)
-		},
-		signingKey.private_key
-	);
-
-	// Redirect to vault callback with token
+	const token = await createAuthToken(db, result.email!, result.vaultId!);
 	const callbackUrl = new URL(result.callbackUrl!);
 	callbackUrl.searchParams.set('token', token);
-
 	throw redirect(303, callbackUrl.toString());
 };
