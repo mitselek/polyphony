@@ -367,18 +367,6 @@ describe('createInvite (roster-linked)', () => {
 			})
 		).rejects.toThrow('already has a pending invitation');
 	});
-
-	it.skip('includes email_hint in invite (SKIPPED - not in production DB)', async () => {
-		const invite = await createInvite(mockDb, {
-			rosterMemberId: rosterId,
-			roles: ['librarian'],
-			emailHint: 'john@example.com',
-			invited_by: adminId
-		});
-
-		// Production DB doesn't have email_hint column
-		// expect(invite.email_hint).toBe('john@example.com');
-	});
 });
 
 describe('acceptInvite (roster upgrade)', () => {
@@ -426,16 +414,6 @@ describe('acceptInvite (roster upgrade)', () => {
 		expect(member).toBeDefined();
 		expect(member!.email_id).toBe('jane@oauth.com');
 		expect(member!.name).toBe('Jane Doe');
-	});
-
-	it.skip('transfers roles from invite to member (SKIPPED - roles not in production DB)', async () => {
-		await acceptInvite(mockDb, inviteToken, 'jane@oauth.com');
-
-		const member = await getMemberById(mockDb, rosterId);
-		// Production DB doesn't store roles in invites table
-		// Would need invite_roles junction table to test this
-		// expect(member!.roles).toContain('librarian');
-		// expect(member!.roles).toContain('conductor');
 	});
 
 	it('preserves voices and sections from roster member', async () => {
