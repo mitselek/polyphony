@@ -60,3 +60,45 @@ export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
 }
+
+// =============================================================================
+// Email Authentication (Issue #156)
+// =============================================================================
+
+/**
+ * Request body for POST /auth/email
+ */
+export interface EmailAuthRequest {
+  /** User's email address */
+  email: string;
+  /** Vault ID requesting authentication */
+  vault_id: string;
+  /** Callback URL for token delivery (must match registered URL) */
+  callback: string;
+}
+
+/**
+ * Response from POST /auth/email
+ */
+export interface EmailAuthResponse {
+  /** Whether the request was accepted */
+  success: boolean;
+  /** User-facing message */
+  message?: string;
+  /** Error message (if success=false) */
+  error?: string;
+}
+
+/**
+ * Stored email auth code record
+ */
+export interface EmailAuthCode {
+  id: string;
+  email: string;
+  code: string;
+  vaultId: string;
+  callbackUrl: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt: string | null;
+}

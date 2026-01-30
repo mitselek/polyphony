@@ -1,6 +1,6 @@
 # Database Schema
 
-Vault D1 database schema (SQLite). Current state after migrations 0001-0021.
+Vault D1 database schema (SQLite). Current state after migrations 0001-0025.
 
 ## Tables
 
@@ -99,18 +99,6 @@ erDiagram
         TEXT parent_section_id FK "hierarchical"
         INTEGER display_order
     }
-
-    member_voices {
-        TEXT member_id PK,FK
-        TEXT voice_id PK,FK
-        INTEGER is_primary
-    }
-
-    member_sections {
-        TEXT member_id PK,FK
-        TEXT section_id PK,FK
-        INTEGER is_primary
-    }
 ```
 
 #### voices
@@ -208,98 +196,345 @@ Junction table: which sections each member is assigned to.
 
 ---
 
-### Scores
+### Score Library
 
 ```mermaid
 erDiagram
-    members ||--o{ scores : "uploads"
-    scores ||--|| score_files : "stored as"
-    scores ||--o{ score_chunks : "chunked as"
-    scores ||--o{ access_log : "tracked in"
-    scores ||--o{ takedowns : "claimed by"
+    works ||--o{ editions : "has publications"
+    editions ||--o{ edition_sections : "covers"
+    editions ||--|| edition_files : "stored as"
+    editions ||--o{ edition_chunks : "chunked as"
+    editions ||--o{ physical_copies : "has copies"
+    sections ||--o{ edition_sections : "covered by"
 
-    scores {
+    works {
         TEXT id PK
         TEXT title
         TEXT composer
-        TEXT license_type
-        TEXT file_key
-        TEXT uploaded_by FK
+        TEXT lyricist
     }
 
-    score_files {
-        TEXT score_id PK,FK
+    editions {
+        TEXT id PK
+        TEXT work_id FK
+        TEXT name
+        TEXT edition_type
+        TEXT license_type
+        TEXT file_key
+    }
+
+    edition_sections {
+        TEXT edition_id PK,FK
+        TEXT section_id PK,FK
+    }
+
+    edition_files {
+        TEXT edition_id PK,FK
         BLOB data
         INTEGER size
         INTEGER is_chunked
     }
 
-    score_chunks {
-        TEXT score_id PK,FK
+    edition_chunks {
+        TEXT edition_id PK,FK
         INTEGER chunk_index PK
         BLOB data
     }
 ```
 
-#### scores
+#### works
 
-Sheet music metadata.
+Abstract musical compositions (independent of specific publications).
 
-| Column       | Type | Constraints      | Description                                     |
-| ------------ | ---- | ---------------- | ----------------------------------------------- |
-| id           | TEXT | PK               | Unique score ID                                 |
-| title        | TEXT | NOT NULL         | Score title                                     |
-| composer     | TEXT |                  | Composer name                                   |
-| arranger     | TEXT |                  | Arranger name                                   |
-| license_type | TEXT | CHECK            | `public_domain`, `licensed`, `owned`, `pending` |
-| file_key     | TEXT | NOT NULL         | Storage key (legacy, unused with D1)            |
-| uploaded_by  | TEXT | FK → members(id) | Uploader                                        |
-| uploaded_at  | TEXT | DEFAULT now()    | Upload timestamp                                |
-| deleted_at   | TEXT |                  | Soft delete timestamp                           |
-
-**Indexes:** None additional
-
----
-
-#### score_files
-
-PDF metadata and single-row storage (≤2MB files).
-
-| Column        | Type    | Constraints         | Description                           |
-| ------------- | ------- | ------------------- | ------------------------------------- |
-| score_id      | TEXT    | PK, FK → scores(id) | Score reference                       |
-| data          | BLOB    |                     | PDF binary (NULL if `is_chunked=1`)   |
-| size          | INTEGER | NOT NULL            | Total file size in bytes              |
-| original_name | TEXT    |                     | Original filename                     |
-| uploaded_at   | TEXT    | DEFAULT now()       | Upload timestamp                      |
-| is_chunked    | INTEGER | NOT NULL, DEFAULT 0 | 0=single row, 1=chunked               |
-| chunk_count   | INTEGER |                     | Number of chunks (NULL if single row) |
-
-**Indexes:** None additional (PK on score_id)
-
----
-
-#### score_chunks
-
-Large file storage (>2MB files split into chunks).
-
-| Column      | Type    | Constraints         | Description                |
-| ----------- | ------- | ------------------- | -------------------------- |
-| score_id    | TEXT    | PK, FK → scores(id) | Score reference            |
-| chunk_index | INTEGER | PK                  | Chunk number (0-based)     |
-| data        | BLOB    | NOT NULL            | Chunk binary data (~1.9MB) |
-| size        | INTEGER | NOT NULL            | Chunk size in bytes        |
+| Column     | Type | Constraints   | Description          |
+| ---------- | ---- | ------------- | -------------------- |
+| id         | TEXT | PK            | Work ID              |
+| title      | TEXT | NOT NULL      | Composition title    |
+| composer   | TEXT |               | Composer name        |
+| lyricist   | TEXT |               | Lyricist/librettist  |
+| created_at | TEXT | DEFAULT now() | Creation timestamp   |
 
 **Indexes:**
 
-- `idx_score_chunks_score_id` on score_id
+- `idx_works_title` on title
+- `idx_works_composer` on composer
+
+---
+
+#### editions
+
+Specific publications or arrangements of a work.
+
+| Column           | Type     | Constraints                        | Description                              |
+| ---------------- | -------- | ---------------------------------- | ---------------------------------------- |
+| id               | TEXT     | PK                                 | Edition ID                               |
+| work_id          | TEXT     | NOT NULL, FK → works(id) CASCADE   | Parent work                              |
+| name             | TEXT     | NOT NULL                           | Edition name (e.g., "Novello Vocal")     |
+| arranger         | TEXT     |                                    | Arranger name                            |
+| publisher        | TEXT     |                                    | Publisher name                           |
+| voicing          | TEXT     |                                    | Voice arrangement (e.g., "SATB")         |
+| edition_type     | TEXT     | NOT NULL, DEFAULT 'vocal_score'    | See Edition Types below                  |
+| license_type     | TEXT     | NOT NULL, DEFAULT 'owned'          | `public_domain`, `licensed`, `owned`     |
+| notes            | TEXT     |                                    | Internal notes                           |
+| external_url     | TEXT     |                                    | Link to external resource (IMSLP, etc.)  |
+| file_key         | TEXT     |                                    | Storage key (if uploaded)                |
+| file_name        | TEXT     |                                    | Original filename                        |
+| file_size        | INTEGER  |                                    | File size in bytes                       |
+| file_uploaded_at | DATETIME |                                    | Upload timestamp                         |
+| file_uploaded_by | TEXT     | FK → members(id)                   | Who uploaded                             |
+| created_at       | DATETIME | DEFAULT now()                      | Creation timestamp                       |
+
+**Indexes:**
+
+- `idx_editions_work_id` on work_id
+- `idx_editions_edition_type` on edition_type
+
+**Edition Types:**
+
+- `full_score` - Conductor's score with all parts
+- `vocal_score` - Voice parts with piano reduction
+- `part` - Individual instrumental part
+- `reduction` - Simplified arrangement
+- `audio` - Audio recording
+- `video` - Video recording
+- `supplementary` - Supporting materials
+
+---
+
+#### edition_sections
+
+Junction table: which sections an edition covers (for coverage validation).
+
+| Column     | Type | Constraints                             | Description       |
+| ---------- | ---- | --------------------------------------- | ----------------- |
+| edition_id | TEXT | PK, FK → editions(id) ON DELETE CASCADE | Edition reference |
+| section_id | TEXT | PK, FK → sections(id) ON DELETE CASCADE | Section reference |
+
+**Indexes:**
+
+- `idx_edition_sections_section_id` on section_id
+
+---
+
+#### edition_files
+
+PDF metadata and single-row storage (≤2MB files).
+
+| Column        | Type    | Constraints                            | Description                           |
+| ------------- | ------- | -------------------------------------- | ------------------------------------- |
+| edition_id    | TEXT    | PK, FK → editions(id) ON DELETE CASCADE| Edition reference                     |
+| data          | BLOB    |                                        | PDF binary (NULL if `is_chunked=1`)   |
+| size          | INTEGER | NOT NULL                               | Total file size in bytes              |
+| original_name | TEXT    |                                        | Original filename                     |
+| uploaded_at   | TEXT    | DEFAULT now()                          | Upload timestamp                      |
+| is_chunked    | INTEGER | NOT NULL, DEFAULT 0                    | 0=single row, 1=chunked               |
+| chunk_count   | INTEGER |                                        | Number of chunks (NULL if single row) |
+
+---
+
+#### edition_chunks
+
+Large file storage (>2MB files split into chunks).
+
+| Column      | Type    | Constraints                             | Description                |
+| ----------- | ------- | --------------------------------------- | -------------------------- |
+| edition_id  | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference          |
+| chunk_index | INTEGER | PK                                      | Chunk number (0-based)     |
+| data        | BLOB    | NOT NULL                                | Chunk binary data (~1.9MB) |
+| size        | INTEGER | NOT NULL                                | Chunk size in bytes        |
+
+**Indexes:**
+
+- `idx_edition_chunks_edition_id` on edition_id
 
 **Chunking Strategy:**
 
-- Files ≤2MB: Single row in `score_files` (`data` filled, `is_chunked=0`)
-- Files >2MB: Metadata row in `score_files` (`data=NULL`, `is_chunked=1`) + N rows in `score_chunks`
+- Files ≤2MB: Single row in `edition_files` (`data` filled, `is_chunked=0`)
+- Files >2MB: Metadata row in `edition_files` (`data=NULL`, `is_chunked=1`) + N rows in `edition_chunks`
 - Chunk size: ~1.9MB (safely under D1's 2MB row limit)
 - Max file size: ~9.5MB (5 chunks × 1.9MB)
+
+---
+
+### Physical Inventory
+
+```mermaid
+erDiagram
+    editions ||--o{ physical_copies : "has copies"
+    physical_copies ||--o{ copy_assignments : "assigned to"
+    members ||--o{ copy_assignments : "holds"
+
+    physical_copies {
+        TEXT id PK
+        TEXT edition_id FK
+        TEXT copy_number UK
+        TEXT condition
+    }
+
+    copy_assignments {
+        TEXT id PK
+        TEXT copy_id FK
+        TEXT member_id FK
+        TEXT assigned_at
+        TEXT returned_at
+    }
+```
+
+#### physical_copies
+
+Individual numbered copies of editions in the choir's inventory.
+
+| Column      | Type     | Constraints                            | Description                                |
+| ----------- | -------- | -------------------------------------- | ------------------------------------------ |
+| id          | TEXT     | PK                                     | Copy ID                                    |
+| edition_id  | TEXT     | NOT NULL, FK → editions(id) CASCADE    | Parent edition                             |
+| copy_number | TEXT     | NOT NULL                               | Copy identifier (e.g., "1", "M-01")        |
+| condition   | TEXT     | DEFAULT 'good', CHECK                  | `good`, `fair`, `poor`, `lost`             |
+| acquired_at | DATE     |                                        | When acquired                              |
+| notes       | TEXT     |                                        | Notes about this copy                      |
+| created_at  | DATETIME | DEFAULT now()                          | Creation timestamp                         |
+
+**Indexes:**
+
+- `idx_physical_copies_edition` on edition_id
+- `idx_physical_copies_condition` on condition
+
+**Constraints:**
+
+- UNIQUE(edition_id, copy_number) - Copy numbers unique within edition
+
+---
+
+#### copy_assignments
+
+Tracks who has which physical copy (check-out/return workflow).
+
+| Column      | Type | Constraints                                   | Description                            |
+| ----------- | ---- | --------------------------------------------- | -------------------------------------- |
+| id          | TEXT | PK                                            | Assignment ID                          |
+| copy_id     | TEXT | NOT NULL, FK → physical_copies(id) CASCADE    | Copy being assigned                    |
+| member_id   | TEXT | NOT NULL, FK → members(id) CASCADE            | Member receiving copy                  |
+| assigned_at | TEXT | NOT NULL, DEFAULT now()                       | Check-out timestamp                    |
+| assigned_by | TEXT | FK → members(id) ON DELETE SET NULL           | Librarian who assigned                 |
+| returned_at | TEXT |                                               | Return timestamp (NULL = still out)    |
+| notes       | TEXT |                                               | Assignment notes                       |
+| created_at  | TEXT | NOT NULL, DEFAULT now()                       | Record creation timestamp              |
+
+**Indexes:**
+
+- `idx_copy_assignments_copy_id` on copy_id
+- `idx_copy_assignments_member_id` on member_id
+- `idx_copy_assignments_active` PARTIAL on copy_id WHERE returned_at IS NULL
+
+**Notes:**
+
+- Active assignment: `returned_at IS NULL`
+- History preserved: Multiple assignments per copy over time
+- Partial index optimizes "is this copy currently assigned?" queries
+
+---
+
+### Seasons and Repertoire
+
+```mermaid
+erDiagram
+    seasons ||--o{ season_works : "includes"
+    works ||--o{ season_works : "in season"
+    season_works ||--o{ season_work_editions : "uses"
+    editions ||--o{ season_work_editions : "selected for"
+
+    seasons {
+        TEXT id PK
+        TEXT name
+        TEXT start_date UK
+    }
+
+    season_works {
+        TEXT id PK
+        TEXT season_id FK
+        TEXT work_id FK
+        INTEGER display_order
+    }
+
+    season_work_editions {
+        TEXT id PK
+        TEXT season_work_id FK
+        TEXT edition_id FK
+        INTEGER is_primary
+    }
+```
+
+#### seasons
+
+Date-based groupings for repertoire organization.
+
+| Column     | Type | Constraints             | Description                     |
+| ---------- | ---- | ----------------------- | ------------------------------- |
+| id         | TEXT | PK                      | Season ID                       |
+| name       | TEXT | NOT NULL                | Season name (e.g., "Fall 2026") |
+| start_date | TEXT | NOT NULL, UNIQUE        | Start date (YYYY-MM-DD)         |
+| created_at | TEXT | NOT NULL, DEFAULT now() | Creation timestamp              |
+| updated_at | TEXT | NOT NULL, DEFAULT now() | Last update timestamp           |
+
+**Indexes:**
+
+- `idx_seasons_start_date` on start_date
+
+**Notes:**
+
+- Events belong to seasons by date, not explicit FK
+- Query: `SELECT * FROM seasons WHERE start_date <= :event_date ORDER BY start_date DESC LIMIT 1`
+- UNIQUE on start_date prevents overlapping seasons
+
+---
+
+#### season_works
+
+Works assigned to a season (season repertoire, ordered).
+
+| Column        | Type    | Constraints                            | Description                |
+| ------------- | ------- | -------------------------------------- | -------------------------- |
+| id            | TEXT    | PK                                     | Assignment ID              |
+| season_id     | TEXT    | NOT NULL, FK → seasons(id) CASCADE     | Season reference           |
+| work_id       | TEXT    | NOT NULL, FK → works(id) CASCADE       | Work reference             |
+| display_order | INTEGER | NOT NULL, DEFAULT 0                    | Order in repertoire        |
+| notes         | TEXT    |                                        | Notes about this work      |
+| added_at      | TEXT    | NOT NULL, DEFAULT now()                | When added                 |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL    | Who added it               |
+
+**Indexes:**
+
+- `idx_season_works_season` on (season_id, display_order)
+- `idx_season_works_work` on work_id
+
+**Constraints:**
+
+- UNIQUE(season_id, work_id) prevents duplicate works in same season
+
+---
+
+#### season_work_editions
+
+Editions selected for each season-work pairing.
+
+| Column         | Type    | Constraints                                 | Description               |
+| -------------- | ------- | ------------------------------------------- | ------------------------- |
+| id             | TEXT    | PK                                          | Assignment ID             |
+| season_work_id | TEXT    | NOT NULL, FK → season_works(id) CASCADE     | Season-work reference     |
+| edition_id     | TEXT    | NOT NULL, FK → editions(id) CASCADE         | Edition reference         |
+| is_primary     | INTEGER | NOT NULL, DEFAULT 0                         | Mark the main edition     |
+| notes          | TEXT    |                                             | Notes about this edition  |
+| added_at       | TEXT    | NOT NULL, DEFAULT now()                     | When added                |
+| added_by       | TEXT    | FK → members(id) ON DELETE SET NULL         | Who added it              |
+
+**Indexes:**
+
+- `idx_season_work_editions_sw` on season_work_id
+- `idx_season_work_editions_edition` on edition_id
+
+**Constraints:**
+
+- UNIQUE(season_work_id, edition_id) prevents duplicate editions per season-work
 
 ---
 
@@ -402,10 +637,6 @@ Junction table: sections to assign when invite is accepted.
 erDiagram
     members ||--o{ sessions : "authenticates"
     members ||--o{ vault_settings : "updates"
-    members ||--o{ access_log : "tracked"
-    members ||--o{ takedowns : "processes"
-    scores ||--o{ takedowns : "target"
-    scores ||--o{ access_log : "accessed"
 
     sessions {
         TEXT id PK
@@ -422,17 +653,10 @@ erDiagram
 
     takedowns {
         TEXT id PK
-        TEXT score_id FK
+        TEXT edition_id FK
         TEXT claimant_email
         TEXT status
         TEXT processed_by FK
-    }
-
-    access_log {
-        INTEGER id PK
-        TEXT member_id FK
-        TEXT score_id FK
-        TEXT action
     }
 ```
 
@@ -457,12 +681,12 @@ Authentication sessions.
 
 #### takedowns
 
-Copyright takedown requests.
+Copyright takedown requests (targets editions, not legacy scores).
 
 | Column           | Type    | Constraints                        | Description                       |
 | ---------------- | ------- | ---------------------------------- | --------------------------------- |
 | id               | TEXT    | PK                                 | Takedown ID                       |
-| score_id         | TEXT    | NOT NULL, FK → scores(id)          | Target score                      |
+| edition_id       | TEXT    | NOT NULL, FK → editions(id)        | Target edition                    |
 | claimant_name    | TEXT    | NOT NULL                           | Claimant's name                   |
 | claimant_email   | TEXT    | NOT NULL                           | Claimant's email                  |
 | reason           | TEXT    | NOT NULL                           | Takedown reason                   |
@@ -475,26 +699,8 @@ Copyright takedown requests.
 
 **Indexes:**
 
-- None additional (uses PK index)
-
----
-
-#### access_log
-
-Audit trail for score access.
-
-| Column      | Type    | Constraints      | Description        |
-| ----------- | ------- | ---------------- | ------------------ |
-| id          | INTEGER | PK AUTOINCREMENT | Log entry ID       |
-| member_id   | TEXT    | FK → members(id) | Accessor           |
-| score_id    | TEXT    | FK → scores(id)  | Accessed score     |
-| action      | TEXT    |                  | `download`, `view` |
-| accessed_at | TEXT    | DEFAULT now()    | Access timestamp   |
-
-**Indexes:**
-
-- `idx_access_log_member` on member_id
-- `idx_access_log_score` on score_id
+- `idx_takedowns_status` on status
+- `idx_takedowns_created` on created_at DESC
 
 ---
 
@@ -681,7 +887,23 @@ RSVP and attendance tracking for events.
 - `public_domain` - No restrictions
 - `licensed` - Licensed for use
 - `owned` - Owned by choir
-- `pending` - Rights verification pending
+
+### Edition Types
+
+- `full_score` - Conductor's score with all parts
+- `vocal_score` - Voice parts with piano reduction
+- `part` - Individual instrumental part
+- `reduction` - Simplified arrangement
+- `audio` - Audio recording
+- `video` - Video recording
+- `supplementary` - Supporting materials
+
+### Copy Conditions
+
+- `good` - In good condition
+- `fair` - Acceptable condition
+- `poor` - Needs replacement
+- `lost` - Missing
 
 ### Role Types
 
@@ -710,11 +932,13 @@ RSVP and attendance tracking for events.
 - `absent` - Did not attend
 - `late` - Arrived late
 
+---
+
 ## Migration History
 
 | Migration | Description                                                                                                                                                                                                                  |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0001**  | **Complete schema** - Consolidated base schema with members, member_roles, scores, score_files, score_chunks, invites, sessions, takedowns, access_log, vault_settings, events.                                              |
+| **0001**  | **Complete schema** - Consolidated base schema with members, member_roles, scores, score_files, score_chunks, invites, sessions, takedowns, access_log, vault_settings, events, event_programs.                              |
 | **0002**  | **Section leader role** - Added `section_leader` to member_roles CHECK constraint.                                                                                                                                           |
 | **0003**  | **Voices and sections** - Added voices, sections, member_voices, member_sections, invite_voices, invite_sections tables. Removed voice_part columns from members and invites. Added triggers for single-primary enforcement. |
 | **0004**  | **Remove default_voice_part** - Removed deprecated setting from vault_settings.                                                                                                                                              |
@@ -733,8 +957,28 @@ RSVP and attendance tracking for events.
 | **0024**  | **Event repertoire** - Added event_works and event_work_editions tables for event-level repertoire (replaces event_programs).                                                                                                |
 | **0025**  | **Drop event_programs** - Removed deprecated event_programs table after migration to event_works/event_work_editions.                                                                                                        |
 
+---
+
+## Table Summary
+
+| Category           | Tables                                                                |
+| ------------------ | --------------------------------------------------------------------- |
+| **Core**           | members, member_roles                                                 |
+| **Voices/Sections**| voices, sections, member_voices, member_sections                      |
+| **Score Library**  | works, editions, edition_sections, edition_files, edition_chunks      |
+| **Inventory**      | physical_copies, copy_assignments                                     |
+| **Seasons**        | seasons, season_works, season_work_editions                           |
+| **Events**         | events, event_works, event_work_editions, participation               |
+| **Invitations**    | invites, invite_voices, invite_sections                               |
+| **Supporting**     | sessions, takedowns, vault_settings                                   |
+
+**Total: 22 tables** (after dropping scores, score_files, score_chunks, access_log, event_programs)
+
+---
+
 ## See Also
 
 - [roles.md](../apps/vault/docs/roles.md) - Role definitions and permissions
+- [SCORE-LIBRARY-DESIGN.md](SCORE-LIBRARY-DESIGN.md) - Score Library architecture
 - [migrations/](../apps/vault/migrations/) - SQL migration files
 - TypeScript interfaces: `../apps/vault/src/lib/types.ts`

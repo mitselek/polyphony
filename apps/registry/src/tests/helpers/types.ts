@@ -33,11 +33,18 @@ export interface TestGetPlatform {
 		API_KEY?: string;
 		GOOGLE_CLIENT_ID?: string;
 		GOOGLE_CLIENT_SECRET?: string;
+		RESEND_API_KEY?: string;
 	};
 }
 
 export interface TestGetEvent {
 	url?: URL;
 	fetch?: TestFetch;
+	platform?: TestGetPlatform;
+}
+
+export interface TestPostEvent {
+	request: Request;
+	url: URL;
 	platform?: TestGetPlatform;
 }

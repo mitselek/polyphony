@@ -73,7 +73,7 @@
 	<Card class="mb-6">
 		<div class="flex flex-wrap gap-4">
 			<!-- Event Filter -->
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="event-filter" class="mb-1 block text-sm font-medium text-gray-700">
 					Filter by Event
 				</label>
@@ -98,7 +98,7 @@
 			</div>
 
 			<!-- Season Filter -->
-			<div class="flex-1 min-w-[200px]">
+			<div class="flex-1 min-w-50">
 				<label for="season-filter" class="mb-1 block text-sm font-medium text-gray-700">
 					Filter by Season
 				</label>
