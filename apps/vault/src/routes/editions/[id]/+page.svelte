@@ -624,9 +624,18 @@
 
 <!-- Assign Copy Modal -->
 {#if showAssignModal}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="assign-modal-title"
+		tabindex="-1"
+		onclick={(e) => { if (e.target === e.currentTarget) { showAssignModal = false; memberSearchQuery = ''; } }}
+		onkeydown={(e) => { if (e.key === 'Escape') { showAssignModal = false; memberSearchQuery = ''; } }}
+	>
 		<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-			<h3 class="mb-4 text-lg font-semibold">Assign Copy</h3>
+			<h3 id="assign-modal-title" class="mb-4 text-lg font-semibold">Assign Copy</h3>
 			
 			<!-- Search filter -->
 			<div class="mb-3">

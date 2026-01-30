@@ -181,9 +181,18 @@
 
 	<!-- Create/Edit Form Modal -->
 	{#if showCreateForm}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="work-form-title"
+			tabindex="-1"
+			onclick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
+			onkeydown={(e) => { if (e.key === 'Escape') closeForm(); }}
+		>
 			<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-				<h2 class="mb-4 text-xl font-semibold">
+				<h2 id="work-form-title" class="mb-4 text-xl font-semibold">
 					{editingWork ? 'Edit Work' : 'Add New Work'}
 				</h2>
 				<form onsubmit={handleSubmit}>
