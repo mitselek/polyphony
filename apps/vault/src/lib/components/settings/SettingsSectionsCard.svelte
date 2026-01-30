@@ -1,14 +1,13 @@
 <script lang="ts">
   import Card from "$lib/components/Card.svelte";
+  import { toast } from "$lib/stores/toast";
   import type { SectionWithCount } from "$lib/server/db/sections";
 
   interface Props {
     sections: SectionWithCount[];
-    onSuccess?: (message: string) => void;
-    onError?: (message: string) => void;
   }
 
-  let { sections = $bindable(), onSuccess = () => {}, onError = () => {} }: Props = $props();
+  let { sections = $bindable() }: Props = $props();
 
   // State
   let togglingId = $state<string | null>(null);
@@ -52,7 +51,7 @@
         s.id === section.id ? { ...s, isActive: !s.isActive } : s
       );
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update section");
+      toast.error(err instanceof Error ? err.message : "Failed to update section");
     } finally {
       togglingId = null;
     }
@@ -74,9 +73,9 @@
       }
 
       sections = sections.filter((s) => s.id !== section.id);
-      onSuccess(`Deleted "${section.name}"`);
+      toast.success(`Deleted "${section.name}"`);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to delete section");
+      toast.error(err instanceof Error ? err.message : "Failed to delete section");
     } finally {
       deletingId = null;
     }
@@ -116,11 +115,11 @@
         return s;
       });
 
-      onSuccess(
+      toast.success(
         `Moved ${result.movedCount} assignment(s) from ${result.sourceSection} to ${result.targetSection}`
       );
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to reassign section");
+      toast.error(err instanceof Error ? err.message : "Failed to reassign section");
     } finally {
       reassigningId = null;
     }
@@ -154,9 +153,9 @@
       newSectionName = "";
       newSectionAbbr = "";
 
-      onSuccess(`Created "${newSection.name}"`);
+      toast.success(`Created "${newSection.name}"`);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to create section");
+      toast.error(err instanceof Error ? err.message : "Failed to create section");
     } finally {
       creatingSection = false;
     }
@@ -200,9 +199,9 @@
       sections = updatedSections;
 
       rearrangingSections = false;
-      onSuccess("Section order saved");
+      toast.success("Section order saved");
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to save section order");
+      toast.error(err instanceof Error ? err.message : "Failed to save section order");
     } finally {
       savingOrder = false;
     }

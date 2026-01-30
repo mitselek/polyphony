@@ -8,7 +8,6 @@
   import EventRepertoireCard from "$lib/components/events/EventRepertoireCard.svelte";
   import EventProgramCard from "$lib/components/events/EventProgramCard.svelte";
   import type { EventRepertoire, Work } from "$lib/types";
-  import { toast } from "$lib/stores/toast";
 
   let { data }: { data: PageData } = $props();
 
@@ -29,13 +28,6 @@
     program = data.program || [];
     myParticipation = data.myParticipation;
   });
-
-  // Error handler for child components
-  function handleError(message: string) {
-    if (message) {
-      toast.error(message);
-    }
-  }
 </script>
 
 <svelte:head>
@@ -59,7 +51,7 @@
   </div>
 
   <!-- Event Details Card -->
-  <EventDetailsCard bind:event canManage={data.canManage} onError={handleError} />
+  <EventDetailsCard bind:event canManage={data.canManage} />
 
   <!-- Participation Section -->
   <ParticipationCard
@@ -67,7 +59,6 @@
     hasStarted={data.hasStarted}
     canRecordAttendance={data.canRecordAttendance}
     bind:myParticipation
-    onError={handleError}
   />
 
   <!-- What to Bring (Personalized Materials for Singer) -->

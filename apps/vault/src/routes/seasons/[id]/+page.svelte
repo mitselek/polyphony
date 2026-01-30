@@ -10,9 +10,6 @@
 	// Local state for repertoire (reactive copy)
 	let repertoire: SeasonRepertoire = $state(untrack(() => data.repertoire));
 	let availableWorks: Work[] = $state(untrack(() => data.availableWorks));
-	
-	// Error state
-	let error = $state('');
 
 	// Sync on navigation
 	$effect(() => {
@@ -26,10 +23,6 @@
 
 	function handleAvailableWorksChange(newWorks: Work[]) {
 		availableWorks = newWorks;
-	}
-
-	function handleError(message: string) {
-		error = message;
 	}
 </script>
 
@@ -54,13 +47,6 @@
 		</p>
 	</div>
 
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-			{error}
-			<button onclick={() => error = ''} class="ml-2 text-red-800 hover:underline">Dismiss</button>
-		</div>
-	{/if}
-
 	<!-- Repertoire Section -->
 	<SeasonRepertoireCard
 		seasonId={data.season.id}
@@ -70,7 +56,6 @@
 		canManageLibrary={data.canManageLibrary}
 		onRepertoireChange={handleRepertoireChange}
 		onAvailableWorksChange={handleAvailableWorksChange}
-		onError={handleError}
 	/>
 
 	<!-- Events in this season -->

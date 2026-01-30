@@ -4,6 +4,7 @@
   import { goto } from "$app/navigation";
   import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes, DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
   import { getEventTypeBadgeClass } from "$lib/utils/badges";
+  import { toast } from "$lib/stores/toast";
 
   interface EventData {
     id: string;
@@ -18,11 +19,9 @@
   interface Props {
     event: EventData;
     canManage: boolean;
-    error?: string;
-    onError?: (message: string) => void;
   }
 
-  let { event = $bindable(), canManage, error = "", onError = () => {} }: Props = $props();
+  let { event = $bindable(), canManage }: Props = $props();
 
   // Edit state
   let editingEventId = $state<string | null>(null);
@@ -107,13 +106,11 @@
 
   function cancelEditEvent() {
     editingEventId = null;
-    onError("");
   }
 
   // Update event
   async function saveEvent() {
     updatingEvent = true;
-    onError("");
 
     try {
       const startsAt = new Date(`${editForm.date}T${editForm.time}:00`).toISOString();
@@ -152,7 +149,7 @@
 
       editingEventId = null;
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update event");
+      toast.error(err instanceof Error ? err.message : "Failed to update event");
     } finally {
       updatingEvent = false;
     }
@@ -167,7 +164,6 @@
     if (!confirmed) return;
 
     deletingEvent = true;
-    onError("");
 
     try {
       const response = await fetch(`/api/events/${event.id}`, {
@@ -181,7 +177,7 @@
 
       goto("/events");
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to delete event");
+      toast.error(err instanceof Error ? err.message : "Failed to delete event");
       deletingEvent = false;
     }
   }

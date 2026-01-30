@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import Card from "$lib/components/Card.svelte";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
+  import { toast } from "$lib/stores/toast";
 
   interface Section {
     name: string;
@@ -27,7 +28,6 @@
     hasStarted: boolean;
     canRecordAttendance: boolean;
     myParticipation?: MyParticipation | null;
-    onError?: (message: string) => void;
   }
 
   let {
@@ -35,7 +35,6 @@
     hasStarted,
     canRecordAttendance,
     myParticipation = $bindable(null),
-    onError = () => {},
   }: Props = $props();
 
   // State
@@ -70,7 +69,6 @@
 
   async function updateMyRsvp(status: PlannedStatus) {
     updatingRsvp = true;
-    onError("");
 
     try {
       const response = await fetch(`/api/events/${eventId}/participation`, {
@@ -94,7 +92,7 @@
       // Reload full participation data in background
       await loadParticipation();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update RSVP");
+      toast.error(err instanceof Error ? err.message : "Failed to update RSVP");
     } finally {
       updatingRsvp = false;
     }
@@ -102,7 +100,6 @@
 
   async function updateAttendance(memberId: string, status: ActualStatus) {
     recordingAttendance[memberId] = true;
-    onError("");
 
     try {
       const response = await fetch(`/api/events/${eventId}/attendance`, {
@@ -118,7 +115,7 @@
 
       await loadParticipation();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to record attendance");
+      toast.error(err instanceof Error ? err.message : "Failed to record attendance");
     } finally {
       recordingAttendance[memberId] = false;
     }
@@ -129,7 +126,6 @@
     if (!confirmed) return;
 
     bulkUpdatingAttendance = true;
-    onError("");
 
     try {
       const updates = participationData.map((p) => ({
@@ -150,7 +146,7 @@
 
       await loadParticipation();
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to mark all present");
+      toast.error(err instanceof Error ? err.message : "Failed to mark all present");
     } finally {
       bulkUpdatingAttendance = false;
     }

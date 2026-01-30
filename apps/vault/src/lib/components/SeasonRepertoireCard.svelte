@@ -3,6 +3,7 @@
 	import SortableList from '$lib/components/SortableList.svelte';
 	import type { SeasonRepertoireWork, SeasonRepertoire, Work, Edition } from '$lib/types';
 	import { getLicenseBadge } from '$lib/utils/badges';
+	import { toast } from '$lib/stores/toast';
 
 	interface Props {
 		seasonId: string;
@@ -12,7 +13,6 @@
 		canManageLibrary: boolean;
 		onRepertoireChange: (repertoire: SeasonRepertoire) => void;
 		onAvailableWorksChange: (works: Work[]) => void;
-		onError: (message: string) => void;
 	}
 
 	let {
@@ -22,8 +22,7 @@
 		workEditionsMap,
 		canManageLibrary,
 		onRepertoireChange,
-		onAvailableWorksChange,
-		onError
+		onAvailableWorksChange
 	}: Props = $props();
 
 	// State for UI interactions
@@ -81,7 +80,7 @@
 			onAvailableWorksChange(newAvailableWorks);
 			selectedWorkId = '';
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to add work');
+			toast.error(err instanceof Error ? err.message : 'Failed to add work');
 		} finally {
 			addingWork = false;
 		}
@@ -114,7 +113,7 @@
 				onAvailableWorksChange(newAvailableWorks);
 			}
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to remove work');
+			toast.error(err instanceof Error ? err.message : 'Failed to remove work');
 		} finally {
 			removingWorkId = null;
 		}
@@ -142,7 +141,7 @@
 			repertoire = newRepertoire;
 			onRepertoireChange(newRepertoire);
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to reorder works');
+			toast.error(err instanceof Error ? err.message : 'Failed to reorder works');
 			// Refresh to get correct order
 			const repertoireResponse = await fetch(`/api/seasons/${seasonId}/works`);
 			if (repertoireResponse.ok) {
@@ -201,7 +200,7 @@
 			editingNotesFor = null;
 			notesInput = '';
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to save notes');
+			toast.error(err instanceof Error ? err.message : 'Failed to save notes');
 		} finally {
 			savingNotes = false;
 		}
@@ -243,7 +242,7 @@
 			}
 			selectedEditionId = '';
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to add edition');
+			toast.error(err instanceof Error ? err.message : 'Failed to add edition');
 		} finally {
 			addingEditionTo = null;
 		}
@@ -273,7 +272,7 @@
 			repertoire = newRepertoire;
 			onRepertoireChange(newRepertoire);
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to remove edition');
+			toast.error(err instanceof Error ? err.message : 'Failed to remove edition');
 		} finally {
 			removingEditionId = null;
 		}
@@ -311,7 +310,7 @@
 			repertoire = newRepertoire;
 			onRepertoireChange(newRepertoire);
 		} catch (err) {
-			onError(err instanceof Error ? err.message : 'Failed to set primary edition');
+			toast.error(err instanceof Error ? err.message : 'Failed to set primary edition');
 		} finally {
 			settingPrimaryId = null;
 		}

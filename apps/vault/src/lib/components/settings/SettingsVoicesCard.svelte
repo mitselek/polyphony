@@ -1,14 +1,13 @@
 <script lang="ts">
   import Card from "$lib/components/Card.svelte";
+  import { toast } from "$lib/stores/toast";
   import type { VoiceWithCount } from "$lib/server/db/voices";
 
   interface Props {
     voices: VoiceWithCount[];
-    onSuccess?: (message: string) => void;
-    onError?: (message: string) => void;
   }
 
-  let { voices = $bindable(), onSuccess = () => {}, onError = () => {} }: Props = $props();
+  let { voices = $bindable() }: Props = $props();
 
   // State
   let togglingId = $state<string | null>(null);
@@ -51,7 +50,7 @@
 
       voices = voices.map((v) => (v.id === voice.id ? { ...v, isActive: !v.isActive } : v));
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to update voice");
+      toast.error(err instanceof Error ? err.message : "Failed to update voice");
     } finally {
       togglingId = null;
     }
@@ -73,9 +72,9 @@
       }
 
       voices = voices.filter((v) => v.id !== voice.id);
-      onSuccess(`Deleted "${voice.name}"`);
+      toast.success(`Deleted "${voice.name}"`);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to delete voice");
+      toast.error(err instanceof Error ? err.message : "Failed to delete voice");
     } finally {
       deletingId = null;
     }
@@ -112,11 +111,11 @@
         return v;
       });
 
-      onSuccess(
+      toast.success(
         `Moved ${result.movedCount} assignment(s) from ${result.sourceVoice} to ${result.targetVoice}`
       );
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to reassign voice");
+      toast.error(err instanceof Error ? err.message : "Failed to reassign voice");
     } finally {
       reassigningId = null;
     }
@@ -152,9 +151,9 @@
       newVoiceAbbr = "";
       newVoiceCategory = "vocal";
 
-      onSuccess(`Created "${newVoice.name}"`);
+      toast.success(`Created "${newVoice.name}"`);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to create voice");
+      toast.error(err instanceof Error ? err.message : "Failed to create voice");
     } finally {
       creatingVoice = false;
     }
@@ -198,9 +197,9 @@
       voices = updatedVoices;
 
       rearrangingVoices = false;
-      onSuccess("Voice order saved");
+      toast.success("Voice order saved");
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Failed to save voice order");
+      toast.error(err instanceof Error ? err.message : "Failed to save voice order");
     } finally {
       savingOrder = false;
     }

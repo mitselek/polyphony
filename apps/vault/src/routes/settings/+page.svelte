@@ -24,15 +24,6 @@
     sections = data.sections;
   });
 
-  // Callbacks for child components (they don't have access to toast store)
-  function handleSuccess(message: string) {
-    toast.success(message);
-  }
-
-  function handleError(message: string) {
-    toast.error(message);
-  }
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
     saving = true;
@@ -134,8 +125,8 @@
   </Card>
 
   <!-- Voices Management -->
-  <SettingsVoicesCard bind:voices onSuccess={handleSuccess} onError={handleError} />
+  <SettingsVoicesCard bind:voices />
 
   <!-- Sections Management -->
-  <SettingsSectionsCard bind:sections onSuccess={handleSuccess} onError={handleError} />
+  <SettingsSectionsCard bind:sections />
 </div>
