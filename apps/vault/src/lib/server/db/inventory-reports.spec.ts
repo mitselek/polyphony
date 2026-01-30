@@ -1,7 +1,7 @@
 // Inventory reports database layer tests
 // Issue #123 - Missing Copies Report
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getMissingCopiesForEvent, getMissingCopiesForSeason } from './inventory-reports';
+import { getMissingCopiesForEvent, getMissingCopiesForSeason, getOutstandingCopiesForSeason, bulkReturnCopies } from './inventory-reports';
 
 // Mock D1Database
 function createMockDb() {
@@ -227,6 +227,147 @@ describe('Inventory reports', () => {
 			await getMissingCopiesForSeason(db, 'specific-season-id');
 
 			expect(db.prepare('').bind).toHaveBeenCalledWith('specific-season-id');
+		});
+	});
+
+	// ============================================================================
+	// COLLECTION REMINDERS (Issue #126)
+	// ============================================================================
+
+	describe('getOutstandingCopiesForSeason', () => {
+		it('returns unreturned copies grouped by member', async () => {
+			const mockResults = [
+				{
+					assignment_id: 'assign-1',
+					member_id: 'member-1',
+					member_name: 'Alice Singer',
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_title: 'Messiah',
+					copy_id: 'copy-1',
+					copy_number: '01',
+					assigned_at: '2026-01-15T12:00:00.000Z'
+				},
+				{
+					assignment_id: 'assign-2',
+					member_id: 'member-1',
+					member_name: 'Alice Singer',
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_title: 'Messiah',
+					copy_id: 'copy-2',
+					copy_number: '02',
+					assigned_at: '2026-01-16T12:00:00.000Z'
+				},
+				{
+					assignment_id: 'assign-3',
+					member_id: 'member-2',
+					member_name: 'Bob Bass',
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_title: 'Messiah',
+					copy_id: 'copy-3',
+					copy_number: '03',
+					assigned_at: '2026-01-17T12:00:00.000Z'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const result = await getOutstandingCopiesForSeason(db, 'season-1');
+
+			expect(result).toHaveLength(2); // 2 members
+			expect(result[0].memberId).toBe('member-1');
+			expect(result[0].memberName).toBe('Alice Singer');
+			expect(result[0].copies).toHaveLength(2); // Alice has 2 copies
+			expect(result[1].memberId).toBe('member-2');
+			expect(result[1].copies).toHaveLength(1); // Bob has 1 copy
+		});
+
+		it('returns empty array when all copies collected', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const result = await getOutstandingCopiesForSeason(db, 'season-1');
+
+			expect(result).toEqual([]);
+		});
+
+		it('includes all copy details', async () => {
+			const mockResults = [
+				{
+					assignment_id: 'assign-1',
+					member_id: 'member-1',
+					member_name: 'Alice',
+					edition_id: 'ed-1',
+					edition_name: 'Edition Name',
+					work_title: 'Work Title',
+					copy_id: 'copy-1',
+					copy_number: 'M-05',
+					assigned_at: '2026-01-15T12:00:00.000Z'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const result = await getOutstandingCopiesForSeason(db, 'season-1');
+
+			const copy = result[0].copies[0];
+			expect(copy.assignmentId).toBe('assign-1');
+			expect(copy.editionId).toBe('ed-1');
+			expect(copy.editionName).toBe('Edition Name');
+			expect(copy.workTitle).toBe('Work Title');
+			expect(copy.copyId).toBe('copy-1');
+			expect(copy.copyNumber).toBe('M-05');
+			expect(copy.assignedAt).toBe('2026-01-15T12:00:00.000Z');
+		});
+
+		it('passes season ID to the query', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			await getOutstandingCopiesForSeason(db, 'specific-season-id');
+
+			expect(db.prepare('').bind).toHaveBeenCalledWith('specific-season-id');
+		});
+	});
+
+	describe('bulkReturnCopies', () => {
+		it('marks multiple assignments as returned', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { changes: 2 } });
+
+			const count = await bulkReturnCopies(db, ['assign-1', 'assign-2']);
+
+			expect(count).toBe(2);
+			expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE copy_assignments'));
+			expect(db.prepare('').bind).toHaveBeenCalledWith('assign-1', 'assign-2');
+		});
+
+		it('returns count of affected rows', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { changes: 3 } });
+
+			const count = await bulkReturnCopies(db, ['a', 'b', 'c']);
+
+			expect(count).toBe(3);
+		});
+
+		it('returns 0 for empty array without database call', async () => {
+			const count = await bulkReturnCopies(db, []);
+
+			expect(count).toBe(0);
+			expect(db.prepare).not.toHaveBeenCalled();
+		});
+
+		it('handles already-returned assignments gracefully', async () => {
+			// Only 1 of 2 was actually updated (other was already returned)
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { changes: 1 } });
+
+			const count = await bulkReturnCopies(db, ['assign-1', 'assign-2']);
+
+			expect(count).toBe(1);
 		});
 	});
 });

@@ -1,0 +1,247 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+	import { invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
+	import { toast } from '$lib/stores/toast';
+
+	let { data }: { data: PageData } = $props();
+
+	// Selection state
+	let selectedIds = $state(new Set<string>());
+	let isReturning = $state(false);
+
+	// Computed values
+	const hasOutstanding = $derived(data.totalOutstanding > 0);
+	const hasSelection = $derived(selectedIds.size > 0);
+
+	function handleSeasonChange(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		goto(`?season=${select.value}`);
+	}
+
+	function toggleCopy(assignmentId: string) {
+		if (selectedIds.has(assignmentId)) {
+			selectedIds.delete(assignmentId);
+		} else {
+			selectedIds.add(assignmentId);
+		}
+		selectedIds = new Set(selectedIds); // Trigger reactivity
+	}
+
+	function toggleMember(memberId: string) {
+		const member = data.outstandingByMember.find((m) => m.memberId === memberId);
+		if (!member) return;
+
+		const memberAssignmentIds = member.copies.map((c) => c.assignmentId);
+		const allSelected = memberAssignmentIds.every((id) => selectedIds.has(id));
+
+		if (allSelected) {
+			// Deselect all
+			memberAssignmentIds.forEach((id) => selectedIds.delete(id));
+		} else {
+			// Select all
+			memberAssignmentIds.forEach((id) => selectedIds.add(id));
+		}
+		selectedIds = new Set(selectedIds); // Trigger reactivity
+	}
+
+	function selectAll() {
+		for (const member of data.outstandingByMember) {
+			for (const copy of member.copies) {
+				selectedIds.add(copy.assignmentId);
+			}
+		}
+		selectedIds = new Set(selectedIds);
+	}
+
+	function deselectAll() {
+		selectedIds = new Set();
+	}
+
+	async function markAsReturned() {
+		if (selectedIds.size === 0) return;
+		isReturning = true;
+
+		try {
+			const response = await fetch('/api/assignments/bulk-return', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ assignmentIds: [...selectedIds] })
+			});
+
+			if (!response.ok) {
+				const result = (await response.json()) as { error?: string };
+				throw new Error(result.error ?? 'Failed to mark copies as returned');
+			}
+
+			const result = (await response.json()) as { returned: number };
+			toast.success(`Marked ${result.returned} ${result.returned === 1 ? 'copy' : 'copies'} as returned`);
+			selectedIds = new Set();
+			await invalidateAll();
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to mark copies as returned');
+		} finally {
+			isReturning = false;
+		}
+	}
+
+	function isMemberFullySelected(memberId: string): boolean {
+		const member = data.outstandingByMember.find((m) => m.memberId === memberId);
+		if (!member) return false;
+		return member.copies.every((c) => selectedIds.has(c.assignmentId));
+	}
+
+	function isMemberPartiallySelected(memberId: string): boolean {
+		const member = data.outstandingByMember.find((m) => m.memberId === memberId);
+		if (!member) return false;
+		const selectedCount = member.copies.filter((c) => selectedIds.has(c.assignmentId)).length;
+		return selectedCount > 0 && selectedCount < member.copies.length;
+	}
+</script>
+
+<svelte:head>
+	<title>Collection Reminders | Polyphony Vault</title>
+</svelte:head>
+
+<div class="container mx-auto max-w-6xl px-4 py-8">
+	<!-- Header -->
+	<div class="mb-8">
+		<nav class="mb-4 text-sm text-gray-500">
+			<a href="/library" class="hover:text-blue-600">Library</a>
+			<span class="mx-2">›</span>
+			<a href="/library/inventory" class="hover:text-blue-600">Inventory</a>
+			<span class="mx-2">›</span>
+			<span>Collection Reminders</span>
+		</nav>
+
+		<h1 class="text-3xl font-bold">Collection Reminders</h1>
+		<p class="mt-2 text-gray-600">
+			Outstanding copies that need to be collected after a season ends
+		</p>
+	</div>
+
+	<!-- Season Selector -->
+	<div class="mb-6">
+		<label for="season" class="block text-sm font-medium text-gray-700">Season</label>
+		<select
+			id="season"
+			class="mt-1 w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2"
+			value={data.selectedSeasonId ?? ''}
+			onchange={handleSeasonChange}
+		>
+			{#if data.seasons.length === 0}
+				<option value="">No seasons defined</option>
+			{:else}
+				{#each data.seasons as season}
+					<option value={season.id}>{season.name}</option>
+				{/each}
+			{/if}
+		</select>
+	</div>
+
+	<!-- Summary -->
+	{#if data.selectedSeasonId}
+		<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+			{#if hasOutstanding}
+				<p class="text-lg">
+					<span class="font-semibold">{data.totalOutstanding}</span>
+					{data.totalOutstanding === 1 ? 'copy' : 'copies'} outstanding from
+					<span class="font-semibold">{data.memberCount}</span>
+					{data.memberCount === 1 ? 'member' : 'members'}
+				</p>
+			{:else}
+				<p class="text-lg text-green-700">✓ All copies have been collected for this season</p>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Action Bar -->
+	{#if hasOutstanding}
+		<div class="mb-4 flex items-center gap-4">
+			<button
+				type="button"
+				onclick={selectAll}
+				class="text-sm text-blue-600 hover:underline"
+			>
+				Select all
+			</button>
+			{#if hasSelection}
+				<button
+					type="button"
+					onclick={deselectAll}
+					class="text-sm text-gray-600 hover:underline"
+				>
+					Deselect all
+				</button>
+				<button
+					type="button"
+					onclick={markAsReturned}
+					disabled={isReturning}
+					class="ml-auto rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+				>
+					{#if isReturning}
+						Marking as returned...
+					{:else}
+						Mark {selectedIds.size} as returned
+					{/if}
+				</button>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Outstanding Copies by Member -->
+	{#if hasOutstanding}
+		<div class="space-y-4">
+			{#each data.outstandingByMember as member (member.memberId)}
+				<div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+					<!-- Member Header -->
+					<div class="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
+						<input
+							type="checkbox"
+							checked={isMemberFullySelected(member.memberId)}
+							indeterminate={isMemberPartiallySelected(member.memberId)}
+							onchange={() => toggleMember(member.memberId)}
+							class="h-4 w-4 rounded border-gray-300"
+						/>
+						<h3 class="font-semibold">
+							<a href="/members/{member.memberId}" class="text-blue-600 hover:underline">
+								{member.memberName}
+							</a>
+						</h3>
+						<span class="text-sm text-gray-500">
+							({member.copies.length} {member.copies.length === 1 ? 'copy' : 'copies'})
+						</span>
+					</div>
+
+					<!-- Copies Table -->
+					<table class="min-w-full">
+						<tbody class="divide-y divide-gray-100">
+							{#each member.copies as copy (copy.assignmentId)}
+								<tr class="hover:bg-gray-50">
+									<td class="w-10 px-4 py-2">
+										<input
+											type="checkbox"
+											checked={selectedIds.has(copy.assignmentId)}
+											onchange={() => toggleCopy(copy.assignmentId)}
+											class="h-4 w-4 rounded border-gray-300"
+										/>
+									</td>
+									<td class="px-4 py-2">
+										<div class="font-medium text-gray-900">{copy.workTitle}</div>
+										<div class="text-sm text-gray-500">{copy.editionName}</div>
+									</td>
+									<td class="whitespace-nowrap px-4 py-2 text-gray-600">
+										Copy #{copy.copyNumber}
+									</td>
+									<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
+										Since {new Date(copy.assignedAt).toLocaleDateString()}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/each}
+		</div>
+	{/if}
+</div>

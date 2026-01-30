@@ -29,12 +29,20 @@
 			<h1 class="text-3xl font-bold">Inventory Reports</h1>
 			<p class="mt-2 text-gray-600">Physical copy inventory summary per edition</p>
 		</div>
-		<a
-			href="/library/reports/missing-copies"
-			class="rounded-lg bg-amber-600 px-4 py-2 text-white transition hover:bg-amber-700"
-		>
-			Missing Copies Report
-		</a>
+		<div class="flex gap-3">
+			<a
+				href="/library/reports/collection"
+				class="rounded-lg border border-amber-600 px-4 py-2 text-amber-600 transition hover:bg-amber-50"
+			>
+				Collection Reminders
+			</a>
+			<a
+				href="/library/reports/missing-copies"
+				class="rounded-lg bg-amber-600 px-4 py-2 text-white transition hover:bg-amber-700"
+			>
+				Missing Copies Report
+			</a>
+		</div>
 	</div>
 
 	<!-- Summary Stats -->
