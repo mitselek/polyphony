@@ -451,3 +451,37 @@ export interface SeasonRepertoire {
 	seasonId: string;
 	works: SeasonRepertoireWork[];
 }
+
+// ============================================================================
+// EVENT REPERTOIRE SYSTEM (Issue #121)
+// ============================================================================
+
+/**
+ * Event repertoire work with editions
+ * Used by API/UI to display a work in an event's repertoire
+ */
+export interface EventRepertoireWork {
+	eventWorkId: string; // event_works.id
+	work: Work;
+	displayOrder: number;
+	notes: string | null;
+	editions: EventRepertoireEdition[];
+}
+
+/**
+ * Edition selected for a work in an event
+ */
+export interface EventRepertoireEdition {
+	workEditionId: string; // event_work_editions.id
+	edition: Edition;
+	isPrimary: boolean;
+	notes: string | null;
+}
+
+/**
+ * Full event repertoire (works + editions tree)
+ */
+export interface EventRepertoire {
+	eventId: string;
+	works: EventRepertoireWork[];
+}
