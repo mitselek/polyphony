@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -87,7 +88,7 @@
 		</div>
 	{/if}
 
-	<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+	<Card padding="lg">
 		<!-- Name Section (Editable) -->
 		<div class="mb-6">
 			<span id="name-label" class="mb-2 block text-sm font-medium text-gray-700">Name</span>
@@ -211,5 +212,5 @@
 			<span class="mb-2 block text-sm font-medium text-gray-700">Member Since</span>
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
-	</div>
+	</Card>
 </div>

@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import type { PlannedStatus, ActualStatus } from '$lib/types';
 	import { getLocale } from '$lib/utils/locale';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -321,7 +322,7 @@
 	</div>
 
 	<!-- Filter Controls -->
-	<div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+	<Card class="mb-6">
 		<div class="flex flex-wrap items-end gap-4">
 			<!-- Date Range -->
 			<div class="flex-1 min-w-50">
@@ -379,17 +380,17 @@
 				</a>
 			</div>
 		</div>
-	</div>
+	</Card>
 
 	<!-- Roster Table -->
 	{#if roster.events.length === 0}
-		<div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
+		<Card padding="lg" class="text-center">
 			<p class="text-gray-500">No events in selected date range</p>
-		</div>
+		</Card>
 	{:else if roster.members.length === 0}
-		<div class="rounded-lg border border-gray-200 bg-white p-8 text-center">
+		<Card padding="lg" class="text-center">
 			<p class="text-gray-500">No members match filters</p>
-		</div>
+		</Card>
 	{:else}
 		<!-- Table Container with Horizontal Scroll -->
 		<!-- Pattern Note: This is the first table component in Polyphony -->
@@ -523,7 +524,7 @@
 		<!-- Summary Stats -->
 		<div class="mt-4 space-y-4">
 			<!-- Overall Summary -->
-			<div class="rounded-lg border border-gray-200 bg-white p-4">
+			<Card>
 				<div class="flex gap-6 text-sm text-gray-600">
 					<div>
 						<span class="font-medium">Events:</span>
@@ -538,11 +539,11 @@
 						{roster.summary.averageAttendance.toFixed(1)}%
 					</div>
 				</div>
-			</div>
+			</Card>
 
 			<!-- Section Summary (Epic #73) - Reactive -->
 			{#if Object.keys(sectionStats).length > 0}
-				<div class="rounded-lg border border-gray-200 bg-white p-4">
+				<Card>
 					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 						{#each Object.entries(sectionStats).sort((a, b) => a[1].displayOrder - b[1].displayOrder) as [sectionId, stats]}
@@ -594,7 +595,7 @@
 							</div>
 						{/each}
 					</div>
-				</div>
+				</Card>
 			{/if}
 		</div>
 	{/if}

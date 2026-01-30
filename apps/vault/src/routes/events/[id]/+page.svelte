@@ -4,6 +4,7 @@
   import type { PageData } from "./$types";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
   import { getLocale } from "$lib/utils/locale";
+  import Card from "$lib/components/Card.svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -617,7 +618,7 @@
   {/if}
 
   <!-- Event Details Card -->
-  <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+  <Card padding="lg" class="mb-8">
     {#if editingEventId}
       <!-- Edit Mode -->
       <div class="space-y-4">
@@ -867,10 +868,10 @@
         {/if}
       </div>
     {/if}
-  </div>
+  </Card>
 
   <!-- Participation Section -->
-  <div class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+  <Card padding="lg" class="mb-8">
     <h2 class="mb-4 text-2xl font-semibold">Participation</h2>
 
     <!-- My RSVP -->
@@ -1067,10 +1068,10 @@
         </div>
       </div>
     {/if}
-  </div>
+  </Card>
 
   <!-- Program (Setlist) Section -->
-  <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+  <Card padding="lg">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-2xl font-semibold">Program</h2>
       {#if data.canManage && program.length > 0}
@@ -1215,5 +1216,5 @@
         {/if}
       </div>
     {/if}
-  </div>
+  </Card>
 </div>

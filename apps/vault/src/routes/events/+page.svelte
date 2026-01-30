@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { EventType, PlannedStatus } from '$lib/types';
 	import { getLocale } from '$lib/utils/locale';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -203,7 +204,7 @@
 		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each filteredEvents as event (event.id)}
 				{@const { date, time } = formatDateTime(event.starts_at)}
-				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+				<Card variant="interactive" padding="lg">
 					<a href="/events/{event.id}" class="block mb-4">
 						<!-- Event Type Badge -->
 						<div class="mb-3">
@@ -302,7 +303,7 @@
 							</p>
 						</div>
 					{/if}
-				</div>
+				</Card>
 			{/each}
 		</div>
 	{/if}

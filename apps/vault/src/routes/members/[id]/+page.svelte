@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -443,7 +444,7 @@
 		</div>
 	{/if}
 
-	<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+	<Card padding="lg">
 		<!-- Registration Status -->
 		{#if !member.email_id}
 			<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
@@ -632,11 +633,11 @@
 			<h2 class="mb-2 text-sm font-medium text-gray-700">Member Since</h2>
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
-	</div>
+	</Card>
 
 	<!-- My Scores Section - Only visible to profile owner or admins -->
 	{#if data.assignedCopies}
-		<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<Card padding="lg" class="mt-8">
 			<h2 class="mb-4 text-xl font-semibold text-gray-900">
 				{data.isOwnProfile ? 'My Scores' : 'Assigned Scores'}
 			</h2>
@@ -679,6 +680,5 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
-	{/if}
+		</Card>	{/if}
 </div>

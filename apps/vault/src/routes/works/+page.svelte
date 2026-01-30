@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { Work } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -268,10 +269,8 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredWorks as work (work.id)}
-				<a
-					href="/works/{work.id}"
-					class="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
-				>
+				<Card variant="clickable" href="/works/{work.id}">
+					<div class="flex items-center justify-between">
 					<div class="flex-1">
 						<h2 class="text-lg font-semibold group-hover:text-blue-600">{work.title}</h2>
 						{#if work.composer}
@@ -301,7 +300,8 @@
 							</button>
 						</div>
 					{/if}
-				</a>
+					</div>
+				</Card>
 			{/each}
 		</div>
 	{/if}

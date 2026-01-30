@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { VoiceWithCount } from '$lib/server/db/voices';
 	import type { SectionWithCount } from '$lib/server/db/sections';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -481,7 +482,8 @@
 		</div>
 	{/if}
 
-	<form onsubmit={handleSubmit} class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+	<Card padding="lg">
+	<form onsubmit={handleSubmit} class="space-y-6">
 		<!-- Locale Setting -->
 		<div>
 			<label for="locale" class="block text-sm font-medium text-gray-700">
@@ -540,9 +542,10 @@
 			</button>
 		</div>
 	</form>
+	</Card>
 
 	<!-- Voices Management -->
-	<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+	<Card padding="lg" class="mt-8">
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-xl font-semibold">Vocal Ranges</h2>
 			{#if !rearrangingVoices}
@@ -731,10 +734,10 @@
 				</button>
 			</div>
 		</form>
-	</div>
+	</Card>
 
 	<!-- Sections Management -->
-	<div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+	<Card padding="lg" class="mt-8">
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-xl font-semibold">Performance Sections</h2>
 			{#if !rearrangingSections}
@@ -910,5 +913,5 @@
 				</button>
 			</div>
 		</form>
-	</div>
+	</Card>
 </div>

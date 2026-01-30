@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { EventType } from '$lib/types';
 	import { getLocale } from '$lib/utils/locale';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -194,7 +195,7 @@
 
 	<form onsubmit={handleSubmit} class="space-y-8">
 		<!-- Basic Info Section -->
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<Card padding="lg">
 			<h2 class="mb-4 text-xl font-semibold">Event Details</h2>
 			
 			<div class="space-y-4">
@@ -257,10 +258,10 @@
 					></textarea>
 				</div>
 			</div>
-		</div>
+		</Card>
 
 		<!-- Date & Time Section -->
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<Card padding="lg">
 			<h2 class="mb-4 text-xl font-semibold">Date & Time</h2>
 			
 			<div class="grid gap-4 md:grid-cols-2">
@@ -349,10 +350,10 @@
 					</p>
 				</div>
 			</div>
-		</div>
+		</Card>
 
 		<!-- Repeat Picker Section -->
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<Card padding="lg">
 			<h2 class="mb-4 text-xl font-semibold">Repeat Pattern</h2>
 			
 			<div class="space-y-4">
@@ -410,11 +411,11 @@
 					</div>
 				{/if}
 			</div>
-		</div>
+		</Card>
 
 		<!-- Preview Section -->
 		{#if generatedEvents.length > 0}
-			<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+			<Card padding="lg">
 				<div class="mb-4 flex items-center justify-between">
 					<h2 class="text-xl font-semibold">Preview & Select</h2>
 					<div class="flex gap-2">
@@ -466,7 +467,7 @@
 				<p class="mt-4 text-sm text-gray-500">
 					{generatedEvents.filter(e => e.checked).length} of {generatedEvents.length} events selected
 				</p>
-			</div>
+			</Card>
 		{/if}
 
 		<!-- Action Buttons -->
