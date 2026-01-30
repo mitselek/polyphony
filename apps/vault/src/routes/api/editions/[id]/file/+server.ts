@@ -29,17 +29,18 @@ async function getValidatedEdition(db: D1Database, editionId: string | undefined
 }
 
 // Helper: Build PDF response
-function buildPdfResponse(data: ArrayBuffer, size: number, fileName: string): Response {
+function buildPdfResponse(data: ArrayBuffer, size: number, fileName: string, download: boolean = false): Response {
+	const disposition = download ? 'attachment' : 'inline';
 	return new Response(data, {
 		headers: {
 			'Content-Type': 'application/pdf',
-			'Content-Disposition': `inline; filename="${fileName}"`,
+			'Content-Disposition': `${disposition}; filename="${fileName}"`,
 			'Content-Length': size.toString()
 		}
 	});
 }
 
-export async function GET({ params, platform, cookies }: RequestEvent) {
+export async function GET({ params, platform, cookies, url }: RequestEvent) {
 	const db = getDb(platform);
 	await getAuthenticatedMember(db, cookies);
 	const edition = await getValidatedEdition(db, params.id);
@@ -50,7 +51,10 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	const file = await getEditionFile(db, params.id!);
 	if (!file) throw error(404, 'File not found in storage');
 
-	return buildPdfResponse(file.data, file.size, edition.fileName ?? 'score.pdf');
+	// Check for download query param
+	const download = url.searchParams.get('download') === '1';
+
+	return buildPdfResponse(file.data, file.size, edition.fileName ?? 'score.pdf', download);
 }
 
 export async function POST({ params, request, platform, cookies }: RequestEvent) {

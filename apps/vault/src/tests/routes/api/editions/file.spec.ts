@@ -78,6 +78,7 @@ const mockEdition = {
 
 // Helper to create mock request event
 function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
+	const requestUrl = 'http://localhost/api/editions/edition-1/file';
 	return {
 		params: { id: 'edition-1' },
 		platform: { env: { DB: {} as D1Database } },
@@ -88,7 +89,8 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 			getAll: vi.fn(),
 			serialize: vi.fn()
 		},
-		request: new Request('http://localhost/api/editions/edition-1/file'),
+		request: new Request(requestUrl),
+		url: new URL(requestUrl),
 		...overrides
 	} as unknown as RequestEvent;
 }
