@@ -4,9 +4,8 @@
 	 * 
 	 * Usage:
 	 * <SortableList items={myItems} onReorder={handleReorder}>
-	 *   {#snippet item(item, index, dragHandle)}
+	 *   {#snippet item(item, index)}
 	 *     <div>
-	 *       {@render dragHandle()}
 	 *       <span>{item.name}</span>
 	 *     </div>
 	 *   {/snippet}
@@ -16,9 +15,10 @@
 	 * - items: Array of items with unique 'id' property
 	 * - onReorder: Callback with new order of item IDs
 	 * - disabled: Disable drag functionality
+	 * - showHandle: Show drag handle (default: true)
 	 * 
 	 * Snippets:
-	 * - item: Render function for each item (item, index, dragHandle snippet)
+	 * - item: Render function for each item (item, index)
 	 */
 	import type { Snippet } from 'svelte';
 
@@ -31,10 +31,11 @@
 		items: Item[];
 		onReorder: (itemIds: string[]) => void | Promise<void>;
 		disabled?: boolean;
-		item: Snippet<[Item, number, Snippet]>;
+		showHandle?: boolean;
+		item: Snippet<[Item, number]>;
 	}
 
-	let { items, onReorder, disabled = false, item: itemSnippet }: Props = $props();
+	let { items, onReorder, disabled = false, showHandle = true, item: itemSnippet }: Props = $props();
 
 	let draggedIndex = $state<number | null>(null);
 	let dragOverIndex = $state<number | null>(null);
@@ -105,53 +106,10 @@
 	}
 </script>
 
-{#snippet dragHandle(index: number)}
-	<div class="flex items-center gap-1">
-		<button
-			type="button"
-			onclick={() => moveItem(index, 'up')}
-			disabled={disabled || index === 0}
-			class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-			title="Move up"
-			aria-label="Move up"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-			</svg>
-		</button>
-		<button
-			type="button"
-			onclick={() => moveItem(index, 'down')}
-			disabled={disabled || index === items.length - 1}
-			class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-			title="Move down"
-			aria-label="Move down"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-			</svg>
-		</button>
-		<span
-			class="cursor-grab p-1 text-gray-400 hover:text-gray-600 {disabled ? 'cursor-not-allowed opacity-30' : ''}"
-			title="Drag to reorder"
-			aria-label="Drag handle"
-			draggable={!disabled}
-			ondragstart={(e) => handleDragStart(e, index)}
-			ondragend={handleDragEnd}
-			role="button"
-			tabindex={disabled ? -1 : 0}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-			</svg>
-		</span>
-	</div>
-{/snippet}
-
 <div class="sortable-list space-y-2">
 	{#each items as itemData, index (itemData.id)}
 		<div
-			class="sortable-item transition-all duration-150
+			class="sortable-item flex items-start gap-2 transition-all duration-150
 				{draggedIndex === index ? 'opacity-50' : ''}
 				{dragOverIndex === index && draggedIndex !== index ? 'border-t-2 border-blue-500' : ''}"
 			ondragover={(e) => handleDragOver(e, index)}
@@ -159,7 +117,51 @@
 			ondrop={(e) => handleDrop(e, index)}
 			role="listitem"
 		>
-			{@render itemSnippet(itemData, index, () => dragHandle(index))}
+			{#if showHandle && !disabled}
+				<div class="flex flex-col items-center gap-0.5 pt-2">
+					<button
+						type="button"
+						onclick={() => moveItem(index, 'up')}
+						disabled={index === 0}
+						class="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Move up"
+						aria-label="Move up"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+						</svg>
+					</button>
+					<span
+						class="cursor-grab p-0.5 text-gray-400 hover:text-gray-600"
+						title="Drag to reorder"
+						aria-label="Drag handle"
+						draggable="true"
+						ondragstart={(e) => handleDragStart(e, index)}
+						ondragend={handleDragEnd}
+						role="button"
+						tabindex="0"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+						</svg>
+					</span>
+					<button
+						type="button"
+						onclick={() => moveItem(index, 'down')}
+						disabled={index === items.length - 1}
+						class="p-0.5 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+						title="Move down"
+						aria-label="Move down"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+						</svg>
+					</button>
+				</div>
+			{/if}
+			<div class="flex-1">
+				{@render itemSnippet(itemData, index)}
+			</div>
 		</div>
 	{/each}
 </div>

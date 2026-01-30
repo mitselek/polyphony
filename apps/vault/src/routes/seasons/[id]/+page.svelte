@@ -422,17 +422,11 @@
 				onReorder={handleReorderWorks}
 				disabled={!data.canManageLibrary || isReordering}
 			>
-				{#snippet item(repWork, index, dragHandle)}
+				{#snippet item(repWork, index)}
 					{@const typedWork = repWork as unknown as SeasonRepertoireWork & { id: string }}
 					{@const availableEditions = getAvailableEditionsForWork(typedWork)}
 					<Card padding="md">
-						<div class="flex items-start gap-2">
-							<!-- Drag handle -->
-							{#if data.canManageLibrary}
-								{@render dragHandle()}
-							{/if}
-							
-							<div class="flex-1">
+						<div class="flex-1">
 								<div class="flex items-start justify-between">
 									<div class="flex-1">
 										<button
@@ -607,7 +601,6 @@
 									</div>
 								{/if}
 							</div>
-						</div>
 					</Card>
 				{/snippet}
 			</SortableList>
