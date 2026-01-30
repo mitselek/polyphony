@@ -310,7 +310,7 @@ Refs: #67
    - Lead provides feedback as text
    - Ada applies → commits → reports again
 
-### 9. Merge to Main
+### 9. Merge to Main & Issue Closure
 
 **When approved, Ada merges directly:**
 
@@ -318,7 +318,7 @@ Refs: #67
 - Push to remote
 - Clean up feature branch (local and remote)
 - Post completion comment on GitHub issue
-- Close issue
+- Close issue with all checkboxes marked
 
 **Pre-merge checklist:**
 
@@ -331,6 +331,62 @@ Refs: #67
 - [ ] Migration files included (if needed)
 
 **Note:** PRs are optional and only needed for complex changes requiring discussion or multiple reviewers.
+
+### 9.1 Issue Closure Protocol (MANDATORY)
+
+**CRITICAL**: Issues must NOT be left in "finished but not closed" state. Every completed issue must be properly closed.
+
+**Closure requirements:**
+
+1. **Add completion comment** with:
+   - Summary of what was implemented
+   - List of files changed/created
+   - Test count and status
+   - Any notes for future reference
+
+2. **Close the issue** via:
+   - `gh issue close <number> --comment "All tasks completed."`
+   - Or manually close in GitHub UI
+
+3. **Check off ALL task boxes** in issue body:
+   - Edit issue to mark `- [x]` for completed tasks
+   - If a task was skipped, add note explaining why
+
+**Completion comment template:**
+
+```markdown
+## ✅ Issue Complete
+
+### Implementation Summary
+[Brief description of what was built]
+
+### Files Changed
+- `path/to/file.ts` - [description]
+- `path/to/file.spec.ts` - [X tests]
+
+### Acceptance Criteria Verification
+- ✅ [Criteria 1 - how it was met]
+- ✅ [Criteria 2 - how it was met]
+
+### Notes
+[Any caveats, follow-up work, or decisions made]
+
+**Closing as complete.**
+```
+
+**When to close:**
+
+- ✅ All acceptance criteria met → Close immediately
+- ⚠️ Partially complete → Keep open, comment on blockers
+- 🔄 Superseded by another issue → Close with "Superseded by #XXX"
+- ❌ Won't implement → Close with "wontfix" label and explanation
+
+**Lead responsibility:**
+
+Before session end, Lead must verify:
+1. No "dangling" issues (implemented but not closed)
+2. All merged work has corresponding closed issues
+3. Epic issue has sub-issues checked off as completed
 
 ### 10. Communication Protocol
 
@@ -436,6 +492,33 @@ wrangler d1 migrations apply DB
 - Multi-role system: [lib/server/auth/permissions.ts](apps/vault/src/lib/server/auth/permissions.ts)
 - Database operations: [lib/server/db/members.ts](apps/vault/src/lib/server/db/members.ts)
 - Svelte 5 reactivity: [routes/members/+page.svelte](apps/vault/src/routes/members/+page.svelte)
+
+---
+
+## Session End Checklist
+
+**Before ending a development session, Lead must verify:**
+
+- [ ] All completed work is committed and pushed
+- [ ] Every merged feature has its GitHub issue closed
+- [ ] No "dangling" issues (implemented but not closed)
+- [ ] Epic issues have sub-issues checked off
+- [ ] Any blocking issues are documented with comments
+- [ ] Tests pass: `pnpm test`
+- [ ] No TypeScript errors: `pnpm check`
+
+**Quick commands to audit:**
+
+```bash
+# List open issues assigned to you
+gh issue list --assignee @me --state open
+
+# Check for recently merged PRs without linked closed issues
+gh pr list --state merged --limit 10
+
+# Verify all tests pass
+pnpm test
+```
 
 ---
 
