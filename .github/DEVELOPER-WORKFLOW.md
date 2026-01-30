@@ -384,6 +384,7 @@ Refs: #67
 **Lead responsibility:**
 
 Before session end, Lead must verify:
+
 1. No "dangling" issues (implemented but not closed)
 2. All merged work has corresponding closed issues
 3. Epic issue has sub-issues checked off as completed

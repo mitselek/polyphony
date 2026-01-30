@@ -325,3 +325,102 @@ export async function getCopyStats(
 
 	return stats;
 }
+
+// ============================================================================
+// INVENTORY REPORT QUERIES (Issue #118)
+// ============================================================================
+
+export interface EditionInventorySummary {
+	editionId: string;
+	editionName: string;
+	workTitle: string;
+	composer: string | null;
+	total: number;
+	available: number; // good/fair/poor AND not assigned
+	assigned: number; // currently checked out
+	lost: number;
+}
+
+/**
+ * Get inventory summary for all editions with physical copies
+ */
+export async function getEditionInventorySummaries(
+	db: D1Database
+): Promise<EditionInventorySummary[]> {
+	const query = `
+		SELECT 
+			e.id as edition_id,
+			e.name as edition_name,
+			w.title as work_title,
+			w.composer,
+			COUNT(pc.id) as total,
+			COUNT(CASE WHEN pc.condition = 'lost' THEN 1 END) as lost,
+			COUNT(CASE WHEN pc.condition != 'lost' AND ca.id IS NOT NULL THEN 1 END) as assigned
+		FROM editions e
+		JOIN works w ON e.work_id = w.id
+		JOIN physical_copies pc ON pc.edition_id = e.id
+		LEFT JOIN copy_assignments ca ON ca.copy_id = pc.id AND ca.returned_at IS NULL
+		GROUP BY e.id
+		ORDER BY w.title, e.name
+	`;
+
+	const { results } = await db.prepare(query).all<{
+		edition_id: string;
+		edition_name: string;
+		work_title: string;
+		composer: string | null;
+		total: number;
+		lost: number;
+		assigned: number;
+	}>();
+
+	return results.map((row) => ({
+		editionId: row.edition_id,
+		editionName: row.edition_name,
+		workTitle: row.work_title,
+		composer: row.composer,
+		total: row.total,
+		available: row.total - row.lost - row.assigned,
+		assigned: row.assigned,
+		lost: row.lost
+	}));
+}
+
+/**
+ * Get unassigned copies for an edition (available for checkout)
+ */
+export async function getUnassignedCopies(
+	db: D1Database,
+	editionId: string
+): Promise<PhysicalCopy[]> {
+	const query = `
+		SELECT pc.* FROM physical_copies pc
+		LEFT JOIN copy_assignments ca ON ca.copy_id = pc.id AND ca.returned_at IS NULL
+		WHERE pc.edition_id = ? 
+			AND pc.condition != 'lost'
+			AND ca.id IS NULL
+		ORDER BY pc.copy_number COLLATE NOCASE
+	`;
+
+	const { results } = await db.prepare(query).bind(editionId).all<PhysicalCopyRow>();
+	return results.map(rowToCopy);
+}
+
+/**
+ * Get copies by condition for an edition
+ */
+export async function getCopiesByCondition(
+	db: D1Database,
+	editionId: string,
+	condition: CopyCondition
+): Promise<PhysicalCopy[]> {
+	const { results } = await db
+		.prepare(
+			`SELECT * FROM physical_copies WHERE edition_id = ? AND condition = ? ORDER BY copy_number COLLATE NOCASE`
+		)
+		.bind(editionId, condition)
+		.all<PhysicalCopyRow>();
+
+	return results.map(rowToCopy);
+}
+

@@ -8,7 +8,10 @@ import {
 	updatePhysicalCopy,
 	deletePhysicalCopy,
 	copyNumberExists,
-	getCopyStats
+	getCopyStats,
+	getEditionInventorySummaries,
+	getUnassignedCopies,
+	getCopiesByCondition
 } from './physical-copies';
 
 // Mock D1Database
@@ -370,6 +373,158 @@ describe('Physical copies database layer', () => {
 			expect(stats.fair).toBe(5);
 			expect(stats.poor).toBe(2);
 			expect(stats.lost).toBe(1);
+		});
+	});
+
+	// ============================================================================
+	// INVENTORY REPORT QUERIES (Issue #118)
+	// ============================================================================
+
+	describe('getEditionInventorySummaries', () => {
+		it('returns inventory summaries for all editions with copies', async () => {
+			const mockResults = [
+				{
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_title: 'Messiah',
+					composer: 'Handel',
+					total: 10,
+					lost: 1,
+					assigned: 3
+				},
+				{
+					edition_id: 'ed-2',
+					edition_name: 'Peters Edition',
+					work_title: 'Requiem',
+					composer: 'Mozart',
+					total: 5,
+					lost: 0,
+					assigned: 2
+				}
+			];
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const summaries = await getEditionInventorySummaries(db);
+
+			expect(summaries).toHaveLength(2);
+			
+			// First edition: 10 total, 1 lost, 3 assigned → 6 available
+			expect(summaries[0].editionId).toBe('ed-1');
+			expect(summaries[0].editionName).toBe('Novello Vocal Score');
+			expect(summaries[0].workTitle).toBe('Messiah');
+			expect(summaries[0].composer).toBe('Handel');
+			expect(summaries[0].total).toBe(10);
+			expect(summaries[0].lost).toBe(1);
+			expect(summaries[0].assigned).toBe(3);
+			expect(summaries[0].available).toBe(6);
+
+			// Second edition: 5 total, 0 lost, 2 assigned → 3 available
+			expect(summaries[1].available).toBe(3);
+		});
+
+		it('returns empty array when no editions have copies', async () => {
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const summaries = await getEditionInventorySummaries(db);
+
+			expect(summaries).toEqual([]);
+		});
+
+		it('handles editions with all copies lost', async () => {
+			const mockResults = [
+				{
+					edition_id: 'ed-1',
+					edition_name: 'Lost Edition',
+					work_title: 'Gone',
+					composer: null,
+					total: 3,
+					lost: 3,
+					assigned: 0
+				}
+			];
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const summaries = await getEditionInventorySummaries(db);
+
+			expect(summaries[0].total).toBe(3);
+			expect(summaries[0].lost).toBe(3);
+			expect(summaries[0].available).toBe(0);
+		});
+	});
+
+	describe('getUnassignedCopies', () => {
+		it('returns copies that are not assigned and not lost', async () => {
+			const mockResults = [
+				{
+					id: 'copy-1',
+					edition_id: 'ed-1',
+					copy_number: '01',
+					condition: 'good',
+					acquired_at: null,
+					notes: null,
+					created_at: '2026-01-30T12:00:00Z'
+				},
+				{
+					id: 'copy-2',
+					edition_id: 'ed-1',
+					copy_number: '02',
+					condition: 'fair',
+					acquired_at: null,
+					notes: null,
+					created_at: '2026-01-30T12:00:00Z'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const copies = await getUnassignedCopies(db, 'ed-1');
+
+			expect(copies).toHaveLength(2);
+			expect(copies[0].copyNumber).toBe('01');
+			expect(copies[0].condition).toBe('good');
+			expect(copies[1].copyNumber).toBe('02');
+		});
+
+		it('returns empty array when all copies are assigned or lost', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const copies = await getUnassignedCopies(db, 'ed-1');
+
+			expect(copies).toEqual([]);
+		});
+	});
+
+	describe('getCopiesByCondition', () => {
+		it('returns copies matching the specified condition', async () => {
+			const mockResults = [
+				{
+					id: 'copy-1',
+					edition_id: 'ed-1',
+					copy_number: '03',
+					condition: 'poor',
+					acquired_at: '2020-01-01',
+					notes: 'Worn binding',
+					created_at: '2026-01-30T12:00:00Z'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const copies = await getCopiesByCondition(db, 'ed-1', 'poor');
+
+			expect(copies).toHaveLength(1);
+			expect(copies[0].condition).toBe('poor');
+			expect(copies[0].notes).toBe('Worn binding');
+		});
+
+		it('returns empty array when no copies match condition', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const copies = await getCopiesByCondition(db, 'ed-1', 'lost');
+
+			expect(copies).toEqual([]);
 		});
 	});
 });
