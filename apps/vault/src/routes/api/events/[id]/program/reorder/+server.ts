@@ -9,9 +9,9 @@ import { reorderProgram } from '$lib/server/db/programs';
 
 /**
  * POST /api/events/[id]/program/reorder
- * Reorders scores in the event program
+ * Reorders editions in the event program
  * Requires: Conductor/admin role
- * Body: { score_ids: string[] } - Array of score IDs in desired order
+ * Body: { edition_ids: string[] } - Array of edition IDs in desired order
  */
 export async function POST(event: RequestEvent) {
 	const { platform, cookies, params, request } = event;
@@ -30,13 +30,13 @@ export async function POST(event: RequestEvent) {
 	}
 
 	const body = await request.json() as any;
-	const { score_ids } = body;
+	const { edition_ids } = body;
 
-	if (!Array.isArray(score_ids) || score_ids.length === 0) {
-		throw error(400, 'Missing required field: score_ids (array)');
+	if (!Array.isArray(edition_ids) || edition_ids.length === 0) {
+		throw error(400, 'Missing required field: edition_ids (array)');
 	}
 
-	await reorderProgram(db, eventId, score_ids);
+	await reorderProgram(db, eventId, edition_ids);
 
 	return json({ success: true });
 }

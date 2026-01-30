@@ -1,5 +1,5 @@
 // Program management API endpoints
-// POST /api/events/[id]/program - Add score to program
+// POST /api/events/[id]/program - Add edition to program
 // GET /api/events/[id]/program - Get program (for reference)
 
 import { json, error } from '@sveltejs/kit';
@@ -31,7 +31,7 @@ export async function GET(event: RequestEvent) {
 
 /**
  * POST /api/events/[id]/program
- * Adds a score to the event program
+ * Adds an edition to the event program
  * Requires: Conductor/admin role
  */
 export async function POST(event: RequestEvent) {
@@ -51,13 +51,13 @@ export async function POST(event: RequestEvent) {
 	}
 
 	const body = await request.json() as any;
-	const { score_id, position, notes } = body;
+	const { edition_id, position, notes } = body;
 
-	if (!score_id || typeof position !== 'number') {
-		throw error(400, 'Missing required fields: score_id, position');
+	if (!edition_id || typeof position !== 'number') {
+		throw error(400, 'Missing required fields: edition_id, position');
 	}
 
-	await addToProgram(db, eventId, score_id, position, notes);
+	await addToProgram(db, eventId, edition_id, position, notes);
 
 	// Return updated program
 	const program = await getEventProgram(db, eventId);

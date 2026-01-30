@@ -76,10 +76,10 @@ export const updateEventSchema = z.object({
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 
 /**
- * Schema for adding a score to an event program
+ * Schema for adding an edition to an event program
  */
 export const addToProgramSchema = z.object({
-	score_id: z.string().min(1, 'Score ID is required'),
+	edition_id: z.string().min(1, 'Edition ID is required'),
 	position: z.number().int().nonnegative('Position must be non-negative'),
 	notes: z.string().optional()
 });

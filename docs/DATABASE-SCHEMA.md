@@ -1,6 +1,6 @@
 # Database Schema
 
-Vault D1 database schema (SQLite). Current state after migrations 0001-0012.
+Vault D1 database schema (SQLite). Current state after migrations 0001-0021.
 
 ## Tables
 
@@ -525,7 +525,7 @@ erDiagram
     members ||--o{ participation : "RSVPs"
     events ||--o{ event_programs : "has setlist"
     events ||--o{ participation : "tracks attendance"
-    scores ||--o{ event_programs : "performed at"
+    editions ||--o{ event_programs : "performed at"
 
     events {
         TEXT id PK
@@ -538,7 +538,7 @@ erDiagram
 
     event_programs {
         TEXT event_id PK,FK
-        TEXT score_id PK,FK
+        TEXT edition_id PK,FK
         INTEGER position
     }
 
@@ -577,24 +577,24 @@ Rehearsals, concerts, and other choir events.
 
 #### event_programs
 
-Setlists linking scores to events in order.
+Setlists linking editions to events in order.
 
-| Column   | Type    | Constraints                           | Description                |
-| -------- | ------- | ------------------------------------- | -------------------------- |
-| event_id | TEXT    | PK, FK → events(id) ON DELETE CASCADE | Event reference            |
-| score_id | TEXT    | PK, FK → scores(id) ON DELETE CASCADE | Score reference            |
-| position | INTEGER | NOT NULL, DEFAULT 0                   | Order in program (0-based) |
-| notes    | TEXT    |                                       | Notes about this piece     |
-| added_at | TEXT    | DEFAULT now()                         | When added to program      |
+| Column     | Type    | Constraints                            | Description                |
+| ---------- | ------- | -------------------------------------- | -------------------------- |
+| event_id   | TEXT    | PK, FK → events(id) ON DELETE CASCADE  | Event reference            |
+| edition_id | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference         |
+| position   | INTEGER | NOT NULL, DEFAULT 0                    | Order in program (0-based) |
+| notes      | TEXT    |                                        | Notes about this piece     |
+| added_at   | TEXT    | DEFAULT now()                          | When added to program      |
 
 **Indexes:**
 
 - `idx_event_programs_event` on event_id
-- `idx_event_programs_score` on score_id
+- `idx_event_programs_edition` on edition_id
 
 **Constraints:**
 
-- Composite primary key (event_id, score_id) prevents duplicate scores in same event
+- Composite primary key (event_id, edition_id) prevents duplicate editions in same event
 
 ---
 
@@ -682,6 +682,13 @@ RSVP and attendance tracking for events.
 | **0010**  | **Participation** - Added participation table for RSVP (planned_status) and attendance tracking (actual_status).                                                                                                             |
 | **0011**  | **Roster members** - Two-tier member system. Renamed `email` → `email_id`, added `email_contact`, made `name` required. Added `roster_member_id` to invites. Enables roster-only members without OAuth.                      |
 | **0012**  | **Member nickname** - Added `nickname` column to members for compact display in roster and constrained views.                                                                                                                |
+| **0013**  | **Works** - Added works table for abstract compositions (title, composer, lyricist).                                                                                                                                         |
+| **0014**  | **Editions** - Added editions table (specific publications of works) and edition_sections junction table.                                                                                                                    |
+| **0015**  | **Edition files** - Added edition_files and edition_chunks tables for D1 chunked PDF storage.                                                                                                                                |
+| **0016**  | **Physical copies** - Added physical_copies table for inventory tracking.                                                                                                                                                    |
+| **0017**  | **Copy assignments** - Added copy_assignments table for tracking who has which physical copy.                                                                                                                                |
+| **0020**  | **Drop legacy scores** - Removed scores, score_files, score_chunks, access_log tables after migration to works/editions.                                                                                                     |
+| **0021**  | **Event programs edition_id** - Renamed `score_id` → `edition_id` in event_programs table.                                                                                                                                   |
 
 ## See Also
 

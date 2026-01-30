@@ -44,11 +44,11 @@ function createMockDb(): D1Database {
 					// INSERT into event_programs
 					if (lowerQuery.includes('insert into event_programs')) {
 						const programs = storage.get('event_programs') ?? [];
-						const [event_id, score_id, position, notes] = boundValues;
+						const [event_id, edition_id, position, notes] = boundValues;
 
 						// Check for duplicate
 						const exists = programs.some(
-							(p) => p.event_id === event_id && p.score_id === score_id
+							(p) => p.event_id === event_id && p.edition_id === edition_id
 						);
 						if (exists) {
 							throw new Error('UNIQUE constraint failed');
@@ -56,7 +56,7 @@ function createMockDb(): D1Database {
 
 						programs.push({
 							event_id: event_id as string,
-							score_id: score_id as string,
+							edition_id: edition_id as string,
 							position: position as number,
 							notes: notes as string | null,
 							added_at: new Date().toISOString()
@@ -78,9 +78,9 @@ function createMockDb(): D1Database {
 					// UPDATE position
 					if (lowerQuery.includes('update event_programs') && lowerQuery.includes('position')) {
 						const programs = storage.get('event_programs') ?? [];
-						const [position, event_id, score_id] = boundValues;
+						const [position, event_id, edition_id] = boundValues;
 						const index = programs.findIndex(
-							(p) => p.event_id === event_id && p.score_id === score_id
+							(p) => p.event_id === event_id && p.edition_id === edition_id
 						);
 						if (index >= 0) {
 							programs[index].position = position as number;
@@ -93,9 +93,9 @@ function createMockDb(): D1Database {
 					// DELETE
 					if (lowerQuery.includes('delete from event_programs')) {
 						const programs = storage.get('event_programs') ?? [];
-						const [event_id, score_id] = boundValues;
+						const [event_id, edition_id] = boundValues;
 						const filtered = programs.filter(
-							(p) => !(p.event_id === event_id && p.score_id === score_id)
+							(p) => !(p.event_id === event_id && p.edition_id === edition_id)
 						);
 						const changes = programs.length - filtered.length;
 						storage.set('event_programs', filtered);
@@ -124,76 +124,76 @@ function createMockDb(): D1Database {
 describe('Event Programs', () => {
 	let db: D1Database;
 	const eventId = 'event-001';
-	const scoreIds = ['score-001', 'score-002', 'score-003'];
+	const editionIds = ['edition-001', 'edition-002', 'edition-003'];
 
 	beforeEach(() => {
 		db = createMockDb();
 	});
 
 	describe('getEventProgram', () => {
-		it('returns scores in order', async () => {
-			// Add scores in non-sequential order
-			await addToProgram(db, eventId, scoreIds[2], 2);
-			await addToProgram(db, eventId, scoreIds[0], 0);
-			await addToProgram(db, eventId, scoreIds[1], 1);
+		it('returns editions in order', async () => {
+			// Add editions in non-sequential order
+			await addToProgram(db, eventId, editionIds[2], 2);
+			await addToProgram(db, eventId, editionIds[0], 0);
+			await addToProgram(db, eventId, editionIds[1], 1);
 
 			const program = await getEventProgram(db, eventId);
 
 			expect(program).toHaveLength(3);
-			expect(program[0].score_id).toBe(scoreIds[0]);
-			expect(program[1].score_id).toBe(scoreIds[1]);
-			expect(program[2].score_id).toBe(scoreIds[2]);
+			expect(program[0].edition_id).toBe(editionIds[0]);
+			expect(program[1].edition_id).toBe(editionIds[1]);
+			expect(program[2].edition_id).toBe(editionIds[2]);
 		});
 	});
 
 	describe('addToProgram', () => {
-		it('adds score to program', async () => {
-			const added = await addToProgram(db, eventId, scoreIds[0], 0, 'Opening piece');
+		it('adds edition to program', async () => {
+			const added = await addToProgram(db, eventId, editionIds[0], 0, 'Opening piece');
 
 			expect(added).toBe(true);
 
 			const program = await getEventProgram(db, eventId);
 			expect(program).toHaveLength(1);
-			expect(program[0].score_id).toBe(scoreIds[0]);
+			expect(program[0].edition_id).toBe(editionIds[0]);
 			expect(program[0].notes).toBe('Opening piece');
 		});
 
-		it('prevents duplicate score in same event', async () => {
-			await addToProgram(db, eventId, scoreIds[0], 0);
+		it('prevents duplicate edition in same event', async () => {
+			await addToProgram(db, eventId, editionIds[0], 0);
 
-			// Try to add same score again
-			await expect(addToProgram(db, eventId, scoreIds[0], 1)).rejects.toThrow();
+			// Try to add same edition again
+			await expect(addToProgram(db, eventId, editionIds[0], 1)).rejects.toThrow();
 		});
 	});
 
 	describe('removeFromProgram', () => {
-		it('removes score from program', async () => {
-			await addToProgram(db, eventId, scoreIds[0], 0);
-			await addToProgram(db, eventId, scoreIds[1], 1);
+		it('removes edition from program', async () => {
+			await addToProgram(db, eventId, editionIds[0], 0);
+			await addToProgram(db, eventId, editionIds[1], 1);
 
-			const removed = await removeFromProgram(db, eventId, scoreIds[0]);
+			const removed = await removeFromProgram(db, eventId, editionIds[0]);
 			expect(removed).toBe(true);
 
 			const program = await getEventProgram(db, eventId);
 			expect(program).toHaveLength(1);
-			expect(program[0].score_id).toBe(scoreIds[1]);
+			expect(program[0].edition_id).toBe(editionIds[1]);
 		});
 	});
 
 	describe('reorderProgram', () => {
-		it('updates positions for all scores', async () => {
-			// Add scores in original order
-			await addToProgram(db, eventId, scoreIds[0], 0);
-			await addToProgram(db, eventId, scoreIds[1], 1);
-			await addToProgram(db, eventId, scoreIds[2], 2);
+		it('updates positions for all editions', async () => {
+			// Add editions in original order
+			await addToProgram(db, eventId, editionIds[0], 0);
+			await addToProgram(db, eventId, editionIds[1], 1);
+			await addToProgram(db, eventId, editionIds[2], 2);
 
 			// Reorder: reverse the order
-			await reorderProgram(db, eventId, [scoreIds[2], scoreIds[1], scoreIds[0]]);
+			await reorderProgram(db, eventId, [editionIds[2], editionIds[1], editionIds[0]]);
 
 			const program = await getEventProgram(db, eventId);
-			expect(program[0].score_id).toBe(scoreIds[2]);
-			expect(program[1].score_id).toBe(scoreIds[1]);
-			expect(program[2].score_id).toBe(scoreIds[0]);
+			expect(program[0].edition_id).toBe(editionIds[2]);
+			expect(program[1].edition_id).toBe(editionIds[1]);
+			expect(program[2].edition_id).toBe(editionIds[0]);
 		});
 	});
 });
