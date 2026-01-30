@@ -2,7 +2,7 @@
   import Card from "$lib/components/Card.svelte";
   import type { EventType } from "$lib/types";
   import { goto } from "$app/navigation";
-  import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes } from "$lib/utils/formatters";
+  import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes, DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
   import { getEventTypeBadgeClass } from "$lib/utils/badges";
 
   interface EventData {
@@ -89,8 +89,8 @@
   function startEditEvent() {
     editingEventId = event.id;
     const dt = parseDateTime(event.starts_at);
-    // Default to 2 hours duration if ends_at is null
-    const dur = event.ends_at ? calculateDurationMinutes(event.starts_at, event.ends_at) : 120;
+    // Use default duration if ends_at is null
+    const dur = event.ends_at ? calculateDurationMinutes(event.starts_at, event.ends_at) : DEFAULT_EVENT_DURATION_MINUTES;
     const durParts = splitDuration(dur);
     editForm = {
       title: event.title,

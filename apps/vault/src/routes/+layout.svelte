@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import type { LayoutData } from './$types';
+	import Toast from '$lib/components/Toast.svelte';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 	
@@ -98,4 +99,7 @@
 	<main>
 		{@render children()}
 	</main>
+
+	<!-- Toast Notifications -->
+	<Toast />
 </div>

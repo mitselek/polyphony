@@ -105,6 +105,15 @@ describe('DateTime formatting', () => {
 		});
 	});
 
+	describe('formatDateTimeFull', () => {
+		it('includes full date and time', () => {
+			const result = formatDateTimeFull(testDateTime, 'en-US');
+			expect(result).toMatch(/January|Friday/);
+			expect(result).toMatch(/30/);
+			expect(result).toMatch(/7|19/); // hour
+		});
+	});
+
 	describe('formatDateTimeComponents', () => {
 		it('returns separate date and time strings', () => {
 			const result = formatDateTimeComponents(testDateTime, 'en-US');

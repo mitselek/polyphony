@@ -2,6 +2,12 @@
 // Issue #142 - DRY: Extract shared utilities
 
 /**
+ * Default event duration in minutes (2 hours)
+ * Used as fallback when ends_at is null
+ */
+export const DEFAULT_EVENT_DURATION_MINUTES = 120;
+
+/**
  * Get the locale to use for date formatting
  * Returns undefined for 'system' to use browser default
  */

@@ -6,6 +6,8 @@
   import Card from "$lib/components/Card.svelte";
   import SettingsVoicesCard from "$lib/components/settings/SettingsVoicesCard.svelte";
   import SettingsSectionsCard from "$lib/components/settings/SettingsSectionsCard.svelte";
+  import { DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
+  import { toast } from "$lib/stores/toast";
 
   let { data }: { data: PageData } = $props();
 
@@ -14,8 +16,6 @@
   let voices = $state<VoiceWithCount[]>(untrack(() => data.voices));
   let sections = $state<SectionWithCount[]>(untrack(() => data.sections));
   let saving = $state(false);
-  let error = $state("");
-  let success = $state("");
 
   // Watch for data changes (e.g., on navigation)
   $effect(() => {
@@ -24,28 +24,25 @@
     sections = data.sections;
   });
 
+  // Callbacks for child components (they don't have access to toast store)
   function handleSuccess(message: string) {
-    success = message;
-    setTimeout(() => (success = ""), 3000);
+    toast.success(message);
   }
 
   function handleError(message: string) {
-    error = message;
-    setTimeout(() => (error = ""), 5000);
+    toast.error(message);
   }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
     saving = true;
-    error = "";
-    success = "";
 
     try {
       const response = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          default_event_duration: parseInt(settings.default_event_duration) || 120,
+          default_event_duration: parseInt(settings.default_event_duration) || DEFAULT_EVENT_DURATION_MINUTES,
           locale: settings.locale || "system",
         }),
       });
@@ -57,9 +54,9 @@
 
       const updated = (await response.json()) as Record<string, string>;
       settings = updated;
-      handleSuccess("Settings saved successfully");
+      toast.success("Settings saved successfully");
     } catch (err) {
-      handleError(err instanceof Error ? err.message : "Failed to save settings");
+      toast.error(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
       saving = false;
     }
@@ -75,18 +72,6 @@
     <h1 class="text-3xl font-bold">Vault Settings</h1>
     <p class="mt-2 text-gray-600">Configure default settings for your choir</p>
   </div>
-
-  {#if error}
-    <div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-      {error}
-    </div>
-  {/if}
-
-  {#if success}
-    <div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-      {success}
-    </div>
-  {/if}
 
   <Card padding="lg">
     <form onsubmit={handleSubmit} class="space-y-6">
