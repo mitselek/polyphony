@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -11,7 +12,6 @@
 	// Form state
 	let roles = $state<Set<Role>>(new Set());
 	let isSubmitting = $state(false);
-	let error = $state('');
 	let success = $state('');
 	let inviteLink = $state('');
 
@@ -29,12 +29,11 @@
 		e.preventDefault();
 
 		if (!rosterMember) {
-			error = 'Roster member is required. Go to Members → Add Roster Member first.';
+			toast.error('Roster member is required. Go to Members → Add Roster Member first.');
 			return;
 		}
 
 		isSubmitting = true;
-		error = '';
 		success = '';
 		inviteLink = '';
 
@@ -60,7 +59,7 @@
 			success = `Invitation created for ${rosterMember.name}! Copy the link below and share it with them.`;
 			roles = new Set();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to send invite';
+			toast.error(err instanceof Error ? err.message : 'Failed to send invite');
 		} finally {
 			isSubmitting = false;
 		}
@@ -100,12 +99,6 @@
 	{:else}
 		<!-- Inviting a roster member -->
 		<div class="rounded-lg bg-white p-6 shadow-md">
-			{#if error}
-				<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-					{error}
-				</div>
-			{/if}
-
 			{#if success}
 				<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
 					<p class="font-semibold">{success}</p>
@@ -122,7 +115,14 @@
 								/>
 								<button
 									type="button"
-									onclick={() => navigator.clipboard.writeText(inviteLink)}
+									onclick={async () => {
+										try {
+											await navigator.clipboard.writeText(inviteLink);
+											toast.success('Invite link copied!');
+										} catch {
+											toast.error('Failed to copy link');
+										}
+									}}
 									class="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
 								>
 									Copy

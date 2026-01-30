@@ -85,12 +85,7 @@
 	async function copyInviteLink(link: string, name: string) {
 		try {
 			await navigator.clipboard.writeText(link);
-			const btn = document.activeElement as HTMLButtonElement;
-			const originalText = btn?.textContent;
-			if (btn) {
-				btn.textContent = 'Copied!';
-				setTimeout(() => { btn.textContent = originalText; }, 1500);
-			}
+			toast.success(`Copied invite link for ${name}`);
 		} catch {
 			toast.error(`Failed to copy link for ${name}`);
 		}
