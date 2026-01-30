@@ -8,7 +8,9 @@ import {
 	getActiveAssignments,
 	getAssignmentHistory,
 	getMemberAssignments,
-	isAssigned
+	isAssigned,
+	getCopyAssignmentHistory,
+	getEditionAssignmentHistory
 } from './copy-assignments';
 
 // Mock D1 database
@@ -269,6 +271,167 @@ describe('Copy assignments database layer', () => {
 			const result = await isAssigned(db as unknown as D1Database, 'copy-1');
 
 			expect(result).toBe(false);
+		});
+	});
+
+	// ============================================================================
+	// ASSIGNMENT HISTORY (Issue #124)
+	// ============================================================================
+
+	describe('getCopyAssignmentHistory', () => {
+		it('returns full history for a copy with member names', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'assign-2',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						member_id: 'member-2',
+						member_name: 'Bob Tenor',
+						assigned_at: '2026-01-20T12:00:00.000Z',
+						assigned_by_id: 'admin-1',
+						assigned_by_name: 'Admin User',
+						returned_at: null,
+						notes: 'Current holder'
+					},
+					{
+						id: 'assign-1',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						assigned_at: '2026-01-01T12:00:00.000Z',
+						assigned_by_id: 'admin-1',
+						assigned_by_name: 'Admin User',
+						returned_at: '2026-01-15T12:00:00.000Z',
+						notes: 'Returned after concert'
+					}
+				]
+			});
+
+			const history = await getCopyAssignmentHistory(db as unknown as D1Database, 'copy-1');
+
+			expect(history).toHaveLength(2);
+			expect(history[0].memberName).toBe('Bob Tenor');
+			expect(history[0].returnedAt).toBeNull();
+			expect(history[1].memberName).toBe('Alice Soprano');
+			expect(history[1].returnedAt).toBe('2026-01-15T12:00:00.000Z');
+		});
+
+		it('returns empty array for copy with no history', async () => {
+			db.all.mockResolvedValueOnce({ results: [] });
+
+			const history = await getCopyAssignmentHistory(db as unknown as D1Database, 'copy-new');
+
+			expect(history).toEqual([]);
+		});
+
+		it('includes assignedBy info when available', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'assign-1',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						assigned_at: '2026-01-01T12:00:00.000Z',
+						assigned_by_id: 'librarian-1',
+						assigned_by_name: 'Jane Librarian',
+						returned_at: null,
+						notes: null
+					}
+				]
+			});
+
+			const history = await getCopyAssignmentHistory(db as unknown as D1Database, 'copy-1');
+
+			expect(history[0].assignedById).toBe('librarian-1');
+			expect(history[0].assignedByName).toBe('Jane Librarian');
+		});
+	});
+
+	describe('getEditionAssignmentHistory', () => {
+		it('returns history for all copies of an edition', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'assign-3',
+						copy_id: 'copy-2',
+						copy_number: '02',
+						member_id: 'member-3',
+						member_name: 'Carol Alto',
+						assigned_at: '2026-01-25T12:00:00.000Z',
+						assigned_by_id: 'admin-1',
+						assigned_by_name: 'Admin User',
+						returned_at: null,
+						notes: null
+					},
+					{
+						id: 'assign-2',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						member_id: 'member-2',
+						member_name: 'Bob Tenor',
+						assigned_at: '2026-01-20T12:00:00.000Z',
+						assigned_by_id: 'admin-1',
+						assigned_by_name: 'Admin User',
+						returned_at: null,
+						notes: null
+					},
+					{
+						id: 'assign-1',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						assigned_at: '2026-01-01T12:00:00.000Z',
+						assigned_by_id: 'admin-1',
+						assigned_by_name: 'Admin User',
+						returned_at: '2026-01-15T12:00:00.000Z',
+						notes: 'Previous holder'
+					}
+				]
+			});
+
+			const history = await getEditionAssignmentHistory(db as unknown as D1Database, 'edition-1');
+
+			expect(history).toHaveLength(3);
+			// Verify order: newest first
+			expect(history[0].copyNumber).toBe('02');
+			expect(history[1].copyNumber).toBe('01');
+			expect(history[2].copyNumber).toBe('01');
+		});
+
+		it('returns empty array for edition with no assignments', async () => {
+			db.all.mockResolvedValueOnce({ results: [] });
+
+			const history = await getEditionAssignmentHistory(db as unknown as D1Database, 'edition-new');
+
+			expect(history).toEqual([]);
+		});
+
+		it('includes copy number for identification', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						id: 'assign-1',
+						copy_id: 'copy-1',
+						copy_number: 'M-05',
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						assigned_at: '2026-01-01T12:00:00.000Z',
+						assigned_by_id: null,
+						assigned_by_name: null,
+						returned_at: null,
+						notes: null
+					}
+				]
+			});
+
+			const history = await getEditionAssignmentHistory(db as unknown as D1Database, 'edition-1');
+
+			expect(history[0].copyNumber).toBe('M-05');
 		});
 	});
 });

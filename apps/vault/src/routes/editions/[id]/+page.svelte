@@ -606,6 +606,51 @@
 					</div>
 				{/if}
 			</div>
+
+			<!-- Assignment History Section -->
+			{#if data.assignmentHistory.length > 0}
+				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold">Assignment History</h2>
+					<p class="mb-4 text-sm text-gray-500">
+						Complete history of copy assignments for this edition
+					</p>
+					
+					<div class="overflow-hidden rounded-lg border border-gray-200">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Member</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Assigned</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Returned</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Assigned By</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-200 bg-white">
+								{#each data.assignmentHistory as entry (entry.id)}
+									<tr class={entry.returnedAt ? 'bg-gray-50' : ''}>
+										<td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{entry.copyNumber}</td>
+										<td class="whitespace-nowrap px-4 py-3 text-gray-900">{entry.memberName}</td>
+										<td class="whitespace-nowrap px-4 py-3 text-gray-600">
+											{new Date(entry.assignedAt).toLocaleDateString()}
+										</td>
+										<td class="whitespace-nowrap px-4 py-3">
+											{#if entry.returnedAt}
+												<span class="text-gray-600">{new Date(entry.returnedAt).toLocaleDateString()}</span>
+											{:else}
+												<span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">Current</span>
+											{/if}
+										</td>
+										<td class="whitespace-nowrap px-4 py-3 text-gray-500">
+											{entry.assignedByName ?? '—'}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </div>
