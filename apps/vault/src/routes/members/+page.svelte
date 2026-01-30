@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import { page } from '$app/stores';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -515,7 +516,7 @@
 	{:else}
 		<div class="space-y-4">
 			{#each filteredMembers as member (member.id)}
-				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm relative">
+				<Card variant="interactive" padding="lg" class="relative">
 					<!-- Remove Button (top-right corner) -->
 					{#if member.id !== data.currentUserId && data.isOwner}
 						<button
@@ -722,7 +723,7 @@
 							{/if}
 						</div>
 					</div>
-				</div>
+				</Card>
 			{/each}
 		</div>
 	{/if}
