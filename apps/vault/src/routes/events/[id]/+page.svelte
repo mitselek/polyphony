@@ -8,6 +8,7 @@
   import EventRepertoireCard from "$lib/components/events/EventRepertoireCard.svelte";
   import EventProgramCard from "$lib/components/events/EventProgramCard.svelte";
   import type { EventRepertoire, Work } from "$lib/types";
+  import { toast } from "$lib/stores/toast";
 
   let { data }: { data: PageData } = $props();
 
@@ -29,13 +30,10 @@
     myParticipation = data.myParticipation;
   });
 
-  // Error state (shared across components)
-  let error = $state("");
-
+  // Error handler for child components
   function handleError(message: string) {
-    error = message;
     if (message) {
-      setTimeout(() => (error = ""), 5000);
+      toast.error(message);
     }
   }
 </script>
@@ -59,12 +57,6 @@
       Back to Events
     </a>
   </div>
-
-  {#if error}
-    <div class="mb-6 rounded-lg bg-red-100 p-4 text-red-700">
-      {error}
-    </div>
-  {/if}
 
   <!-- Event Details Card -->
   <EventDetailsCard bind:event canManage={data.canManage} onError={handleError} />

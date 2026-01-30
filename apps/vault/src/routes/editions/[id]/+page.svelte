@@ -4,6 +4,7 @@
 	import type { EditionType, LicenseType } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,8 +17,6 @@
 	let assigning = $state(false);
 	let returning = $state(false);
 	let deleting = $state<string | null>(null);
-	let error = $state('');
-	let successMessage = $state('');
 
 	// Create form state
 	let batchCount = $state(1);
@@ -150,7 +149,6 @@
 
 	async function createCopies() {
 		creating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/editions/${data.edition.id}/copies`, {
@@ -173,11 +171,9 @@
 			showCreateForm = false;
 			batchCount = 1;
 			batchPrefix = '';
-			successMessage = `Created ${newCopies.length} cop${newCopies.length === 1 ? 'y' : 'ies'}`;
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success(`Created ${newCopies.length} cop${newCopies.length === 1 ? 'y' : 'ies'}`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to create copies';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to create copies');
 		} finally {
 			creating = false;
 		}
@@ -198,7 +194,6 @@
 		if (!selectedCopyId || !selectedMemberId) return;
 
 		assigning = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/copies/${selectedCopyId}/assign`, {
@@ -229,11 +224,9 @@
 			);
 
 			showAssignModal = false;
-			successMessage = `Copy assigned to ${member?.name}`;
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success(`Copy assigned to ${member?.name}`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to assign copy';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to assign copy');
 		} finally {
 			assigning = false;
 		}
@@ -241,7 +234,6 @@
 
 	async function returnCopy(copyId: string) {
 		returning = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/copies/${copyId}/return`, {
@@ -254,11 +246,9 @@
 			}
 
 			copies = copies.map((c) => (c.id === copyId ? { ...c, assignment: null } : c));
-			successMessage = 'Copy marked as returned';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Copy marked as returned');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to return copy';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to return copy');
 		} finally {
 			returning = false;
 		}
@@ -269,7 +259,6 @@
 		if (!confirmed) return;
 
 		deleting = copyId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/copies/${copyId}`, {
@@ -282,11 +271,9 @@
 			}
 
 			copies = copies.filter((c) => c.id !== copyId);
-			successMessage = `Copy ${copyNumber} deleted`;
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success(`Copy ${copyNumber} deleted`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to delete copy';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to delete copy');
 		} finally {
 			deleting = null;
 		}
@@ -495,14 +482,6 @@
 						{showCreateForm ? 'Cancel' : '+ Add Copies'}
 					</button>
 				</div>
-
-				{#if error}
-					<div class="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>
-				{/if}
-
-				{#if successMessage}
-					<div class="mb-4 rounded-lg bg-green-100 p-3 text-sm text-green-700">{successMessage}</div>
-				{/if}
 
 				<!-- Create Copies Form -->
 				{#if showCreateForm}

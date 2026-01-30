@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -11,7 +12,6 @@
 	let editedName = $state('');
 	let isSaving = $state(false);
 	let error = $state('');
-	let successMessage = $state('');
 
 	// Watch for data changes and update local state
 	$effect(() => {
@@ -54,8 +54,7 @@
 			const updatedMember = (await response.json()) as typeof member;
 			member = updatedMember;
 			isEditing = false;
-			successMessage = 'Name updated successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Name updated successfully');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to update name';
 		} finally {
@@ -79,12 +78,6 @@
 	{#if error}
 		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
 			{error}
-		</div>
-	{/if}
-
-	{#if successMessage}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{successMessage}
 		</div>
 	{/if}
 

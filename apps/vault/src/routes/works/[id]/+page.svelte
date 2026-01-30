@@ -6,6 +6,7 @@
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { getLicenseBadgeClass } from '$lib/utils/badges';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,8 +16,6 @@
 	let editingEdition = $state<Edition | null>(null);
 	let deletingId = $state<string | null>(null);
 	let saving = $state(false);
-	let error = $state('');
-	let success = $state('');
 
 	// Form state
 	let formName = $state('');
@@ -124,12 +123,11 @@
 		e.preventDefault();
 
 		if (!formName.trim()) {
-			error = 'Name is required';
+			toast.error('Name is required');
 			return;
 		}
 
 		saving = true;
-		error = '';
 
 		try {
 			if (editingEdition) {
@@ -169,7 +167,7 @@
 					editions = editions.map((ed) => (ed.id === updated.id ? updated : ed));
 				}
 				
-				success = `"${updated.name}" updated successfully`;
+				toast.success(`"${updated.name}" updated successfully`);
 			} else {
 				// Create new edition
 				const response = await fetch(`/api/works/${data.work.id}/editions`, {
@@ -206,13 +204,12 @@
 					}
 				}
 				
-				success = `"${created.name}" created successfully`;
+				toast.success(`"${created.name}" created successfully`);
 			}
 
 			closeForm();
-			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Operation failed';
+			toast.error(err instanceof Error ? err.message : 'Operation failed');
 		} finally {
 			saving = false;
 		}
@@ -222,7 +219,6 @@
 		if (!confirm(`Delete "${edition.name}"? This cannot be undone.`)) return;
 
 		deletingId = edition.id;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/editions/${edition.id}`, { method: 'DELETE' });
@@ -233,10 +229,9 @@
 			}
 
 			editions = editions.filter((ed) => ed.id !== edition.id);
-			success = `"${edition.name}" deleted`;
-			setTimeout(() => (success = ''), 3000);
+			toast.success(`"${edition.name}" deleted`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Delete failed';
+			toast.error(err instanceof Error ? err.message : 'Delete failed');
 		} finally {
 			deletingId = null;
 		}
@@ -266,19 +261,6 @@
 			<p class="text-gray-500">text: {data.work.lyricist}</p>
 		{/if}
 	</div>
-
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-			{error}
-			<button onclick={() => (error = '')} class="ml-2 text-red-900 hover:underline">×</button>
-		</div>
-	{/if}
-
-	{#if success}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{success}
-		</div>
-	{/if}
 
 	<!-- Editions Section -->
 	<div class="mb-8">

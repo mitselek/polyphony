@@ -5,6 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { formatDateLong } from '$lib/utils/formatters';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,7 +16,6 @@
 	let deletingId = $state<string | null>(null);
 	let saving = $state(false);
 	let error = $state('');
-	let success = $state('');
 
 	// Form state
 	let formName = $state('');
@@ -86,7 +86,7 @@
 				seasons = [...seasons].sort(
 					(a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
 				);
-				success = `"${updated.name}" updated successfully`;
+				toast.success(`"${updated.name}" updated successfully`);
 			} else {
 				// Create new season
 				const response = await fetch('/api/seasons', {
@@ -108,11 +108,10 @@
 				seasons = [...seasons, created].sort(
 					(a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
 				);
-				success = `"${created.name}" created successfully`;
+				toast.success(`"${created.name}" created successfully`);
 			}
 
 			closeForm();
-			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Operation failed';
 		} finally {
@@ -135,8 +134,7 @@
 			}
 
 			seasons = seasons.filter((s) => s.id !== season.id);
-			success = `"${season.name}" deleted`;
-			setTimeout(() => (success = ''), 3000);
+			toast.success(`"${season.name}" deleted`);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Delete failed';
 		} finally {
@@ -198,12 +196,6 @@
 		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
 			{error}
 			<button onclick={() => (error = '')} class="ml-2 text-red-900 hover:underline">×</button>
-		</div>
-	{/if}
-
-	{#if success}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{success}
 		</div>
 	{/if}
 

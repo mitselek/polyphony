@@ -6,14 +6,13 @@
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
 	// Make a reactive copy of member for local updates
 	let member = $state(untrack(() => data.member));
 	let updating = $state(false);
-	let error = $state('');
-	let successMessage = $state('');
 	let showingVoiceDropdown = $state(false);
 	let showingSectionDropdown = $state(false);
 
@@ -46,7 +45,6 @@
 		}
 
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}`, {
@@ -63,11 +61,9 @@
 			// Update local state
 			member = { ...member, name: trimmedName };
 			isEditingName = false;
-			successMessage = 'Name updated successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Name updated successfully');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update name';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to update name');
 		} finally {
 			updating = false;
 		}
@@ -97,7 +93,6 @@
 		}
 
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}`, {
@@ -114,11 +109,9 @@
 			// Update local state
 			member = { ...member, nickname: trimmedNickname || null };
 			isEditingNickname = false;
-			successMessage = trimmedNickname ? 'Nickname updated' : 'Nickname cleared';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success(trimmedNickname ? 'Nickname updated' : 'Nickname cleared');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update nickname';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to update nickname');
 		} finally {
 			updating = false;
 		}
@@ -138,13 +131,11 @@
 
 		// Prevent removing last owner
 		if (role === 'owner' && hasRole && data.ownerCount <= 1) {
-			error = 'Cannot remove the last owner';
-			setTimeout(() => (error = ''), 3000);
+			toast.error('Cannot remove the last owner');
 			return;
 		}
 
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}/roles`, {
@@ -165,11 +156,9 @@
 					? [...member.roles, role]
 					: member.roles.filter((r) => r !== role)
 			};
-			successMessage = `Role ${action === 'add' ? 'added' : 'removed'} successfully`;
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success(`Role ${action === 'add' ? 'added' : 'removed'} successfully`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update role';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to update role');
 		} finally {
 			updating = false;
 		}
@@ -177,7 +166,6 @@
 
 	async function addVoice(voiceId: string, isPrimary: boolean = false) {
 		updating = true;
-		error = '';
 		showingVoiceDropdown = false;
 
 		try {
@@ -199,11 +187,9 @@
 					voices: isPrimary ? [voice, ...member.voices] : [...member.voices, voice]
 				};
 			}
-			successMessage = 'Voice added successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Voice added successfully');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add voice';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add voice');
 		} finally {
 			updating = false;
 		}
@@ -211,7 +197,6 @@
 
 	async function removeVoice(voiceId: string) {
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}/voices`, {
@@ -229,11 +214,9 @@
 				...member,
 				voices: member.voices.filter((v) => v.id !== voiceId)
 			};
-			successMessage = 'Voice removed successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Voice removed successfully');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove voice';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove voice');
 		} finally {
 			updating = false;
 		}
@@ -241,7 +224,6 @@
 
 	async function addSection(sectionId: string, isPrimary: boolean = false) {
 		updating = true;
-		error = '';
 		showingSectionDropdown = false;
 
 		try {
@@ -263,11 +245,9 @@
 					sections: isPrimary ? [section, ...member.sections] : [...member.sections, section]
 				};
 			}
-			successMessage = 'Section added successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Section added successfully');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add section';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add section');
 		} finally {
 			updating = false;
 		}
@@ -275,7 +255,6 @@
 
 	async function removeSection(sectionId: string) {
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}/sections`, {
@@ -293,11 +272,9 @@
 				...member,
 				sections: member.sections.filter((s) => s.id !== sectionId)
 			};
-			successMessage = 'Section removed successfully';
-			setTimeout(() => (successMessage = ''), 3000);
+			toast.success('Section removed successfully');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove section';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove section');
 		} finally {
 			updating = false;
 		}
@@ -311,7 +288,6 @@
 		if (!confirmed) return;
 
 		updating = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${member.id}`, {
@@ -326,8 +302,7 @@
 			// Navigate back to members list
 			goto('/members');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove member';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove member');
 			updating = false;
 		}
 	}
@@ -415,18 +390,6 @@
 			<p class="text-sm text-gray-500">Nickname: <span class="text-gray-700">{member.nickname}</span></p>
 		{/if}
 	</div>
-
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-			{error}
-		</div>
-	{/if}
-
-	{#if successMessage}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{successMessage}
-		</div>
-	{/if}
 
 	<Card padding="lg">
 		<!-- Registration Status -->

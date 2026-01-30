@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	interface ProgramEntry {
 		event_id: string;
@@ -27,7 +28,6 @@
 	let { eventId, program = $bindable(), allEditions, canManage, onUpdate }: Props = $props();
 
 	// Local state
-	let error = $state('');
 	let selectedScoreId = $state('');
 	let addingScore = $state(false);
 	let removingScoreId = $state<string | null>(null);
@@ -45,7 +45,6 @@
 		if (!selectedScoreId || addingScore) return;
 
 		addingScore = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/program`, {
@@ -67,8 +66,7 @@
 			selectedScoreId = '';
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add score';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add score');
 		} finally {
 			addingScore = false;
 		}
@@ -76,7 +74,6 @@
 
 	async function removeFromProgram(editionId: string) {
 		removingScoreId = editionId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/program/${editionId}`, {
@@ -92,8 +89,7 @@
 			program = program.filter((p) => p.edition_id !== editionId);
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove score';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove score');
 		} finally {
 			removingScoreId = null;
 		}
@@ -117,7 +113,6 @@
 
 	async function saveReorder() {
 		reorderingProgram = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/program/reorder`, {
@@ -134,8 +129,7 @@
 			}
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to reorder program';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to reorder program');
 		} finally {
 			reorderingProgram = false;
 		}
@@ -151,10 +145,6 @@
 			</span>
 		{/if}
 	</div>
-
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>
-	{/if}
 
 	{#if program.length === 0}
 		<div class="py-8 text-center text-gray-500">

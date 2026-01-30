@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { EventRepertoire, Work, Edition, EventRepertoireWork } from '$lib/types';
 	import Card from '$lib/components/Card.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	interface Props {
 		eventId: string;
@@ -23,7 +24,6 @@
 	}: Props = $props();
 
 	// Local state
-	let error = $state('');
 	let selectedWorkId = $state('');
 	let addingWork = $state(false);
 	let removingWorkId = $state<string | null>(null);
@@ -43,7 +43,6 @@
 		if (!selectedWorkId || addingWork) return;
 
 		addingWork = true;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/works`, {
@@ -83,8 +82,7 @@
 			selectedWorkId = '';
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add work';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add work');
 		} finally {
 			addingWork = false;
 		}
@@ -94,7 +92,6 @@
 		if (!confirm(`Remove "${work.title}" from this event's repertoire?`)) return;
 
 		removingWorkId = eventWorkId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/works/${eventWorkId}`, {
@@ -116,8 +113,7 @@
 			availableWorks = [...availableWorks, work];
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove work';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove work');
 		} finally {
 			removingWorkId = null;
 		}
@@ -136,7 +132,6 @@
 		if (!selectedEditionId) return;
 
 		addingEditionToWorkId = eventWorkId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/events/${eventId}/works/${eventWorkId}/editions`, {
@@ -179,8 +174,7 @@
 			selectedEditionId = '';
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add edition';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add edition');
 		} finally {
 			addingEditionToWorkId = null;
 		}
@@ -188,7 +182,6 @@
 
 	async function removeEdition(eventWorkId: string, workEditionId: string) {
 		removingEditionId = workEditionId;
-		error = '';
 
 		try {
 			const response = await fetch(
@@ -213,16 +206,13 @@
 			};
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove edition';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove edition');
 		} finally {
 			removingEditionId = null;
 		}
 	}
 
 	async function setPrimaryEdition(eventWorkId: string, workEditionId: string) {
-		error = '';
-
 		try {
 			const response = await fetch(
 				`/api/events/${eventId}/works/${eventWorkId}/editions/${workEditionId}`,
@@ -253,8 +243,7 @@
 			};
 			onUpdate?.();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to set primary edition';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to set primary edition');
 		}
 	}
 </script>
@@ -268,10 +257,6 @@
 			</span>
 		{/if}
 	</div>
-
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>
-	{/if}
 
 	<!-- Works List -->
 	{#if repertoire.works.length === 0}

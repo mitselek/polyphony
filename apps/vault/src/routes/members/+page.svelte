@@ -7,6 +7,7 @@
 	import type { Invite } from '$lib/components/PendingInvitesCard.svelte';
 	import type { DisplayMember } from '$lib/components/MemberListCard.svelte';
 	import type { Role } from '$lib/types';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,8 +17,6 @@
 	
 	// UI state
 	let searchQuery = $state('');
-	let error = $state('');
-	let successMessage = $state('');
 	let updatingMember = $state<string | null>(null);
 	let removingMember = $state<string | null>(null);
 	let revokingInvite = $state<string | null>(null);
@@ -33,8 +32,7 @@
 	$effect(() => {
 		const addedName = $page.url.searchParams.get('added');
 		if (addedName) {
-			successMessage = `Successfully added roster member "${addedName}"`;
-			setTimeout(() => (successMessage = ''), 5000);
+			toast.success(`Successfully added roster member "${addedName}"`);
 			// Remove query param from URL without reload
 			const url = new URL($page.url);
 			url.searchParams.delete('added');
@@ -51,7 +49,6 @@
 		if (!confirmed) return;
 
 		revokingInvite = inviteId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/invites/${inviteId}`, { method: 'DELETE' });
@@ -61,8 +58,7 @@
 			}
 			invites = invites.filter((inv) => inv.id !== inviteId);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to revoke invite';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to revoke invite');
 		} finally {
 			revokingInvite = null;
 		}
@@ -70,7 +66,6 @@
 
 	async function renewInvite(inviteId: string, name: string) {
 		renewingInvite = inviteId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/invites/${inviteId}/renew`, { method: 'POST' });
@@ -81,8 +76,7 @@
 			const renewedInvite = (await response.json()) as Invite;
 			invites = invites.map((inv) => (inv.id === inviteId ? renewedInvite : inv));
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to renew invite';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to renew invite');
 		} finally {
 			renewingInvite = null;
 		}
@@ -91,7 +85,6 @@
 	async function copyInviteLink(link: string, name: string) {
 		try {
 			await navigator.clipboard.writeText(link);
-			error = '';
 			const btn = document.activeElement as HTMLButtonElement;
 			const originalText = btn?.textContent;
 			if (btn) {
@@ -99,8 +92,7 @@
 				setTimeout(() => { btn.textContent = originalText; }, 1500);
 			}
 		} catch {
-			error = `Failed to copy link for ${name}`;
-			setTimeout(() => (error = ''), 3000);
+			toast.error(`Failed to copy link for ${name}`);
 		}
 	}
 
@@ -119,14 +111,12 @@
 		if (role === 'owner' && hasRole) {
 			const ownerCount = members.filter((m) => m.roles.includes('owner')).length;
 			if (ownerCount <= 1) {
-				error = 'Cannot remove the last owner';
-				setTimeout(() => (error = ''), 3000);
+				toast.error('Cannot remove the last owner');
 				return;
 			}
 		}
 
 		updatingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/roles`, {
@@ -151,8 +141,7 @@
 					: m
 			);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to update role';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to update role');
 		} finally {
 			updatingMember = null;
 		}
@@ -160,7 +149,6 @@
 
 	async function addVoice(memberId: string, voiceId: string, isPrimary: boolean) {
 		updatingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/voices`, {
@@ -183,8 +171,7 @@
 				);
 			}
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add voice';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add voice');
 		} finally {
 			updatingMember = null;
 		}
@@ -192,7 +179,6 @@
 
 	async function removeVoice(memberId: string, voiceId: string) {
 		updatingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/voices`, {
@@ -212,8 +198,7 @@
 					: m
 			);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove voice';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove voice');
 		} finally {
 			updatingMember = null;
 		}
@@ -221,7 +206,6 @@
 
 	async function addSection(memberId: string, sectionId: string, isPrimary: boolean) {
 		updatingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/sections`, {
@@ -244,8 +228,7 @@
 				);
 			}
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add section';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to add section');
 		} finally {
 			updatingMember = null;
 		}
@@ -253,7 +236,6 @@
 
 	async function removeSection(memberId: string, sectionId: string) {
 		updatingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}/sections`, {
@@ -273,8 +255,7 @@
 					: m
 			);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove section';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove section');
 		} finally {
 			updatingMember = null;
 		}
@@ -288,7 +269,6 @@
 		if (!confirmed) return;
 
 		removingMember = memberId;
-		error = '';
 
 		try {
 			const response = await fetch(`/api/members/${memberId}`, { method: 'DELETE' });
@@ -300,8 +280,7 @@
 
 			members = members.filter((m) => m.id !== memberId);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to remove member';
-			setTimeout(() => (error = ''), 5000);
+			toast.error(err instanceof Error ? err.message : 'Failed to remove member');
 		} finally {
 			removingMember = null;
 		}
@@ -333,18 +312,6 @@
 			</a>
 		</div>
 	</div>
-
-	{#if error}
-		<div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
-			{error}
-		</div>
-	{/if}
-
-	{#if successMessage}
-		<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-			{successMessage}
-		</div>
-	{/if}
 
 	<!-- Pending Invitations -->
 	<PendingInvitesCard
