@@ -1,0 +1,232 @@
+// Inventory reports database layer tests
+// Issue #123 - Missing Copies Report
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { getMissingCopiesForEvent, getMissingCopiesForSeason } from './inventory-reports';
+
+// Mock D1Database
+function createMockDb() {
+	const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 1 } });
+	const mockFirst = vi.fn();
+	const mockAll = vi.fn().mockResolvedValue({ results: [] });
+	const mockBind = vi.fn().mockReturnThis();
+	const mockBatch = vi.fn().mockResolvedValue([]);
+
+	return {
+		prepare: vi.fn().mockReturnValue({
+			bind: mockBind,
+			run: mockRun,
+			first: mockFirst,
+			all: mockAll
+		}),
+		batch: mockBatch,
+		_mocks: { mockRun, mockFirst, mockAll, mockBind, mockBatch }
+	} as unknown as D1Database & { _mocks: typeof import('vitest') };
+}
+
+describe('Inventory reports', () => {
+	let db: ReturnType<typeof createMockDb>;
+
+	beforeEach(() => {
+		db = createMockDb();
+	});
+
+	describe('getMissingCopiesForEvent', () => {
+		it('returns members in edition sections without assignments', async () => {
+			const mockResults = [
+				{
+					member_id: 'member-1',
+					member_name: 'Alice Singer',
+					section_id: 'soprano',
+					section_name: 'Soprano',
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_id: 'work-1',
+					work_title: 'Messiah',
+					composer: 'Handel'
+				},
+				{
+					member_id: 'member-2',
+					member_name: 'Bob Bass',
+					section_id: 'bass',
+					section_name: 'Bass',
+					edition_id: 'ed-1',
+					edition_name: 'Novello Vocal Score',
+					work_id: 'work-1',
+					work_title: 'Messiah',
+					composer: 'Handel'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const report = await getMissingCopiesForEvent(db, 'event-1');
+
+			expect(report.entries).toHaveLength(2);
+			expect(report.totalMissing).toBe(2);
+			expect(report.editionCount).toBe(1);
+
+			expect(report.entries[0].memberId).toBe('member-1');
+			expect(report.entries[0].memberName).toBe('Alice Singer');
+			expect(report.entries[0].sectionName).toBe('Soprano');
+			expect(report.entries[0].editionName).toBe('Novello Vocal Score');
+			expect(report.entries[0].workTitle).toBe('Messiah');
+			expect(report.entries[0].composer).toBe('Handel');
+		});
+
+		it('returns empty report when all members have copies', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const report = await getMissingCopiesForEvent(db, 'event-1');
+
+			expect(report.entries).toEqual([]);
+			expect(report.totalMissing).toBe(0);
+			expect(report.editionCount).toBe(0);
+		});
+
+		it('counts unique editions correctly with multiple members', async () => {
+			const mockResults = [
+				{
+					member_id: 'member-1',
+					member_name: 'Alice',
+					section_id: 'soprano',
+					section_name: 'Soprano',
+					edition_id: 'ed-1',
+					edition_name: 'Edition A',
+					work_id: 'work-1',
+					work_title: 'Work 1',
+					composer: null
+				},
+				{
+					member_id: 'member-2',
+					member_name: 'Bob',
+					section_id: 'bass',
+					section_name: 'Bass',
+					edition_id: 'ed-1',
+					edition_name: 'Edition A',
+					work_id: 'work-1',
+					work_title: 'Work 1',
+					composer: null
+				},
+				{
+					member_id: 'member-3',
+					member_name: 'Carol',
+					section_id: 'alto',
+					section_name: 'Alto',
+					edition_id: 'ed-2',
+					edition_name: 'Edition B',
+					work_id: 'work-2',
+					work_title: 'Work 2',
+					composer: 'Bach'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const report = await getMissingCopiesForEvent(db, 'event-1');
+
+			expect(report.totalMissing).toBe(3);
+			expect(report.editionCount).toBe(2); // ed-1 and ed-2
+		});
+
+		it('handles null composer values', async () => {
+			const mockResults = [
+				{
+					member_id: 'member-1',
+					member_name: 'Alice',
+					section_id: 'soprano',
+					section_name: 'Soprano',
+					edition_id: 'ed-1',
+					edition_name: 'Traditional Carol',
+					work_id: 'work-1',
+					work_title: 'Anonymous Hymn',
+					composer: null
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const report = await getMissingCopiesForEvent(db, 'event-1');
+
+			expect(report.entries[0].composer).toBeNull();
+		});
+
+		it('includes section ID for grouping', async () => {
+			const mockResults = [
+				{
+					member_id: 'member-1',
+					member_name: 'Alice',
+					section_id: 'soprano-1',
+					section_name: 'Soprano I',
+					edition_id: 'ed-1',
+					edition_name: 'Edition A',
+					work_id: 'work-1',
+					work_title: 'Work 1',
+					composer: null
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const report = await getMissingCopiesForEvent(db, 'event-1');
+
+			expect(report.entries[0].sectionId).toBe('soprano-1');
+		});
+
+		it('passes event ID to the query', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			await getMissingCopiesForEvent(db, 'specific-event-id');
+
+			expect(db.prepare('').bind).toHaveBeenCalledWith('specific-event-id');
+		});
+	});
+
+	describe('getMissingCopiesForSeason', () => {
+		it('returns members missing copies for season repertoire', async () => {
+			const mockResults = [
+				{
+					member_id: 'member-1',
+					member_name: 'Alice Singer',
+					section_id: 'soprano',
+					section_name: 'Soprano',
+					edition_id: 'ed-1',
+					edition_name: 'Season Edition',
+					work_id: 'work-1',
+					work_title: 'Season Work',
+					composer: 'Mozart'
+				}
+			];
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
+
+			const report = await getMissingCopiesForSeason(db, 'season-1');
+
+			expect(report.entries).toHaveLength(1);
+			expect(report.totalMissing).toBe(1);
+			expect(report.editionCount).toBe(1);
+			expect(report.entries[0].workTitle).toBe('Season Work');
+		});
+
+		it('returns empty report when all season members have copies', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			const report = await getMissingCopiesForSeason(db, 'season-1');
+
+			expect(report.entries).toEqual([]);
+			expect(report.totalMissing).toBe(0);
+			expect(report.editionCount).toBe(0);
+		});
+
+		it('passes season ID to the query', async () => {
+			(db.prepare('').bind as ReturnType<typeof vi.fn>).mockReturnThis();
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
+
+			await getMissingCopiesForSeason(db, 'specific-season-id');
+
+			expect(db.prepare('').bind).toHaveBeenCalledWith('specific-season-id');
+		});
+	});
+});
