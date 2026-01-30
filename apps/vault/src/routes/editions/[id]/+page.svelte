@@ -23,10 +23,55 @@
 
 	// Assign modal state
 	let selectedMemberId = $state('');
+	let memberSearchQuery = $state('');
 
 	// Sync copies when data changes
 	$effect(() => {
 		copies = data.copies;
+	});
+
+	// Filter and group members for assignment dropdown
+	const filteredMembers = $derived(() => {
+		const query = memberSearchQuery.toLowerCase().trim();
+		return data.members.filter((m) => {
+			if (!query) return true;
+			const displayName = m.nickname || m.name;
+			return displayName.toLowerCase().includes(query) || m.name.toLowerCase().includes(query);
+		});
+	});
+
+	// Group filtered members by section, ordered by section displayOrder then member name
+	const membersBySection = $derived(() => {
+		const members = filteredMembers();
+		const grouped: Record<string, typeof members> = {};
+		const sectionOrder: Record<string, number> = {};
+
+		for (const member of members) {
+			const sectionName = member.primarySection?.name ?? 'No section';
+			const order = member.primarySection?.displayOrder ?? 999;
+			if (!grouped[sectionName]) {
+				grouped[sectionName] = [];
+				sectionOrder[sectionName] = order;
+			}
+			grouped[sectionName].push(member);
+		}
+
+		// Sort members within each section by display name
+		for (const section of Object.keys(grouped)) {
+			grouped[section].sort((a, b) => {
+				const nameA = a.nickname || a.name;
+				const nameB = b.nickname || b.name;
+				return nameA.localeCompare(nameB);
+			});
+		}
+
+		// Return sorted entries by section order
+		return Object.entries(grouped).sort(([, ], [, ]) => {
+			// Sort by section order
+			return 0; // Already sorted in next step
+		}).sort(([a], [b]) => {
+			return (sectionOrder[a] ?? 999) - (sectionOrder[b] ?? 999);
+		});
 	});
 
 	const editionTypes: Record<EditionType, string> = {
@@ -583,23 +628,45 @@
 		<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
 			<h3 class="mb-4 text-lg font-semibold">Assign Copy</h3>
 			
+			<!-- Search filter -->
+			<div class="mb-3">
+				<input
+					type="text"
+					bind:value={memberSearchQuery}
+					placeholder="Filter by name..."
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+				/>
+			</div>
+
 			<div class="mb-4">
 				<label for="member" class="block text-sm font-medium text-gray-700">Select Member</label>
 				<select
 					id="member"
 					bind:value={selectedMemberId}
 					class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+					size="8"
 				>
-					<option value="">Choose a member...</option>
-					{#each data.members as member}
-						<option value={member.id}>{member.name}</option>
+					{#each membersBySection() as [sectionName, members]}
+						<optgroup label={sectionName}>
+							{#each members as member}
+								<option value={member.id}>
+									{member.nickname || member.name}
+									{#if member.nickname}
+										({member.name})
+									{/if}
+								</option>
+							{/each}
+						</optgroup>
 					{/each}
 				</select>
+				{#if filteredMembers().length === 0}
+					<p class="mt-2 text-sm text-gray-500">No members match your search</p>
+				{/if}
 			</div>
 
 			<div class="flex justify-end gap-3">
 				<button
-					onclick={() => (showAssignModal = false)}
+					onclick={() => { showAssignModal = false; memberSearchQuery = ''; }}
 					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
 				>
 					Cancel

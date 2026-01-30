@@ -19,6 +19,13 @@ interface CopyWithAssignment {
 	} | null;
 }
 
+interface MemberForAssignment {
+	id: string;
+	name: string;
+	nickname: string | null;
+	primarySection: { id: string; name: string; displayOrder: number } | null;
+}
+
 async function loadCopiesWithAssignments(
 	db: D1Database,
 	editionId: string
@@ -58,13 +65,24 @@ async function checkCanManage(db: D1Database, memberId: string | undefined): Pro
 
 async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean) {
 	if (!canManage) {
-		return { copies: [] as CopyWithAssignment[], members: [] as { id: string; name: string }[] };
+		return { copies: [] as CopyWithAssignment[], members: [] as MemberForAssignment[] };
 	}
 	const [copies, members] = await Promise.all([
 		loadCopiesWithAssignments(db, editionId),
 		getAllMembers(db)
 	]);
-	return { copies, members: members.map((m) => ({ id: m.id, name: m.name })) };
+	// Transform members for assignment dropdown with section info
+	const membersForAssignment: MemberForAssignment[] = members.map((m) => ({
+		id: m.id,
+		name: m.name,
+		nickname: m.nickname,
+		primarySection: m.sections[0] ? {
+			id: m.sections[0].id,
+			name: m.sections[0].name,
+			displayOrder: m.sections[0].displayOrder
+		} : null
+	}));
+	return { copies, members: membersForAssignment };
 }
 
 export const load: PageServerLoad = async ({ params, platform, cookies }) => {
