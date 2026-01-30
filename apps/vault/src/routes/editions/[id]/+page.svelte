@@ -651,9 +651,6 @@
 							{#each members as member}
 								<option value={member.id}>
 									{member.nickname || member.name}
-									{#if member.nickname}
-										({member.name})
-									{/if}
 								</option>
 							{/each}
 						</optgroup>
