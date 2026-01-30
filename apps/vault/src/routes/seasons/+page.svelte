@@ -289,51 +289,48 @@
 			{#each seasons as season, index (season.id)}
 				{@const endDate = getSeasonEndDate(season, index)}
 				{@const isCurrent = isCurrentSeason(season, index)}
-				<Card variant={data.canManage ? 'interactive' : 'static'} padding="lg">
-					<div class="flex items-center justify-between">
-						<div class="flex-1">
-							<div class="flex items-center gap-3">
-								<h3 class="text-lg font-semibold">
-									<a
-										href="/seasons/{season.id}"
-										class="hover:text-blue-600 hover:underline"
-									>
+				<a href="/seasons/{season.id}" class="block">
+					<Card variant="interactive" padding="lg">
+						<div class="flex items-center justify-between">
+							<div class="flex-1">
+								<div class="flex items-center gap-3">
+									<h3 class="text-lg font-semibold">
 										{season.name}
-									</a>
-								</h3>
-								{#if isCurrent}
-									<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-										Current
-									</span>
-								{/if}
+									</h3>
+									{#if isCurrent}
+										<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+											Current
+										</span>
+									{/if}
+								</div>
+								<p class="mt-1 text-sm text-gray-600">
+									{formatDate(season.start_date)}
+									{#if endDate}
+										<span class="text-gray-400">→</span>
+										{formatDate(endDate)}
+									{/if}
+								</p>
 							</div>
-							<p class="mt-1 text-sm text-gray-600">
-								{formatDate(season.start_date)}
-								{#if endDate}
-									<span class="text-gray-400">→</span>
-									{formatDate(endDate)}
-								{/if}
-							</p>
+							{#if data.canManage}
+								<div class="flex items-center gap-2">
+									<button
+										onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(season); }}
+										class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+									>
+										Edit
+									</button>
+									<button
+										onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteSeason(season); }}
+										disabled={deletingId === season.id}
+										class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+									>
+										{deletingId === season.id ? 'Deleting...' : 'Delete'}
+									</button>
+								</div>
+							{/if}
 						</div>
-						{#if data.canManage}
-							<div class="flex items-center gap-2">
-								<button
-									onclick={() => openEditForm(season)}
-									class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
-								>
-									Edit
-								</button>
-								<button
-									onclick={() => deleteSeason(season)}
-									disabled={deletingId === season.id}
-									class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-								>
-									{deletingId === season.id ? 'Deleting...' : 'Delete'}
-								</button>
-							</div>
-						{/if}
-					</div>
-				</Card>
+					</Card>
+				</a>
 			{/each}
 		</div>
 
