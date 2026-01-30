@@ -147,4 +147,29 @@ describe('Permission System', () => {
 			expect(hasPermission(owner, 'attendance:record')).toBe(true);
 		});
 	});
+
+	// Registration checks (Issue #97) - roster-only members have no permissions
+	describe('registration requirements', () => {
+		it('roster-only member (email_id=null) has NO permissions', () => {
+			const rosterMember: Member = {
+				id: 'roster-1',
+				email_id: null, // NOT registered
+				roles: ['librarian'] // Has roles but not registered
+			};
+			// Even basic permissions should be denied
+			expect(hasPermission(rosterMember, 'scores:view')).toBe(false);
+			expect(hasPermission(rosterMember, 'scores:download')).toBe(false);
+			expect(hasPermission(rosterMember, 'scores:upload')).toBe(false);
+		});
+
+		it('null member has no permissions', () => {
+			expect(hasPermission(null, 'scores:view')).toBe(false);
+			expect(hasPermission(null, 'scores:download')).toBe(false);
+		});
+
+		it('undefined member has no permissions', () => {
+			expect(hasPermission(undefined, 'scores:view')).toBe(false);
+			expect(hasPermission(undefined, 'scores:download')).toBe(false);
+		});
+	});
 });
