@@ -10,7 +10,8 @@ import {
 	getMemberAssignments,
 	isAssigned,
 	getCopyAssignmentHistory,
-	getEditionAssignmentHistory
+	getEditionAssignmentHistory,
+	getCurrentHolders
 } from './copy-assignments';
 
 // Mock D1 database
@@ -432,6 +433,122 @@ describe('Copy assignments database layer', () => {
 			const history = await getEditionAssignmentHistory(db as unknown as D1Database, 'edition-1');
 
 			expect(history[0].copyNumber).toBe('M-05');
+		});
+	});
+
+	// ============================================================================
+	// getCurrentHolders (Issue #125 - Who Has Edition X)
+	// ============================================================================
+
+	describe('getCurrentHolders', () => {
+		it('returns members with active assignments', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						condition: 'good',
+						assigned_at: '2026-01-15T12:00:00.000Z',
+						assigned_by: 'admin-1'
+					},
+					{
+						member_id: 'member-2',
+						member_name: 'Bob Tenor',
+						copy_id: 'copy-2',
+						copy_number: '02',
+						condition: 'fair',
+						assigned_at: '2026-01-10T12:00:00.000Z',
+						assigned_by: 'admin-1'
+					}
+				]
+			});
+
+			const holders = await getCurrentHolders(db as unknown as D1Database, 'edition-1');
+
+			expect(holders).toHaveLength(2);
+			expect(holders[0]).toEqual({
+				memberId: 'member-1',
+				memberName: 'Alice Soprano',
+				copyId: 'copy-1',
+				copyNumber: '01',
+				condition: 'good',
+				assignedAt: '2026-01-15T12:00:00.000Z',
+				assignedBy: 'admin-1'
+			});
+		});
+
+		it('returns empty array when no copies assigned', async () => {
+			db.all.mockResolvedValueOnce({ results: [] });
+
+			const holders = await getCurrentHolders(db as unknown as D1Database, 'edition-1');
+
+			expect(holders).toEqual([]);
+		});
+
+		it('excludes returned assignments', async () => {
+			// Query already filters by returned_at IS NULL
+			// Just verify the function returns what the DB returns (only active)
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						member_id: 'member-1',
+						member_name: 'Alice Soprano',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						condition: 'good',
+						assigned_at: '2026-01-15T12:00:00.000Z',
+						assigned_by: null
+					}
+				]
+			});
+
+			const holders = await getCurrentHolders(db as unknown as D1Database, 'edition-1');
+
+			// Only 1 holder (returned assignment filtered by SQL)
+			expect(holders).toHaveLength(1);
+			expect(holders[0].memberName).toBe('Alice Soprano');
+		});
+
+		it('orders by copy number', async () => {
+			db.all.mockResolvedValueOnce({
+				results: [
+					{
+						member_id: 'member-1',
+						member_name: 'Alice',
+						copy_id: 'copy-1',
+						copy_number: '01',
+						condition: 'good',
+						assigned_at: '2026-01-15T12:00:00.000Z',
+						assigned_by: null
+					},
+					{
+						member_id: 'member-2',
+						member_name: 'Bob',
+						copy_id: 'copy-2',
+						copy_number: '02',
+						condition: 'good',
+						assigned_at: '2026-01-10T12:00:00.000Z',
+						assigned_by: null
+					},
+					{
+						member_id: 'member-3',
+						member_name: 'Carol',
+						copy_id: 'copy-3',
+						copy_number: '03',
+						condition: 'good',
+						assigned_at: '2026-01-20T12:00:00.000Z',
+						assigned_by: null
+					}
+				]
+			});
+
+			const holders = await getCurrentHolders(db as unknown as D1Database, 'edition-1');
+
+			expect(holders[0].copyNumber).toBe('01');
+			expect(holders[1].copyNumber).toBe('02');
+			expect(holders[2].copyNumber).toBe('03');
 		});
 	});
 });

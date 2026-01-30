@@ -607,6 +607,43 @@
 				{/if}
 			</div>
 
+			<!-- Current Holders Section (Issue #125) -->
+			{#if data.currentHolders.length > 0}
+				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold">Current Holders ({data.currentHolders.length})</h2>
+					<p class="mb-4 text-sm text-gray-500">
+						Members who currently have copies of this edition
+					</p>
+					
+					<div class="overflow-hidden rounded-lg border border-gray-200">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Member</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Since</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-200 bg-white">
+								{#each data.currentHolders as holder (holder.copyId)}
+									<tr>
+										<td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{holder.copyNumber}</td>
+										<td class="whitespace-nowrap px-4 py-3">
+											<a href="/members/{holder.memberId}" class="text-blue-600 hover:underline">
+												{holder.memberName}
+											</a>
+										</td>
+										<td class="whitespace-nowrap px-4 py-3 text-gray-600">
+											{new Date(holder.assignedAt).toLocaleDateString()}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{/if}
+
 			<!-- Assignment History Section -->
 			{#if data.assignmentHistory.length > 0}
 				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
