@@ -30,7 +30,7 @@
 		member = data.member;
 	});
 
-	function startEditingName() { {
+	function startEditingName() {
 		if (!data.isAdmin) return;
 		editedName = member.name;
 		isEditingName = true;
