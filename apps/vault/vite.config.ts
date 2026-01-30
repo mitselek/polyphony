@@ -22,6 +22,17 @@ export default defineConfig(({ mode }) => ({
 		// Default to node for fast unit tests
 		// Component tests use @vitest-environment comment or file pattern
 		environment: 'node',
-		pool: 'forks'
+		pool: 'forks',
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'html', 'json'],
+			reportsDirectory: './coverage',
+			include: ['src/lib/**/*.ts'],
+			exclude: [
+				'src/**/*.spec.ts',
+				'src/**/*.d.ts',
+				'src/lib/types.ts'
+			]
+		}
 	}
 }));
