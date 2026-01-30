@@ -156,14 +156,22 @@
 			<h1 class="text-3xl font-bold">Works Catalog</h1>
 			<p class="mt-1 text-gray-600">Musical compositions in your library</p>
 		</div>
-		{#if data.canManage}
-			<button
-				onclick={openCreateForm}
-				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-			>
-				+ Add Work
-			</button>
-		{/if}
+		<div class="flex gap-3">
+			{#if data.canManage}
+				<a
+					href="/library/inventory"
+					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+				>
+					Inventory
+				</a>
+				<button
+					onclick={openCreateForm}
+					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+				>
+					+ Add Work
+				</button>
+			{/if}
+		</div>
 	</div>
 
 	{#if error}
