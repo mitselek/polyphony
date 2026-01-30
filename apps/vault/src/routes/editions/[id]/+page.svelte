@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import type { EditionType, LicenseType } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// Physical copies state
-	let copies = $state(data.copies);
+	// Physical copies state (untrack to capture initial value, $effect syncs updates)
+	let copies = $state(untrack(() => data.copies));
 	let showCreateForm = $state(false);
 	let showAssignModal = $state(false);
 	let selectedCopyId = $state<string | null>(null);
