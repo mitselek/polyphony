@@ -28,12 +28,13 @@
 
 	// Local state
 	let error = $state('');
-	let availableScores = $state(allEditions.filter((s) => !program.some((p) => p.edition_id === s.id)));
 	let selectedScoreId = $state('');
 	let addingScore = $state(false);
 	let removingScoreId = $state<string | null>(null);
 	let reorderingProgram = $state(false);
 
+	// Derived: available scores are all editions not already in program
+	let availableScores = $derived(allEditions.filter((s) => !program.some((p) => p.edition_id === s.id)));
 	let canAddScore = $derived(!!selectedScoreId && !addingScore);
 
 	function getScoreById(editionId: string): Score | undefined {
@@ -62,8 +63,7 @@
 			const updatedProgram = (await response.json()) as ProgramEntry[];
 			program = updatedProgram;
 
-			// Remove from available
-			availableScores = availableScores.filter((s) => s.id !== selectedScoreId);
+			// availableScores is $derived - updates automatically when program changes
 			selectedScoreId = '';
 			onUpdate?.();
 		} catch (err) {
@@ -88,14 +88,8 @@
 				throw new Error(errorData.message || 'Failed to remove score');
 			}
 
-			// Update local state
+			// Update local state - availableScores updates automatically via $derived
 			program = program.filter((p) => p.edition_id !== editionId);
-
-			// Add back to available
-			const score = allEditions.find((s) => s.id === editionId);
-			if (score) {
-				availableScores = [...availableScores, score];
-			}
 			onUpdate?.();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to remove score';
