@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Voice, Section, Role } from '$lib/types';
+	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { isExpired } from '$lib/utils/formatters';
 
 	export interface Invite {
@@ -61,12 +62,7 @@
 							{#if invite.voices && invite.voices.length > 0}
 								<div class="flex gap-1">
 									{#each invite.voices as voice, index}
-										<span 
-											class="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
-											title="{voice.name} {index === 0 ? '(primary)' : ''}"
-										>
-											{#if index === 0}★{/if} {voice.abbreviation}
-										</span>
+										<VoiceBadge {voice} isPrimary={index === 0} />
 									{/each}
 								</div>
 							{/if}
@@ -75,12 +71,7 @@
 							{#if invite.sections && invite.sections.length > 0}
 								<div class="flex gap-1">
 									{#each invite.sections as section, index}
-										<span 
-											class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
-											title="{section.name} {index === 0 ? '(primary)' : ''}"
-										>
-											{#if index === 0}★{/if} {section.abbreviation}
-										</span>
+										<SectionBadge {section} isPrimary={index === 0} />
 									{/each}
 								</div>
 							{/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import type { Role, Voice, Section } from '$lib/types';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
@@ -138,21 +139,13 @@
 								{#if member.voices && member.voices.length > 0}
 									<div class="flex flex-wrap gap-1">
 										{#each member.voices as voice, index}
-											<span 
-												class="group relative inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800"
-												title="{voice.name} {index === 0 ? '(primary)' : ''}"
-											>
-												{#if index === 0}★{/if} {voice.abbreviation}
-												{#if isAdmin && updatingMember !== member.id}
-													<button
-														onclick={() => onRemoveVoice(member.id, voice.id)}
-														class="ml-0.5 opacity-0 group-hover:opacity-100 hover:text-purple-900 transition"
-														title="Remove {voice.name}"
-													>
-														×
-													</button>
-												{/if}
-											</span>
+										<VoiceBadge
+											{voice}
+											isPrimary={index === 0}
+											removable={isAdmin}
+											disabled={updatingMember === member.id}
+											onRemove={() => onRemoveVoice(member.id, voice.id)}
+										/>
 										{/each}
 									</div>
 								{/if}
@@ -194,21 +187,13 @@
 								{#if member.sections && member.sections.length > 0}
 									<div class="flex flex-wrap gap-1">
 										{#each member.sections as section, index}
-											<span 
-												class="group relative inline-flex items-center gap-1 rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
-												title="{section.name} {index === 0 ? '(primary)' : ''}"
-											>
-												{#if index === 0}★{/if} {section.abbreviation}
-												{#if isAdmin && updatingMember !== member.id}
-													<button
-														onclick={() => onRemoveSection(member.id, section.id)}
-														class="ml-0.5 opacity-0 group-hover:opacity-100 hover:text-teal-900 transition"
-														title="Remove {section.name}"
-													>
-														×
-													</button>
-												{/if}
-											</span>
+										<SectionBadge
+											{section}
+											isPrimary={index === 0}
+											removable={isAdmin}
+											disabled={updatingMember === member.id}
+											onRemove={() => onRemoveSection(member.id, section.id)}
+										/>
 										{/each}
 									</div>
 								{/if}

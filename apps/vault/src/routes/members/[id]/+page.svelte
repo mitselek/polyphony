@@ -5,6 +5,7 @@
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
 	import { toast } from '$lib/stores/toast';
 
@@ -467,22 +468,15 @@
 			<div class="flex flex-wrap items-center gap-2">
 				{#if member.voices.length > 0}
 					{#each member.voices as voice, index}
-						<span
-							class="group relative inline-flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800"
-							title="{voice.name} {index === 0 ? '(primary)' : ''}"
-						>
-							{#if index === 0}★{/if}
-							{voice.name} ({voice.abbreviation})
-							{#if data.isAdmin && !updating}
-								<button
-									onclick={() => removeVoice(voice.id)}
-									class="ml-1 opacity-0 group-hover:opacity-100 hover:text-purple-900 transition"
-									title="Remove {voice.name}"
-								>
-									×
-								</button>
-							{/if}
-						</span>
+						<VoiceBadge
+							{voice}
+							isPrimary={index === 0}
+							showFullName
+							size="md"
+							removable={data.isAdmin}
+							disabled={updating}
+							onRemove={() => removeVoice(voice.id)}
+						/>
 					{/each}
 				{:else}
 					<span class="text-gray-500">No voices assigned</span>
@@ -524,22 +518,15 @@
 			<div class="flex flex-wrap items-center gap-2">
 				{#if member.sections.length > 0}
 					{#each member.sections as section, index}
-						<span
-							class="group relative inline-flex items-center gap-1 rounded-full bg-teal-100 px-3 py-1 text-sm font-medium text-teal-800"
-							title="{section.name} {index === 0 ? '(primary)' : ''}"
-						>
-							{#if index === 0}★{/if}
-							{section.name} ({section.abbreviation})
-							{#if data.isAdmin && !updating}
-								<button
-									onclick={() => removeSection(section.id)}
-									class="ml-1 opacity-0 group-hover:opacity-100 hover:text-teal-900 transition"
-									title="Remove {section.name}"
-								>
-									×
-								</button>
-							{/if}
-						</span>
+						<SectionBadge
+							{section}
+							isPrimary={index === 0}
+							showFullName
+							size="md"
+							removable={data.isAdmin}
+							disabled={updating}
+							onRemove={() => removeSection(section.id)}
+						/>
 					{/each}
 				{:else}
 					<span class="text-gray-500">No sections assigned</span>

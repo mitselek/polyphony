@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
 	import { toast } from '$lib/stores/toast';
+	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 
 	let { data }: { data: PageData } = $props();
 
@@ -132,22 +133,17 @@
 					{/if}
 				</div>
 			{:else}
-				<!-- Member info card -->
 				<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
 					<h2 class="text-lg font-semibold">{rosterMember.name}</h2>
 					<div class="mt-2 flex flex-wrap gap-2">
 						{#if rosterMember.voices.length > 0}
-							{#each rosterMember.voices as voice}
-								<span class="rounded bg-purple-100 px-2 py-1 text-xs text-purple-800">
-									{voice.abbreviation}
-								</span>
+							{#each rosterMember.voices as voice, index}
+								<VoiceBadge {voice} isPrimary={index === 0} />
 							{/each}
 						{/if}
 						{#if rosterMember.sections.length > 0}
-							{#each rosterMember.sections as section}
-								<span class="rounded bg-teal-100 px-2 py-1 text-xs text-teal-800">
-									{section.abbreviation}
-								</span>
+							{#each rosterMember.sections as section, index}
+								<SectionBadge {section} isPrimary={index === 0} />
 							{/each}
 						{/if}
 					</div>

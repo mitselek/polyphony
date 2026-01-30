@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
@@ -166,13 +167,7 @@
 			{#if member.voices.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each member.voices as voice, index}
-						<span
-							class="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800"
-							title="{voice.name} {index === 0 ? '(primary)' : ''}"
-						>
-							{#if index === 0}★{/if}
-							{voice.name} ({voice.abbreviation})
-						</span>
+						<VoiceBadge {voice} isPrimary={index === 0} showFullName size="md" />
 					{/each}
 				</div>
 			{:else}
@@ -186,13 +181,7 @@
 			{#if member.sections.length > 0}
 				<div class="flex flex-wrap gap-2">
 					{#each member.sections as section, index}
-						<span
-							class="rounded-full bg-teal-100 px-3 py-1 text-sm font-medium text-teal-800"
-							title="{section.name} {index === 0 ? '(primary)' : ''}"
-						>
-							{#if index === 0}★{/if}
-							{section.name} ({section.abbreviation})
-						</span>
+						<SectionBadge {section} isPrimary={index === 0} showFullName size="md" />
 					{/each}
 				</div>
 			{:else}

@@ -6,6 +6,7 @@
 	import { getLocale } from '$lib/utils/locale';
 	import { formatDateShort, formatTime, isPast } from '$lib/utils/formatters';
 	import Card from '$lib/components/Card.svelte';
+	import { SectionBadge } from '$lib/components/badges';
 
 	let { data }: { data: PageData } = $props();
 
@@ -438,12 +439,7 @@
 									class="flex items-center gap-2 px-4 py-3 hover:bg-blue-50"
 								>
 									{#if isNewSection && member.primarySection}
-										<span
-											class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800 shrink-0"
-											title={member.primarySection.name}
-										>
-											{member.primarySection.abbreviation}
-										</span>
+										<SectionBadge section={member.primarySection} class="shrink-0" />
 									{/if}
 									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto text-right">{member.nickname || member.name}</span>
 								</a>

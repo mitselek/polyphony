@@ -4,6 +4,7 @@
 	import type { EditionType, LicenseType } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
+	import { SectionBadge } from '$lib/components/badges';
 	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
@@ -373,9 +374,7 @@
 						<dt class="text-sm font-medium text-gray-500">Sections</dt>
 						<dd class="mt-1 flex flex-wrap gap-1">
 							{#each linkedSections as section}
-								<span class="rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800">
-									{section.abbreviation}
-								</span>
+								<SectionBadge {section} />
 							{/each}
 						</dd>
 					</div>
