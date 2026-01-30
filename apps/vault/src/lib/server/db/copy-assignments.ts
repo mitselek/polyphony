@@ -414,3 +414,68 @@ export async function getEditionAssignmentHistory(
 	return results.map(rowToHistoryEntry);
 }
 
+// ============================================================================
+// CURRENT HOLDERS QUERY (Issue #125 - Who Has Edition X)
+// ============================================================================
+
+/**
+ * Current holder of a physical copy
+ */
+export interface CurrentHolder {
+	memberId: string;
+	memberName: string;
+	copyId: string;
+	copyNumber: string;
+	condition: string;
+	assignedAt: string;
+	assignedBy: string | null;
+}
+
+interface CurrentHolderRow {
+	member_id: string;
+	member_name: string;
+	copy_id: string;
+	copy_number: string;
+	condition: string;
+	assigned_at: string;
+	assigned_by: string | null;
+}
+
+/**
+ * Get all members currently holding copies of an edition
+ * Issue #125 - Quick lookup for "who has edition X"
+ */
+export async function getCurrentHolders(
+	db: D1Database,
+	editionId: string
+): Promise<CurrentHolder[]> {
+	const query = `
+		SELECT 
+			m.id as member_id,
+			m.name as member_name,
+			pc.id as copy_id,
+			pc.copy_number,
+			pc.condition,
+			ca.assigned_at,
+			ca.assigned_by
+		FROM copy_assignments ca
+		JOIN physical_copies pc ON pc.id = ca.copy_id
+		JOIN members m ON m.id = ca.member_id
+		WHERE pc.edition_id = ?
+			AND ca.returned_at IS NULL
+		ORDER BY pc.copy_number COLLATE NOCASE
+	`;
+
+	const { results } = await db.prepare(query).bind(editionId).all<CurrentHolderRow>();
+
+	return results.map((row) => ({
+		memberId: row.member_id,
+		memberName: row.member_name,
+		copyId: row.copy_id,
+		copyNumber: row.copy_number,
+		condition: row.condition,
+		assignedAt: row.assigned_at,
+		assignedBy: row.assigned_by
+	}));
+}
+
