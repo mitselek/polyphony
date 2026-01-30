@@ -4,6 +4,7 @@
 	import type { Edition, EditionType, LicenseType, Section } from '$lib/types';
 	import Modal from '$lib/components/Modal.svelte';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
+	import Card from '$lib/components/Card.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -319,10 +320,7 @@
 		{:else}
 			<div class="space-y-3">
 				{#each editions as edition (edition.id)}
-					<a
-						href="/editions/{edition.id}"
-						class="group block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
-					>
+					<Card variant="clickable" href="/editions/{edition.id}">
 						<div class="flex items-start justify-between">
 							<div class="flex-1">
 								<div class="flex items-center gap-2">
@@ -394,7 +392,7 @@
 								</div>
 							{/if}
 						</div>
-					</a>
+					</Card>
 				{/each}
 			</div>
 		{/if}
