@@ -317,11 +317,14 @@
 		{:else}
 			<div class="space-y-3">
 				{#each editions as edition (edition.id)}
-					<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+					<a
+						href="/editions/{edition.id}"
+						class="group block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+					>
 						<div class="flex items-start justify-between">
 							<div class="flex-1">
 								<div class="flex items-center gap-2">
-									<h3 class="font-semibold">{edition.name}</h3>
+									<h3 class="font-semibold group-hover:text-blue-600">{edition.name}</h3>
 									<span class="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-800">
 										{getEditionTypeLabel(edition.editionType)}
 									</span>
@@ -344,32 +347,39 @@
 								</div>
 								{#if edition.externalUrl}
 									<p class="mt-2">
-										<a
-											href={edition.externalUrl}
-											target="_blank"
-											rel="noopener noreferrer"
-											class="text-sm text-blue-600 hover:underline"
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<span
+											onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(edition.externalUrl ?? '', '_blank'); }}
+											onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.open(edition.externalUrl ?? '', '_blank'); } }}
+											role="link"
+											tabindex="0"
+											class="cursor-pointer text-sm text-blue-600 hover:underline"
 										>
 											External link ↗
-										</a>
+										</span>
 									</p>
 								{/if}
 								{#if edition.fileName}
 									<p class="mt-2 flex items-center gap-2 text-sm text-gray-500">
 										<span>📄 {edition.fileName}</span>
-										<a
-											href="/editions/{edition.id}/view"
-											class="rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
+										<span
+											onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/editions/${edition.id}/view`; }}
+											onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = `/editions/${edition.id}/view`; } }}
+											role="link"
+											tabindex="0"
+											class="cursor-pointer rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
 										>
 											View
-										</a>
-										<a
-											href="/api/editions/{edition.id}/file"
-											download
-											class="rounded bg-gray-100 px-2 py-0.5 text-gray-700 hover:bg-gray-200"
+										</span>
+										<span
+											onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/api/editions/${edition.id}/file`; }}
+											onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.location.href = `/api/editions/${edition.id}/file`; } }}
+											role="link"
+											tabindex="0"
+											class="cursor-pointer rounded bg-gray-100 px-2 py-0.5 text-gray-700 hover:bg-gray-200"
 										>
 											Download
-										</a>
+										</span>
 									</p>
 								{/if}
 								{#if edition.notes}
@@ -379,13 +389,13 @@
 							{#if data.canManage}
 								<div class="flex gap-2">
 									<button
-										onclick={() => openEditForm(edition)}
+										onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(edition); }}
 										class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-200"
 									>
 										Edit
 									</button>
 									<button
-										onclick={() => deleteEdition(edition)}
+										onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteEdition(edition); }}
 										disabled={deletingId === edition.id}
 										class="rounded bg-red-100 px-3 py-1 text-sm text-red-700 transition hover:bg-red-200 disabled:opacity-50"
 									>
@@ -394,7 +404,7 @@
 								</div>
 							{/if}
 						</div>
-					</div>
+					</a>
 				{/each}
 			</div>
 		{/if}
