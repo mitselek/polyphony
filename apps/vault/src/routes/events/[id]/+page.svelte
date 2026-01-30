@@ -14,7 +14,7 @@
   let program = $state(untrack(() => [...data.program]));
   let availableScores = $state(
     untrack(() =>
-      data.allScores.filter(
+      data.allEditions.filter(
         (s: any) => !program.some((p) => p.score_id === s.id),
       ),
     ),
@@ -176,9 +176,9 @@
     }
   }
 
-  // Find score by ID
+  // Find edition by ID (for program display)
   function getScoreById(scoreId: string) {
-    return data.allScores.find((s: any) => s.id === scoreId);
+    return data.allEditions.find((s: any) => s.id === scoreId);
   }
 
   // Toggle edit mode
@@ -309,7 +309,7 @@
       program = updatedProgram;
 
       // Update available scores
-      availableScores = data.allScores.filter(
+      availableScores = data.allEditions.filter(
         (s: any) => !program.some((p) => p.score_id === s.id),
       );
       selectedScoreId = "";
@@ -324,7 +324,7 @@
   // Remove score from program
   async function removeFromProgram(scoreId: string) {
     const score = getScoreById(scoreId);
-    const confirmed = confirm(`Remove "${score?.title}" from the program?`);
+    const confirmed = confirm(`Remove "${score?.workTitle}" from the program?`);
 
     if (!confirmed) return;
 
@@ -348,7 +348,7 @@
       program = program.filter((p) => p.score_id !== scoreId);
 
       // Update available scores
-      availableScores = data.allScores.filter(
+      availableScores = data.allEditions.filter(
         (s: any) => !program.some((p) => p.score_id === s.id),
       );
     } catch (err) {
@@ -1102,9 +1102,9 @@
 
               <!-- Score Details -->
               <div class="flex-1">
-                <h3 class="font-semibold text-gray-900">{score.title}</h3>
-                {#if score.composer}
-                  <p class="text-sm text-gray-600">{score.composer}</p>
+                <h3 class="font-semibold text-gray-900">{score.workTitle}</h3>
+                {#if score.workComposer}
+                  <p class="text-sm text-gray-600">{score.workComposer}</p>
                 {/if}
                 {#if entry.notes}
                   <p class="mt-1 text-sm italic text-gray-500">{entry.notes}</p>
@@ -1200,7 +1200,7 @@
               <option value="">Select a score...</option>
               {#each availableScores as score (score.id)}
                 <option value={score.id}>
-                  {score.title}{score.composer ? ` - ${score.composer}` : ""}
+                  {score.workTitle}{score.workComposer ? ` - ${score.workComposer}` : ""}
                 </option>
               {/each}
             </select>

@@ -100,7 +100,7 @@ wrangler d1 migrations apply DB
 | Framework       | SvelteKit 2 + Svelte 5     | Use Runes ($state, $derived, $effect) not legacy $ syntax |
 | Platform        | Cloudflare Pages + Workers | Edge deployment                                           |
 | Database        | Cloudflare D1 (SQLite)     | Per-deployment, local dev with wrangler                   |
-| File Storage    | D1 BLOBs (chunked)         | NO R2 - files in score_files/score_chunks tables          |
+| File Storage    | D1 BLOBs (chunked)         | NO R2 - files in edition_files/edition_chunks tables     |
 | Auth            | EdDSA (Ed25519) JWTs       | Registry signs, Vaults verify via JWKS                    |
 | Testing         | Vitest + Playwright        | Unit + E2E                                                |
 | Package Manager | pnpm (workspaces)          | Use workspace:\* for internal deps                        |
@@ -139,10 +139,10 @@ Permission model: Permissions are union of all assigned roles. All authenticated
 
 PDFs stored in D1 to avoid R2 billing. Files >9.5MB split into ~9MB chunks:
 
-- Small files: Single BLOB in `score_files.data`
-- Large files: `is_chunked=1`, chunks in `score_chunks` table
+- Small files: Single BLOB in `edition_files.data`
+- Large files: `is_chunked=1`, chunks in `edition_chunks` table
 
-Implementation: `apps/vault/src/lib/server/storage/d1-chunked-storage.ts`
+Implementation: `apps/vault/src/lib/server/storage/edition-storage.ts`
 
 ### EdDSA JWT Authentication
 
@@ -196,18 +196,20 @@ $effect(() => { localState = data.value; });
 - `member_sections`: Member section assignments (junction table with sections)
 - `voices`: Vocal ranges (Soprano, Alto, Tenor, Bass, etc.)
 - `sections`: Performance sections (S1, S2, T1, T2, Full Choir, etc.)
-- `scores`: Sheet music metadata (id, title, composer, license_type, file_key)
-- `score_files`: PDF BLOBs or chunking metadata
-- `score_chunks`: File chunks for large PDFs
+- `works`: Abstract compositions (title, composer, lyricist)
+- `editions`: Specific publications of works (name, arranger, license_type, file_key)
+- `edition_files`: PDF BLOBs or chunking metadata
+- `edition_chunks`: File chunks for large PDFs
+- `physical_copies`: Individual numbered copies of editions
+- `copy_assignments`: Who has which physical copy checked out
 - `invites`: Name-based invitations (email from Registry OAuth)
 - `invite_voices`: Voice assignments for invites (junction table)
 - `invite_sections`: Section assignments for invites (junction table)
 - `takedowns`: DMCA/DSA takedown requests
-- `access_log`: Score view/download audit trail
 - `vault_settings`: Key-value configuration store (migration 0010)
 
-Role types: `'owner' | 'admin' | 'librarian' | 'conductor'`
-License types: `'public_domain' | 'licensed' | 'owned' | 'pending'`
+Role types: `'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader'`
+License types: `'public_domain' | 'licensed' | 'owned'``
 
 Full schema details: `docs/DATABASE-SCHEMA.md`
 
@@ -228,7 +230,7 @@ Full schema details: `docs/DATABASE-SCHEMA.md`
 ### Vault
 
 - Member operations: `apps/vault/src/lib/server/db/members.ts`
-- Chunked storage: `apps/vault/src/lib/server/storage/d1-chunked-storage.ts`
+- Edition storage: `apps/vault/src/lib/server/storage/edition-storage.ts`
 - Permissions: `apps/vault/src/lib/server/auth/permissions.ts`
 - Settings: `apps/vault/src/lib/server/db/settings.ts`
 - Member UI: `apps/vault/src/routes/members/+page.svelte`
