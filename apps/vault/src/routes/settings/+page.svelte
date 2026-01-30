@@ -1,11 +1,8 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { PageData } from "./$types";
-  import type { VoiceWithCount } from "$lib/server/db/voices";
-  import type { SectionWithCount } from "$lib/server/db/sections";
   import Card from "$lib/components/Card.svelte";
-  import SettingsVoicesCard from "$lib/components/settings/SettingsVoicesCard.svelte";
-  import SettingsSectionsCard from "$lib/components/settings/SettingsSectionsCard.svelte";
+  import SettingsEntityCard from "$lib/components/settings/SettingsEntityCard.svelte";
   import { DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
   import { toast } from "$lib/stores/toast";
 
@@ -13,8 +10,8 @@
 
   // Local state for settings form
   let settings = $state(untrack(() => data.settings));
-  let voices = $state<VoiceWithCount[]>(untrack(() => data.voices));
-  let sections = $state<SectionWithCount[]>(untrack(() => data.sections));
+  let voices = $state(untrack(() => data.voices));
+  let sections = $state(untrack(() => data.sections));
   let saving = $state(false);
 
   // Watch for data changes (e.g., on navigation)
@@ -125,8 +122,8 @@
   </Card>
 
   <!-- Voices Management -->
-  <SettingsVoicesCard bind:voices />
+  <SettingsEntityCard type="voice" bind:items={voices} />
 
   <!-- Sections Management -->
-  <SettingsSectionsCard bind:sections />
+  <SettingsEntityCard type="section" bind:items={sections} />
 </div>
