@@ -6,7 +6,6 @@
   import ParticipationCard from "$lib/components/events/ParticipationCard.svelte";
   import WhatToBringCard from "$lib/components/events/WhatToBringCard.svelte";
   import EventRepertoireCard from "$lib/components/events/EventRepertoireCard.svelte";
-  import EventProgramCard from "$lib/components/events/EventProgramCard.svelte";
   import type { EventRepertoire, Work } from "$lib/types";
 
   let { data }: { data: PageData } = $props();
@@ -17,7 +16,6 @@
     untrack(() => data.repertoire || { eventId: data.event.id, works: [] })
   );
   let availableWorks = $state<Work[]>(untrack(() => data.availableWorks || []));
-  let program = $state(untrack(() => data.program || []));
   let myParticipation = $state(untrack(() => data.myParticipation));
 
   // Sync state when page data changes (navigation)
@@ -25,7 +23,6 @@
     event = data.event;
     repertoire = data.repertoire || { eventId: data.event.id, works: [] };
     availableWorks = data.availableWorks || [];
-    program = data.program || [];
     myParticipation = data.myParticipation;
   });
 </script>
@@ -73,14 +70,6 @@
     bind:availableWorks
     workEditionsMap={data.workEditionsMap}
     seasonWorkIds={new Set(data.seasonWorkIds)}
-    canManage={data.canManage}
-  />
-
-  <!-- Program (Legacy Setlist) Section -->
-  <EventProgramCard
-    eventId={data.event.id}
-    bind:program
-    allEditions={data.allEditions}
     canManage={data.canManage}
   />
 </div>
