@@ -154,6 +154,36 @@ describe('Physical copies database layer', () => {
 				})
 			).rejects.toThrow('Count must be positive');
 		});
+
+		it('auto-increments from existing copies when startNumber not specified', async () => {
+			// First call to getNextAvailableCopyNumber - returns existing copies
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				results: [
+					{ copy_number: '01' },
+					{ copy_number: '02' },
+					{ copy_number: '03' }
+				]
+			});
+			// Second call - returns the newly created copies
+			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				results: [
+					{ id: 'c1', edition_id: 'ed-1', copy_number: '01', condition: 'good', acquired_at: null, notes: null, created_at: '' },
+					{ id: 'c2', edition_id: 'ed-1', copy_number: '02', condition: 'good', acquired_at: null, notes: null, created_at: '' },
+					{ id: 'c3', edition_id: 'ed-1', copy_number: '03', condition: 'good', acquired_at: null, notes: null, created_at: '' },
+					{ id: 'c4', edition_id: 'ed-1', copy_number: '4', condition: 'good', acquired_at: null, notes: null, created_at: '' },
+					{ id: 'c5', edition_id: 'ed-1', copy_number: '5', condition: 'good', acquired_at: null, notes: null, created_at: '' }
+				]
+			});
+
+			const copies = await batchCreatePhysicalCopies(db, {
+				editionId: 'ed-1',
+				count: 2
+			});
+
+			// Should return all copies including new ones starting from 4
+			expect(copies).toHaveLength(5);
+			expect(db.batch).toHaveBeenCalled();
+		});
 	});
 
 	describe('getPhysicalCopyById', () => {

@@ -98,15 +98,22 @@ export async function createPhysicalCopy(
 /**
  * Create multiple physical copies with auto-generated numbers
  * Numbers are zero-padded based on total count (e.g., 01-99 for count < 100)
+ * If startNumber is not specified, automatically finds the next available number
  */
 export async function batchCreatePhysicalCopies(
 	db: D1Database,
 	input: BatchCreateInput
 ): Promise<PhysicalCopy[]> {
-	const { editionId, count, prefix = '', startNumber = 1, condition = 'good', acquiredAt } = input;
+	const { editionId, count, prefix = '', condition = 'good', acquiredAt } = input;
 
 	if (count <= 0) {
 		throw new Error('Count must be positive');
+	}
+
+	// Find the next available start number if not specified
+	let startNumber = input.startNumber ?? 1;
+	if (!input.startNumber) {
+		startNumber = await getNextAvailableCopyNumber(db, editionId, prefix);
 	}
 
 	// Calculate zero-padding width
@@ -136,6 +143,49 @@ export async function batchCreatePhysicalCopies(
 
 	// Return created copies
 	return getPhysicalCopiesByEdition(db, editionId);
+}
+
+/**
+ * Find the next available copy number for an edition
+ * Parses existing copy numbers to find the highest and returns highest + 1
+ */
+async function getNextAvailableCopyNumber(
+	db: D1Database,
+	editionId: string,
+	prefix: string
+): Promise<number> {
+	// Get all existing copy numbers for this edition
+	const { results } = await db
+		.prepare('SELECT copy_number FROM physical_copies WHERE edition_id = ?')
+		.bind(editionId)
+		.all<{ copy_number: string }>();
+
+	if (!results || results.length === 0) {
+		return 1;
+	}
+
+	// Find the highest number
+	let maxNum = 0;
+	for (const row of results) {
+		const copyNumber = row.copy_number;
+		// Try to extract the numeric part
+		let numStr: string;
+		if (prefix && copyNumber.startsWith(`${prefix}-`)) {
+			numStr = copyNumber.slice(prefix.length + 1);
+		} else if (!prefix) {
+			numStr = copyNumber;
+		} else {
+			// Different prefix, skip
+			continue;
+		}
+		
+		const num = parseInt(numStr, 10);
+		if (!isNaN(num) && num > maxNum) {
+			maxNum = num;
+		}
+	}
+
+	return maxNum + 1;
 }
 
 /**
