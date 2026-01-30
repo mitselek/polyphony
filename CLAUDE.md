@@ -100,7 +100,7 @@ wrangler d1 migrations apply DB
 | Framework       | SvelteKit 2 + Svelte 5     | Use Runes ($state, $derived, $effect) not legacy $ syntax |
 | Platform        | Cloudflare Pages + Workers | Edge deployment                                           |
 | Database        | Cloudflare D1 (SQLite)     | Per-deployment, local dev with wrangler                   |
-| File Storage    | D1 BLOBs (chunked)         | NO R2 - files in edition_files/edition_chunks tables     |
+| File Storage    | D1 BLOBs (chunked)         | NO R2 - files in edition_files/edition_chunks tables      |
 | Auth            | EdDSA (Ed25519) JWTs       | Registry signs, Vaults verify via JWKS                    |
 | Testing         | Vitest + Playwright        | Unit + E2E                                                |
 | Package Manager | pnpm (workspaces)          | Use workspace:\* for internal deps                        |

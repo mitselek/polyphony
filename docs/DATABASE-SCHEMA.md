@@ -579,13 +579,13 @@ Rehearsals, concerts, and other choir events.
 
 Setlists linking editions to events in order.
 
-| Column     | Type    | Constraints                            | Description                |
-| ---------- | ------- | -------------------------------------- | -------------------------- |
-| event_id   | TEXT    | PK, FK → events(id) ON DELETE CASCADE  | Event reference            |
-| edition_id | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference         |
-| position   | INTEGER | NOT NULL, DEFAULT 0                    | Order in program (0-based) |
-| notes      | TEXT    |                                        | Notes about this piece     |
-| added_at   | TEXT    | DEFAULT now()                          | When added to program      |
+| Column     | Type    | Constraints                             | Description                |
+| ---------- | ------- | --------------------------------------- | -------------------------- |
+| event_id   | TEXT    | PK, FK → events(id) ON DELETE CASCADE   | Event reference            |
+| edition_id | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference          |
+| position   | INTEGER | NOT NULL, DEFAULT 0                     | Order in program (0-based) |
+| notes      | TEXT    |                                         | Notes about this piece     |
+| added_at   | TEXT    | DEFAULT now()                           | When added to program      |
 
 **Indexes:**
 
