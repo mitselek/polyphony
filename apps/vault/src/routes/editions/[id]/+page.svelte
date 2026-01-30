@@ -4,6 +4,31 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// Physical copies state
+	let copies = $state(data.copies);
+	let showCreateForm = $state(false);
+	let showAssignModal = $state(false);
+	let selectedCopyId = $state<string | null>(null);
+	let creating = $state(false);
+	let assigning = $state(false);
+	let returning = $state(false);
+	let deleting = $state<string | null>(null);
+	let error = $state('');
+	let successMessage = $state('');
+
+	// Create form state
+	let batchCount = $state(1);
+	let batchPrefix = $state('');
+	let copyCondition = $state<'good' | 'fair' | 'poor'>('good');
+
+	// Assign modal state
+	let selectedMemberId = $state('');
+
+	// Sync copies when data changes
+	$effect(() => {
+		copies = data.copies;
+	});
+
 	const editionTypes: Record<EditionType, string> = {
 		full_score: 'Full Score',
 		vocal_score: 'Vocal Score',
@@ -67,6 +92,167 @@
 			?.map((id) => data.sections.find((s) => s.id === id))
 			.filter((s): s is NonNullable<typeof s> => s !== undefined) ?? []
 	);
+
+	// Physical copies summary
+	const copyStats = $derived({
+		total: copies.length,
+		assigned: copies.filter((c) => c.assignment).length,
+		available: copies.filter((c) => !c.assignment).length
+	});
+
+	async function createCopies() {
+		creating = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/editions/${data.edition.id}/copies`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					count: batchCount,
+					prefix: batchPrefix || undefined,
+					condition: copyCondition
+				})
+			});
+
+			if (!response.ok) {
+				const respData = (await response.json()) as { error?: string };
+				throw new Error(respData.error ?? 'Failed to create copies');
+			}
+
+			const newCopies = (await response.json()) as typeof copies;
+			copies = [...copies, ...newCopies.map((c) => ({ ...c, assignment: null }))];
+			showCreateForm = false;
+			batchCount = 1;
+			batchPrefix = '';
+			successMessage = `Created ${newCopies.length} cop${newCopies.length === 1 ? 'y' : 'ies'}`;
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to create copies';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			creating = false;
+		}
+	}
+
+	function openAssignModal(copyId: string) {
+		selectedCopyId = copyId;
+		selectedMemberId = '';
+		showAssignModal = true;
+	}
+
+	async function assignCopy() {
+		if (!selectedCopyId || !selectedMemberId) return;
+
+		assigning = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/copies/${selectedCopyId}/assign`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ memberId: selectedMemberId })
+			});
+
+			if (!response.ok) {
+				const respData = (await response.json()) as { error?: string };
+				throw new Error(respData.error ?? 'Failed to assign copy');
+			}
+
+			const assignment = (await response.json()) as { memberId: string; assignedAt: string };
+			const member = data.members.find((m) => m.id === selectedMemberId);
+
+			copies = copies.map((c) =>
+				c.id === selectedCopyId
+					? {
+							...c,
+							assignment: {
+								memberId: assignment.memberId,
+								memberName: member?.name ?? 'Unknown',
+								assignedAt: assignment.assignedAt
+							}
+						}
+					: c
+			);
+
+			showAssignModal = false;
+			successMessage = `Copy assigned to ${member?.name}`;
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to assign copy';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			assigning = false;
+		}
+	}
+
+	async function returnCopy(copyId: string) {
+		returning = true;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/copies/${copyId}/return`, {
+				method: 'POST'
+			});
+
+			if (!response.ok) {
+				const respData = (await response.json()) as { error?: string };
+				throw new Error(respData.error ?? 'Failed to return copy');
+			}
+
+			copies = copies.map((c) => (c.id === copyId ? { ...c, assignment: null } : c));
+			successMessage = 'Copy marked as returned';
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to return copy';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			returning = false;
+		}
+	}
+
+	async function deleteCopy(copyId: string, copyNumber: string) {
+		const confirmed = confirm(`Delete copy ${copyNumber}? This cannot be undone.`);
+		if (!confirmed) return;
+
+		deleting = copyId;
+		error = '';
+
+		try {
+			const response = await fetch(`/api/copies/${copyId}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				const respData = (await response.json()) as { error?: string };
+				throw new Error(respData.error ?? 'Failed to delete copy');
+			}
+
+			copies = copies.filter((c) => c.id !== copyId);
+			successMessage = `Copy ${copyNumber} deleted`;
+			setTimeout(() => (successMessage = ''), 3000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to delete copy';
+			setTimeout(() => (error = ''), 5000);
+		} finally {
+			deleting = null;
+		}
+	}
+
+	function getConditionClass(condition: string): string {
+		switch (condition) {
+			case 'good':
+				return 'text-green-600';
+			case 'fair':
+				return 'text-amber-600';
+			case 'poor':
+				return 'text-red-600';
+			case 'lost':
+				return 'text-gray-400';
+			default:
+				return 'text-gray-600';
+		}
+	}
 </script>
 
 <svelte:head>
@@ -236,5 +422,196 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- Physical Copies Section (Librarians only) -->
+		{#if data.canManage}
+			<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+				<div class="mb-4 flex items-center justify-between">
+					<div>
+						<h2 class="text-lg font-semibold">Physical Copies</h2>
+						<p class="text-sm text-gray-500">
+							{copyStats.total} cop{copyStats.total === 1 ? 'y' : 'ies'}
+							{#if copyStats.total > 0}
+								({copyStats.assigned} assigned, {copyStats.available} available)
+							{/if}
+						</p>
+					</div>
+					<button
+						onclick={() => (showCreateForm = !showCreateForm)}
+						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+					>
+						{showCreateForm ? 'Cancel' : '+ Add Copies'}
+					</button>
+				</div>
+
+				{#if error}
+					<div class="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>
+				{/if}
+
+				{#if successMessage}
+					<div class="mb-4 rounded-lg bg-green-100 p-3 text-sm text-green-700">{successMessage}</div>
+				{/if}
+
+				<!-- Create Copies Form -->
+				{#if showCreateForm}
+					<div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+						<h3 class="mb-3 font-medium text-gray-900">Add New Copies</h3>
+						<div class="flex flex-wrap items-end gap-4">
+							<div>
+								<label for="count" class="block text-sm font-medium text-gray-700">Count</label>
+								<input
+									id="count"
+									type="number"
+									min="1"
+									max="100"
+									bind:value={batchCount}
+									class="mt-1 w-20 rounded-lg border border-gray-300 px-3 py-2"
+								/>
+							</div>
+							<div>
+								<label for="prefix" class="block text-sm font-medium text-gray-700">Prefix (optional)</label>
+								<input
+									id="prefix"
+									type="text"
+									placeholder="e.g., M"
+									bind:value={batchPrefix}
+									class="mt-1 w-24 rounded-lg border border-gray-300 px-3 py-2"
+								/>
+							</div>
+							<div>
+								<label for="condition" class="block text-sm font-medium text-gray-700">Condition</label>
+								<select
+									id="condition"
+									bind:value={copyCondition}
+									class="mt-1 rounded-lg border border-gray-300 px-3 py-2"
+								>
+									<option value="good">Good</option>
+									<option value="fair">Fair</option>
+									<option value="poor">Poor</option>
+								</select>
+							</div>
+							<button
+								onclick={createCopies}
+								disabled={creating || batchCount < 1}
+								class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+							>
+								{creating ? 'Creating...' : 'Create'}
+							</button>
+						</div>
+						<p class="mt-2 text-xs text-gray-500">
+							{#if batchPrefix}
+								Creates: {batchPrefix}-01{#if batchCount > 1}, {batchPrefix}-02{#if batchCount > 2}, ...{/if}{/if}
+							{:else}
+								Creates: 1{#if batchCount > 1}, 2{#if batchCount > 2}, ...{/if}{/if}
+							{/if}
+						</p>
+					</div>
+				{/if}
+
+				<!-- Copies List -->
+				{#if copies.length === 0}
+					<p class="py-8 text-center text-gray-500">No physical copies yet. Click "Add Copies" to create some.</p>
+				{:else}
+					<div class="overflow-hidden rounded-lg border border-gray-200">
+						<table class="min-w-full divide-y divide-gray-200">
+							<thead class="bg-gray-50">
+								<tr>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Condition</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+									<th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-200 bg-white">
+								{#each copies as copy (copy.id)}
+									<tr>
+										<td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{copy.copyNumber}</td>
+										<td class="whitespace-nowrap px-4 py-3">
+											<span class="capitalize {getConditionClass(copy.condition)}">{copy.condition}</span>
+										</td>
+										<td class="px-4 py-3">
+											{#if copy.assignment}
+												<div>
+													<span class="font-medium text-gray-900">{copy.assignment.memberName}</span>
+													<span class="block text-xs text-gray-500">
+														since {new Date(copy.assignment.assignedAt).toLocaleDateString()}
+													</span>
+												</div>
+											{:else}
+												<span class="text-green-600">Available</span>
+											{/if}
+										</td>
+										<td class="whitespace-nowrap px-4 py-3 text-right">
+											{#if copy.assignment}
+												<button
+													onclick={() => returnCopy(copy.id)}
+													disabled={returning}
+													class="text-sm text-amber-600 hover:text-amber-800 disabled:opacity-50"
+												>
+													Return
+												</button>
+											{:else}
+												<button
+													onclick={() => openAssignModal(copy.id)}
+													class="text-sm text-blue-600 hover:text-blue-800"
+												>
+													Assign
+												</button>
+												<button
+													onclick={() => deleteCopy(copy.id, copy.copyNumber)}
+													disabled={deleting === copy.id}
+													class="ml-3 text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+												>
+													{deleting === copy.id ? '...' : 'Delete'}
+												</button>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </div>
+
+<!-- Assign Copy Modal -->
+{#if showAssignModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+		<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+			<h3 class="mb-4 text-lg font-semibold">Assign Copy</h3>
+			
+			<div class="mb-4">
+				<label for="member" class="block text-sm font-medium text-gray-700">Select Member</label>
+				<select
+					id="member"
+					bind:value={selectedMemberId}
+					class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+				>
+					<option value="">Choose a member...</option>
+					{#each data.members as member}
+						<option value={member.id}>{member.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div class="flex justify-end gap-3">
+				<button
+					onclick={() => (showAssignModal = false)}
+					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={assignCopy}
+					disabled={!selectedMemberId || assigning}
+					class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+				>
+					{assigning ? 'Assigning...' : 'Assign'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
