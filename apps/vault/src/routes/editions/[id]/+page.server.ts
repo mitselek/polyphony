@@ -13,6 +13,7 @@ interface CopyWithAssignment {
 	copyNumber: string;
 	condition: string;
 	assignment: {
+		id: string;
 		memberId: string;
 		memberName: string;
 		assignedAt: string;
@@ -46,6 +47,7 @@ async function loadCopiesWithAssignments(
 			condition: copy.condition,
 			assignment: assignment
 				? {
+						id: assignment.id,
 						memberId: assignment.memberId,
 						memberName: memberMap.get(assignment.memberId) ?? 'Unknown',
 						assignedAt: assignment.assignedAt

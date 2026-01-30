@@ -208,7 +208,7 @@
 				throw new Error(respData.error ?? 'Failed to assign copy');
 			}
 
-			const assignment = (await response.json()) as { memberId: string; assignedAt: string };
+			const assignment = (await response.json()) as { id: string; memberId: string; assignedAt: string };
 			const member = data.members.find((m) => m.id === selectedMemberId);
 
 			copies = copies.map((c) =>
@@ -216,6 +216,7 @@
 					? {
 							...c,
 							assignment: {
+								id: assignment.id,
 								memberId: assignment.memberId,
 								memberName: member?.name ?? 'Unknown',
 								assignedAt: assignment.assignedAt
@@ -233,12 +234,14 @@
 		}
 	}
 
-	async function returnCopy(copyId: string) {
+	async function returnCopy(copyId: string, assignmentId: string) {
 		returning = true;
 
 		try {
 			const response = await fetch(`/api/copies/${copyId}/return`, {
-				method: 'POST'
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ assignmentId })
 			});
 
 			if (!response.ok) {
@@ -574,7 +577,7 @@
 										<td class="whitespace-nowrap px-4 py-3 text-right">
 											{#if copy.assignment}
 												<button
-													onclick={() => returnCopy(copy.id)}
+													onclick={() => returnCopy(copy.id, copy.assignment!.id)}
 													disabled={returning}
 													class="text-sm text-amber-600 hover:text-amber-800 disabled:opacity-50"
 												>
