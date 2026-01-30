@@ -18,7 +18,7 @@
 	// Create local reactive copy of events for RSVP updates
 	let events = $state(untrack(() => data.events));
 	
-	// Sync with server data when it changes
+	// Sync with server data when it changes (e.g., season navigation)
 	$effect(() => {
 		events = data.events;
 	});
@@ -95,7 +95,13 @@
 	<div class="mb-8 flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Events</h1>
-			<p class="mt-2 text-gray-600">Upcoming rehearsals, concerts, and retreats</p>
+			<p class="mt-2 text-gray-600">
+				{#if data.season}
+					{data.season.name}
+				{:else}
+					No season configured
+				{/if}
+			</p>
 		</div>
 		<div class="flex gap-3">
 			<a
@@ -114,6 +120,41 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Season Navigation -->
+	{#if data.season && (data.seasonNav.prev || data.seasonNav.next)}
+		<div class="mb-6 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2">
+			<div>
+				{#if data.seasonNav.prev}
+					<a
+						href="/events?seasonId={data.seasonNav.prev.id}"
+						class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+					>
+						<span>←</span>
+						<span>{data.seasonNav.prev.name}</span>
+					</a>
+				{:else}
+					<span class="text-sm text-gray-400">← No older season</span>
+				{/if}
+			</div>
+			<div class="text-sm font-medium text-gray-700">
+				{data.season.name}
+			</div>
+			<div>
+				{#if data.seasonNav.next}
+					<a
+						href="/events?seasonId={data.seasonNav.next.id}"
+						class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+					>
+						<span>{data.seasonNav.next.name}</span>
+						<span>→</span>
+					</a>
+				{:else}
+					<span class="text-sm text-gray-400">No newer season →</span>
+				{/if}
+			</div>
+		</div>
+	{/if}
 
 	<!-- Filter Buttons -->
 	<div class="mb-6 flex gap-2">
