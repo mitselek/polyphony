@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "author": "Institute of Beautiful Scores <https://scoreinstitute.eu>",
+  "license": "MIT",
   "scripts": {
     "dev": "pnpm --filter registry dev",
     "build": "pnpm --filter registry build",

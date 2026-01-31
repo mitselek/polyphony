@@ -26,7 +26,7 @@ async function getSigningKey(db: D1Database): Promise<string> {
 /** Create signed JWT for verified user */
 async function createAuthToken(db: D1Database, email: string, vaultId: string): Promise<string> {
 	const privateKey = await getSigningKey(db);
-	return signToken({ iss: 'https://registry.polyphony.app', sub: email, aud: vaultId, nonce: nanoid(), email }, privateKey);
+	return signToken({ iss: 'https://scoreinstitute.eu', sub: email, aud: vaultId, nonce: nanoid(), email }, privateKey);
 }
 
 export const GET: RequestHandler = async ({ url, platform }) => {

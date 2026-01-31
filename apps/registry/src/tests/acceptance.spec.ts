@@ -17,7 +17,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 	let token: string;
 	let decodedPayload: any;
 
-	const REGISTRY_URL = 'https://registry.polyphony.app';
+	const REGISTRY_URL = 'https://scoreinstitute.eu';
 	const VAULT_ID = 'test-vault-123';
 	const USER_EMAIL = 'user@example.com';
 	const USER_NAME = 'Test User';

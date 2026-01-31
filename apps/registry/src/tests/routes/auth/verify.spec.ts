@@ -224,7 +224,7 @@ describe('GET /auth/verify', () => {
 		// Verify signToken was called with correct claims
 		expect(signToken).toHaveBeenCalledWith(
 			expect.objectContaining({
-				iss: 'https://registry.polyphony.app',
+				iss: 'https://scoreinstitute.eu',
 				sub: 'user@example.com',
 				aud: 'vault-123',
 				email: 'user@example.com',

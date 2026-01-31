@@ -105,7 +105,7 @@ A public hub that connects the ecosystem.
 
 ### For Choir Directors
 
-1. Visit [registry.polyphony.app](https://registry.polyphony.app) _(coming soon)_
+1. Visit [scoreinstitute.eu](https://scoreinstitute.eu) _(coming soon)_
 2. Click "Create Your Vault"
 3. Follow the setup wizard
 4. Start uploading scores!
@@ -264,10 +264,13 @@ We welcome contributions! Please read our contributing guidelines _(coming soon)
 
 [MIT](LICENSE)
 
+Copyright (c) 2026 Institute of Beautiful Scores
+
 ---
 
 ## Acknowledgments
 
+- Operated by [Institute of Beautiful Scores](https://scoreinstitute.eu)
 - Inspired by the needs of Estonian choral communities
 - Built with [SvelteKit](https://kit.svelte.dev/) and [Cloudflare](https://cloudflare.com/)
 - Name "Polyphony" reflects multiple independent voices harmonizing together

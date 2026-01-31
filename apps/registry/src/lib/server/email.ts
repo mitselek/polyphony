@@ -58,7 +58,7 @@ export async function sendMagicLink(
 			method: 'POST',
 			headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				from: 'Polyphony <onboarding@resend.dev>',
+				from: 'Polyphony <noreply@scoreinstitute.eu>',
 				to: [params.to],
 				subject: `Sign in to ${params.vaultName}`,
 				html

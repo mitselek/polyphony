@@ -453,7 +453,7 @@ Registry acts as a **stateless authentication gateway**. It authenticates users 
 ```typescript
 // Issued by Registry, verified by Vault
 interface AuthToken {
-  iss: "https://registry.polyphony.app";
+  iss: "https://scoreinstitute.eu";
   sub: string; // User's email (the identity)
   aud: string; // vault_id that requested auth
   iat: number; // Issued at
@@ -571,7 +571,7 @@ Each choir gets their own Cloudflare Pages project:
 ```toml
 # wrangler.toml
 [vars]
-PUBLIC_URL = "https://registry.polyphony.app"
+PUBLIC_URL = "https://scoreinstitute.eu"
 
 # Secrets (via wrangler secret put)
 # CLOUDFLARE_API_TOKEN - for automated Vault deployment
@@ -584,7 +584,7 @@ PUBLIC_URL = "https://registry.polyphony.app"
 # wrangler.toml
 [vars]
 PUBLIC_URL = "https://choir-name.polyphony.app"
-REGISTRY_URL = "https://registry.polyphony.app"
+REGISTRY_URL = "https://scoreinstitute.eu"
 
 # Secrets
 # JWT_PRIVATE_KEY - Vault's private key for federation

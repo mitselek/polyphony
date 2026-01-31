@@ -2,6 +2,8 @@
 
 This document outlines the legal architecture designed to minimize liability while enabling choral communities to share music.
 
+**Operated by**: Institute of Beautiful Scores (https://scoreinstitute.eu)
+
 > **Terminology**: See [GLOSSARY.md](GLOSSARY.md) for definitions.
 
 ---

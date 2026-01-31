@@ -2,6 +2,8 @@
 
 **Federated choral music sharing platform.** Two-tier system: Registry (auth gateway + discovery) + distributed Vaults (choir libraries). Built on SvelteKit + Cloudflare (D1/Pages).
 
+**Operated by**: Institute of Beautiful Scores (https://scoreinstitute.eu)
+
 ## System Architecture
 
 ### Two-App Monorepo

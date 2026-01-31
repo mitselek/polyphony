@@ -87,7 +87,7 @@ export const GET = async ({
 	// Create JWT
 	const token = await signToken(
 		{
-			iss: 'https://registry.polyphony.app',
+			iss: 'https://scoreinstitute.eu',
 			sub: userInfo.email,
 			aud: state.vaultId,
 			nonce: nanoid(),
