@@ -6,7 +6,6 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberAssignedCopies, type AssignedCopyWithDetails } from '$lib/server/db/copy-assignments';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface AuthContext {
 	currentUser: Member | null;
@@ -32,10 +31,8 @@ async function loadAuthContext(db: D1Database, cookies: unknown): Promise<AuthCo
 	}
 }
 
-async function loadAdminData(db: D1Database, isAdmin: boolean) {
+async function loadAdminData(db: D1Database, isAdmin: boolean, orgId: string) {
 	if (!isAdmin) return { availableVoices: [], availableSections: [] };
-	// TODO: Get orgId from subdomain routing (#165)
-	const orgId = DEFAULT_ORG_ID;
 	const [availableVoices, availableSections] = await Promise.all([
 		getActiveVoices(db),
 		getActiveSections(db, orgId)
@@ -68,17 +65,18 @@ function formatMemberData(member: Member) {
 	};
 }
 
-export const load: PageServerLoad = async ({ params, platform, cookies }) => {
+export const load: PageServerLoad = async ({ params, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw new Error('Database not available');
 
+	const orgId = locals.org.id;
 	const authContext = await loadAuthContext(db, cookies);
 	const member = await getMemberById(db, params.id);
 	if (!member) error(404, 'Member not found');
 
 	const isOwnProfile = authContext.currentUser?.id === params.id;
 	const [adminData, assignedCopies] = await Promise.all([
-		loadAdminData(db, authContext.isAdmin),
+		loadAdminData(db, authContext.isAdmin, orgId),
 		loadAssignedCopies(db, params.id, authContext.currentUser?.id ?? null, authContext.isAdmin)
 	]);
 

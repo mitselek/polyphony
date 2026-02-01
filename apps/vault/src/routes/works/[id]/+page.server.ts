@@ -5,7 +5,6 @@ import { canUploadScores } from '$lib/server/auth/permissions';
 import { getWorkById } from '$lib/server/db/works';
 import { getEditionsByWorkId } from '$lib/server/db/editions';
 import { getAllSections } from '$lib/server/db/sections';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 async function checkCanManage(db: D1Database, memberId: string | undefined): Promise<boolean> {
 	if (!memberId) return false;
@@ -13,7 +12,7 @@ async function checkCanManage(db: D1Database, memberId: string | undefined): Pro
 	return member ? canUploadScores(member) : false;
 }
 
-export const load: PageServerLoad = async ({ params, platform, cookies }) => {
+export const load: PageServerLoad = async ({ params, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
@@ -23,8 +22,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 	const work = await getWorkById(db, workId);
 	if (!work) throw error(404, 'Work not found');
 
-	// TODO: Get orgId from subdomain routing (#165)
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	const [editions, sections, canManage] = await Promise.all([
 		getEditionsByWorkId(db, workId),

@@ -49,6 +49,16 @@ function createMockCookies(memberId: string | null = 'admin-1') {
 	};
 }
 
+// Mock org for subdomain routing (Schema V2)
+const mockOrg = {
+	id: 'org_crede_001',
+	name: 'Crede',
+	subdomain: 'crede',
+	type: 'collective' as const,
+	contactEmail: 'test@example.com',
+	createdAt: new Date().toISOString()
+};
+
 describe('POST /api/members/invite', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -97,7 +107,8 @@ describe('POST /api/members/invite', () => {
 				sectionIds: ['section-tenor-1', 'section-tenor-2']
 			}),
 			platform: { env: { DB: {} } },
-			cookies: createMockCookies()
+			cookies: createMockCookies(),
+			locals: { org: mockOrg }
 		} as any);
 
 		const json = (await response.json()) as any;
@@ -124,7 +135,8 @@ describe('POST /api/members/invite', () => {
 			POST({
 				request: createMockRequest({ name: 'Test' }),
 				platform: { env: { DB: {} } },
-				cookies: createMockCookies()
+				cookies: createMockCookies(),
+				locals: { org: mockOrg }
 			} as any)
 		).rejects.toThrow('Insufficient permissions');
 	});
@@ -149,7 +161,8 @@ describe('POST /api/members/invite', () => {
 					roles: ['owner']
 				}),
 				platform: { env: { DB: {} } },
-				cookies: createMockCookies()
+				cookies: createMockCookies(),
+				locals: { org: mockOrg }
 			} as any)
 		).rejects.toThrow('Only owners can invite other owners');
 	});

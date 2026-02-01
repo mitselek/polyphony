@@ -9,18 +9,16 @@ import { getParticipation } from '$lib/server/db/participation';
 import { getEventRepertoire } from '$lib/server/db/event-repertoire';
 import { getEventMaterialsForMember } from '$lib/server/db/event-materials';
 import { getAllWorks } from '$lib/server/db/works';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import type { Edition } from '$lib/types';
 
-export const load: PageServerLoad = async ({ platform, cookies, params }) => {
+export const load: PageServerLoad = async ({ platform, cookies, params, locals }) => {
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
 
 	// Require authentication
 	const member = await getAuthenticatedMember(db, cookies);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	const eventId = params.id;
 	if (!eventId) {

@@ -4,9 +4,8 @@
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { createSeason, getAllSeasons, getSeasonByDate } from '$lib/server/db/seasons';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
-export async function GET({ url, platform, cookies }: RequestEvent) {
+export async function GET({ url, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -15,8 +14,7 @@ export async function GET({ url, platform, cookies }: RequestEvent) {
 	// Auth: any authenticated member can view seasons
 	await getAuthenticatedMember(db, cookies);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Check for date query parameter
 	const dateParam = url.searchParams.get('date');
@@ -31,7 +29,7 @@ export async function GET({ url, platform, cookies }: RequestEvent) {
 	return json(seasons);
 }
 
-export async function POST({ request, platform, cookies }: RequestEvent) {
+export async function POST({ request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -41,8 +39,7 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Parse request body
 	const body = (await request.json()) as { name?: string; start_date?: string };

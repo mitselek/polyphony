@@ -3,10 +3,9 @@ import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware
 import { getAllSettings } from '$lib/server/db/settings';
 import { getAllVoicesWithCounts } from '$lib/server/db/voices';
 import { getAllSectionsWithCounts } from '$lib/server/db/sections';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ platform, cookies }) => {
+export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
@@ -14,8 +13,7 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// TODO: Get orgId from subdomain routing (#165)
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Load settings, voices (with counts), and sections (with counts)
 	const [settings, voices, sections] = await Promise.all([

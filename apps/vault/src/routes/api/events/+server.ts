@@ -6,7 +6,6 @@ import { createEvents, getUpcomingEvents } from '$lib/server/db/events';
 import { parseBody, createEventsSchema } from '$lib/server/validation/schemas';
 import { canCreateEvents } from '$lib/server/auth/permissions';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 /**
  * GET /api/events
@@ -14,15 +13,14 @@ import { DEFAULT_ORG_ID } from '$lib/server/constants';
  * Requires: Authentication
  */
 export async function GET(event: RequestEvent) {
-	const { platform, cookies } = event;
+	const { platform, cookies, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require authentication
 	const member = await getAuthenticatedMember(db, cookies);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	const events = await getUpcomingEvents(db, orgId);
 	return json(events);
@@ -35,7 +33,7 @@ export async function GET(event: RequestEvent) {
  * Body: { events: [{ title, starts_at, event_type, description?, location?, ends_at? }] }
  */
 export async function POST(event: RequestEvent) {
-	const { platform, cookies, request } = event;
+	const { platform, cookies, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
@@ -45,8 +43,7 @@ export async function POST(event: RequestEvent) {
 		throw error(403, 'Only conductors and admins can create events');
 	}
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	const body = await parseBody(request, createEventsSchema);
 	const createdEvents = await createEvents(db, orgId, body.events, member.id);

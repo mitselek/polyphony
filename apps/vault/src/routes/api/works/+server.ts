@@ -4,10 +4,9 @@
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { createWork, getAllWorks, searchWorks } from '$lib/server/db/works';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import type { CreateWorkInput } from '$lib/types';
 
-export async function GET({ url, platform, cookies }: RequestEvent) {
+export async function GET({ url, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -16,8 +15,7 @@ export async function GET({ url, platform, cookies }: RequestEvent) {
 	// Auth: any authenticated member can view works
 	await getAuthenticatedMember(db, cookies);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Check for search query
 	const query = url.searchParams.get('q');
@@ -31,7 +29,7 @@ export async function GET({ url, platform, cookies }: RequestEvent) {
 	return json(works);
 }
 
-export async function POST({ request, platform, cookies }: RequestEvent) {
+export async function POST({ request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -41,8 +39,7 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Parse request body
 	const body = (await request.json()) as Partial<CreateWorkInput>;
