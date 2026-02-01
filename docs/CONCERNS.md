@@ -35,6 +35,8 @@ This document tracks unresolved questions that need answers before implementatio
 
 ## 2. Federation Protocol
 
+> ⏳ **DEFERRED**: Federation is planned for a future phase. Current focus is on single-vault functionality.
+
 ### Trust Establishment
 
 - [ ] Wire protocol specification: REST? GraphQL? Custom binary?
@@ -171,7 +173,7 @@ This document tracks unresolved questions that need answers before implementatio
 | Question                      | Impact   | Urgency       | Owner         |
 | ----------------------------- | -------- | ------------- | ------------- |
 | Private Circle legal validity | Critical | Before MVP    | Legal counsel |
-| Federation wire protocol      | Critical | Phase 2       | Tech lead     |
+| Federation wire protocol      | Low      | Deferred      | Tech lead     |
 | Deployment complexity         | High     | Phase 1       | UX + DevOps   |
 | Identity/auth model           | High     | Phase 1       | Tech lead     |
 | Funding model                 | Medium   | Before launch | Project lead  |

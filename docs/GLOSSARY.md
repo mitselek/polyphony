@@ -14,17 +14,17 @@ A self-contained, independently hosted instance serving a single choir.
 - **Members**: Choir singers with access to the Vault
 - **Hosted on**: Cloudflare (via Registry deploy) or self-hosted
 
-**MVP Features (Phase 1)**:
+**Current Features**:
 
 - Score library (upload, organize, view)
 - Member access control
-- Federation capability (Handshake)
+- Roster management
+- Event scheduling and attendance
 
-**Future Features (Phase 2+)**:
+**Future Features**:
 
-- Choir roster management
-- Rehearsal agenda/calendar
 - Press releases / public page
+- Federation (Handshake) - deferred
 
 ### Registry
 
@@ -48,31 +48,33 @@ The central coordination service for the Polyphony ecosystem.
 
 ## Federation Concepts
 
-### Handshake
+> ⏳ **DEFERRED**: Federation and Handshake features are planned for a future phase. Current focus is on single-vault functionality and umbrella organization support.
 
-The process by which two Vaults establish mutual trust for score sharing.
+### Handshake (Future)
 
-**Flow**:
+The process by which two Vaults would establish mutual trust for score sharing.
+
+**Conceptual Flow**:
 
 1. Vault A finds Vault B via Registry directory (or direct URI exchange)
 2. Vault A sends trust request to Vault B
 3. Vault B admin approves
 4. Cryptographic trust established (mechanism TBD: mTLS / signed JWTs)
-5. Vaults can now share scores directly (P2P)
+5. Vaults can share scores directly (P2P)
 
-**Properties**:
+**Properties** (when implemented):
 
 - Requires explicit approval from both parties
 - Can be revoked at any time
 - Not transitive (A trusts B, B trusts C ≠ A trusts C)
 
-### Federation
+### Federation (Future)
 
 The network of Vaults connected via Handshakes. Each Vault chooses its trusted peers independently.
 
-### P2P (Peer-to-Peer)
+### P2P (Peer-to-Peer) (Future)
 
-Direct communication between Vaults without routing through Registry. After Handshake, all score sharing happens P2P.
+Direct communication between Vaults without routing through Registry. After Handshake, all score sharing would happen P2P.
 
 ---
 
