@@ -1,6 +1,13 @@
 // Permission system for role-based access control
 
-export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader';
+import type { Role, MemberAuthContext } from '$lib/types';
+
+// Re-export for consumers that import from here
+export type { Role, MemberAuthContext };
+
+// Deprecated: Use MemberAuthContext from types.ts
+// Keeping alias for backward compatibility
+export type Member = MemberAuthContext;
 
 export type Permission =
 	| 'scores:view'
@@ -15,13 +22,6 @@ export type Permission =
 	| 'events:manage'
 	| 'events:delete'
 	| 'attendance:record';
-
-export interface Member {
-	id: string;
-	roles: Role[]; // Aggregate roles (for backward compat)
-	email_id: string | null; // OAuth identity
-	orgRoles?: Record<string, Role[]>; // Org-specific roles (Schema V2)
-}
 
 export interface RequireRoleResult {
 	success: boolean;
@@ -46,7 +46,7 @@ const PERMISSIONS: Record<Role, Permission[]> = {
  * @param orgId Optional org ID to get org-specific roles
  * @returns Array of roles (from orgRoles if orgId provided and available, else from roles)
  */
-function getMemberRoles(member: Member, orgId?: string): Role[] {
+function getMemberRoles(member: MemberAuthContext, orgId?: string): Role[] {
 	if (orgId && member.orgRoles) {
 		return member.orgRoles[orgId] ?? [];
 	}
