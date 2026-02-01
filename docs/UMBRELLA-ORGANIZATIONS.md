@@ -12,11 +12,11 @@ Business model and technical architecture for multi-tier organization support in
 
 Polyphony supports three tiers of organizations:
 
-| Tier | Example | Payment | Vault Access |
-|------|---------|---------|--------------|
-| **Umbrella Organization** | Estonian Mixed Choirs Association | Monthly (based on member count) | Dashboard + aggregated data |
-| **Affiliated Collective** | Choir under umbrella | Free (covered by umbrella) | Own vault at `name.polyphony.uk` |
-| **Independent Collective** | Self-paying choir/band | Monthly/annual (volume-based) | Own vault at `name.polyphony.uk` |
+| Tier                       | Example                           | Payment                         | Vault Access                     |
+| -------------------------- | --------------------------------- | ------------------------------- | -------------------------------- |
+| **Umbrella Organization**  | Estonian Mixed Choirs Association | Monthly (based on member count) | Dashboard + aggregated data      |
+| **Affiliated Collective**  | Choir under umbrella              | Free (covered by umbrella)      | Own vault at `name.polyphony.uk` |
+| **Independent Collective** | Self-paying choir/band            | Monthly/annual (volume-based)   | Own vault at `name.polyphony.uk` |
 
 ### Key Principles
 
@@ -69,11 +69,13 @@ Polyphony supports three tiers of organizations:
 An association or federation that pays for multiple member collectives.
 
 **Examples**:
+
 - Estonian Mixed Choirs Association (Eesti Segakooride Liit)
 - Chamber Choirs Association (Kammerkooride Liit)
 - Regional choir federation
 
 **Capabilities**:
+
 - View list of affiliated vaults
 - See aggregated statistics:
   - Total member count across affiliates
@@ -83,6 +85,7 @@ An association or federation that pays for multiple member collectives.
 - Access billing dashboard
 
 **Does NOT have**:
+
 - Direct access to vault content (scores, private events)
 - Ability to manage vault members
 - A vault of their own (unless they're also a performing collective)
@@ -94,12 +97,14 @@ A choir/orchestra/band that belongs to an umbrella organization.
 **Billing**: Free (umbrella pays)
 
 **Vault Features**: Full access to all vault features:
+
 - Score library
 - Member management
 - Events & attendance
 - Seasons & repertoire
 
 **Affiliation Rules**:
+
 - Can belong to ONE umbrella at a time
 - Can leave umbrella → becomes independent (must start paying)
 - Can switch umbrellas (with approval from new umbrella)
@@ -111,6 +116,7 @@ A self-paying choir/orchestra/band with no umbrella affiliation.
 **Billing**: Direct payment (monthly or annual)
 
 **Pricing Model** (TBD):
+
 - Option A: Flat rate (e.g., €5/month)
 - Option B: Volume-based (member count or storage)
 - Option C: Freemium (basic free, premium features paid)
@@ -135,7 +141,7 @@ CREATE TABLE organizations (
     umbrella_id TEXT REFERENCES organizations(id),  -- NULL for umbrellas and independents
     contact_email TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    
+
     -- Constraint: umbrellas cannot have umbrella_id
     CHECK (type != 'umbrella' OR umbrella_id IS NULL)
 );
@@ -176,7 +182,7 @@ CREATE TABLE usage_reports (
     storage_bytes INTEGER NOT NULL,
     event_count INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    
+
     UNIQUE(vault_id, report_date)
 );
 ```
@@ -198,7 +204,7 @@ All vaults get a subdomain under `polyphony.uk`:
 
 ```
 kamariit.polyphony.uk     -- Affiliated collective
-voces.polyphony.uk        -- Affiliated collective  
+voces.polyphony.uk        -- Affiliated collective
 rockband.polyphony.uk     -- Independent collective
 ```
 
@@ -206,15 +212,16 @@ rockband.polyphony.uk     -- Independent collective
 
 ### 5.2 Subdomain Validation Rules
 
-| Rule | Example Valid | Example Invalid |
-|------|---------------|-----------------|
-| Lowercase alphanumeric + hyphens | `my-choir` | `My_Choir` |
-| 3-63 characters | `abc` | `ab` |
-| Cannot start/end with hyphen | `my-choir` | `-mychoir-` |
-| Cannot be reserved | `choir123` | `www`, `api`, `admin` |
-| Must be unique | (first come) | (duplicate) |
+| Rule                             | Example Valid | Example Invalid       |
+| -------------------------------- | ------------- | --------------------- |
+| Lowercase alphanumeric + hyphens | `my-choir`    | `My_Choir`            |
+| 3-63 characters                  | `abc`         | `ab`                  |
+| Cannot start/end with hyphen     | `my-choir`    | `-mychoir-`           |
+| Cannot be reserved               | `choir123`    | `www`, `api`, `admin` |
+| Must be unique                   | (first come)  | (duplicate)           |
 
 **Reserved subdomains**:
+
 - `www`, `api`, `admin`, `auth`, `login`
 - `vault`, `registry`, `static`, `assets`
 - `mail`, `smtp`, `imap`, `pop`
@@ -230,6 +237,7 @@ When a vault is provisioned:
 4. Vault is accessible at `https://{slug}.polyphony.uk`
 
 **Required Cloudflare API permissions**:
+
 - `Zone:DNS:Edit` - Create CNAME records
 - `Pages:Edit` - Create projects and add domains
 
@@ -242,17 +250,20 @@ Umbrella organizations access a dashboard at `polyphony.uk/dashboard/umbrella/{s
 ### 6.1 Features
 
 **Affiliate Management**:
+
 - List of affiliated collectives (name, subdomain, join date)
 - Pending affiliation requests (approve/reject)
 - Remove affiliate (with confirmation)
 
 **Aggregated Statistics**:
+
 - Total member count across all affiliates
 - Active vaults count
 - Public events calendar (concerts, festivals)
 - Storage usage summary
 
 **Billing**:
+
 - Current plan and pricing tier
 - Invoice history
 - Payment method management
@@ -261,11 +272,13 @@ Umbrella organizations access a dashboard at `polyphony.uk/dashboard/umbrella/{s
 ### 6.2 Data Access Boundaries
 
 Umbrella orgs can see:
+
 - ✅ Aggregate counts (members, scores, events)
 - ✅ Public event details (concerts listed as public)
 - ✅ Vault status (active/inactive)
 
 Umbrella orgs CANNOT see:
+
 - ❌ Individual member names/emails
 - ❌ Score library contents
 - ❌ Private events or rehearsals
@@ -325,19 +338,21 @@ Umbrella orgs CANNOT see:
 
 **Tiered by affiliate count**:
 
-| Affiliates | Monthly Price | Per-Affiliate |
-|------------|---------------|---------------|
-| 1-5        | €25           | €5.00         |
-| 6-15       | €50           | €3.33-€8.33   |
-| 16-30      | €80           | €2.67-€5.00   |
-| 31+        | €100 + €2/each| ~€3.00        |
+| Affiliates | Monthly Price  | Per-Affiliate |
+| ---------- | -------------- | ------------- |
+| 1-5        | €25            | €5.00         |
+| 6-15       | €50            | €3.33-€8.33   |
+| 16-30      | €80            | €2.67-€5.00   |
+| 31+        | €100 + €2/each | ~€3.00        |
 
 ### 8.2 Independent Pricing
 
 **Option A - Flat Rate**:
+
 - €5/month or €50/year
 
 **Option B - Usage-Based**:
+
 - Free tier: Up to 20 members, 100MB storage
 - Basic (€3/mo): Up to 50 members, 500MB storage
 - Premium (€8/mo): Unlimited members, 2GB storage
@@ -345,6 +360,7 @@ Umbrella orgs CANNOT see:
 ### 8.3 Payment Provider
 
 **Stripe** for payment processing:
+
 - Subscription management
 - Invoice generation
 - Payment method storage
@@ -355,26 +371,31 @@ Umbrella orgs CANNOT see:
 ## 9. Implementation Phases
 
 ### Phase 1: Manual Provisioning
+
 - Single vault at `vault.polyphony.uk` (current)
 - No subdomain system yet
 - Manual Cloudflare setup for additional vaults
 
 ### Phase 2: Registry Schema + UI
+
 - Add organizations/subscriptions tables
 - Umbrella dashboard (view-only, no provisioning)
 - Organization registration flow
 
 ### Phase 3: Automated Vault Provisioning
+
 - Cloudflare API integration
 - Automatic subdomain DNS setup
 - Vault database creation
 
 ### Phase 4: Billing Integration
+
 - Stripe subscription management
 - Usage-based pricing (if chosen)
 - Invoice generation
 
 ### Phase 5: Aggregated Reporting
+
 - Vault → Registry usage reports
 - Umbrella statistics dashboard
 - Public event aggregation
