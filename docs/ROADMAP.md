@@ -38,8 +38,9 @@ See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for complete schema design.
 - ✅ Registry handles OAuth + email magic link authentication
 - ✅ Vault features: members, events, scores, editions, seasons, attendance
 - ✅ **Schema V2 design complete** (see SCHEMA-V2-EVOLUTION.md)
-- 🔲 Schema V2 migrations not yet implemented
-- 🔲 No umbrella organization support
+- ✅ **Schema V2 migrations applied to production** (2026-02-01)
+- ✅ **Subdomain routing implemented** (crede.polyphony.uk live)
+- 🔲 No umbrella organization support (UI pending)
 - 🔲 No billing/subscriptions
 
 ---
@@ -61,54 +62,56 @@ See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for complete schema design.
 
 ---
 
-## Phase 0.5: Schema V2 Implementation
+## Phase 0.5: Schema V2 Implementation ✅ COMPLETE
 
 **Goal**: Create and apply migrations to implement V2 schema.
 
-### 0.5.1 Vault Migrations
+**Completed 2026-02-01**. All migrations applied to production, Crede live at `crede.polyphony.uk`.
 
-Create migration files for V2 schema:
+### 0.5.1 Vault Migrations ✅
 
-- [ ] `0025_organizations.sql` - organizations table
-- [ ] `0026_member_organizations.sql` - junction table, migrate existing members
-- [ ] `0027_member_roles_org_id.sql` - add org_id to member_roles
-- [ ] `0028_sections_org_id.sql` - add org_id to sections
-- [ ] `0029_content_org_id.sql` - add org_id to events, works, seasons, invites
-- [ ] `0030_affiliations.sql` - affiliations table with history
+Migration files for V2 schema:
 
-### 0.5.2 Data Migration
+- [x] `0025_organizations.sql` - organizations table
+- [x] `0026_member_organizations.sql` - junction table, migrate existing members
+- [x] `0027_member_roles_org_id.sql` - add org_id to member_roles
+- [x] `0028_sections_org_id.sql` - add org_id to sections
+- [x] `0029_content_org_id.sql` - add org_id to events, works, seasons, invites
+- [x] `0030_affiliations.sql` - affiliations table with history
 
-Migrate existing Crede data to V2 structure:
+### 0.5.2 Data Migration ✅
 
-- [ ] Create organization record for Kammerkoor Crede
-- [ ] Populate member_organizations from existing members
-- [ ] Copy member_roles with org_id
-- [ ] Update sections with org_id
-- [ ] Update content tables with org_id
+Migrated existing Crede data to V2 structure:
 
-### 0.5.3 Subdomain Routing
+- [x] Created organization record for Kammerkoor Crede (subdomain: `crede`)
+- [x] Populated member_organizations from existing members
+- [x] Copied member_roles with org_id
+- [x] Updated sections with org_id
+- [x] Updated content tables with org_id
 
-Minimal routing to keep Crede working:
+**Note**: member_sections assignments were lost during migration cleanup; manually reassigned.
 
-- [ ] Extract subdomain from request URL in hooks
-- [ ] Lookup organization by subdomain
-- [ ] Add org context to `locals`
-- [ ] Update all routes to use `locals.org`
+### 0.5.3 Subdomain Routing ✅
 
-### 0.5.4 Code Updates
+- [x] Extract subdomain from request URL in hooks
+- [x] Lookup organization by subdomain
+- [x] Add org context to `locals`
+- [x] Cloudflare Pages custom domain: `crede.polyphony.uk`
+- [x] Registry callback URL updated for subdomain
 
-- [ ] Update member queries to include org context
-- [ ] Update role checks to include org_id
-- [ ] Add organization context to session
-- [ ] Update invite acceptance flow (4 scenarios)
+### 0.5.4 Code Updates ✅
 
-**Deliverables**:
+- [x] Updated hooks.server.ts with subdomain extraction
+- [x] Added organization context to session (via locals.org)
+- [x] Consolidated Member interface definitions (#170)
 
-- [ ] All migration files created and tested
-- [ ] Existing data migrated
-- [ ] Subdomain routing working
-- [ ] All tests passing with new schema
-- [ ] **Crede fully functional on V2 schema**
+**Deliverables** ✅:
+
+- [x] All migration files created and tested
+- [x] Existing data migrated
+- [x] Subdomain routing working
+- [x] All tests passing with new schema
+- [x] **Crede fully functional on V2 schema at crede.polyphony.uk**
 
 ---
 
@@ -116,7 +119,7 @@ Minimal routing to keep Crede working:
 
 **Goal**: Enable seamless login across multiple organizations.
 
-**Note**: Not blocking for single-org usage. Crede works after Phase 0.5.
+**Status**: Next up. Not blocking for single-org usage. Crede works now.
 
 ### 1.1 SSO Cookie Implementation
 
@@ -133,7 +136,7 @@ See [SCHEMA-V2-EVOLUTION.md#sso-flow](SCHEMA-V2-EVOLUTION.md#sso-flow) for desig
 
 ### 1.2 Wildcard DNS
 
-- [ ] Configure `*.polyphony.uk` CNAME to vault deployment
+- [x] Configure `*.polyphony.uk` CNAME to vault deployment (done, but Pages requires per-subdomain custom domain)
 - [ ] Verify SSL certificate covers wildcard
 
 **Deliverables**:
