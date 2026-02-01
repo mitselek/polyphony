@@ -47,6 +47,32 @@ export interface UpdateOrganizationInput {
 }
 
 // ============================================================================
+// MEMBER ORGANIZATIONS SYSTEM (Schema V2)
+// ============================================================================
+
+/**
+ * Member-Organization relationship (junction table)
+ * Links a global member identity to an organization with org-specific data
+ */
+export interface MemberOrganization {
+	memberId: string;
+	orgId: string;
+	nickname: string | null; // Org-specific display name
+	invitedBy: string | null;
+	joinedAt: string;
+}
+
+/**
+ * Input for adding a member to an organization
+ */
+export interface AddMemberToOrgInput {
+	memberId: string;
+	orgId: string;
+	nickname?: string;
+	invitedBy?: string;
+}
+
+// ============================================================================
 // VOICES & SECTIONS SYSTEM
 // ============================================================================
 
