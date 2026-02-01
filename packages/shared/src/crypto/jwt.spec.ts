@@ -18,7 +18,7 @@ beforeAll(async () => {
 describe('signToken', () => {
 	it('should create a valid JWT with required claims', async () => {
 		const payload: Omit<AuthToken, 'iat' | 'exp'> = {
-			iss: 'https://scoreinstitute.eu',
+			iss: 'https://polyphony.uk',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-123',
@@ -34,7 +34,7 @@ describe('signToken', () => {
 
 	it('should include optional claims if provided', async () => {
 		const payload: Omit<AuthToken, 'iat' | 'exp'> = {
-			iss: 'https://scoreinstitute.eu',
+			iss: 'https://polyphony.uk',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-123',
@@ -51,7 +51,7 @@ describe('signToken', () => {
 describe('verifyToken', () => {
 	it('should verify a valid token', async () => {
 		const payload: Omit<AuthToken, 'iat' | 'exp'> = {
-			iss: 'https://scoreinstitute.eu',
+			iss: 'https://polyphony.uk',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-456',
@@ -71,7 +71,7 @@ describe('verifyToken', () => {
 
 	it('should reject token with invalid signature', async () => {
 		const payload: Omit<AuthToken, 'iat' | 'exp'> = {
-			iss: 'https://scoreinstitute.eu',
+			iss: 'https://polyphony.uk',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-789',
@@ -92,7 +92,7 @@ describe('verifyToken', () => {
 
 	it('should include optional claims in verified payload', async () => {
 		const payload: Omit<AuthToken, 'iat' | 'exp'> = {
-			iss: 'https://scoreinstitute.eu',
+			iss: 'https://polyphony.uk',
 			sub: 'user@example.com',
 			aud: 'vault-test-id',
 			nonce: 'test-nonce-abc',

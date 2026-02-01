@@ -7,7 +7,7 @@ import { acceptInvite } from '$lib/server/db/invites';
 import type { Cookies } from '@sveltejs/kit';
 
 // Registry URL for fetching JWKS
-const REGISTRY_URL = 'https://scoreinstitute.eu';
+const REGISTRY_URL = 'https://polyphony.uk';
 
 // Cache JWKS for 5 minutes
 let jwksCache: { keys: Array<{ kid: string; x: string; crv: string; kty: string; alg?: string }> } | null = null;
