@@ -12,19 +12,21 @@ Business model and technical architecture for multi-tier organization support in
 
 Polyphony supports three tiers of organizations:
 
-| Tier                       | Example                           | Payment                         | Vault Access                     |
-| -------------------------- | --------------------------------- | ------------------------------- | -------------------------------- |
-| **Umbrella Organization**  | Estonian Mixed Choirs Association | Monthly (based on member count) | Dashboard + aggregated data      |
-| **Affiliated Collective**  | Choir under umbrella              | Free (covered by umbrella)      | Own vault at `name.polyphony.uk` |
-| **Independent Collective** | Self-paying choir/band            | Monthly/annual (volume-based)   | Own vault at `name.polyphony.uk` |
+| Tier                       | Example                           | Payment                              | Vault Access                     |
+| -------------------------- | --------------------------------- | ------------------------------------ | -------------------------------- |
+| **Umbrella Organization**  | Estonian Mixed Choirs Association | €10/mo base + €1/GB (aggregate)      | Dashboard + own vault (optional) |
+| **Affiliated Collective**  | Choir under umbrella              | Free (covered by umbrella)           | Own vault at `name.polyphony.uk` |
+| **Independent Collective** | Self-paying choir/band            | Free ≤100MB, €3 ≤1GB, €10 ≤10GB     | Own vault at `name.polyphony.uk` |
 
 ### Key Principles
 
 1. **Umbrella pays for affiliates** - Choirs under an umbrella don't pay individually
-2. **Flat subdomain structure** - All vaults get `name.polyphony.uk` (not nested)
-3. **Registry manages billing** - Subscription/payment logic lives in Registry, not Vaults
-4. **Vaults are independent** - Umbrella affiliation is billing relationship, not data access
-5. **Collectives can move** - A choir can leave one umbrella and join another (or go independent)
+2. **Multi-umbrella allowed** - A collective can belong to multiple umbrellas
+3. **Flat subdomain structure** - All vaults get `name.polyphony.uk` (not nested)
+4. **Registry manages billing** - Subscription/payment logic lives in Registry, not Vaults
+5. **Vaults are independent** - Umbrella affiliation is billing relationship, not data access
+6. **Collectives can move** - A choir can leave one umbrella and join another (or go independent)
+7. **30-day trial** - New independents get 30 days free with full features
 
 ---
 
@@ -83,12 +85,14 @@ An association or federation that pays for multiple member collectives.
   - Active vault count
 - Manage affiliation requests (approve/remove)
 - Access billing dashboard
+- **Own vault** (optional): If umbrella is also a performing collective
+  - Can selectively share scores with affiliates
+  - Can selectively share events with affiliates
 
 **Does NOT have**:
 
-- Direct access to vault content (scores, private events)
-- Ability to manage vault members
-- A vault of their own (unless they're also a performing collective)
+- Direct access to affiliate vault content (scores, private events)
+- Ability to manage affiliate vault members
 
 ### 3.2 Affiliated Collective
 
@@ -105,21 +109,24 @@ A choir/orchestra/band that belongs to an umbrella organization.
 
 **Affiliation Rules**:
 
-- Can belong to ONE umbrella at a time
-- Can leave umbrella → becomes independent (must start paying)
-- Can switch umbrellas (with approval from new umbrella)
+- Can belong to **multiple umbrellas** simultaneously
+- Each umbrella pays proportionally for the collective's storage
+- Can leave umbrella → 30-day grace period → becomes independent (must start paying)
+- Can switch/add umbrellas (with approval from new umbrella)
 
 ### 3.3 Independent Collective
 
 A self-paying choir/orchestra/band with no umbrella affiliation.
 
-**Billing**: Direct payment (monthly or annual)
+**Billing**: Tiered storage-based pricing
 
-**Pricing Model** (TBD):
+| Storage | Monthly Price |
+| ------- | ------------- |
+| ≤100 MB | Free |
+| ≤1 GB | €3/mo |
+| ≤10 GB | €10/mo |
 
-- Option A: Flat rate (e.g., €5/month)
-- Option B: Volume-based (member count or storage)
-- Option C: Freemium (basic free, premium features paid)
+**Trial**: 30 days free with full features for new collectives.
 
 **Vault Features**: Same as affiliated collective
 
@@ -131,27 +138,35 @@ A self-paying choir/orchestra/band with no umbrella affiliation.
 
 ```sql
 -- Organization types: 'umbrella' or 'collective'
--- Collectives can be affiliated or independent based on umbrella_id
 
 CREATE TABLE organizations (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,  -- URL-safe identifier
     type TEXT NOT NULL CHECK (type IN ('umbrella', 'collective')),
-    umbrella_id TEXT REFERENCES organizations(id),  -- NULL for umbrellas and independents
     contact_email TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
-    -- Constraint: umbrellas cannot have umbrella_id
-    CHECK (type != 'umbrella' OR umbrella_id IS NULL)
+-- Many-to-many: collectives can belong to multiple umbrellas
+CREATE TABLE affiliations (
+    id TEXT PRIMARY KEY,
+    collective_id TEXT NOT NULL REFERENCES organizations(id),
+    umbrella_id TEXT NOT NULL REFERENCES organizations(id),
+    is_primary BOOLEAN NOT NULL DEFAULT 0,  -- Primary umbrella pays full storage
+    joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+    
+    UNIQUE(collective_id, umbrella_id)
 );
 
 -- Subscription/billing state
 CREATE TABLE subscriptions (
     id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES organizations(id),
-    plan TEXT NOT NULL CHECK (plan IN ('free', 'basic', 'premium', 'umbrella')),
-    status TEXT NOT NULL CHECK (status IN ('active', 'past_due', 'cancelled', 'trial')),
+    plan TEXT NOT NULL CHECK (plan IN ('free', 'tier1', 'tier2', 'umbrella', 'trial')),
+    status TEXT NOT NULL CHECK (status IN ('active', 'past_due', 'cancelled', 'trial', 'grace')),
+    trial_ends_at TEXT,  -- For 30-day trial
+    grace_ends_at TEXT,  -- For 30-day grace period
     current_period_start TEXT,
     current_period_end TEXT,
     stripe_customer_id TEXT,
@@ -172,7 +187,7 @@ CREATE TABLE affiliation_requests (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Usage reports from vaults (for aggregated stats)
+-- Usage reports from vaults (for aggregated stats and billing)
 CREATE TABLE usage_reports (
     id TEXT PRIMARY KEY,
     vault_id TEXT NOT NULL REFERENCES vaults(id),
@@ -276,13 +291,23 @@ Umbrella orgs can see:
 - ✅ Aggregate counts (members, scores, events)
 - ✅ Public event details (concerts listed as public)
 - ✅ Vault status (active/inactive)
+- ✅ Storage usage per affiliate (for billing transparency)
 
 Umbrella orgs CANNOT see:
 
 - ❌ Individual member names/emails
-- ❌ Score library contents
+- ❌ Affiliate score library contents
 - ❌ Private events or rehearsals
 - ❌ Attendance records
+
+### 6.3 Umbrella Vault Sharing (Optional)
+
+If an umbrella has its own vault (as a performing collective), it can:
+
+- **Share scores** selectively with affiliates (one-way push)
+- **Share events** selectively with affiliates (festival announcements, workshops)
+
+This is NOT federation - just umbrella → affiliate visibility. Affiliates cannot share back to umbrella through this mechanism.
 
 ---
 
@@ -315,9 +340,10 @@ Umbrella orgs CANNOT see:
 1. Collective admin visits polyphony.uk/register
 2. Selects "Register as independent"
 3. Fills in collective details + subdomain
-4. Enters payment information (Stripe)
-5. Subscription created → vault provisioned immediately
-6. Collective admin accesses their vault
+4. 30-day trial starts immediately (no payment required)
+5. Vault provisioned → collective admin accesses their vault
+6. Before trial ends: prompted to add payment method
+7. After trial: tiered pricing based on storage usage
 ```
 
 ### 7.3 Existing Independent → Joins Umbrella
@@ -325,9 +351,22 @@ Umbrella orgs CANNOT see:
 ```
 1. Independent collective admin requests affiliation
 2. Umbrella approves
-3. Registry updates org relationship
-4. Subscription cancelled (umbrella now covers cost)
+3. Registry creates affiliation record (can have multiple)
+4. If primary umbrella: subscription cancelled (umbrella covers cost)
 5. Vault URL unchanged (subdomain stays the same)
+```
+
+### 7.4 Collective Leaves Umbrella
+
+```
+1. Collective or umbrella initiates separation
+2. 30-day grace period starts
+3. During grace: vault fully functional, negotiate next steps
+4. Options:
+   a) Join another umbrella (no interruption)
+   b) Start paying as independent
+   c) Data export + vault archived
+5. After grace with no resolution: vault becomes read-only
 ```
 
 ---
@@ -336,28 +375,55 @@ Umbrella orgs CANNOT see:
 
 ### 8.1 Umbrella Pricing
 
-**Tiered by affiliate count**:
+**Base fee + linear storage**:
 
-| Affiliates | Monthly Price  | Per-Affiliate |
-| ---------- | -------------- | ------------- |
-| 1-5        | €25            | €5.00         |
-| 6-15       | €50            | €3.33-€8.33   |
-| 16-30      | €80            | €2.67-€5.00   |
-| 31+        | €100 + €2/each | ~€3.00        |
+| Component | Price              |
+| --------- | ------------------ |
+| Base fee  | €10/mo             |
+| Storage   | €1/GB (rounded up) |
+
+**Rules**:
+
+- Base fee covers dashboard, aggregation, and support
+- Sum storage across all affiliated vaults
+- Charge €1 per GB, **always rounded up**
+- Archived/inactive data counts toward storage
+
+**Examples**:
+
+| Affiliates | Total Storage | Monthly Cost |
+| ---------- | ------------- | ------------ |
+| 3 choirs | 800 MB | €10 + €1 = **€11/mo** |
+| 10 choirs | 4.2 GB | €10 + €5 = **€15/mo** |
+| 25 choirs | 12 GB | €10 + €12 = **€22/mo** |
 
 ### 8.2 Independent Pricing
 
-**Option A - Flat Rate**:
+**Tiered storage-based pricing**:
 
-- €5/month or €50/year
+| Storage | Monthly Price |
+| ------- | ------------- |
+| ≤100 MB | Free          |
+| ≤1 GB   | €3/mo         |
+| ≤10 GB  | €10/mo        |
 
-**Option B - Usage-Based**:
+**Rules**:
 
-- Free tier: Up to 20 members, 100MB storage
-- Basic (€3/mo): Up to 50 members, 500MB storage
-- Premium (€8/mo): Unlimited members, 2GB storage
+- Archived/inactive data counts toward storage
+- No pro-rating within tiers
 
-### 8.3 Payment Provider
+### 8.3 Why Join an Umbrella?
+
+**Cost comparison** (10 choirs, ~500 MB each = 5 GB total):
+
+| Model           | Calculation | Monthly Cost |
+| --------------- | ----------- | ------------ |
+| As independents | 10 × €3/mo  | **€30/mo**   |
+| Under umbrella  | €10 + €5    | **€15/mo**   |
+
+Umbrella membership saves ~50% at typical usage.
+
+### 8.4 Payment Provider
 
 **Stripe** for payment processing:
 
@@ -402,28 +468,38 @@ Umbrella orgs CANNOT see:
 
 ---
 
-## 10. Open Questions
+## 10. Resolved Questions
 
-1. **Umbrella vault**: Should umbrellas have their own vault if they're also a performing collective?
-   - Option A: Separate organization record (umbrella + collective)
-   - Option B: Umbrella type with optional vault
+1. ✅ **Umbrella vault**: Umbrellas can have their own vault as an affiliated collective under themselves.
+   - Their score library can be selectively shared with affiliates
+   - Their events can be selectively shared with affiliates
 
-2. **Multi-umbrella**: Can a collective belong to multiple umbrellas?
-   - Current design: No (simplifies billing)
-   - Future consideration: Yes, with primary/secondary designation
+2. ✅ **Multi-umbrella**: Collectives can belong to multiple umbrellas.
+   - Primary umbrella designated for billing (pays full storage cost)
+   - Secondary umbrellas get aggregate stats but don't pay
 
-3. **Vault transfer**: What happens to vault data if collective leaves umbrella and stops paying?
-   - Grace period? Data export? Archival?
+3. ✅ **Vault transfer**: 30-day grace period when collective leaves umbrella.
+   - During grace: full functionality, time to negotiate
+   - After grace with no resolution: read-only, then archived
 
-4. **Geographic scope**: Are umbrellas limited to specific countries/regions?
-   - Affects pricing, payment currencies, legal jurisdiction
+4. ✅ **Geographic scope**: No limit. Umbrellas can have affiliates from any country.
 
-5. **Trial period**: Free trial before requiring payment for independents?
-   - 14 days? 30 days? Limited features?
+5. ✅ **Trial period**: 30 days free trial with full features for independents.
 
 ---
 
-## 11. Related Documents
+## 11. Open Questions
+
+1. **Multi-umbrella billing split**: If a collective has multiple umbrellas, does only the primary pay? Or proportional split?
+   - Current design: Primary umbrella pays 100%
+   - Alternative: Split by % of storage or equal division
+
+2. **Umbrella-to-affiliate sharing**: Technical implementation for selective score/event sharing
+   - Read-only references? Copies? Sync mechanism?
+
+---
+
+## 12. Related Documents
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical stack and structure
 - [GLOSSARY.md](GLOSSARY.md) - Terminology definitions
