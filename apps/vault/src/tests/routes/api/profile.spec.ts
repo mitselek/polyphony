@@ -197,7 +197,7 @@ describe('PATCH /api/profile', () => {
 				{ id: 'v1', name: 'Tenor', abbreviation: 'T', category: 'vocal' as const, rangeGroup: 'medium', displayOrder: 1, isActive: true }
 			],
 			sections: [
-				{ id: 's1', name: 'Tenor 1', abbreviation: 'T1', parentSectionId: null, displayOrder: 1, isActive: true }
+				{ id: 's1', orgId: 'org_crede_001', name: 'Tenor 1', abbreviation: 'T1', parentSectionId: null, displayOrder: 1, isActive: true }
 			]
 		};
 		vi.mocked(updateMemberName).mockResolvedValue(updatedMember);

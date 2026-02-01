@@ -19,6 +19,10 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 	const body = (await request.json()) as Partial<CreateSectionInput>;
 
 	// Validate required fields
+	if (!body.orgId || typeof body.orgId !== 'string' || body.orgId.trim().length === 0) {
+		return json({ error: 'Organization ID is required' }, { status: 400 });
+	}
+
 	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
 		return json({ error: 'Name is required' }, { status: 400 });
 	}
@@ -29,6 +33,7 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 
 	// Build input with defaults
 	const input: CreateSectionInput = {
+		orgId: body.orgId.trim(),
 		name: body.name.trim(),
 		abbreviation: body.abbreviation.trim(),
 		parentSectionId: body.parentSectionId ?? undefined,

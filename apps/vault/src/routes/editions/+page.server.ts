@@ -3,6 +3,7 @@ import { getMemberById } from '$lib/server/db/members';
 import { getAllEditions, type EditionWithWork } from '$lib/server/db/editions';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getAllSections } from '$lib/server/db/sections';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import type { Section } from '$lib/types';
 
 export const load: PageServerLoad = async ({ platform, cookies }) => {
@@ -11,9 +12,12 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 		return { editions: [], sections: [], canManage: false };
 	}
 
+	// TODO: Get orgId from subdomain routing (#165)
+	const orgId = DEFAULT_ORG_ID;
+
 	const [editions, sections] = await Promise.all([
 		getAllEditions(db),
-		getAllSections(db)
+		getAllSections(db, orgId)
 	]);
 
 	// Get current user's permissions (librarian can manage editions)

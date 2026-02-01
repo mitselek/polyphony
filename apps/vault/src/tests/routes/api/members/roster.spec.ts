@@ -137,7 +137,7 @@ describe('POST /api/members/roster', () => {
 			email_contact: 'jane@example.com',
 			roles: [],
 			voices: [{ id: 'voice1', name: 'Soprano', abbreviation: 'S', category: 'vocal' as const, rangeGroup: 'upper', displayOrder: 1, isActive: true }],
-			sections: [{ id: 'sec1', name: 'Soprano 1', abbreviation: 'S1', parentSectionId: null, displayOrder: 1, isActive: true }],
+			sections: [{ id: 'sec1', orgId: 'org_crede_001', name: 'Soprano 1', abbreviation: 'S1', parentSectionId: null, displayOrder: 1, isActive: true }],
 			invited_by: 'admin-id',
 			joined_at: '2024-01-15T00:00:00Z'
 		};

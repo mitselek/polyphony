@@ -7,6 +7,7 @@ import { getAllSections } from '$lib/server/db/sections';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getPhysicalCopiesByEdition } from '$lib/server/db/physical-copies';
 import { getActiveAssignments, getEditionAssignmentHistory, getCurrentHolders, type AssignmentHistoryEntry, type CurrentHolder } from '$lib/server/db/copy-assignments';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface CopyWithAssignment {
 	id: string;
@@ -106,8 +107,11 @@ export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 
 	const canManage = await checkCanManage(db, cookies.get('member_id'));
 
+	// TODO: Get orgId from subdomain routing (#165)
+	const orgId = DEFAULT_ORG_ID;
+
 	const [sections, librarianData] = await Promise.all([
-		getAllSections(db),
+		getAllSections(db, orgId),
 		loadLibrarianData(db, params.id, canManage)
 	]);
 

@@ -6,6 +6,7 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberAssignedCopies, type AssignedCopyWithDetails } from '$lib/server/db/copy-assignments';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface AuthContext {
 	currentUser: Member | null;
@@ -33,9 +34,11 @@ async function loadAuthContext(db: D1Database, cookies: unknown): Promise<AuthCo
 
 async function loadAdminData(db: D1Database, isAdmin: boolean) {
 	if (!isAdmin) return { availableVoices: [], availableSections: [] };
+	// TODO: Get orgId from subdomain routing (#165)
+	const orgId = DEFAULT_ORG_ID;
 	const [availableVoices, availableSections] = await Promise.all([
 		getActiveVoices(db),
-		getActiveSections(db)
+		getActiveSections(db, orgId)
 	]);
 	return { availableVoices, availableSections };
 }
