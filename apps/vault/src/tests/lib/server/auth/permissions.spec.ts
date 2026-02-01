@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	requireRole,
 	hasPermission,
+	hasRole,
 	canUploadScores,
 	canDeleteScores,
 	canInviteMembers,
@@ -170,6 +171,91 @@ describe('Permission System', () => {
 		it('undefined member has no permissions', () => {
 			expect(hasPermission(undefined, 'scores:view')).toBe(false);
 			expect(hasPermission(undefined, 'scores:download')).toBe(false);
+		});
+	});
+
+	// Organization-scoped permissions (Issue #161 - Schema V2)
+	describe('organization-scoped permissions', () => {
+		it('hasPermission with orgId checks org-specific roles only', () => {
+			// Member with roles in org_crede_001
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['admin'], // Has admin in Crede
+				orgRoles: {
+					'org_crede_001': ['admin'],
+					'org_other_001': [] // No roles in other org
+				}
+			};
+			// With orgId, should check that specific org
+			expect(hasPermission(member, 'members:invite', 'org_crede_001')).toBe(true);
+			expect(hasPermission(member, 'members:invite', 'org_other_001')).toBe(false);
+		});
+
+		it('hasPermission without orgId falls back to roles array (backward compat)', () => {
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['admin']
+			};
+			// Without orgId, use existing behavior
+			expect(hasPermission(member, 'members:invite')).toBe(true);
+		});
+
+		it('hasRole with orgId checks org-specific roles', () => {
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['owner', 'admin'], // Aggregate
+				orgRoles: {
+					'org_crede_001': ['owner'],
+					'org_other_001': ['admin']
+				}
+			};
+			expect(hasRole(member, 'owner', 'org_crede_001')).toBe(true);
+			expect(hasRole(member, 'admin', 'org_crede_001')).toBe(false);
+			expect(hasRole(member, 'owner', 'org_other_001')).toBe(false);
+			expect(hasRole(member, 'admin', 'org_other_001')).toBe(true);
+		});
+
+		it('hasRole without orgId checks roles array (backward compat)', () => {
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['admin']
+			};
+			expect(hasRole(member, 'admin')).toBe(true);
+			expect(hasRole(member, 'owner')).toBe(false);
+		});
+
+		it('owner in one org does not grant owner in another org', () => {
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['owner'],
+				orgRoles: {
+					'org_crede_001': ['owner'],
+					'org_other_001': []
+				}
+			};
+			// Owner in Crede has all permissions there
+			expect(hasPermission(member, 'vault:delete', 'org_crede_001')).toBe(true);
+			// But not in other org
+			expect(hasPermission(member, 'vault:delete', 'org_other_001')).toBe(false);
+		});
+
+		it('requireRole with orgId checks org-specific roles', () => {
+			const member: Member = {
+				id: 'member-1',
+				email_id: 'member@test.com',
+				roles: ['admin'],
+				orgRoles: {
+					'org_crede_001': ['admin'],
+					'org_other_001': []
+				}
+			};
+			expect(requireRole(member, 'admin', 'org_crede_001').success).toBe(true);
+			expect(requireRole(member, 'admin', 'org_other_001').success).toBe(false);
 		});
 	});
 });
