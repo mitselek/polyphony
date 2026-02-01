@@ -8,8 +8,8 @@ Polyphony empowers choirs to manage their sheet music privately while connecting
 
 ## Production Status
 
-**Vault:** [![Vault Deployment](https://img.shields.io/badge/vault%20deployment-N%2FA-lightgrey?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony-vault.pages.dev)  
-**Registry:** [![Registry Deployment](https://img.shields.io/badge/registry%20deployment-N%2FA-lightgrey?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony-registry.pages.dev)
+**Vault:** [![Vault Deployment](https://img.shields.io/badge/vault%20deployment-demo-blue?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony-vault.pages.dev)  
+**Registry:** [![Registry Deployment](https://img.shields.io/badge/registry%20deployment-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://scoreinstitute.eu)
 
 _Updated on each push to main. Click badge to visit deployment._
 

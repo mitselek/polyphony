@@ -583,7 +583,7 @@ PUBLIC_URL = "https://scoreinstitute.eu"
 ```toml
 # wrangler.toml
 [vars]
-PUBLIC_URL = "https://choir-name.polyphony.app"
+PUBLIC_URL = "https://choir-name.scoreinstitute.eu"
 REGISTRY_URL = "https://scoreinstitute.eu"
 
 # Secrets

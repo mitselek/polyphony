@@ -228,7 +228,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 
 		it('should cache JWKS to avoid duplicate fetches', async () => {
 			// Use unique registryUrl to avoid cache pollution from beforeAll
-			const cacheTestRegistry = 'https://cache-test-registry.polyphony.app';
+			const cacheTestRegistry = 'https://cache-test.scoreinstitute.eu';
 			let fetchCount = 0;
 			globalThis.fetch = async (_url: RequestInfo | URL) => {
 				fetchCount++;
@@ -328,7 +328,7 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 
 		it('INT3: Multi-key JWKS support', async () => {
 			// Use unique registryUrl to avoid cache conflicts
-			const multiKeyRegistry = 'https://multi-key-registry.polyphony.app';
+			const multiKeyRegistry = 'https://multi-key.scoreinstitute.eu';
 
 			// Create JWKS with multiple keys
 			const { publicKey: pub2, privateKey: priv2 } = await generateKeyPair('EdDSA', {

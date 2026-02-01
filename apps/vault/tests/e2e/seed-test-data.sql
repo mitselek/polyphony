@@ -24,10 +24,10 @@ DELETE FROM invites WHERE id LIKE 'e2e-%';
 -- ============================================================================
 
 INSERT INTO members (id, email, name, invited_by, joined_at) VALUES
-    ('e2e-owner-001', 'owner@e2e-test.polyphony.app', 'E2E Owner', NULL, datetime('now')),
-    ('e2e-admin-001', 'admin@e2e-test.polyphony.app', 'E2E Admin', 'e2e-owner-001', datetime('now')),
-    ('e2e-librarian-001', 'librarian@e2e-test.polyphony.app', 'E2E Librarian', 'e2e-owner-001', datetime('now')),
-    ('e2e-singer-001', 'singer@e2e-test.polyphony.app', 'E2E Singer', 'e2e-admin-001', datetime('now'));
+    ('e2e-owner-001', 'owner@e2e-test.scoreinstitute.eu', 'E2E Owner', NULL, datetime('now')),
+    ('e2e-admin-001', 'admin@e2e-test.scoreinstitute.eu', 'E2E Admin', 'e2e-owner-001', datetime('now')),
+    ('e2e-librarian-001', 'librarian@e2e-test.scoreinstitute.eu', 'E2E Librarian', 'e2e-owner-001', datetime('now')),
+    ('e2e-singer-001', 'singer@e2e-test.scoreinstitute.eu', 'E2E Singer', 'e2e-admin-001', datetime('now'));
 
 -- ============================================================================
 -- SEED MEMBER ROLES

@@ -82,13 +82,13 @@ Voices and sections are assigned via separate `invite_voices` and `invite_sectio
 ## Invite Link Structure
 
 ```
-https://polyphony-vault.pages.dev/invite/accept?token={UUID}
+https://<vault-subdomain>.scoreinstitute.eu/invite/accept?token={UUID}
 ```
 
 Example:
 
 ```
-https://polyphony-vault.pages.dev/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef1234567890
+https://my-choir.scoreinstitute.eu/invite/accept?token=a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ## Current Implementation Status
@@ -236,10 +236,10 @@ Cookie: member_id=xxx
   "roles": ["librarian"],
   "voices": [{"id": "soprano-1", "name": "Soprano", "abbreviation": "S1"}],
   "sections": [{"id": "s1", "name": "Soprano 1", "abbreviation": "S1"}],
-  "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
+  "inviteLink": "https://my-choir.scoreinstitute.eu/invite/accept?token=xxx",
   "message": "Invitation created. Share the link with Jane Singer."
 }
-  "inviteLink": "https://polyphony-vault.pages.dev/invite/accept?token=xxx",
+  "inviteLink": "https://my-choir.scoreinstitute.eu/invite/accept?token=xxx",
   "message": "Invitation created. Email will be sent to the recipient."
 }
 ```

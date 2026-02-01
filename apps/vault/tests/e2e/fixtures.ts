@@ -43,25 +43,25 @@ async function createAuthenticatedPage(
 export const testMembers = {
 	owner: {
 		id: 'e2e-owner-001',
-		email: 'owner@e2e-test.polyphony.app',
+		email: 'owner@e2e-test.scoreinstitute.eu',
 		name: 'E2E Owner',
 		role: 'owner' as const
 	},
 	admin: {
 		id: 'e2e-admin-001',
-		email: 'admin@e2e-test.polyphony.app',
+		email: 'admin@e2e-test.scoreinstitute.eu',
 		name: 'E2E Admin',
 		role: 'admin' as const
 	},
 	librarian: {
 		id: 'e2e-librarian-001',
-		email: 'librarian@e2e-test.polyphony.app',
+		email: 'librarian@e2e-test.scoreinstitute.eu',
 		name: 'E2E Librarian',
 		role: 'librarian' as const
 	},
 	singer: {
 		id: 'e2e-singer-001',
-		email: 'singer@e2e-test.polyphony.app',
+		email: 'singer@e2e-test.scoreinstitute.eu',
 		name: 'E2E Singer',
 		role: 'singer' as const
 	}
