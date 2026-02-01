@@ -73,6 +73,30 @@ export interface AddMemberToOrgInput {
 }
 
 // ============================================================================
+// AFFILIATIONS SYSTEM (Schema V2 - Issue #164)
+// ============================================================================
+
+/**
+ * Affiliation: Relationship between collective and umbrella organizations
+ * Tracks history (leftAt = null means active)
+ */
+export interface Affiliation {
+	id: string;
+	collectiveId: string;
+	umbrellaId: string;
+	joinedAt: string;
+	leftAt: string | null; // null = active
+}
+
+/**
+ * Input for creating a new affiliation
+ */
+export interface CreateAffiliationInput {
+	collectiveId: string;
+	umbrellaId: string;
+}
+
+// ============================================================================
 // VOICES & SECTIONS SYSTEM
 // ============================================================================
 
