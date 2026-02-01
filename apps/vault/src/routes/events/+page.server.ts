@@ -5,7 +5,6 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canCreateEvents } from '$lib/server/auth/permissions';
 import { getParticipation } from '$lib/server/db/participation';
 import { getSeasonByDate, getSeason, getSeasonEvents, getAllSeasons, type Season } from '$lib/server/db/seasons';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface SeasonNav {
 	prev: { id: string; name: string } | null;
@@ -31,15 +30,14 @@ async function getSeasonNavigation(db: D1Database, orgId: string, currentSeasonI
 	return { prev, next };
 }
 
-export const load: PageServerLoad = async ({ platform, cookies, url }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
 
 	// Require authentication
 	const member = await getAuthenticatedMember(db, cookies);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Determine which season to show
 	const seasonIdParam = url.searchParams.get('seasonId');

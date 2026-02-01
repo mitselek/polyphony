@@ -46,6 +46,16 @@ const mockMember = {
 // Test org ID (matches DEFAULT_ORG_ID used in routes)
 const TEST_ORG_ID = 'org_crede_001';
 
+// Mock org for locals
+const mockOrg = {
+	id: TEST_ORG_ID,
+	name: 'Crede',
+	subdomain: 'crede',
+	type: 'collective' as const,
+	contactEmail: 'test@example.com',
+	createdAt: new Date().toISOString()
+};
+
 const mockWork: Work = {
 	id: 'work-1',
 	orgId: TEST_ORG_ID,
@@ -60,6 +70,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		url: new URL('http://localhost/api/works'),
 		params: {},
 		platform: { env: { DB: {} } },
+		locals: { org: mockOrg },
 		cookies: {
 			get: vi.fn(),
 			set: vi.fn(),

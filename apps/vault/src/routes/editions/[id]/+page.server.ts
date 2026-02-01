@@ -7,7 +7,6 @@ import { getAllSections } from '$lib/server/db/sections';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getPhysicalCopiesByEdition } from '$lib/server/db/physical-copies';
 import { getActiveAssignments, getEditionAssignmentHistory, getCurrentHolders, type AssignmentHistoryEntry, type CurrentHolder } from '$lib/server/db/copy-assignments';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface CopyWithAssignment {
 	id: string;
@@ -95,7 +94,7 @@ async function loadLibrarianData(db: D1Database, editionId: string, canManage: b
 	return { copies, members: membersForAssignment, assignmentHistory, currentHolders };
 }
 
-export const load: PageServerLoad = async ({ params, platform, cookies }) => {
+export const load: PageServerLoad = async ({ params, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
@@ -107,8 +106,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies }) => {
 
 	const canManage = await checkCanManage(db, cookies.get('member_id'));
 
-	// TODO: Get orgId from subdomain routing (#165)
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	const [sections, librarianData] = await Promise.all([
 		getAllSections(db, orgId),

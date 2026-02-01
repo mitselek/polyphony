@@ -5,7 +5,6 @@ import type { PageServerLoad } from './$types';
 import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getUpcomingEvents } from '$lib/server/db/events';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import {
 	getMissingCopiesForEvent,
 	getMissingCopiesForSeason,
@@ -17,7 +16,7 @@ interface SeasonOption {
 	name: string;
 }
 
-export const load: PageServerLoad = async ({ platform, cookies, url }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database unavailable');
 	}
@@ -41,8 +40,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		throw redirect(303, '/works');
 	}
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Load filter options
 	const events = await getUpcomingEvents(db, orgId);

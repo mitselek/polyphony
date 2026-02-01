@@ -3,9 +3,8 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/middleware';
 import { parseBody, createInviteSchema } from '$lib/server/validation/schemas';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
-export const POST: RequestHandler = async ({ request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -15,8 +14,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Validate request body with Zod
 	const body = await parseBody(request, createInviteSchema);

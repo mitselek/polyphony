@@ -6,9 +6,8 @@ import { getPendingInvites } from '$lib/server/db/invites';
 import { getAllMembers } from '$lib/server/db/members';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
-import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
-export const load: PageServerLoad = async ({ platform, cookies, url }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		console.error('[members] Database not available');
@@ -51,8 +50,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		roles: m.roles
 	}));
 
-	// TODO: #165 - Get orgId from subdomain routing
-	const orgId = DEFAULT_ORG_ID;
+	const orgId = locals.org.id;
 
 	// Get pending invites for this organization
 	console.log('[members] Loading pending invites...');

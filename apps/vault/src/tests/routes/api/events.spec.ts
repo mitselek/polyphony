@@ -122,13 +122,24 @@ function createMockCookies(memberId: string | null = 'test-member'): any {
 	};
 }
 
+// Mock org for subdomain routing (Schema V2)
+const mockOrg = {
+	id: 'org_crede_001',
+	name: 'Crede',
+	subdomain: 'crede',
+	type: 'collective' as const,
+	contactEmail: 'test@example.com',
+	createdAt: new Date().toISOString()
+};
+
 describe('GET /api/events', () => {
 	it('returns upcoming events for authenticated user', async () => {
 		const db = createMockDb();
 		
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
-			cookies: createMockCookies('test-member')
+			cookies: createMockCookies('test-member'),
+			locals: { org: mockOrg }
 		} as any;
 		
 		const response = await GET(event);
@@ -143,7 +154,8 @@ describe('GET /api/events', () => {
 		
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
-			cookies: createMockCookies(null)
+			cookies: createMockCookies(null),
+			locals: { org: mockOrg }
 		} as any;
 		
 		await expect(GET(event)).rejects.toThrow();
@@ -165,6 +177,7 @@ describe('POST /api/events', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('test-member'),
+			locals: { org: mockOrg },
 			request: {
 				json: async () => requestBody
 			}
@@ -199,6 +212,7 @@ describe('POST /api/events', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('test-member'),
+			locals: { org: mockOrg },
 			request: {
 				json: async () => requestBody
 			}
@@ -223,6 +237,7 @@ describe('POST /api/events', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('librarian-member'), // Use librarian (not conductor)
+			locals: { org: mockOrg },
 			request: {
 				json: async () => requestBody
 			}
@@ -245,6 +260,7 @@ describe('POST /api/events', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('test-member'),
+			locals: { org: mockOrg },
 			request: {
 				json: async () => requestBody
 			}
@@ -266,6 +282,7 @@ describe('POST /api/events', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('test-member'),
+			locals: { org: mockOrg },
 			request: {
 				json: async () => requestBody
 			}

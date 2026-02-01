@@ -1,6 +1,11 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
+import type { Organization } from '$lib/types';
+
 declare global {
 	namespace App {
+		interface Locals {
+			org: Organization; // Set by hooks.server.ts via subdomain routing
+		}
 		interface Platform {
 			env: {
 				DB: D1Database;
