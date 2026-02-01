@@ -1,19 +1,9 @@
 // Member database operations
-import type { Role, Voice, Section } from '$lib/types';
+import type { Role, Voice, Section, Member } from '$lib/types';
 import { queryMemberSections, queryMemberVoices } from './queries/members';
 
-export interface Member {
-	id: string;
-	name: string; // Now required (NOT NULL)
-	nickname: string | null; // Optional compact display name
-	email_id: string | null; // OAuth identity (was: email)
-	email_contact: string | null; // Contact preference (NEW)
-	roles: Role[]; // Multiple roles via junction table
-	voices: Voice[]; // Member's vocal capabilities (what they CAN sing)
-	sections: Section[]; // Member's current assignments (where they DO sing)
-	invited_by: string | null;
-	joined_at: string;
-}
+// Re-export Member from canonical types
+export type { Member };
 
 export interface CreateMemberInput {
 	email: string; // For OAuth registration (becomes email_id)

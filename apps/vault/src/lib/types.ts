@@ -97,6 +97,34 @@ export interface CreateAffiliationInput {
 }
 
 // ============================================================================
+// MEMBER SYSTEM
+// ============================================================================
+
+/**
+ * Full member record from database
+ * Canonical definition - used throughout the vault application
+ */
+export interface Member {
+	id: string;
+	name: string;
+	nickname: string | null;
+	email_id: string | null; // OAuth identity
+	email_contact: string | null; // Contact preference
+	roles: Role[]; // Aggregate roles (multi-role system)
+	voices: Voice[];
+	sections: Section[];
+	invited_by: string | null;
+	joined_at: string;
+	orgRoles?: Record<string, Role[]>; // Org-specific roles (Schema V2)
+}
+
+/**
+ * Minimal member context for permission checks
+ * Used by hasPermission(), hasRole(), requireRole()
+ */
+export type MemberAuthContext = Pick<Member, 'id' | 'roles' | 'email_id' | 'orgRoles'>;
+
+// ============================================================================
 // VOICES & SECTIONS SYSTEM
 // ============================================================================
 
