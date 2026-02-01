@@ -7,249 +7,228 @@ Strategic roadmap for evolving Polyphony from single-vault to multi-tenant umbre
 
 ---
 
-## Current State
+## Architecture Decision (2026-02-01)
 
-- ✅ Single vault codebase deployed to multiple subdomains manually
-- ✅ Registry handles OAuth + email magic link authentication
-- ✅ Vault features: members, events, scores, editions, seasons, attendance
-- ✅ Manual subdomain provisioning via Cloudflare API
-- ❌ No umbrella organization support
-- ❌ No billing/subscriptions
-- ❌ No multi-vault awareness in Registry
+**Key insight**: Registry stays stateless. All organization data lives in Vault.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ Registry (polyphony.uk)                                    │
+│ ├── D1: vaults, signing_keys (existing)                    │
+│ ├── Stateless auth (OAuth, magic link, SSO cookie)         │
+│ └── No user/org storage                                    │
+└────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌────────────────────────────────────────────────────────────┐
+│ Vault (vault.polyphony.uk) - SINGLE DEPLOYMENT             │
+│ ├── D1: organizations, members, member_organizations, ...  │
+│ ├── All orgs in one database                               │
+│ └── Subdomains route to same app (org context from URL)    │
+└────────────────────────────────────────────────────────────┘
+```
+
+See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for complete schema design.
 
 ---
 
-## Phase 0: Schema Redesign & Multi-Tenant Foundation
+## Current State
 
-**Goal**: Restructure database schemas to support multiple vaults and umbrellas from the start.
+- ✅ Single vault codebase (Kammerkoor Crede)
+- ✅ Registry handles OAuth + email magic link authentication
+- ✅ Vault features: members, events, scores, editions, seasons, attendance
+- ✅ **Schema V2 design complete** (see SCHEMA-V2-EVOLUTION.md)
+- 🔲 Schema V2 migrations not yet implemented
+- 🔲 No umbrella organization support
+- 🔲 No billing/subscriptions
 
-### 0.1 Registry Schema Migration
+---
 
-Add organization and subscription support to Registry database.
+## Phase 0: Schema V2 Design ✅ COMPLETE
 
-**New tables**:
+**Goal**: Design multi-organization schema supporting umbrellas and collectives.
 
-```sql
--- Organization types: 'umbrella' or 'collective'
-CREATE TABLE organizations (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    type TEXT NOT NULL CHECK (type IN ('umbrella', 'collective')),
-    contact_email TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+**Completed 2026-02-01**. See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for full design.
 
--- Many-to-many affiliations (collectives can have multiple umbrellas)
-CREATE TABLE affiliations (
-    id TEXT PRIMARY KEY,
-    collective_id TEXT NOT NULL REFERENCES organizations(id),
-    umbrella_id TEXT NOT NULL REFERENCES organizations(id),
-    joined_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(collective_id, umbrella_id)
-);
+**Key decisions:**
 
--- Subscription/billing state
-CREATE TABLE subscriptions (
-    id TEXT PRIMARY KEY,
-    org_id TEXT NOT NULL REFERENCES organizations(id),
-    plan TEXT NOT NULL CHECK (plan IN ('free', 'tier1', 'tier2', 'umbrella', 'trial')),
-    status TEXT NOT NULL CHECK (status IN ('active', 'past_due', 'cancelled', 'trial', 'grace')),
-    trial_ends_at TEXT,
-    grace_ends_at TEXT,
-    current_period_start TEXT,
-    current_period_end TEXT,
-    stripe_customer_id TEXT,
-    stripe_subscription_id TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+- ✅ Registry stays stateless (no organization tables)
+- ✅ All org data in Vault D1 (single deployment)
+- ✅ Global identity pool with org-scoped memberships
+- ✅ Voices global, sections per-org
+- ✅ Affiliations with history tracking
+- ✅ Invite acceptance flow with merge logic
 
--- Affiliation requests
-CREATE TABLE affiliation_requests (
-    id TEXT PRIMARY KEY,
-    collective_id TEXT NOT NULL REFERENCES organizations(id),
-    umbrella_id TEXT NOT NULL REFERENCES organizations(id),
-    requested_by TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
-    responded_by TEXT,
-    responded_at TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+---
 
--- Usage reports from vaults
-CREATE TABLE usage_reports (
-    id TEXT PRIMARY KEY,
-    vault_id TEXT NOT NULL REFERENCES vaults(id),
-    report_date TEXT NOT NULL,
-    member_count INTEGER NOT NULL,
-    score_count INTEGER NOT NULL,
-    storage_bytes INTEGER NOT NULL,
-    event_count INTEGER NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(vault_id, report_date)
-);
+## Phase 0.5: Schema V2 Implementation
 
--- Umbrella-level events (shared with affiliates)
-CREATE TABLE umbrella_events (
-    id TEXT PRIMARY KEY,
-    umbrella_id TEXT NOT NULL REFERENCES organizations(id),
-    name TEXT NOT NULL,
-    description TEXT,
-    event_type TEXT NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date TEXT,
-    location TEXT,
-    created_by TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+**Goal**: Create and apply migrations to implement V2 schema.
 
--- Which affiliates see which umbrella events
-CREATE TABLE umbrella_event_targets (
-    id TEXT PRIMARY KEY,
-    event_id TEXT NOT NULL REFERENCES umbrella_events(id) ON DELETE CASCADE,
-    collective_id TEXT NOT NULL REFERENCES organizations(id),
-    UNIQUE(event_id, collective_id)
-);
+### 0.5.1 Vault Migrations
 
--- Umbrella-level scores (shared library)
-CREATE TABLE umbrella_editions (
-    id TEXT PRIMARY KEY,
-    umbrella_id TEXT NOT NULL REFERENCES organizations(id),
-    work_title TEXT NOT NULL,
-    composer TEXT,
-    edition_name TEXT NOT NULL,
-    file_data BLOB,
-    file_name TEXT,
-    file_size INTEGER,
-    uploaded_by TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+Create migration files for V2 schema:
 
--- Event-edition linkage for umbrella events
-CREATE TABLE umbrella_event_editions (
-    id TEXT PRIMARY KEY,
-    event_id TEXT NOT NULL REFERENCES umbrella_events(id) ON DELETE CASCADE,
-    edition_id TEXT NOT NULL REFERENCES umbrella_editions(id),
-    display_order INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(event_id, edition_id)
-);
-```
+- [ ] `0025_organizations.sql` - organizations table
+- [ ] `0026_member_organizations.sql` - junction table, migrate existing members
+- [ ] `0027_member_roles_org_id.sql` - add org_id to member_roles
+- [ ] `0028_sections_org_id.sql` - add org_id to sections
+- [ ] `0029_content_org_id.sql` - add org_id to events, works, seasons, invites
+- [ ] `0030_affiliations.sql` - affiliations table with history
 
-**Modified tables**:
+### 0.5.2 Data Migration
 
-```sql
--- Add org reference to vaults
-ALTER TABLE vaults ADD COLUMN org_id TEXT REFERENCES organizations(id);
-```
+Migrate existing Crede data to V2 structure:
 
-### 0.2 Vault Schema Review
+- [ ] Create organization record for Kammerkoor Crede
+- [ ] Populate member_organizations from existing members
+- [ ] Copy member_roles with org_id
+- [ ] Update sections with org_id
+- [ ] Update content tables with org_id
 
-Review vault schema for multi-tenant compatibility:
+### 0.5.3 Subdomain Routing
 
-- [ ] Ensure no hardcoded assumptions about single vault
-- [ ] Add `vault_id` context to session/auth if needed
-- [ ] Review member email uniqueness (per-vault, not global)
-- [ ] Consider: should invites reference Registry organizations?
+Minimal routing to keep Crede working:
 
-### 0.3 Configuration Refactor
+- [ ] Extract subdomain from request URL in hooks
+- [ ] Lookup organization by subdomain
+- [ ] Add org context to `locals`
+- [ ] Update all routes to use `locals.org`
 
-- [ ] Move `VAULT_ID` from hardcoded config to environment variable
-- [ ] Add `REGISTRY_URL` validation on startup
-- [ ] Create vault self-registration flow with Registry
+### 0.5.4 Code Updates
+
+- [ ] Update member queries to include org context
+- [ ] Update role checks to include org_id
+- [ ] Add organization context to session
+- [ ] Update invite acceptance flow (4 scenarios)
 
 **Deliverables**:
 
-- [ ] Registry migration files (0002_organizations.sql, etc.)
-- [ ] Vault config refactor
-- [ ] Documentation updates
+- [ ] All migration files created and tested
+- [ ] Existing data migrated
+- [ ] Subdomain routing working
+- [ ] All tests passing with new schema
+- [ ] **Crede fully functional on V2 schema**
 
 ---
 
-## Phase 1: Organization Registration
+## Phase 1: SSO Cookie (Multi-Org Convenience)
 
-**Goal**: Allow umbrellas and collectives to register via Registry.
+**Goal**: Enable seamless login across multiple organizations.
 
-### 1.1 Organization Registration UI
+**Note**: Not blocking for single-org usage. Crede works after Phase 0.5.
+
+### 1.1 SSO Cookie Implementation
+
+Stateless cross-subdomain auth via signed JWT cookie on `.polyphony.uk`.
+
+See [SCHEMA-V2-EVOLUTION.md#sso-flow](SCHEMA-V2-EVOLUTION.md#sso-flow) for design.
+
+**Tasks:**
+
+- [ ] Add SSO cookie signing/verification to Registry auth endpoints
+- [ ] Update `/auth` to check SSO cookie before showing login
+- [ ] Update `/auth/callback` to set SSO cookie after successful login
+- [ ] Add `/auth/logout` endpoint to clear SSO cookie
+
+### 1.2 Wildcard DNS
+
+- [ ] Configure `*.polyphony.uk` CNAME to vault deployment
+- [ ] Verify SSL certificate covers wildcard
+
+**Deliverables**:
+
+- [ ] SSO cookie working across subdomains
+- [ ] Wildcard DNS configured
+
+---
+
+## Phase 2: Organization Registration
+
+**Goal**: Allow umbrellas and collectives to register (handled in Vault, not Registry).
+
+### 2.1 Registration UI
 
 - [ ] `/register` page with organization type selection
-- [ ] Umbrella registration form (name, contact email, slug)
-- [ ] Collective registration form (name, contact email, slug, optional umbrella)
+- [ ] Umbrella registration form (name, contact email, subdomain)
+- [ ] Collective registration form (name, contact email, subdomain, optional umbrella)
 - [ ] Subdomain availability checker (real-time)
+- [ ] Create organization + first owner member on submit
 
-### 1.2 Affiliation Workflow
+### 2.2 Affiliation Workflow
 
-- [ ] Affiliation request creation
+- [ ] Affiliation request creation (collective → umbrella)
 - [ ] Umbrella notification (email)
 - [ ] Umbrella approval/rejection UI
 - [ ] Collective notification on approval
+- [ ] Affiliation history tracking (left_at)
 
-### 1.3 Organization Dashboard (Basic)
+### 2.3 Organization Dashboard (Basic)
 
-- [ ] `/dashboard/org/{slug}` - view organization details
-- [ ] List affiliated vaults (for umbrellas)
+- [ ] Org settings page (name, contact, subdomain)
+- [ ] List affiliated collectives (for umbrellas)
 - [ ] View affiliation status (for collectives)
 
 **Deliverables**:
 
-- [ ] Registration pages
+- [ ] Registration pages (in Vault)
 - [ ] Affiliation API endpoints
 - [ ] Basic dashboard
 
 ---
 
-## Phase 2: Automated Vault Provisioning
+## Phase 3: DNS & Subdomain Automation
 
-**Goal**: One-click vault creation when organization is approved.
+**Goal**: Automate subdomain provisioning for new organizations.
 
-### 2.1 Cloudflare API Integration
+With single-vault architecture, we don't need separate deployments. Just DNS records.
+
+### 3.1 Cloudflare DNS API
 
 - [ ] Store Cloudflare credentials securely (secrets)
-- [ ] Create Pages project via API
-- [ ] Add custom domain via API
-- [ ] Create D1 database via API (if possible) or document manual step
+- [ ] Add CNAME record for new subdomain via API
+- [ ] Validate subdomain format and availability
 
-### 2.2 Vault Initialization
+### 3.2 Organization Activation Flow
 
-- [ ] Deploy vault code to new Pages project
-- [ ] Run initial migrations
-- [ ] Create owner member from registration email
-- [ ] Send welcome email with login link
+1. Admin creates org → subdomain reserved in DB
+2. Background job creates DNS CNAME
+3. Org marked active when DNS propagates
+4. Welcome email with login link
 
-### 2.3 Provisioning Queue
+### 3.3 Subdomain Management
 
-- [ ] Background job for provisioning (avoid timeout)
-- [ ] Status tracking (pending → provisioning → active → failed)
-- [ ] Retry logic for transient failures
+- [ ] Change subdomain (update DNS + DB)
+- [ ] Delete organization (remove DNS record)
+- [ ] Handle DNS propagation delays gracefully
 
 **Deliverables**:
 
-- [ ] Provisioning service
-- [ ] Status API
-- [ ] Admin provisioning dashboard
+- [ ] DNS automation service
+- [ ] Org activation flow
+- [ ] Admin tools for subdomain management
 
 ---
 
-## Phase 3: Umbrella Dashboard
+## Phase 4: Umbrella Dashboard
 
 **Goal**: Full umbrella management capabilities.
 
-### 3.1 Affiliate Management
+### 4.1 Affiliate Management
 
 - [ ] List all affiliates with status
 - [ ] Pending requests view
 - [ ] Remove affiliate (with confirmation)
 - [ ] Invite collective (pre-approved registration link)
 
-### 3.2 Aggregated Statistics
+### 4.2 Aggregated Statistics
 
 - [ ] Total member count across affiliates
 - [ ] Storage usage summary
 - [ ] Event calendar (public events from affiliates)
 - [ ] Active/inactive vault counts
 
-### 3.3 Joint Events & Scores
+### 4.3 Joint Events & Scores
 
 - [ ] Create umbrella-level event
 - [ ] Upload scores/editions to umbrella library
@@ -257,48 +236,47 @@ Review vault schema for multi-tenant compatibility:
 - [ ] Select target affiliates (all or specific)
 - [ ] Event/score visibility in affiliate vaults
 
-### 3.4 Vault API for Shared Content
+### 4.4 Shared Content
 
-- [ ] `GET /api/umbrella/events` - fetch events shared with this vault
-- [ ] `GET /api/umbrella/editions/{id}` - fetch shared edition file
-- [ ] Vault UI: "Shared by [Umbrella Name]" section
+- [ ] Umbrella can share events/scores with affiliates
+- [ ] Affiliate vault shows "Shared by [Umbrella]" section
+- [ ] Affiliate members can view shared content
 
 **Deliverables**:
 
 - [ ] Umbrella dashboard pages
-- [ ] Shared content API
-- [ ] Vault shared content UI
+- [ ] Shared content UI
 
 ---
 
-## Phase 4: Billing Integration
+## Phase 5: Billing Integration
 
 **Goal**: Stripe-based subscription management.
 
-### 4.1 Stripe Setup
+### 5.1 Stripe Setup
 
 - [ ] Stripe account configuration
 - [ ] Product/price creation (umbrella plans, independent tiers)
 - [ ] Webhook endpoint for subscription events
 
-### 4.2 Subscription Management
+### 5.2 Subscription Management
 
 - [ ] Payment method collection (Stripe Elements)
 - [ ] Subscription creation on registration
 - [ ] 30-day trial implementation
 - [ ] Upgrade/downgrade flows
 
-### 4.3 Usage-Based Billing
+### 5.3 Usage-Based Billing
 
 - [ ] Vault → Registry usage reporting (daily cron)
 - [ ] Storage calculation and aggregation
 - [ ] Umbrella invoice with affiliate breakdown
 - [ ] Multi-umbrella cost splitting
 
-### 4.4 Grace Period & Enforcement
+### 5.4 Grace Period & Enforcement
 
 - [ ] 30-day grace period on umbrella departure
-- [ ] Read-only mode for unpaid vaults
+- [ ] Read-only mode for unpaid orgs
 - [ ] Reactivation flow
 
 **Deliverables**:
@@ -309,34 +287,34 @@ Review vault schema for multi-tenant compatibility:
 
 ---
 
-## Phase 5: Production Hardening
+## Phase 6: Production Hardening
 
 **Goal**: Production-ready multi-tenant system.
 
-### 5.1 Security Audit
+### 6.1 Security Audit
 
 - [ ] API authentication review
 - [ ] Cross-vault data isolation verification
 - [ ] Rate limiting
 - [ ] Audit logging
 
-### 5.2 Monitoring & Observability
+### 6.2 Monitoring & Observability
 
 - [ ] Error tracking (Sentry or similar)
 - [ ] Usage metrics dashboard
 - [ ] Health checks for all vaults
 - [ ] Alerting for failed provisioning
 
-### 5.3 Documentation
+### 6.3 Documentation
 
 - [ ] User guide for umbrella admins
 - [ ] User guide for collective admins
 - [ ] API documentation
 - [ ] Self-hosting guide
 
-### 5.4 Migration Path
+### 6.4 Migration Path
 
-- [ ] Migrate existing vaults to organization model
+- [ ] Migrate existing Crede vault to V2 schema
 - [ ] Backfill usage data
 - [ ] Grandfather existing users (if applicable)
 
@@ -357,17 +335,42 @@ Migrate score files from D1 chunked storage to R2 object storage.
 **Prerequisites**: Workers Paid plan ($5/mo) from paying customers.
 
 **Benefits**:
+
 - 50x cheaper storage ($0.015/GB vs $0.75/GB)
 - Remove chunking complexity
 - Support files >9.5MB
 - No egress fees for downloads
 
 **Tasks**:
+
 - [ ] Create R2 bucket for score files
 - [ ] Migration script: D1 chunks → R2 objects
 - [ ] Update edition-storage.ts to use R2
 - [ ] Update download endpoints
 - [ ] Remove chunking code
+
+### Cloudflare Pro Plan Migration
+
+Upgrade from Free to Pro plan when approaching DNS record limits.
+
+**Current Limits (Free Plan)**:
+
+- 200 DNS records (zones created after Sept 2024)
+- ~100 vaults max (each vault needs ~2 records: CNAME + TXT)
+
+**Pro Plan ($25/mo)**:
+
+- 3,500 DNS records
+- ~1,750 vaults capacity
+
+**Trigger**: When approaching 80 vaults, plan upgrade.
+
+**Tasks**:
+
+- [ ] Monitor DNS record count via Cloudflare API
+- [ ] Add alerting at 80% capacity (160 records)
+- [ ] Upgrade to Pro when needed
+- [ ] Update provisioning docs
 
 ### Federation (Deferred)
 
@@ -394,33 +397,41 @@ Migrate score files from D1 chunked storage to R2 object storage.
 
 | Phase                        | Effort | Value    | Priority |
 | ---------------------------- | ------ | -------- | -------- |
-| 0: Schema Redesign           | Medium | Critical | **P0**   |
-| 1: Organization Registration | Medium | High     | **P1**   |
-| 2: Automated Provisioning    | High   | High     | **P1**   |
-| 3: Umbrella Dashboard        | High   | High     | **P2**   |
-| 4: Billing Integration       | High   | Medium   | **P2**   |
-| 5: Production Hardening      | Medium | High     | **P3**   |
+| 0: Schema V2 Design          | Medium | Critical | ✅ Done  |
+| 0.5: Schema V2 + Routing     | Medium | Critical | **P0**   |
+| 1: SSO Cookie                | Low    | Medium   | **P2**   |
+| 2: Organization Registration | Medium | High     | **P1**   |
+| 3: DNS Automation            | Low    | Medium   | **P1**   |
+| 4: Umbrella Dashboard        | High   | High     | **P2**   |
+| 5: Billing Integration       | High   | Medium   | **P2**   |
+| 6: Production Hardening      | Medium | High     | **P3**   |
 
 ---
 
 ## Current Sprint
 
-**Focus**: Phase 0 - Schema Redesign
+**Focus**: Phase 0.5 - Schema V2 + Subdomain Routing
 
-- [ ] Create Registry migration for organizations table
-- [ ] Create Registry migration for affiliations table
-- [ ] Create Registry migration for subscriptions table
-- [ ] Update vaults table with org_id
-- [ ] Test migrations locally
-- [ ] Document schema in DATABASE-SCHEMA.md
+**Goal**: Crede fully functional on V2 schema
+
+- [ ] Create vault migration for organizations table
+- [ ] Create vault migration for member_organizations junction
+- [ ] Add org_id to member_roles, sections, events, works, seasons, invites
+- [ ] Create affiliations table with history tracking
+- [ ] Migrate existing Crede data to new structure
+- [ ] Implement subdomain → org routing in hooks
+- [ ] Update member queries for org context
+- [ ] Update tests for new schema
 
 ---
 
 ## Related Documents
 
+- [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) - V2 schema design (complete)
+- [STORAGE-ASSESSMENT.md](STORAGE-ASSESSMENT.md) - D1 vs R2 storage analysis
 - [UMBRELLA-ORGANIZATIONS.md](UMBRELLA-ORGANIZATIONS.md) - Business model specification
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
-- [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) - Current vault schema
+- [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) - Current V1 vault schema
 - [CONCERNS.md](CONCERNS.md) - Open questions and risks
 
 ---
