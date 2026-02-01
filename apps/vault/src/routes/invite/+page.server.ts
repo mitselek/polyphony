@@ -5,6 +5,7 @@ import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/m
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberById } from '$lib/server/db/members';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -16,10 +17,13 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
 
+	// TODO: Get orgId from subdomain routing (#165)
+	const orgId = DEFAULT_ORG_ID;
+
 	// Load active voices and sections for the form
 	const [voices, sections] = await Promise.all([
 		getActiveVoices(db),
-		getActiveSections(db)
+		getActiveSections(db, orgId)
 	]);
 
 	// Check for roster member ID (new flow - inviting existing roster member)

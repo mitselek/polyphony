@@ -6,6 +6,7 @@ import { getPendingInvites } from '$lib/server/db/invites';
 import { getAllMembers } from '$lib/server/db/members';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -70,8 +71,10 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 
 	// Get available voices and sections for adding
 	console.log('[members] Loading available voices and sections...');
+	// TODO: Get orgId from subdomain routing (#165)
+	const orgId = DEFAULT_ORG_ID;
 	const availableVoices = await getActiveVoices(db);
-	const availableSections = await getActiveSections(db);
+	const availableSections = await getActiveSections(db, orgId);
 	console.log('[members] Loaded:', { voices: availableVoices.length, sections: availableSections.length });
 
 	console.log('[members] Page load complete for user:', currentUser.id);

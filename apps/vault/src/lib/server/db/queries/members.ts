@@ -9,6 +9,7 @@ import type { Section, Voice } from '$lib/types';
  */
 interface SectionRow {
 	id: string;
+	org_id: string;
 	name: string;
 	abbreviation: string;
 	parent_section_id: string | null;
@@ -42,7 +43,7 @@ export async function queryMemberSections(
 ): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
-			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
+			`SELECT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
 			 FROM sections s
 			 JOIN member_sections ms ON s.id = ms.section_id
 			 WHERE ms.member_id = ?
@@ -53,6 +54,7 @@ export async function queryMemberSections(
 
 	return results.map((row) => ({
 		id: row.id,
+		orgId: row.org_id,
 		name: row.name,
 		abbreviation: row.abbreviation,
 		parentSectionId: row.parent_section_id,
@@ -95,7 +97,7 @@ export async function queryMemberVoices(db: D1Database, memberId: string): Promi
 export async function queryInviteSections(db: D1Database, inviteId: string): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
-			`SELECT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, isc.is_primary
+			`SELECT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, isc.is_primary
 			 FROM sections s
 			 JOIN invite_sections isc ON s.id = isc.section_id
 			 WHERE isc.invite_id = ?
@@ -106,6 +108,7 @@ export async function queryInviteSections(db: D1Database, inviteId: string): Pro
 
 	return results.map((row) => ({
 		id: row.id,
+		orgId: row.org_id,
 		name: row.name,
 		abbreviation: row.abbreviation,
 		parentSectionId: row.parent_section_id,

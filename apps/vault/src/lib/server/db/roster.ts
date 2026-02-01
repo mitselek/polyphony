@@ -45,6 +45,7 @@ function buildEventsQuery(filters?: RosterViewFilters): { sql: string; params: s
 function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: string[] } {
 	let sql = `SELECT DISTINCT m.*, 
 	       ms.section_id as primary_section, 
+	       s.org_id as section_org_id,
 	       s.name as section_name, 
 	       s.abbreviation as section_abbr,
 	       s.is_active as section_is_active,
@@ -182,6 +183,7 @@ export async function getRosterView(
 			name: string;
 			nickname: string | null;
 			primary_section: string | null;
+			section_org_id: string | null;
 			section_name: string | null;
 			section_abbr: string | null;
 			section_is_active: number | null;
@@ -246,9 +248,10 @@ export async function getRosterView(
 			
 			// Use primary section from the query result (preserves sort order)
 			// The query already joined with primary section and ordered by display_order
-			const primarySection = member.primary_section && member.section_name
+			const primarySection = member.primary_section && member.section_name && member.section_org_id
 				? {
 					id: member.primary_section,
+					orgId: member.section_org_id,
 					name: member.section_name,
 					abbreviation: member.section_abbr ?? '',
 					parentSectionId: null,

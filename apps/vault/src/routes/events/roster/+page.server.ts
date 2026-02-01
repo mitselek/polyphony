@@ -7,6 +7,7 @@ import type { Section } from '$lib/types';
 
 interface SectionRow {
 	id: string;
+	org_id: string;
 	name: string;
 	abbreviation: string;
 	parent_section_id: string | null;
@@ -26,7 +27,7 @@ interface RosterFilters {
 async function getActiveSections(db: D1Database): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
-			`SELECT DISTINCT s.id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
+			`SELECT DISTINCT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
 			 FROM sections s
 			 JOIN member_sections ms ON s.id = ms.section_id
 			 WHERE ms.is_primary = 1 AND s.is_active = 1
@@ -36,6 +37,7 @@ async function getActiveSections(db: D1Database): Promise<Section[]> {
 
 	return results.map((row) => ({
 		id: row.id,
+		orgId: row.org_id,
 		name: row.name,
 		abbreviation: row.abbreviation,
 		parentSectionId: row.parent_section_id,

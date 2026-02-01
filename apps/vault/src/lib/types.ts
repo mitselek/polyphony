@@ -93,9 +93,11 @@ export interface Voice {
 /**
  * Section: Performance assignment (where you DO sing)
  * Example: Thomas performs in Tenor 2
+ * Sections are per-organization (Schema V2)
  */
 export interface Section {
 	id: string;
+	orgId: string; // Schema V2: sections are per-organization
 	name: string;
 	abbreviation: string;
 	parentSectionId: string | null;
@@ -161,6 +163,7 @@ export interface CreateVoiceInput {
  * Input for creating a new section
  */
 export interface CreateSectionInput {
+	orgId: string; // Schema V2: required
 	name: string;
 	abbreviation: string;
 	parentSectionId?: string;

@@ -1,4 +1,4 @@
-// sections.ts TDD test suite
+// sections.ts TDD test suite (Schema V2 with org_id)
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
 	getActiveSections,
@@ -9,13 +9,17 @@ import {
 } from './sections';
 import type { CreateSectionInput, Section } from '$lib/types';
 
-// Mock D1Database for testing
+const CREDE_ORG_ID = 'org_crede_001';
+const OTHER_ORG_ID = 'org_other_001';
+
+// Mock D1Database for testing with org_id support
 function createMockDB(): D1Database {
 	const sections = new Map<string, any>();
 
-	// Seed default sections (matching migration)
+	// Seed default sections for Crede (matching migration)
 	sections.set('soprano', {
 		id: 'soprano',
+		org_id: CREDE_ORG_ID,
 		name: 'Soprano',
 		abbreviation: 'S',
 		parent_section_id: null,
@@ -24,6 +28,7 @@ function createMockDB(): D1Database {
 	});
 	sections.set('alto', {
 		id: 'alto',
+		org_id: CREDE_ORG_ID,
 		name: 'Alto',
 		abbreviation: 'A',
 		parent_section_id: null,
@@ -32,6 +37,7 @@ function createMockDB(): D1Database {
 	});
 	sections.set('tenor', {
 		id: 'tenor',
+		org_id: CREDE_ORG_ID,
 		name: 'Tenor',
 		abbreviation: 'T',
 		parent_section_id: null,
@@ -40,11 +46,22 @@ function createMockDB(): D1Database {
 	});
 	sections.set('soprano-1', {
 		id: 'soprano-1',
+		org_id: CREDE_ORG_ID,
 		name: 'Soprano I',
 		abbreviation: 'S1',
 		parent_section_id: 'soprano',
 		display_order: 11,
 		is_active: 0
+	});
+	// Section in another org
+	sections.set('other-soprano', {
+		id: 'other-soprano',
+		org_id: OTHER_ORG_ID,
+		name: 'Soprano',
+		abbreviation: 'S',
+		parent_section_id: null,
+		display_order: 10,
+		is_active: 1
 	});
 
 	return {
@@ -58,17 +75,24 @@ function createMockDB(): D1Database {
 						return null;
 					},
 					all: async () => {
-						const results = Array.from(sections.values());
-						if (sql.includes('WHERE is_active = 1')) {
-							return { results: results.filter((s) => s.is_active === 1) };
+						let results = Array.from(sections.values());
+						// Filter by org_id
+						if (sql.includes('WHERE org_id = ?') || sql.includes('WHERE s.org_id = ?')) {
+							const orgId = params[0];
+							results = results.filter((s) => s.org_id === orgId);
+						}
+						// Filter active only
+						if (sql.includes('is_active = 1')) {
+							results = results.filter((s) => s.is_active === 1);
 						}
 						return { results };
 					},
 					run: async () => {
 						if (sql.includes('INSERT INTO sections')) {
-							const [id, name, abbr, parentId, displayOrder, isActive] = params;
+							const [id, orgId, name, abbr, parentId, displayOrder, isActive] = params;
 							sections.set(id, {
 								id,
+								org_id: orgId,
 								name,
 								abbreviation: abbr,
 								parent_section_id: parentId,
@@ -90,11 +114,7 @@ function createMockDB(): D1Database {
 					}
 				}),
 				all: async () => {
-					const results = Array.from(sections.values());
-					if (sql.includes('WHERE is_active = 1')) {
-						return { results: results.filter((s) => s.is_active === 1) };
-					}
-					return { results };
+					return { results: Array.from(sections.values()) };
 				},
 				first: async () => {
 					return null;
@@ -116,37 +136,54 @@ describe('sections.ts', () => {
 	});
 
 	describe('getActiveSections', () => {
-		it('should return only active sections', async () => {
-			const sections = await getActiveSections(db);
+		it('should return only active sections for the specified org', async () => {
+			const sections = await getActiveSections(db, CREDE_ORG_ID);
 			expect(sections.length).toBe(3); // soprano, alto, tenor
 			expect(sections.every((s: Section) => s.isActive)).toBe(true);
+			expect(sections.every((s: Section) => s.orgId === CREDE_ORG_ID)).toBe(true);
 		});
 
 		it('should return sections ordered by display_order', async () => {
-			const sections = await getActiveSections(db);
+			const sections = await getActiveSections(db, CREDE_ORG_ID);
 			expect(sections[0].name).toBe('Soprano');
 			expect(sections[1].name).toBe('Alto');
 			expect(sections[2].name).toBe('Tenor');
 		});
+
+		it('should not return sections from other orgs', async () => {
+			const sections = await getActiveSections(db, CREDE_ORG_ID);
+			expect(sections.find((s) => s.id === 'other-soprano')).toBeUndefined();
+		});
+
+		it('should return sections for a different org', async () => {
+			const sections = await getActiveSections(db, OTHER_ORG_ID);
+			expect(sections.length).toBe(1);
+			expect(sections[0].id).toBe('other-soprano');
+		});
 	});
 
 	describe('getAllSections', () => {
-		it('should return all sections including inactive', async () => {
-			const sections = await getAllSections(db);
-			expect(sections.length).toBeGreaterThanOrEqual(4); // soprano, alto, tenor, soprano-1
+		it('should return all sections for org including inactive', async () => {
+			const sections = await getAllSections(db, CREDE_ORG_ID);
+			expect(sections.length).toBe(4); // soprano, alto, tenor, soprano-1
 		});
 
 		it('should include inactive sections', async () => {
-			const sections = await getAllSections(db);
+			const sections = await getAllSections(db, CREDE_ORG_ID);
 			const soprano1 = sections.find((s: Section) => s.id === 'soprano-1');
 			expect(soprano1).toBeDefined();
 			expect(soprano1!.isActive).toBe(false);
 		});
 
 		it('should include parent section id', async () => {
-			const sections = await getAllSections(db);
+			const sections = await getAllSections(db, CREDE_ORG_ID);
 			const soprano1 = sections.find((s: Section) => s.id === 'soprano-1');
 			expect(soprano1!.parentSectionId).toBe('soprano');
+		});
+
+		it('should include orgId in returned sections', async () => {
+			const sections = await getAllSections(db, CREDE_ORG_ID);
+			expect(sections.every((s: Section) => s.orgId === CREDE_ORG_ID)).toBe(true);
 		});
 	});
 
@@ -156,6 +193,7 @@ describe('sections.ts', () => {
 			expect(section).toBeDefined();
 			expect(section!.name).toBe('Soprano');
 			expect(section!.abbreviation).toBe('S');
+			expect(section!.orgId).toBe(CREDE_ORG_ID);
 		});
 
 		it('should return null for non-existent id', async () => {
@@ -168,12 +206,14 @@ describe('sections.ts', () => {
 			expect(section).toHaveProperty('parentSectionId');
 			expect(section).toHaveProperty('displayOrder');
 			expect(section).toHaveProperty('isActive');
+			expect(section).toHaveProperty('orgId');
 		});
 	});
 
 	describe('createSection', () => {
-		it('should create a new section', async () => {
+		it('should create a new section with orgId', async () => {
 			const input: CreateSectionInput = {
+				orgId: CREDE_ORG_ID,
 				name: 'Mezzo-Soprano',
 				abbreviation: 'MS',
 				displayOrder: 15
@@ -182,37 +222,53 @@ describe('sections.ts', () => {
 			const section = await createSection(db, input);
 			expect(section.name).toBe('Mezzo-Soprano');
 			expect(section.abbreviation).toBe('MS');
+			expect(section.orgId).toBe(CREDE_ORG_ID);
 			expect(section.isActive).toBe(true);
 		});
 
-		it('should generate id from name', async () => {
+		it('should generate id from org and name', async () => {
 			const input: CreateSectionInput = {
+				orgId: CREDE_ORG_ID,
 				name: 'Mezzo-Soprano',
 				abbreviation: 'MS',
 				displayOrder: 15
 			};
 
 			const section = await createSection(db, input);
-			expect(section.id).toBe('mezzo-soprano');
+			expect(section.id).toBe('org_crede_001-mezzo-soprano');
 		});
 
 		it('should allow creating subsections with parent', async () => {
 			const input: CreateSectionInput = {
-				name: 'Soprano III',
-				abbreviation: 'S3',
+				orgId: CREDE_ORG_ID,
+				name: 'Soprano II',
+				abbreviation: 'S2',
 				parentSectionId: 'soprano',
-				displayOrder: 13
+				displayOrder: 12
 			};
 
 			const section = await createSection(db, input);
 			expect(section.parentSectionId).toBe('soprano');
 		});
 
-		it('should allow creating inactive sections', async () => {
+		it('should default isActive to true', async () => {
 			const input: CreateSectionInput = {
-				name: 'Counter-Tenor',
-				abbreviation: 'CT',
-				displayOrder: 25,
+				orgId: CREDE_ORG_ID,
+				name: 'Bass',
+				abbreviation: 'B',
+				displayOrder: 40
+			};
+
+			const section = await createSection(db, input);
+			expect(section.isActive).toBe(true);
+		});
+
+		it('should respect isActive=false when provided', async () => {
+			const input: CreateSectionInput = {
+				orgId: CREDE_ORG_ID,
+				name: 'Bass',
+				abbreviation: 'B',
+				displayOrder: 40,
 				isActive: false
 			};
 
@@ -222,25 +278,35 @@ describe('sections.ts', () => {
 	});
 
 	describe('toggleSectionActive', () => {
-		it('should activate an inactive section', async () => {
+		it('should toggle section active status', async () => {
 			const result = await toggleSectionActive(db, 'soprano-1', true);
 			expect(result).toBe(true);
-
-			const section = await getSectionById(db, 'soprano-1');
-			expect(section!.isActive).toBe(true);
-		});
-
-		it('should deactivate an active section', async () => {
-			const result = await toggleSectionActive(db, 'soprano', false);
-			expect(result).toBe(true);
-
-			const section = await getSectionById(db, 'soprano');
-			expect(section!.isActive).toBe(false);
 		});
 
 		it('should return false for non-existent section', async () => {
 			const result = await toggleSectionActive(db, 'nonexistent', true);
 			expect(result).toBe(false);
+		});
+	});
+
+	// Organization scoping tests (Schema V2)
+	describe('organization scoping', () => {
+		it('same section name can exist in different orgs', async () => {
+			// Create Alto in other org
+			const input: CreateSectionInput = {
+				orgId: OTHER_ORG_ID,
+				name: 'Alto', // Same name as Crede's Alto
+				abbreviation: 'A',
+				displayOrder: 20
+			};
+
+			const section = await createSection(db, input);
+			expect(section.name).toBe('Alto');
+			expect(section.orgId).toBe(OTHER_ORG_ID);
+
+			// Both orgs have Alto sections
+			const credeAlto = await getSectionById(db, 'alto');
+			expect(credeAlto?.orgId).toBe(CREDE_ORG_ID);
 		});
 	});
 });

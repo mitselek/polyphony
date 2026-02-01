@@ -3,6 +3,7 @@ import type { Section, CreateSectionInput } from '$lib/types';
 
 interface SectionRow {
 	id: string;
+	org_id: string;
 	name: string;
 	abbreviation: string;
 	parent_section_id: string | null;
@@ -25,6 +26,7 @@ export interface SectionWithCount extends Section {
 function rowToSection(row: SectionRow): Section {
 	return {
 		id: row.id,
+		orgId: row.org_id,
 		name: row.name,
 		abbreviation: row.abbreviation,
 		parentSectionId: row.parent_section_id,
@@ -44,22 +46,24 @@ function rowToSectionWithCount(row: SectionWithCountRow): SectionWithCount {
 }
 
 /**
- * Get all active sections ordered by display_order
+ * Get all active sections for an organization, ordered by display_order
  */
-export async function getActiveSections(db: D1Database): Promise<Section[]> {
+export async function getActiveSections(db: D1Database, orgId: string): Promise<Section[]> {
 	const { results } = await db
-		.prepare('SELECT * FROM sections WHERE is_active = 1 ORDER BY display_order ASC')
+		.prepare('SELECT * FROM sections WHERE org_id = ? AND is_active = 1 ORDER BY display_order ASC')
+		.bind(orgId)
 		.all<SectionRow>();
 
 	return results.map(rowToSection);
 }
 
 /**
- * Get all sections (including inactive) ordered by display_order
+ * Get all sections for an organization (including inactive), ordered by display_order
  */
-export async function getAllSections(db: D1Database): Promise<Section[]> {
+export async function getAllSections(db: D1Database, orgId: string): Promise<Section[]> {
 	const { results } = await db
-		.prepare('SELECT * FROM sections ORDER BY display_order ASC')
+		.prepare('SELECT * FROM sections WHERE org_id = ? ORDER BY display_order ASC')
+		.bind(orgId)
 		.all<SectionRow>();
 
 	return results.map(rowToSection);
@@ -81,16 +85,17 @@ export async function getSectionById(db: D1Database, id: string): Promise<Sectio
  * Create a new section
  */
 export async function createSection(db: D1Database, input: CreateSectionInput): Promise<Section> {
-	// Generate id from name (lowercase, replace spaces with hyphens)
-	const id = input.name.toLowerCase().replace(/\s+/g, '-');
+	// Generate id from org and name (lowercase, replace spaces with hyphens)
+	const id = `${input.orgId}-${input.name.toLowerCase().replace(/\s+/g, '-')}`;
 	const isActive = input.isActive ?? true;
 
 	await db
 		.prepare(
-			'INSERT INTO sections (id, name, abbreviation, parent_section_id, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)'
+			'INSERT INTO sections (id, org_id, name, abbreviation, parent_section_id, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)'
 		)
 		.bind(
 			id,
+			input.orgId,
 			input.name,
 			input.abbreviation,
 			input.parentSectionId ?? null,
@@ -101,6 +106,7 @@ export async function createSection(db: D1Database, input: CreateSectionInput): 
 
 	return {
 		id,
+		orgId: input.orgId,
 		name: input.name,
 		abbreviation: input.abbreviation,
 		parentSectionId: input.parentSectionId ?? null,
@@ -127,17 +133,19 @@ export async function toggleSectionActive(
 }
 
 /**
- * Get all sections with assignment counts (member + invite assignments)
+ * Get all sections for an organization with assignment counts (member + invite assignments)
  */
-export async function getAllSectionsWithCounts(db: D1Database): Promise<SectionWithCount[]> {
+export async function getAllSectionsWithCounts(db: D1Database, orgId: string): Promise<SectionWithCount[]> {
 	const { results } = await db
 		.prepare(`
 			SELECT s.*, 
 				(SELECT COUNT(*) FROM member_sections ms WHERE ms.section_id = s.id) +
 				(SELECT COUNT(*) FROM invite_sections ins WHERE ins.section_id = s.id) AS assignment_count
 			FROM sections s
+			WHERE s.org_id = ?
 			ORDER BY s.display_order ASC
 		`)
+		.bind(orgId)
 		.all<SectionWithCountRow>();
 
 	return results.map(rowToSectionWithCount);
