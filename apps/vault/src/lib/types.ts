@@ -9,6 +9,44 @@ export const ASSIGNABLE_ROLES = ['owner', 'admin', 'librarian', 'conductor', 'se
 export type EventType = 'rehearsal' | 'concert' | 'retreat';
 
 // ============================================================================
+// ORGANIZATIONS SYSTEM (Schema V2)
+// ============================================================================
+
+export type OrganizationType = 'umbrella' | 'collective';
+
+/**
+ * Organization: A choir or umbrella entity
+ * - collective: Regular choir (most common)
+ * - umbrella: Organization that contains other organizations
+ */
+export interface Organization {
+	id: string;
+	name: string;
+	subdomain: string;
+	type: OrganizationType;
+	contactEmail: string;
+	createdAt: string;
+}
+
+/**
+ * Input for creating a new organization
+ */
+export interface CreateOrganizationInput {
+	name: string;
+	subdomain: string;
+	type: OrganizationType;
+	contactEmail: string;
+}
+
+/**
+ * Input for updating an organization
+ */
+export interface UpdateOrganizationInput {
+	name?: string;
+	contactEmail?: string;
+}
+
+// ============================================================================
 // VOICES & SECTIONS SYSTEM
 // ============================================================================
 
