@@ -4,6 +4,7 @@
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { createSeason, getAllSeasons, getSeasonByDate } from '$lib/server/db/seasons';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 export async function GET({ url, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
@@ -14,16 +15,19 @@ export async function GET({ url, platform, cookies }: RequestEvent) {
 	// Auth: any authenticated member can view seasons
 	await getAuthenticatedMember(db, cookies);
 
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
 	// Check for date query parameter
 	const dateParam = url.searchParams.get('date');
 	
 	if (dateParam) {
 		// Find which season contains this date
-		const season = await getSeasonByDate(db, dateParam);
+		const season = await getSeasonByDate(db, orgId, dateParam);
 		return json(season);
 	}
 
-	const seasons = await getAllSeasons(db);
+	const seasons = await getAllSeasons(db, orgId);
 	return json(seasons);
 }
 
@@ -36,6 +40,9 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 	// Auth: require admin role to create seasons
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
+
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
 
 	// Parse request body
 	const body = (await request.json()) as { name?: string; start_date?: string };
@@ -57,6 +64,7 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 
 	try {
 		const season = await createSeason(db, {
+			orgId,
 			name: body.name.trim(),
 			start_date: body.start_date
 		});

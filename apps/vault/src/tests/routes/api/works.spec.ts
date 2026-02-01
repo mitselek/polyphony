@@ -43,8 +43,12 @@ const mockMember = {
 	sections: []
 };
 
+// Test org ID (matches DEFAULT_ORG_ID used in routes)
+const TEST_ORG_ID = 'org_crede_001';
+
 const mockWork: Work = {
 	id: 'work-1',
+	orgId: TEST_ORG_ID,
 	title: 'Test Work',
 	composer: 'Test Composer',
 	lyricist: null,
@@ -99,7 +103,8 @@ describe('Works API Routes', () => {
 			});
 			const response = await GET(event);
 
-			expect(mockSearchWorks).toHaveBeenCalledWith(expect.anything(), 'Test');
+			// searchWorks now takes (db, orgId, query)
+			expect(mockSearchWorks).toHaveBeenCalledWith(expect.anything(), TEST_ORG_ID, 'Test');
 			expect(mockGetAllWorks).not.toHaveBeenCalled();
 			
 			const data = await response.json();

@@ -328,9 +328,11 @@ export interface RosterViewFilters {
 /**
  * Work: Abstract composition (independent of specific publications)
  * Example: "Messiah" by Handel (may have many Editions)
+ * Scoped per-organization (Schema V2)
  */
 export interface Work {
 	id: string;
+	orgId: string;
 	title: string;
 	composer: string | null;
 	lyricist: string | null;
@@ -341,6 +343,7 @@ export interface Work {
  * Input for creating a new work
  */
 export interface CreateWorkInput {
+	orgId: string;
 	title: string;
 	composer?: string;
 	lyricist?: string;

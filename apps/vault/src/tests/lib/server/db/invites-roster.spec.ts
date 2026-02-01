@@ -3,6 +3,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createInvite, getInviteByToken, acceptInvite, type Invite } from '$lib/server/db/invites';
 import { createRosterMember, getMemberById, type Member } from '$lib/server/db/members';
 
+// Test org ID (matches DEFAULT_ORG_ID)
+const TEST_ORG_ID = 'org_crede_001';
+
 // Mock D1 database for roster-linked invites
 function createMockDb() {
 	const invites: Map<string, Record<string, unknown>> = new Map();
@@ -76,6 +79,7 @@ function createMockDb() {
 						members.set(id, {
 							id,
 							name,
+							nickname: null, // Added for getMemberById compatibility
 							email_id,
 							email_contact,
 							invited_by,
@@ -86,13 +90,16 @@ function createMockDb() {
 
 					// Handle INSERT INTO invites (roster-linked invitation)
 					if (sql.startsWith('INSERT INTO invites')) {
-						// Extract params based on minimal production schema (no roles/email_hint)
-						const [id, roster_member_id, token, invited_by, expires_at, created_at] =
+						// Extract params: (id, org_id, roster_member_id, name, token, invited_by, expires_at, created_at)
+						const [id, org_id, roster_member_id, name, token, invited_by, expires_at, created_at] =
 							params as any[];
 
 						const inviteData = {
 							id,
+							org_id,
+							orgId: org_id, // Map for query compatibility
 							roster_member_id,
+							name,
 							token,
 							invited_by,
 							expires_at,
@@ -322,6 +329,7 @@ describe('createInvite (roster-linked)', () => {
 
 	it('creates invite linked to roster member', async () => {
 		const invite = await createInvite(mockDb, {
+			orgId: TEST_ORG_ID,
 			rosterMemberId: rosterId,
 			roles: ['librarian'],
 			invited_by: adminId
@@ -343,6 +351,7 @@ describe('createInvite (roster-linked)', () => {
 
 		await expect(
 			createInvite(mockDb, {
+				orgId: TEST_ORG_ID,
 				rosterMemberId: rosterId,
 				roles: [],
 				invited_by: adminId
@@ -353,6 +362,7 @@ describe('createInvite (roster-linked)', () => {
 	it('rejects duplicate pending invite', async () => {
 		// Create first invite
 		await createInvite(mockDb, {
+			orgId: TEST_ORG_ID,
 			rosterMemberId: rosterId,
 			roles: [],
 			invited_by: adminId
@@ -361,6 +371,7 @@ describe('createInvite (roster-linked)', () => {
 		// Try to create second invite for same roster member
 		await expect(
 			createInvite(mockDb, {
+				orgId: TEST_ORG_ID,
 				rosterMemberId: rosterId,
 				roles: [],
 				invited_by: adminId
@@ -396,6 +407,7 @@ describe('acceptInvite (roster upgrade)', () => {
 
 		// Create invite
 		const invite = await createInvite(mockDb, {
+			orgId: TEST_ORG_ID,
 			rosterMemberId: rosterId,
 			roles: ['librarian', 'conductor'],
 			invited_by: adminId
@@ -444,20 +456,21 @@ describe('acceptInvite (roster upgrade)', () => {
 		const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(); // 72 hours ago
 		const token = 'expired-token';
 
-		// Manually insert expired invite
+		// Manually insert expired invite using production schema format
+		// (id, org_id, roster_member_id, name, token, invited_by, expires_at, created_at)
 		await mockDb
 			.prepare(
-				`INSERT INTO invites (id, roster_member_id, token, invited_by, expires_at, status, roles, email_hint, created_at)
-				 VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+				`INSERT INTO invites (id, org_id, roster_member_id, name, token, invited_by, expires_at, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 			)
 			.bind(
 				'expired-id',
+				TEST_ORG_ID,
 				expiredRoster.id,
+				'Expired User',
 				token,
 				adminId,
 				pastDate,
-				JSON.stringify([]),
-				null,
 				pastDate
 			)
 			.run();

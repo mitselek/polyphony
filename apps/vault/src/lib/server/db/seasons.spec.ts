@@ -10,6 +10,9 @@ import {
 	deleteSeason
 } from './seasons';
 
+// Test org ID (matches DEFAULT_ORG_ID)
+const TEST_ORG_ID = 'org_crede_001';
+
 // Mock D1Database
 function createMockDb() {
 	const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 1 } });
@@ -38,12 +41,14 @@ describe('Seasons database layer', () => {
 	describe('createSeason', () => {
 		it('creates a season with name and start_date', async () => {
 			const season = await createSeason(db, {
+				orgId: TEST_ORG_ID,
 				name: 'Fall 2026',
 				start_date: '2026-09-01'
 			});
 
 			expect(season.name).toBe('Fall 2026');
 			expect(season.start_date).toBe('2026-09-01');
+			expect(season.orgId).toBe(TEST_ORG_ID);
 			expect(season.id).toBeDefined();
 			expect(season.created_at).toBeDefined();
 			expect(season.updated_at).toBeDefined();
@@ -51,10 +56,12 @@ describe('Seasons database layer', () => {
 
 		it('generates unique IDs', async () => {
 			const season1 = await createSeason(db, {
+				orgId: TEST_ORG_ID,
 				name: 'Fall 2026',
 				start_date: '2026-09-01'
 			});
 			const season2 = await createSeason(db, {
+				orgId: TEST_ORG_ID,
 				name: 'Spring 2027',
 				start_date: '2027-01-15'
 			});
@@ -68,7 +75,7 @@ describe('Seasons database layer', () => {
 			);
 
 			await expect(
-				createSeason(db, { name: 'Duplicate', start_date: '2026-09-01' })
+				createSeason(db, { orgId: TEST_ORG_ID, name: 'Duplicate', start_date: '2026-09-01' })
 			).rejects.toThrow('Season with start date 2026-09-01 already exists');
 		});
 	});
@@ -101,14 +108,14 @@ describe('Seasons database layer', () => {
 	describe('getAllSeasons', () => {
 		it('returns all seasons ordered by start_date DESC', async () => {
 			const mockSeasons = [
-				{ id: 's2', name: 'Spring 2027', start_date: '2027-01-15', created_at: '', updated_at: '' },
-				{ id: 's1', name: 'Fall 2026', start_date: '2026-09-01', created_at: '', updated_at: '' }
+				{ id: 's2', org_id: TEST_ORG_ID, name: 'Spring 2027', start_date: '2027-01-15', created_at: '', updated_at: '' },
+				{ id: 's1', org_id: TEST_ORG_ID, name: 'Fall 2026', start_date: '2026-09-01', created_at: '', updated_at: '' }
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
 				results: mockSeasons
 			});
 
-			const seasons = await getAllSeasons(db);
+			const seasons = await getAllSeasons(db, TEST_ORG_ID);
 
 			expect(seasons).toHaveLength(2);
 			expect(seasons[0].name).toBe('Spring 2027');
@@ -118,7 +125,7 @@ describe('Seasons database layer', () => {
 		it('returns empty array when no seasons', async () => {
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ results: [] });
 
-			const seasons = await getAllSeasons(db);
+			const seasons = await getAllSeasons(db, TEST_ORG_ID);
 
 			expect(seasons).toEqual([]);
 		});
@@ -128,6 +135,7 @@ describe('Seasons database layer', () => {
 		it('returns the season containing the date', async () => {
 			const mockSeason = {
 				id: 's1',
+				org_id: TEST_ORG_ID,
 				name: 'Fall 2026',
 				start_date: '2026-09-01',
 				created_at: '',
@@ -135,9 +143,10 @@ describe('Seasons database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockSeason);
 
-			const season = await getSeasonByDate(db, '2026-10-15');
+			const season = await getSeasonByDate(db, TEST_ORG_ID, '2026-10-15');
 
-			expect(season).toEqual(mockSeason);
+			expect(season?.orgId).toBe(TEST_ORG_ID);
+			expect(season?.name).toBe('Fall 2026');
 			// Verify query uses ORDER BY start_date DESC LIMIT 1
 			expect(db.prepare).toHaveBeenCalledWith(
 				expect.stringContaining('ORDER BY start_date DESC LIMIT 1')
@@ -147,7 +156,7 @@ describe('Seasons database layer', () => {
 		it('returns null when date is before all seasons', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const season = await getSeasonByDate(db, '2020-01-01');
+			const season = await getSeasonByDate(db, TEST_ORG_ID, '2020-01-01');
 
 			expect(season).toBeNull();
 		});

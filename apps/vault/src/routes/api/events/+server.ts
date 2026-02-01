@@ -6,6 +6,7 @@ import { createEvents, getUpcomingEvents } from '$lib/server/db/events';
 import { parseBody, createEventsSchema } from '$lib/server/validation/schemas';
 import { canCreateEvents } from '$lib/server/auth/permissions';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 /**
  * GET /api/events
@@ -20,7 +21,10 @@ export async function GET(event: RequestEvent) {
 	// Require authentication
 	const member = await getAuthenticatedMember(db, cookies);
 
-	const events = await getUpcomingEvents(db);
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
+	const events = await getUpcomingEvents(db, orgId);
 	return json(events);
 }
 
@@ -41,8 +45,11 @@ export async function POST(event: RequestEvent) {
 		throw error(403, 'Only conductors and admins can create events');
 	}
 
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
 	const body = await parseBody(request, createEventsSchema);
-	const createdEvents = await createEvents(db, body.events, member.id);
+	const createdEvents = await createEvents(db, orgId, body.events, member.id);
 
 	return json({ events: createdEvents });
 }

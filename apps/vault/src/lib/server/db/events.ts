@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 
 export interface Event {
 	id: string;
+	orgId: string;
 	title: string;
 	description: string | null;
 	location: string | null;
@@ -37,6 +38,7 @@ export interface UpdateEventInput {
  */
 export async function createEvents(
 	db: D1Database,
+	orgId: string,
 	events: CreateEventInput[],
 	createdBy: string
 ): Promise<Event[]> {
@@ -49,6 +51,7 @@ export async function createEvents(
 		
 		createdEvents.push({
 			id,
+			orgId,
 			title: event.title,
 			description: event.description ?? null,
 			location: event.location ?? null,
@@ -61,10 +64,11 @@ export async function createEvents(
 
 		return db
 			.prepare(
-				'INSERT INTO events (id, title, description, location, starts_at, ends_at, event_type, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+				'INSERT INTO events (id, org_id, title, description, location, starts_at, ends_at, event_type, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
 			)
 			.bind(
 				id,
+				orgId,
 				event.title,
 				event.description ?? null,
 				event.location ?? null,
@@ -82,32 +86,58 @@ export async function createEvents(
 
 /**
  * Get upcoming events (starts_at >= now) ordered by start time
+ * Filtered by organization
  */
-export async function getUpcomingEvents(db: D1Database): Promise<Event[]> {
+export async function getUpcomingEvents(db: D1Database, orgId: string): Promise<Event[]> {
 	const { results } = await db
 		.prepare(
-			`SELECT id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
+			`SELECT id, org_id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
 			FROM events 
-			WHERE starts_at >= datetime('now') 
+			WHERE org_id = ? AND starts_at >= datetime('now') 
 			ORDER BY starts_at ASC`
 		)
-		.all<Event>();
+		.bind(orgId)
+		.all<{ id: string; org_id: string; title: string; description: string | null; location: string | null; starts_at: string; ends_at: string | null; event_type: EventType; created_by: string; created_at: string }>();
 
-	return results;
+	return results.map(row => ({
+		id: row.id,
+		orgId: row.org_id,
+		title: row.title,
+		description: row.description,
+		location: row.location,
+		starts_at: row.starts_at,
+		ends_at: row.ends_at,
+		event_type: row.event_type,
+		created_by: row.created_by,
+		created_at: row.created_at
+	}));
 }
 
 /**
  * Get event by ID
  */
 export async function getEventById(db: D1Database, id: string): Promise<Event | null> {
-	const event = await db
+	const row = await db
 		.prepare(
-			'SELECT id, title, description, location, starts_at, ends_at, event_type, created_by, created_at FROM events WHERE id = ?'
+			'SELECT id, org_id, title, description, location, starts_at, ends_at, event_type, created_by, created_at FROM events WHERE id = ?'
 		)
 		.bind(id)
-		.first<Event>();
+		.first<{ id: string; org_id: string; title: string; description: string | null; location: string | null; starts_at: string; ends_at: string | null; event_type: EventType; created_by: string; created_at: string }>();
 
-	return event;
+	if (!row) return null;
+	
+	return {
+		id: row.id,
+		orgId: row.org_id,
+		title: row.title,
+		description: row.description,
+		location: row.location,
+		starts_at: row.starts_at,
+		ends_at: row.ends_at,
+		event_type: row.event_type,
+		created_by: row.created_by,
+		created_at: row.created_at
+	};
 }
 
 /**

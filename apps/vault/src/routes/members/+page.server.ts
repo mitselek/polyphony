@@ -51,9 +51,12 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		roles: m.roles
 	}));
 
-	// Get pending invites
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
+	// Get pending invites for this organization
 	console.log('[members] Loading pending invites...');
-	const pendingInvites = await getPendingInvites(db);
+	const pendingInvites = await getPendingInvites(db, orgId);
 	console.log('[members] Loaded invites:', { count: pendingInvites.length });
 	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = pendingInvites.map((inv) => ({
@@ -71,8 +74,6 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 
 	// Get available voices and sections for adding
 	console.log('[members] Loading available voices and sections...');
-	// TODO: Get orgId from subdomain routing (#165)
-	const orgId = DEFAULT_ORG_ID;
 	const availableVoices = await getActiveVoices(db);
 	const availableSections = await getActiveSections(db, orgId);
 	console.log('[members] Loaded:', { voices: availableVoices.length, sections: availableSections.length });

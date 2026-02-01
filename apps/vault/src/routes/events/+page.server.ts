@@ -5,14 +5,15 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canCreateEvents } from '$lib/server/auth/permissions';
 import { getParticipation } from '$lib/server/db/participation';
 import { getSeasonByDate, getSeason, getSeasonEvents, getAllSeasons, type Season } from '$lib/server/db/seasons';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 interface SeasonNav {
 	prev: { id: string; name: string } | null;
 	next: { id: string; name: string } | null;
 }
 
-async function getSeasonNavigation(db: D1Database, currentSeasonId: string): Promise<SeasonNav> {
-	const seasons = await getAllSeasons(db); // Ordered by start_date DESC
+async function getSeasonNavigation(db: D1Database, orgId: string, currentSeasonId: string): Promise<SeasonNav> {
+	const seasons = await getAllSeasons(db, orgId); // Ordered by start_date DESC
 	const currentIndex = seasons.findIndex(s => s.id === currentSeasonId);
 	
 	if (currentIndex === -1) {
@@ -37,6 +38,9 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	// Require authentication
 	const member = await getAuthenticatedMember(db, cookies);
 
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
 	// Determine which season to show
 	const seasonIdParam = url.searchParams.get('seasonId');
 	let season: Season | null = null;
@@ -49,7 +53,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	if (!season) {
 		// Default to current season (by today's date)
 		const today = new Date().toISOString().split('T')[0];
-		season = await getSeasonByDate(db, today);
+		season = await getSeasonByDate(db, orgId, today);
 	}
 
 	// Load events for the season (or empty if no season)
@@ -72,7 +76,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	);
 
 	// Get navigation to adjacent seasons
-	const seasonNav = season ? await getSeasonNavigation(db, season.id) : { prev: null, next: null };
+	const seasonNav = season ? await getSeasonNavigation(db, orgId, season.id) : { prev: null, next: null };
 
 	// Check if user can create events
 	const canCreate = canCreateEvents(member);

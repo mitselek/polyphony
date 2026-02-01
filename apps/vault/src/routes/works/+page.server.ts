@@ -4,6 +4,7 @@ import { canUploadScores } from '$lib/server/auth/permissions';
 
 interface WorksResponse {
 	id: string;
+	orgId: string;
 	title: string;
 	composer: string | null;
 	lyricist: string | null;

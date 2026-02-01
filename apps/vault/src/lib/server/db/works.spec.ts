@@ -10,6 +10,9 @@ import {
 } from './works';
 import type { Work } from '$lib/types';
 
+// Test org ID (matches DEFAULT_ORG_ID)
+const TEST_ORG_ID = 'org_crede_001';
+
 // Mock D1Database
 function createMockDb() {
 	const mockRun = vi.fn().mockResolvedValue({ meta: { changes: 1 } });
@@ -37,9 +40,10 @@ describe('Works database layer', () => {
 
 	describe('createWork', () => {
 		it('creates a work with title only', async () => {
-			const work = await createWork(db, { title: 'Messiah' });
+			const work = await createWork(db, { orgId: TEST_ORG_ID, title: 'Messiah' });
 
 			expect(work.title).toBe('Messiah');
+			expect(work.orgId).toBe(TEST_ORG_ID);
 			expect(work.composer).toBeNull();
 			expect(work.lyricist).toBeNull();
 			expect(work.id).toBeDefined();
@@ -48,6 +52,7 @@ describe('Works database layer', () => {
 
 		it('creates a work with all fields', async () => {
 			const work = await createWork(db, {
+				orgId: TEST_ORG_ID,
 				title: 'Messiah',
 				composer: 'Handel',
 				lyricist: 'Jennens'
@@ -59,8 +64,8 @@ describe('Works database layer', () => {
 		});
 
 		it('generates unique IDs', async () => {
-			const work1 = await createWork(db, { title: 'Work 1' });
-			const work2 = await createWork(db, { title: 'Work 2' });
+			const work1 = await createWork(db, { orgId: TEST_ORG_ID, title: 'Work 1' });
+			const work2 = await createWork(db, { orgId: TEST_ORG_ID, title: 'Work 2' });
 
 			expect(work1.id).not.toBe(work2.id);
 		});
@@ -70,6 +75,7 @@ describe('Works database layer', () => {
 		it('returns work when found', async () => {
 			const mockRow = {
 				id: 'work-123',
+				org_id: TEST_ORG_ID,
 				title: 'Messiah',
 				composer: 'Handel',
 				lyricist: null,
@@ -83,6 +89,7 @@ describe('Works database layer', () => {
 			expect(work?.title).toBe('Messiah');
 			expect(work?.composer).toBe('Handel');
 			expect(work?.lyricist).toBeNull();
+			expect(work?.orgId).toBe(TEST_ORG_ID);
 		});
 
 		it('returns null when not found', async () => {
@@ -96,19 +103,19 @@ describe('Works database layer', () => {
 
 	describe('getAllWorks', () => {
 		it('returns empty array when no works', async () => {
-			const works = await getAllWorks(db);
+			const works = await getAllWorks(db, TEST_ORG_ID);
 
 			expect(works).toEqual([]);
 		});
 
 		it('returns all works ordered by title', async () => {
 			const mockRows = [
-				{ id: '1', title: 'Ave Maria', composer: 'Schubert', lyricist: null, created_at: '2026-01-29' },
-				{ id: '2', title: 'Messiah', composer: 'Handel', lyricist: 'Jennens', created_at: '2026-01-29' }
+				{ id: '1', org_id: TEST_ORG_ID, title: 'Ave Maria', composer: 'Schubert', lyricist: null, created_at: '2026-01-29' },
+				{ id: '2', org_id: TEST_ORG_ID, title: 'Messiah', composer: 'Handel', lyricist: 'Jennens', created_at: '2026-01-29' }
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ results: mockRows });
 
-			const works = await getAllWorks(db);
+			const works = await getAllWorks(db, TEST_ORG_ID);
 
 			expect(works).toHaveLength(2);
 			expect(works[0].title).toBe('Ave Maria');
@@ -120,6 +127,7 @@ describe('Works database layer', () => {
 		it('updates work title', async () => {
 			const mockRow = {
 				id: 'work-123',
+				org_id: TEST_ORG_ID,
 				title: 'Updated Title',
 				composer: 'Handel',
 				lyricist: null,
@@ -135,6 +143,7 @@ describe('Works database layer', () => {
 		it('clears optional fields when set to null', async () => {
 			const mockRow = {
 				id: 'work-123',
+				org_id: TEST_ORG_ID,
 				title: 'Messiah',
 				composer: null,
 				lyricist: null,
@@ -177,11 +186,11 @@ describe('Works database layer', () => {
 	describe('searchWorks', () => {
 		it('searches by title', async () => {
 			const mockRows = [
-				{ id: '1', title: 'Messiah', composer: 'Handel', lyricist: null, created_at: '2026-01-29' }
+				{ id: '1', org_id: TEST_ORG_ID, title: 'Messiah', composer: 'Handel', lyricist: null, created_at: '2026-01-29' }
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ results: mockRows });
 
-			const works = await searchWorks(db, 'mess');
+			const works = await searchWorks(db, TEST_ORG_ID, 'mess');
 
 			expect(works).toHaveLength(1);
 			expect(works[0].title).toBe('Messiah');
@@ -189,11 +198,11 @@ describe('Works database layer', () => {
 
 		it('searches by composer', async () => {
 			const mockRows = [
-				{ id: '1', title: 'Messiah', composer: 'Handel', lyricist: null, created_at: '2026-01-29' }
+				{ id: '1', org_id: TEST_ORG_ID, title: 'Messiah', composer: 'Handel', lyricist: null, created_at: '2026-01-29' }
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ results: mockRows });
 
-			const works = await searchWorks(db, 'handel');
+			const works = await searchWorks(db, TEST_ORG_ID, 'handel');
 
 			expect(works).toHaveLength(1);
 		});
@@ -201,7 +210,7 @@ describe('Works database layer', () => {
 		it('returns empty array for no matches', async () => {
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ results: [] });
 
-			const works = await searchWorks(db, 'xyz');
+			const works = await searchWorks(db, TEST_ORG_ID, 'xyz');
 
 			expect(works).toEqual([]);
 		});

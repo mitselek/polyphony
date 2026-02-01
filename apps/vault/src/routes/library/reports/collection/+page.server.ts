@@ -6,6 +6,7 @@ import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getOutstandingCopiesForSeason } from '$lib/server/db/inventory-reports';
 import { getAllSeasons } from '$lib/server/db/seasons';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const db = platform?.env?.DB;
@@ -19,8 +20,11 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 	const member = await getMemberById(db, memberId);
 	if (!canUploadScores(member)) throw redirect(302, '/');
 
-	// Get all seasons
-	const seasons = await getAllSeasons(db);
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
+
+	// Get all seasons for this organization
+	const seasons = await getAllSeasons(db, orgId);
 
 	// Get selected season from query param, or default to most recent season
 	const seasonId = url.searchParams.get('season');
