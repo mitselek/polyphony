@@ -12,11 +12,11 @@ Business model and technical architecture for multi-tier organization support in
 
 Polyphony supports three tiers of organizations:
 
-| Tier                       | Example                           | Payment                              | Vault Access                     |
-| -------------------------- | --------------------------------- | ------------------------------------ | -------------------------------- |
-| **Umbrella Organization**  | Estonian Mixed Choirs Association | €10/mo base + €1/GB (aggregate)      | Dashboard + own vault (optional) |
-| **Affiliated Collective**  | Choir under umbrella              | Free (covered by umbrella)           | Own vault at `name.polyphony.uk` |
-| **Independent Collective** | Self-paying choir/band            | Free ≤100MB, €3 ≤1GB, €10 ≤10GB     | Own vault at `name.polyphony.uk` |
+| Tier                       | Example                           | Payment                         | Vault Access                     |
+| -------------------------- | --------------------------------- | ------------------------------- | -------------------------------- |
+| **Umbrella Organization**  | Estonian Mixed Choirs Association | €10/mo base + €1/GB (aggregate) | Dashboard (events + scores)      |
+| **Affiliated Collective**  | Choir under umbrella              | Free (covered by umbrella)      | Own vault at `name.polyphony.uk` |
+| **Independent Collective** | Self-paying choir/band            | Free ≤100MB, €3 ≤1GB, €10 ≤10GB | Own vault at `name.polyphony.uk` |
 
 ### Key Principles
 
@@ -44,7 +44,8 @@ Polyphony supports three tiers of organizations:
 │                              ▼                     ▼            │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │                    Registry Database                      │  │
-│  │  • organizations (umbrellas + independents)               │  │
+│  │  • organizations (umbrellas + collectives)                │  │
+│  │  • affiliations (many-to-many umbrella ↔ collective)      │  │
 │  │  • vaults (with org_id foreign key)                       │  │
 │  │  • subscriptions (billing state)                          │  │
 │  │  • usage_reports (for aggregated stats)                   │  │
@@ -85,12 +86,14 @@ An association or federation that pays for multiple member collectives.
   - Active vault count
 - Manage affiliation requests (approve/remove)
 - Access billing dashboard
-- **Own vault** (optional): If umbrella is also a performing collective
-  - Can selectively share scores with affiliates
-  - Can selectively share events with affiliates
+- **Joint events**: Create events shared with all/selected affiliates
+  - Upload scores/editions for the event
+  - Affiliates see event in their vault (read-only)
+- **Shared score library**: Scores available to all affiliates
 
 **Does NOT have**:
 
+- Own vault (umbrella is not a performing collective)
 - Direct access to affiliate vault content (scores, private events)
 - Ability to manage affiliate vault members
 
@@ -110,7 +113,7 @@ A choir/orchestra/band that belongs to an umbrella organization.
 **Affiliation Rules**:
 
 - Can belong to **multiple umbrellas** simultaneously
-- Each umbrella pays proportionally for the collective's storage
+- Storage cost split **evenly** among all affiliated umbrellas
 - Can leave umbrella → 30-day grace period → becomes independent (must start paying)
 - Can switch/add umbrellas (with approval from new umbrella)
 
@@ -122,9 +125,9 @@ A self-paying choir/orchestra/band with no umbrella affiliation.
 
 | Storage | Monthly Price |
 | ------- | ------------- |
-| ≤100 MB | Free |
-| ≤1 GB | €3/mo |
-| ≤10 GB | €10/mo |
+| ≤100 MB | Free          |
+| ≤1 GB   | €3/mo         |
+| ≤10 GB  | €10/mo        |
 
 **Trial**: 30 days free with full features for new collectives.
 
@@ -149,13 +152,13 @@ CREATE TABLE organizations (
 );
 
 -- Many-to-many: collectives can belong to multiple umbrellas
+-- Storage cost split evenly among all affiliated umbrellas
 CREATE TABLE affiliations (
     id TEXT PRIMARY KEY,
     collective_id TEXT NOT NULL REFERENCES organizations(id),
     umbrella_id TEXT NOT NULL REFERENCES organizations(id),
-    is_primary BOOLEAN NOT NULL DEFAULT 0,  -- Primary umbrella pays full storage
     joined_at TEXT NOT NULL DEFAULT (datetime('now')),
-    
+
     UNIQUE(collective_id, umbrella_id)
 );
 
@@ -300,14 +303,37 @@ Umbrella orgs CANNOT see:
 - ❌ Private events or rehearsals
 - ❌ Attendance records
 
-### 6.3 Umbrella Vault Sharing (Optional)
+### 6.3 Joint Events & Shared Scores
 
-If an umbrella has its own vault (as a performing collective), it can:
+Umbrellas often organize **joint events** (concerts, summer camps, festivals, workshops) that involve multiple affiliates. These are managed directly in the umbrella dashboard (Registry level).
 
-- **Share scores** selectively with affiliates (one-way push)
-- **Share events** selectively with affiliates (festival announcements, workshops)
+**What umbrellas can manage**:
 
-This is NOT federation - just umbrella → affiliate visibility. Affiliates cannot share back to umbrella through this mechanism.
+- **Joint Events**: Concerts, summer camps, workshops, festivals
+  - Event details (date, location, description)
+  - Full repertoire (works + editions)
+  - Uploaded scores (PDFs) for the event
+  - Select which affiliates see the event (all or specific)
+- **Shared Score Library**: Editions available to affiliates
+  - Upload scores once, available to all affiliates
+  - Affiliates can view/download (read-only)
+
+**How it works**:
+
+1. Umbrella admin creates event in Registry dashboard
+2. Attaches repertoire + uploads score files
+3. Selects target affiliates (all or specific)
+4. Event appears in affiliate vaults (read-only section)
+5. Affiliate members can access shared scores
+6. Affiliates can optionally track attendance for their members
+
+**Technical approach** (to be detailed in implementation):
+
+- Registry stores umbrella events + score files
+- Affiliate vaults fetch shared content via Registry API
+- Changes propagate automatically to affiliates
+- No reverse sync (affiliates cannot modify shared content)
+- Umbrella storage (events + scores) counts toward umbrella's €1/GB
 
 ---
 
@@ -391,11 +417,11 @@ This is NOT federation - just umbrella → affiliate visibility. Affiliates cann
 
 **Examples**:
 
-| Affiliates | Total Storage | Monthly Cost |
-| ---------- | ------------- | ------------ |
-| 3 choirs | 800 MB | €10 + €1 = **€11/mo** |
-| 10 choirs | 4.2 GB | €10 + €5 = **€15/mo** |
-| 25 choirs | 12 GB | €10 + €12 = **€22/mo** |
+| Affiliates | Total Storage | Monthly Cost           |
+| ---------- | ------------- | ---------------------- |
+| 3 choirs   | 800 MB        | €10 + €1 = **€11/mo**  |
+| 10 choirs  | 4.2 GB        | €10 + €5 = **€15/mo**  |
+| 25 choirs  | 12 GB         | €10 + €12 = **€22/mo** |
 
 ### 8.2 Independent Pricing
 
@@ -470,13 +496,14 @@ Umbrella membership saves ~50% at typical usage.
 
 ## 10. Resolved Questions
 
-1. ✅ **Umbrella vault**: Umbrellas can have their own vault as an affiliated collective under themselves.
-   - Their score library can be selectively shared with affiliates
-   - Their events can be selectively shared with affiliates
+1. ✅ **Umbrella events & scores**: Managed at Registry level (no separate vault).
+   - Umbrella dashboard has event creation + score upload
+   - Shared content appears in affiliate vaults (read-only)
+   - Storage counts toward umbrella's €1/GB pricing
 
 2. ✅ **Multi-umbrella**: Collectives can belong to multiple umbrellas.
-   - Primary umbrella designated for billing (pays full storage cost)
-   - Secondary umbrellas get aggregate stats but don't pay
+   - Storage cost split **evenly** among all affiliated umbrellas
+   - All umbrellas get aggregate stats for their affiliates
 
 3. ✅ **Vault transfer**: 30-day grace period when collective leaves umbrella.
    - During grace: full functionality, time to negotiate
@@ -486,16 +513,17 @@ Umbrella membership saves ~50% at typical usage.
 
 5. ✅ **Trial period**: 30 days free trial with full features for independents.
 
+6. ✅ **Umbrella-to-affiliate sharing**: Joint events (concerts, camps, festivals) with repertoire.
+   - Umbrella creates event in Registry dashboard with repertoire + scores
+   - Selects target affiliates (all or specific)
+   - Affiliates see event + can access shared scores (read-only)
+   - One-way sync (umbrella → affiliates)
+
 ---
 
 ## 11. Open Questions
 
-1. **Multi-umbrella billing split**: If a collective has multiple umbrellas, does only the primary pay? Or proportional split?
-   - Current design: Primary umbrella pays 100%
-   - Alternative: Split by % of storage or equal division
-
-2. **Umbrella-to-affiliate sharing**: Technical implementation for selective score/event sharing
-   - Read-only references? Copies? Sync mechanism?
+_No open questions at this time._
 
 ---
 
