@@ -247,6 +247,7 @@ interface EventWorkRow {
 	added_at: string;
 	added_by: string | null;
 	w_id: string;
+	w_org_id: string;
 	w_title: string;
 	w_composer: string | null;
 	w_lyricist: string | null;
@@ -313,7 +314,7 @@ function groupEditionsByEventWork(editions: EditionRow[]): Map<string, EventRepe
 function mapEventWorkRow(ew: EventWorkRow, editionsMap: Map<string, EventRepertoireEdition[]>): EventRepertoireWork {
 	return {
 		eventWorkId: ew.id,
-		work: { id: ew.w_id, title: ew.w_title, composer: ew.w_composer, lyricist: ew.w_lyricist, createdAt: ew.w_created_at },
+		work: { id: ew.w_id, orgId: ew.w_org_id, title: ew.w_title, composer: ew.w_composer, lyricist: ew.w_lyricist, createdAt: ew.w_created_at },
 		displayOrder: ew.display_order,
 		notes: ew.notes,
 		editions: editionsMap.get(ew.id) ?? []
@@ -327,7 +328,7 @@ export async function getEventRepertoire(db: D1Database, eventId: string): Promi
 	const eventWorks = await db
 		.prepare(
 			`SELECT ew.id, ew.event_id, ew.work_id, ew.display_order, ew.notes, ew.added_at, ew.added_by,
-				w.id as w_id, w.title as w_title, w.composer as w_composer, w.lyricist as w_lyricist, w.created_at as w_created_at
+				w.id as w_id, w.org_id as w_org_id, w.title as w_title, w.composer as w_composer, w.lyricist as w_lyricist, w.created_at as w_created_at
 			FROM event_works ew JOIN works w ON ew.work_id = w.id WHERE ew.event_id = ? ORDER BY ew.display_order ASC`
 		)
 		.bind(eventId)

@@ -3,6 +3,7 @@ import type { Work, CreateWorkInput, UpdateWorkInput } from '$lib/types';
 
 interface WorkRow {
 	id: string;
+	org_id: string;
 	title: string;
 	composer: string | null;
 	lyricist: string | null;
@@ -15,6 +16,7 @@ interface WorkRow {
 function rowToWork(row: WorkRow): Work {
 	return {
 		id: row.id,
+		orgId: row.org_id,
 		title: row.title,
 		composer: row.composer,
 		lyricist: row.lyricist,
@@ -39,12 +41,13 @@ export async function createWork(db: D1Database, input: CreateWorkInput): Promis
 	const lyricist = input.lyricist ?? null;
 
 	await db
-		.prepare('INSERT INTO works (id, title, composer, lyricist, created_at) VALUES (?, ?, ?, ?, ?)')
-		.bind(id, input.title, composer, lyricist, now)
+		.prepare('INSERT INTO works (id, org_id, title, composer, lyricist, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+		.bind(id, input.orgId, input.title, composer, lyricist, now)
 		.run();
 
 	return {
 		id,
+		orgId: input.orgId,
 		title: input.title,
 		composer,
 		lyricist,
@@ -57,7 +60,7 @@ export async function createWork(db: D1Database, input: CreateWorkInput): Promis
  */
 export async function getWorkById(db: D1Database, id: string): Promise<Work | null> {
 	const row = await db
-		.prepare('SELECT id, title, composer, lyricist, created_at FROM works WHERE id = ?')
+		.prepare('SELECT id, org_id, title, composer, lyricist, created_at FROM works WHERE id = ?')
 		.bind(id)
 		.first<WorkRow>();
 
@@ -65,11 +68,12 @@ export async function getWorkById(db: D1Database, id: string): Promise<Work | nu
 }
 
 /**
- * Get all works ordered by title
+ * Get all works for an organization, ordered by title
  */
-export async function getAllWorks(db: D1Database): Promise<Work[]> {
+export async function getAllWorks(db: D1Database, orgId: string): Promise<Work[]> {
 	const { results } = await db
-		.prepare('SELECT id, title, composer, lyricist, created_at FROM works ORDER BY title ASC')
+		.prepare('SELECT id, org_id, title, composer, lyricist, created_at FROM works WHERE org_id = ? ORDER BY title ASC')
+		.bind(orgId)
 		.all<WorkRow>();
 
 	return results.map(rowToWork);
@@ -134,19 +138,19 @@ export async function deleteWork(db: D1Database, id: string): Promise<boolean> {
 }
 
 /**
- * Search works by title or composer (case-insensitive)
+ * Search works by title or composer (case-insensitive) within an organization
  */
-export async function searchWorks(db: D1Database, query: string): Promise<Work[]> {
+export async function searchWorks(db: D1Database, orgId: string, query: string): Promise<Work[]> {
 	const pattern = `%${query}%`;
 
 	const { results } = await db
 		.prepare(`
-			SELECT id, title, composer, lyricist, created_at 
+			SELECT id, org_id, title, composer, lyricist, created_at 
 			FROM works 
-			WHERE title LIKE ? OR composer LIKE ?
+			WHERE org_id = ? AND (title LIKE ? OR composer LIKE ?)
 			ORDER BY title ASC
 		`)
-		.bind(pattern, pattern)
+		.bind(orgId, pattern, pattern)
 		.all<WorkRow>();
 
 	return results.map(rowToWork);

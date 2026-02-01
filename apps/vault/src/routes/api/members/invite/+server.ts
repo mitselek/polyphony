@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/middleware';
 import { parseBody, createInviteSchema } from '$lib/server/validation/schemas';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -13,6 +14,9 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	// Auth: get member and check admin role
 	const member = await getAuthenticatedMember(db, cookies);
 	assertAdmin(member);
+
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
 
 	// Validate request body with Zod
 	const body = await parseBody(request, createInviteSchema);
@@ -28,6 +32,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 
 		// Create invite linked to roster member
 		const invite = await createInvite(db, {
+			orgId,
 			rosterMemberId: body.rosterMemberId,
 			roles: body.roles,
 			emailHint: body.emailHint,

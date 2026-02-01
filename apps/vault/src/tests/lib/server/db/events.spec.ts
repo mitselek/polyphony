@@ -9,6 +9,9 @@ import {
 } from '$lib/server/db/events';
 import type { EventType } from '$lib/types';
 
+// Test org ID (matches DEFAULT_ORG_ID)
+const TEST_ORG_ID = 'org_crede_001';
+
 // Mock D1 database
 interface MockRow {
 	[key: string]: string | number | null;
@@ -46,10 +49,11 @@ function createMockDb(): D1Database {
 					// INSERT operations
 					if (lowerQuery.includes('insert into events')) {
 						const events = storage.get('events') ?? [];
-						const [id, title, description, location, starts_at, ends_at, event_type, created_by] =
+						const [id, org_id, title, description, location, starts_at, ends_at, event_type, created_by] =
 							boundValues;
 						events.push({
 							id: id as string,
+							org_id: org_id as string,
 							title: title as string,
 							description: description as string | null,
 							location: location as string | null,
@@ -66,9 +70,10 @@ function createMockDb(): D1Database {
 					// SELECT upcoming events
 					if (lowerQuery.includes('select') && lowerQuery.includes('starts_at >= datetime')) {
 						const events = storage.get('events') ?? [];
+						const orgId = boundValues[0];
 						const now = new Date().toISOString();
 						const upcoming = events
-							.filter((e) => e.starts_at >= now)
+							.filter((e) => e.org_id === orgId && e.starts_at >= now)
 							.sort((a, b) => (a.starts_at as string).localeCompare(b.starts_at as string));
 						return { results: upcoming as T[], success: true, meta: {} };
 					}
@@ -161,7 +166,7 @@ describe('Events Database', () => {
 				}
 			];
 
-			const created = await createEvents(db, events, testMemberId);
+			const created = await createEvents(db, TEST_ORG_ID, events, testMemberId);
 
 			expect(created).toHaveLength(2);
 			expect(created[0]).toMatchObject({
@@ -186,6 +191,7 @@ describe('Events Database', () => {
 			// Create events in non-chronological order
 			await createEvents(
 				db,
+				TEST_ORG_ID,
 				[
 					{
 						title: 'Event C',
@@ -206,7 +212,7 @@ describe('Events Database', () => {
 				testMemberId
 			);
 
-			const upcoming = await getUpcomingEvents(db);
+			const upcoming = await getUpcomingEvents(db, TEST_ORG_ID);
 
 			expect(upcoming).toHaveLength(3);
 			expect(upcoming[0].title).toBe('Event A');
@@ -220,6 +226,7 @@ describe('Events Database', () => {
 
 			await createEvents(
 				db,
+				TEST_ORG_ID,
 				[
 					{
 						title: 'Past Event',
@@ -235,7 +242,7 @@ describe('Events Database', () => {
 				testMemberId
 			);
 
-			const upcoming = await getUpcomingEvents(db);
+			const upcoming = await getUpcomingEvents(db, TEST_ORG_ID);
 
 			expect(upcoming).toHaveLength(1);
 			expect(upcoming[0].title).toBe('Future Event');
@@ -246,6 +253,7 @@ describe('Events Database', () => {
 		it('returns event with details', async () => {
 			const [created] = await createEvents(
 				db,
+				TEST_ORG_ID,
 				[
 					{
 						title: 'Test Event',
@@ -278,6 +286,7 @@ describe('Events Database', () => {
 		it('updates event fields', async () => {
 			const [created] = await createEvents(
 				db,
+				TEST_ORG_ID,
 				[
 					{
 						title: 'Original Title',
@@ -307,6 +316,7 @@ describe('Events Database', () => {
 		it('deletes event', async () => {
 			const [created] = await createEvents(
 				db,
+				TEST_ORG_ID,
 				[
 					{
 						title: 'To Delete',

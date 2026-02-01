@@ -5,6 +5,7 @@ import type { PageServerLoad } from './$types';
 import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getUpcomingEvents } from '$lib/server/db/events';
+import { DEFAULT_ORG_ID } from '$lib/server/constants';
 import {
 	getMissingCopiesForEvent,
 	getMissingCopiesForSeason,
@@ -40,12 +41,16 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		throw redirect(303, '/works');
 	}
 
-	// Load filter options
-	const events = await getUpcomingEvents(db);
+	// TODO: #165 - Get orgId from subdomain routing
+	const orgId = DEFAULT_ORG_ID;
 
-	// Load seasons (query directly - simple read)
+	// Load filter options
+	const events = await getUpcomingEvents(db, orgId);
+
+	// Load seasons for this organization (query directly - simple read)
 	const { results: seasonRows } = await db
-		.prepare('SELECT id, name FROM seasons ORDER BY start_date DESC')
+		.prepare('SELECT id, name FROM seasons WHERE org_id = ? ORDER BY start_date DESC')
+		.bind(orgId)
 		.all<{ id: string; name: string }>();
 	const seasons: SeasonOption[] = seasonRows;
 

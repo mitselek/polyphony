@@ -229,6 +229,7 @@ interface SeasonWorkRow {
 	added_at: string;
 	added_by: string | null;
 	w_id: string;
+	w_org_id: string;
 	w_title: string;
 	w_composer: string | null;
 	w_lyricist: string | null;
@@ -295,7 +296,7 @@ function groupEditionsBySeasonWork(editions: EditionRow[]): Map<string, SeasonRe
 function mapSeasonWorkRow(sw: SeasonWorkRow, editionsMap: Map<string, SeasonRepertoireEdition[]>): SeasonRepertoireWork {
 	return {
 		seasonWorkId: sw.id,
-		work: { id: sw.w_id, title: sw.w_title, composer: sw.w_composer, lyricist: sw.w_lyricist, createdAt: sw.w_created_at },
+		work: { id: sw.w_id, orgId: sw.w_org_id, title: sw.w_title, composer: sw.w_composer, lyricist: sw.w_lyricist, createdAt: sw.w_created_at },
 		displayOrder: sw.display_order,
 		notes: sw.notes,
 		editions: editionsMap.get(sw.id) ?? []
@@ -309,7 +310,7 @@ export async function getSeasonRepertoire(db: D1Database, seasonId: string): Pro
 	const seasonWorks = await db
 		.prepare(
 			`SELECT sw.id, sw.season_id, sw.work_id, sw.display_order, sw.notes, sw.added_at, sw.added_by,
-				w.id as w_id, w.title as w_title, w.composer as w_composer, w.lyricist as w_lyricist, w.created_at as w_created_at
+				w.id as w_id, w.org_id as w_org_id, w.title as w_title, w.composer as w_composer, w.lyricist as w_lyricist, w.created_at as w_created_at
 			FROM season_works sw JOIN works w ON sw.work_id = w.id WHERE sw.season_id = ? ORDER BY sw.display_order ASC`
 		)
 		.bind(seasonId)

@@ -4,6 +4,7 @@ import type { Role, Voice, Section } from '$lib/types';
 
 export interface Invite {
 	id: string;
+	orgId: string;
 	roster_member_id: string; // Links to roster member
 	roster_member_name: string; // For display (from JOIN)
 	token: string;
@@ -16,6 +17,7 @@ export interface Invite {
 }
 
 export interface CreateInviteInput {
+	orgId: string; // Required: which organization
 	rosterMemberId: string; // Required: which roster member to invite
 	roles: Role[]; // Roles to grant upon acceptance
 	invited_by: string;
@@ -98,11 +100,12 @@ export async function createInvite(
 	// Include name for backward compatibility with existing schema
 	await db
 		.prepare(
-			`INSERT INTO invites (id, roster_member_id, name, token, invited_by, expires_at, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO invites (id, org_id, roster_member_id, name, token, invited_by, expires_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			id,
+			input.orgId,
 			input.rosterMemberId,
 			name,
 			token,
@@ -158,7 +161,7 @@ export async function getInviteByToken(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, created_at
+			`SELECT id, org_id as orgId, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
@@ -178,7 +181,7 @@ export async function getInviteById(
 ): Promise<Invite | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, roster_member_id, token, invited_by, expires_at, created_at
+			`SELECT id, org_id as orgId, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
@@ -239,20 +242,22 @@ export async function acceptInvite(
 }
 
 /**
- * Get all pending invites with roster member and inviter info
+ * Get all pending invites for an organization with roster member and inviter info
  */
 export async function getPendingInvites(
-	db: D1Database
+	db: D1Database,
+	orgId: string
 ): Promise<(Invite & { inviter_name: string | null; inviter_email: string | null })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.created_at,
+			`SELECT i.id, i.org_id as orgId, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.created_at,
 			        inviter.name as inviter_name, inviter.email_id as inviter_email
 			 FROM invites i
 			 JOIN members inviter ON i.invited_by = inviter.id
-			 WHERE i.expires_at > datetime('now')
+			 WHERE i.org_id = ? AND i.expires_at > datetime('now')
 			 ORDER BY i.created_at DESC`
 		)
+		.bind(orgId)
 		.all<{ inviter_name: string | null; inviter_email: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
 
 	// Load relations for each invite

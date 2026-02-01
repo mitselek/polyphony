@@ -7,13 +7,38 @@ import type { Event } from './events';
 
 export interface Season {
 	id: string;
+	orgId: string;
 	name: string;
 	start_date: string; // YYYY-MM-DD
 	created_at: string;
 	updated_at: string;
 }
 
+interface SeasonRow {
+	id: string;
+	org_id: string;
+	name: string;
+	start_date: string;
+	created_at: string;
+	updated_at: string;
+}
+
+/**
+ * Convert database row to Season interface (snake_case → camelCase)
+ */
+function rowToSeason(row: SeasonRow): Season {
+	return {
+		id: row.id,
+		orgId: row.org_id,
+		name: row.name,
+		start_date: row.start_date,
+		created_at: row.created_at,
+		updated_at: row.updated_at
+	};
+}
+
 export interface CreateSeasonInput {
+	orgId: string;
 	name: string;
 	start_date: string; // YYYY-MM-DD
 }
@@ -25,7 +50,7 @@ export interface UpdateSeasonInput {
 
 /**
  * Create a new season
- * @throws Error if start_date already exists (UNIQUE constraint)
+ * @throws Error if start_date already exists for this org (UNIQUE constraint)
  */
 export async function createSeason(
 	db: D1Database,
@@ -37,12 +62,12 @@ export async function createSeason(
 	try {
 		await db
 			.prepare(
-				'INSERT INTO seasons (id, name, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+				'INSERT INTO seasons (id, org_id, name, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
 			)
-			.bind(id, input.name, input.start_date, now, now)
+			.bind(id, input.orgId, input.name, input.start_date, now, now)
 			.run();
 	} catch (error) {
-		// Check for UNIQUE constraint violation on start_date
+		// Check for UNIQUE constraint violation on (org_id, start_date)
 		if (error instanceof Error && error.message.includes('UNIQUE')) {
 			throw new Error(`Season with start date ${input.start_date} already exists`);
 		}
@@ -51,6 +76,7 @@ export async function createSeason(
 
 	return {
 		id,
+		orgId: input.orgId,
 		name: input.name,
 		start_date: input.start_date,
 		created_at: now,
@@ -65,37 +91,43 @@ export async function getSeason(
 	db: D1Database,
 	id: string
 ): Promise<Season | null> {
-	return await db
-		.prepare('SELECT id, name, start_date, created_at, updated_at FROM seasons WHERE id = ?')
+	const row = await db
+		.prepare('SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE id = ?')
 		.bind(id)
-		.first<Season>();
+		.first<SeasonRow>();
+
+	return row ? rowToSeason(row) : null;
 }
 
 /**
- * Get all seasons ordered by start_date DESC (most recent first)
+ * Get all seasons for an organization ordered by start_date DESC (most recent first)
  */
-export async function getAllSeasons(db: D1Database): Promise<Season[]> {
+export async function getAllSeasons(db: D1Database, orgId: string): Promise<Season[]> {
 	const result = await db
-		.prepare('SELECT id, name, start_date, created_at, updated_at FROM seasons ORDER BY start_date DESC')
-		.all<Season>();
+		.prepare('SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE org_id = ? ORDER BY start_date DESC')
+		.bind(orgId)
+		.all<SeasonRow>();
 
-	return result.results;
+	return result.results.map(rowToSeason);
 }
 
 /**
- * Find which season a given date falls into
+ * Find which season a given date falls into for an organization
  * A date belongs to the season with the largest start_date <= the given date
  */
 export async function getSeasonByDate(
 	db: D1Database,
+	orgId: string,
 	date: string // YYYY-MM-DD
 ): Promise<Season | null> {
-	return await db
+	const row = await db
 		.prepare(
-			'SELECT id, name, start_date, created_at, updated_at FROM seasons WHERE start_date <= ? ORDER BY start_date DESC LIMIT 1'
+			'SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE org_id = ? AND start_date <= ? ORDER BY start_date DESC LIMIT 1'
 		)
-		.bind(date)
-		.first<Season>();
+		.bind(orgId, date)
+		.first<SeasonRow>();
+
+	return row ? rowToSeason(row) : null;
 }
 
 /**
@@ -113,41 +145,64 @@ export async function getSeasonEvents(
 		return [];
 	}
 
-	// Find the next season's start date (if any)
+	// Find the next season's start date (if any) for this org
 	const nextSeason = await db
 		.prepare(
-			'SELECT start_date FROM seasons WHERE start_date > ? ORDER BY start_date ASC LIMIT 1'
+			'SELECT start_date FROM seasons WHERE org_id = ? AND start_date > ? ORDER BY start_date ASC LIMIT 1'
 		)
-		.bind(season.start_date)
+		.bind(season.orgId, season.start_date)
 		.first<{ start_date: string }>();
 
 	// Build query based on whether there's a next season
+	// Filter by org_id to only get events for this organization
 	if (nextSeason) {
 		// Events from this season's start to before next season's start
 		const result = await db
 			.prepare(
-				`SELECT id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
+				`SELECT id, org_id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
 				 FROM events 
-				 WHERE DATE(starts_at) >= ? AND DATE(starts_at) < ?
+				 WHERE org_id = ? AND DATE(starts_at) >= ? AND DATE(starts_at) < ?
 				 ORDER BY starts_at ASC`
 			)
-			.bind(season.start_date, nextSeason.start_date)
-			.all<Event>();
+			.bind(season.orgId, season.start_date, nextSeason.start_date)
+			.all();
 
-		return result.results;
+		return result.results.map((row: any) => ({
+			id: row.id,
+			orgId: row.org_id,
+			title: row.title,
+			description: row.description,
+			location: row.location,
+			starts_at: row.starts_at,
+			ends_at: row.ends_at,
+			event_type: row.event_type,
+			created_by: row.created_by,
+			created_at: row.created_at
+		}));
 	} else {
 		// This is the most recent season - all events from start_date onwards
 		const result = await db
 			.prepare(
-				`SELECT id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
+				`SELECT id, org_id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
 				 FROM events 
-				 WHERE DATE(starts_at) >= ?
+				 WHERE org_id = ? AND DATE(starts_at) >= ?
 				 ORDER BY starts_at ASC`
 			)
-			.bind(season.start_date)
-			.all<Event>();
+			.bind(season.orgId, season.start_date)
+			.all();
 
-		return result.results;
+		return result.results.map((row: any) => ({
+			id: row.id,
+			orgId: row.org_id,
+			title: row.title,
+			description: row.description,
+			location: row.location,
+			starts_at: row.starts_at,
+			ends_at: row.ends_at,
+			event_type: row.event_type,
+			created_by: row.created_by,
+			created_at: row.created_at
+		}));
 	}
 }
 
