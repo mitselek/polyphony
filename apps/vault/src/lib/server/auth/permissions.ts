@@ -18,8 +18,9 @@ export type Permission =
 
 export interface Member {
 	id: string;
-	roles: Role[]; // Multi-role support
+	roles: Role[]; // Aggregate roles (for backward compat)
 	email_id: string | null; // OAuth identity
+	orgRoles?: Record<string, Role[]>; // Org-specific roles (Schema V2)
 }
 
 export interface RequireRoleResult {
@@ -40,10 +41,30 @@ const PERMISSIONS: Record<Role, Permission[]> = {
 };
 
 /**
+ * Get roles for a member, optionally scoped to an organization
+ * @param member The member to check
+ * @param orgId Optional org ID to get org-specific roles
+ * @returns Array of roles (from orgRoles if orgId provided and available, else from roles)
+ */
+function getMemberRoles(member: Member, orgId?: string): Role[] {
+	if (orgId && member.orgRoles) {
+		return member.orgRoles[orgId] ?? [];
+	}
+	return member.roles;
+}
+
+/**
  * Check if a member has a specific permission
  * Permissions are union of all assigned roles
+ * @param member The member to check
+ * @param permission The permission to check for
+ * @param orgId Optional org ID to check org-specific roles
  */
-export function hasPermission(member: Member | null | undefined, permission: Permission): boolean {
+export function hasPermission(
+	member: Member | null | undefined,
+	permission: Permission,
+	orgId?: string
+): boolean {
 	// Must be registered to have ANY permissions
 	if (!member || !member.email_id) {
 		return false;
@@ -54,41 +75,58 @@ export function hasPermission(member: Member | null | undefined, permission: Per
 		return true;
 	}
 
+	const roles = getMemberRoles(member, orgId);
+
 	// Owner has all permissions
-	if (member.roles.includes('owner')) {
+	if (roles.includes('owner')) {
 		return true;
 	}
 
 	// Check if any of member's roles grant the permission
-	return member.roles.some((role) => PERMISSIONS[role]?.includes(permission) ?? false);
+	return roles.some((role) => PERMISSIONS[role]?.includes(permission) ?? false);
 }
 
 /**
  * Check if a member has a specific role
+ * @param member The member to check
+ * @param role The role to check for
+ * @param orgId Optional org ID to check org-specific roles
  */
-export function hasRole(member: Member | null | undefined, role: Role): boolean {
-	return member?.roles.includes(role) ?? false;
+export function hasRole(
+	member: Member | null | undefined,
+	role: Role,
+	orgId?: string
+): boolean {
+	if (!member) return false;
+	const roles = getMemberRoles(member, orgId);
+	return roles.includes(role);
 }
 
 /**
  * Check if a member has at least one of the required roles
  * Owner role grants access to all role requirements
+ * @param member The member to check
+ * @param requiredRoles Single role or array of roles (any match = success)
+ * @param orgId Optional org ID to check org-specific roles
  */
 export function requireRole(
 	member: Member | null | undefined,
-	requiredRoles: Role | Role[]
+	requiredRoles: Role | Role[],
+	orgId?: string
 ): RequireRoleResult {
 	if (!member) {
 		return { success: false, error: 'Authentication required' };
 	}
 
+	const roles = getMemberRoles(member, orgId);
+
 	// Owner has all permissions
-	if (member.roles.includes('owner')) {
+	if (roles.includes('owner')) {
 		return { success: true };
 	}
 
 	const rolesArray = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-	const hasRequiredRole = rolesArray.some((role) => member.roles.includes(role));
+	const hasRequiredRole = rolesArray.some((role) => roles.includes(role));
 
 	if (!hasRequiredRole) {
 		return { success: false, error: 'Insufficient permissions' };
