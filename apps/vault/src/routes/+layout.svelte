@@ -37,7 +37,7 @@
 					</a>
 				{:else}
 					<a
-						href="/api/auth/login"
+						href="/login"
 						class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
 					>
 						Sign In
@@ -84,7 +84,7 @@
 						</a>
 					{:else}
 						<a
-							href="/api/auth/login"
+							href="/login"
 							class="rounded-lg bg-blue-600 px-4 py-2 text-center text-white hover:bg-blue-700"
 						>
 							Sign In
