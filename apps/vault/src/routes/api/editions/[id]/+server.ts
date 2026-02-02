@@ -5,15 +5,15 @@
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { getEditionById, updateEdition, deleteEdition } from '$lib/server/db/editions';
-import type { UpdateEditionInput, EditionType, LicenseType } from '$lib/types';
+import type { UpdateEditionInput, EditionType } from '$lib/types';
+import { LICENSE_TYPES } from '$lib/types';
 
 const VALID_EDITION_TYPES: EditionType[] = ['full_score', 'vocal_score', 'part', 'reduction', 'audio', 'video', 'supplementary'];
-const VALID_LICENSE_TYPES: LicenseType[] = ['public_domain', 'licensed', 'owned'];
 
 function validateUpdateInput(body: Partial<UpdateEditionInput>): string | null {
 	if (body.name !== undefined && (typeof body.name !== 'string' || body.name.trim().length === 0)) return 'Name cannot be empty';
 	if (body.editionType !== undefined && !VALID_EDITION_TYPES.includes(body.editionType)) return 'Invalid edition type';
-	if (body.licenseType !== undefined && !VALID_LICENSE_TYPES.includes(body.licenseType)) return 'Invalid license type';
+	if (body.licenseType !== undefined && !LICENSE_TYPES.includes(body.licenseType)) return 'Invalid license type';
 	if (body.sectionIds !== undefined && !Array.isArray(body.sectionIds)) return 'sectionIds must be an array';
 	return null;
 }

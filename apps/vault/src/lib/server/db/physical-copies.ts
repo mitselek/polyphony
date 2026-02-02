@@ -1,7 +1,10 @@
 // Physical copies database operations
 // Part of Epic #106 - Phase B: Physical Inventory
 
-export type CopyCondition = 'good' | 'fair' | 'poor' | 'lost';
+import type { CopyCondition } from '$lib/types';
+
+// Re-export for consumers that import from here
+export type { CopyCondition };
 
 export interface PhysicalCopy {
 	id: string;

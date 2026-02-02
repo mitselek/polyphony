@@ -10,8 +10,7 @@ import {
 	deletePhysicalCopy
 } from '$lib/server/db/physical-copies';
 import type { CopyCondition } from '$lib/types';
-
-const VALID_CONDITIONS: CopyCondition[] = ['good', 'fair', 'poor', 'lost'];
+import { COPY_CONDITIONS } from '$lib/types';
 
 interface UpdateInput {
 	condition?: CopyCondition;
@@ -20,8 +19,8 @@ interface UpdateInput {
 }
 
 function validateUpdateInput(body: UpdateInput): string | null {
-	if (body.condition !== undefined && !VALID_CONDITIONS.includes(body.condition)) {
-		return `Invalid condition. Must be one of: ${VALID_CONDITIONS.join(', ')}`;
+	if (body.condition !== undefined && !COPY_CONDITIONS.includes(body.condition)) {
+		return `Invalid condition. Must be one of: ${COPY_CONDITIONS.join(', ')}`;
 	}
 	if (body.acquiredAt !== undefined && body.acquiredAt !== null) {
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(body.acquiredAt)) {

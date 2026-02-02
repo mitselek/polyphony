@@ -1,10 +1,10 @@
 // Shared types for the vault application
 // These types are used across both server and client code
 
-export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader';
-
-// All assignable roles (used in members list and invite form)
+// All assignable roles - single source of truth
+// Database CHECK constraint must be kept in sync manually (migrations)
 export const ASSIGNABLE_ROLES = ['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const;
+export type Role = (typeof ASSIGNABLE_ROLES)[number];
 
 // Event types - single source of truth
 // Database CHECK constraint must be kept in sync manually (migrations)
@@ -423,7 +423,10 @@ export type EditionType =
 	| 'video'
 	| 'supplementary';
 
-export type LicenseType = 'public_domain' | 'licensed' | 'owned';
+// License types - single source of truth
+// Database CHECK constraint must be kept in sync manually (migrations)
+export const LICENSE_TYPES = ['public_domain', 'licensed', 'owned'] as const;
+export type LicenseType = (typeof LICENSE_TYPES)[number];
 
 /**
  * Edition: Specific publication or arrangement of a work
@@ -485,7 +488,10 @@ export interface UpdateEditionInput {
 // PHYSICAL COPIES SYSTEM (Epic #106 Phase B)
 // ============================================================================
 
-export type CopyCondition = 'good' | 'fair' | 'poor' | 'lost';
+// Copy conditions - single source of truth
+// Database CHECK constraint must be kept in sync manually (migrations)
+export const COPY_CONDITIONS = ['good', 'fair', 'poor', 'lost'] as const;
+export type CopyCondition = (typeof COPY_CONDITIONS)[number];
 
 /**
  * Physical copy of an edition (individual numbered copy)
