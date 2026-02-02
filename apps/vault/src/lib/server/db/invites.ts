@@ -1,7 +1,7 @@
 // Invite database operations for member invitation system
 
 import type { Role, Voice, Section } from '$lib/types';
-import { DEFAULT_ORG_ID } from '$lib/config';
+import { addMemberRoles } from './roles';
 
 export interface Invite {
 	id: string;
@@ -223,14 +223,7 @@ export async function acceptInvite(
 
 	// Transfer roles from invite to member
 	if (invite.roles.length > 0) {
-		const roleStatements = invite.roles.map((role) =>
-			db
-				.prepare(
-					'INSERT INTO member_roles (member_id, org_id, role, granted_by) VALUES (?, ?, ?, ?)'
-				)
-				.bind(member.id, DEFAULT_ORG_ID, role, invite.invited_by)
-		);
-		await db.batch(roleStatements);
+		await addMemberRoles(db, member.id, invite.roles, invite.invited_by);
 	}
 
 	// Delete invite after successful acceptance (cleanup)

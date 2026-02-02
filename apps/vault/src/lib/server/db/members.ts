@@ -1,7 +1,7 @@
 // Member database operations
 import type { Role, Voice, Section, Member } from '$lib/types';
 import { queryMemberSections, queryMemberVoices } from './queries/members';
-import { DEFAULT_ORG_ID } from '$lib/config';
+import { addMemberRoles } from './roles';
 
 // Re-export Member from canonical types
 export type { Member };
@@ -66,14 +66,9 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 		.bind(id, name, input.email, invited_by)
 		.run();
 
-	// Insert role records
+	// Insert role records using centralized function
 	if (input.roles.length > 0) {
-		const roleStatements = input.roles.map((role) =>
-			db
-				.prepare('INSERT INTO member_roles (member_id, org_id, role, granted_by) VALUES (?, ?, ?, ?)')
-				.bind(id, DEFAULT_ORG_ID, role, invited_by)
-		);
-		await db.batch(roleStatements);
+		await addMemberRoles(db, id, input.roles, invited_by);
 	}
 
 	// Insert voice assignments

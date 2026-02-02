@@ -3,7 +3,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 import { parseBody, updateRolesSchema } from '$lib/server/validation/schemas';
-import { DEFAULT_ORG_ID } from '$lib/config';
+import { addMemberRole, removeMemberRole, countMembersWithRole } from '$lib/server/db/roles';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -28,42 +28,17 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 
 	// Prevent removing last owner
 	if (role === 'owner' && action === 'remove') {
-		const ownerCount = await db
-			.prepare(`SELECT COUNT(*) as count FROM member_roles WHERE role = 'owner' AND org_id = ?`)
-			.bind(DEFAULT_ORG_ID)
-			.first<{ count: number }>();
-
-		if (ownerCount && ownerCount.count <= 1) {
+		const ownerCount = await countMembersWithRole(db, 'owner');
+		if (ownerCount <= 1) {
 			throw error(400, 'Cannot remove the last owner');
 		}
 	}
 
 	try {
 		if (action === 'add') {
-			// Check if role already exists
-			const existing = await db
-				.prepare(
-					`SELECT 1 FROM member_roles
-					 WHERE member_id = ? AND org_id = ? AND role = ?`
-				)
-				.bind(targetMemberId, DEFAULT_ORG_ID, role)
-				.first();
-
-			if (!existing) {
-				await db
-					.prepare(
-						`INSERT INTO member_roles (member_id, org_id, role, granted_by, granted_at)
-						 VALUES (?, ?, ?, ?, datetime('now'))`
-					)
-					.bind(targetMemberId, DEFAULT_ORG_ID, role, currentMember.id)
-					.run();
-			}
+			await addMemberRole(db, targetMemberId, role, currentMember.id);
 		} else {
-			// Remove role
-			await db
-				.prepare(`DELETE FROM member_roles WHERE member_id = ? AND org_id = ? AND role = ?`)
-				.bind(targetMemberId, DEFAULT_ORG_ID, role)
-				.run();
+			await removeMemberRole(db, targetMemberId, role);
 		}
 
 		return json({ success: true });
