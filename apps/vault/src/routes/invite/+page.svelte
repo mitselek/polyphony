@@ -97,6 +97,21 @@
 				Add Roster Member
 			</a>
 		</div>
+	{:else if data.hasPendingInvite}
+		<!-- Member already has a pending invite -->
+		<div class="rounded-lg border border-blue-200 bg-blue-50 p-6">
+			<h2 class="mb-2 text-lg font-semibold text-blue-800">Invitation Already Pending</h2>
+			<p class="mb-4 text-blue-700">
+				<strong>{rosterMember.name}</strong> already has a pending invitation. 
+				You can view or renew the invite from the Members page.
+			</p>
+			<a
+				href="/members"
+				class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+			>
+				← Back to Members
+			</a>
+		</div>
 	{:else}
 		<!-- Inviting a roster member -->
 		<div class="rounded-lg bg-white p-6 shadow-md">

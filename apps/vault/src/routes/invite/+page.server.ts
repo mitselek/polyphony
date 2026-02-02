@@ -27,6 +27,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	// Check for roster member ID (new flow - inviting existing roster member)
 	const rosterId = url.searchParams.get('rosterId');
 	let rosterMember = null;
+	let hasPendingInvite = false;
 
 	if (rosterId) {
 		rosterMember = await getMemberById(db, rosterId);
@@ -37,12 +38,23 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		if (rosterMember.email_id) {
 			throw error(400, 'Member is already registered');
 		}
+
+		// Check for existing pending invite
+		const existingInvite = await db
+			.prepare('SELECT id FROM invites WHERE roster_member_id = ? AND expires_at > datetime("now")')
+			.bind(rosterId)
+			.first();
+		
+		if (existingInvite) {
+			hasPendingInvite = true;
+		}
 	}
 
 	return {
 		isOwner: isOwner(member),
 		voices,
 		sections,
+		hasPendingInvite,
 		rosterMember: rosterMember ? {
 			id: rosterMember.id,
 			name: rosterMember.name,

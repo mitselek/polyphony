@@ -24,6 +24,7 @@
 		isAdmin: boolean;
 		availableVoices: Voice[];
 		availableSections: Section[];
+		pendingInviteMemberIds: string[];
 		searchQuery: string;
 		onToggleRole: (memberId: string, role: Role) => Promise<void>;
 		onAddVoice: (memberId: string, voiceId: string, isPrimary: boolean) => Promise<void>;
@@ -42,6 +43,7 @@
 		isAdmin,
 		availableVoices,
 		availableSections,
+		pendingInviteMemberIds,
 		searchQuery,
 		onToggleRole,
 		onAddVoice,
@@ -231,17 +233,24 @@
 						</div>
 
 						{#if !member.email_id}
-							<!-- Roster-only member - show invitation button instead of roles -->
-							<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-								<p class="mb-2 text-sm text-amber-800">
-									This member cannot log in until invited. Send them an invitation to grant system access.
-								</p>
-								<a
-									href="/invite?rosterId={member.id}"
-									class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-								>
-									Send Invitation
-								</a>
+							<!-- Roster-only member - show invitation status or button -->
+							{@const hasPendingInvite = pendingInviteMemberIds.includes(member.id)}
+							<div class="mt-3 rounded-lg border {hasPendingInvite ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50'} p-3">
+								{#if hasPendingInvite}
+									<p class="text-sm text-blue-800">
+										<span class="font-medium">Invitation pending</span> — waiting for member to accept.
+									</p>
+								{:else}
+									<p class="mb-2 text-sm text-amber-800">
+										This member cannot log in until invited. Send them an invitation to grant system access.
+									</p>
+									<a
+										href="/invite?rosterId={member.id}"
+										class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+									>
+										Send Invitation
+									</a>
+								{/if}
 							</div>
 						{:else}
 							<!-- Registered member - show role badges -->
