@@ -5,6 +5,7 @@ import { importJWK, jwtVerify, type JWTPayload } from 'jose';
 import { getMemberByEmailId } from '$lib/server/db/members';
 import { acceptInvite } from '$lib/server/db/invites';
 import type { Cookies } from '@sveltejs/kit';
+import { logger } from '$lib/server/logger';
 
 // Registry URL for fetching JWKS
 const REGISTRY_URL = 'https://polyphony.uk';
@@ -160,7 +161,7 @@ function handleAuthError(err: unknown): never {
 	if (err && typeof err === 'object' && 'status' in err) {
 		throw err;
 	}
-	console.error('Auth callback error:', err);
+	logger.error('Auth callback error:', err);
 	if (err instanceof Error && err.message.includes('expired')) {
 		throw error(401, 'Token expired. Please try logging in again.');
 	}
