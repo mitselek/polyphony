@@ -6,7 +6,10 @@ export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_lead
 // All assignable roles (used in members list and invite form)
 export const ASSIGNABLE_ROLES = ['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const;
 
-export type EventType = 'rehearsal' | 'concert' | 'retreat' | 'festival';
+// Event types - single source of truth
+// Database CHECK constraint must be kept in sync manually (migrations)
+export const EVENT_TYPES = ['rehearsal', 'concert', 'retreat', 'festival'] as const;
+export type EventType = (typeof EVENT_TYPES)[number];
 
 // ============================================================================
 // ORGANIZATIONS SYSTEM (Schema V2)

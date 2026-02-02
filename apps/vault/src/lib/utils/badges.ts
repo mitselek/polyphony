@@ -2,6 +2,10 @@
 // Issue #143 - DRY: Extract shared utilities
 
 import type { Role, EventType, LicenseType } from '$lib/types';
+import { EVENT_TYPES } from '$lib/types';
+
+// Re-export EVENT_TYPES for convenience
+export { EVENT_TYPES };
 
 // ============================================================================
 // ROLE BADGES
@@ -54,6 +58,8 @@ export function getEventTypeBadge(eventType: EventType | string): { bg: string; 
 			return { bg: 'bg-blue-100', text: 'text-blue-800' };
 		case 'retreat':
 			return { bg: 'bg-green-100', text: 'text-green-800' };
+		case 'festival':
+			return { bg: 'bg-orange-100', text: 'text-orange-800' };
 		default:
 			return { bg: 'bg-gray-100', text: 'text-gray-800' };
 	}
@@ -70,9 +76,19 @@ export function getEventTypeBadgeClass(eventType: EventType | string): string {
 			return 'bg-blue-100 text-blue-800 border-blue-200';
 		case 'retreat':
 			return 'bg-green-100 text-green-800 border-green-200';
+		case 'festival':
+			return 'bg-orange-100 text-orange-800 border-orange-200';
 		default:
 			return 'bg-gray-100 text-gray-800 border-gray-200';
 	}
+}
+
+/**
+ * Get display label for an event type
+ * Capitalizes the first letter (rehearsal -> Rehearsal)
+ */
+export function getEventTypeLabel(eventType: EventType | string): string {
+	return eventType.charAt(0).toUpperCase() + eventType.slice(1);
 }
 
 // ============================================================================

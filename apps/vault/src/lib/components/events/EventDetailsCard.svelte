@@ -3,7 +3,7 @@
   import type { EventType } from "$lib/types";
   import { goto } from "$app/navigation";
   import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes, DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
-  import { getEventTypeBadgeClass } from "$lib/utils/badges";
+  import { getEventTypeBadgeClass, EVENT_TYPES, getEventTypeLabel } from "$lib/utils/badges";
   import { toast } from "$lib/stores/toast";
 
   interface EventData {
@@ -204,9 +204,9 @@
           bind:value={editForm.event_type}
           class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
         >
-          <option value="rehearsal">Rehearsal</option>
-          <option value="concert">Concert</option>
-          <option value="retreat">Retreat</option>
+          {#each EVENT_TYPES as type}
+            <option value={type}>{getEventTypeLabel(type)}</option>
+          {/each}
         </select>
       </div>
       <div>

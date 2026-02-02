@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import type { EventType } from '$lib/types';
+	import { EVENT_TYPES, getEventTypeLabel } from '$lib/utils/badges';
 	import { getLocale } from '$lib/utils/locale';
 	import Card from '$lib/components/Card.svelte';
 
@@ -224,10 +225,9 @@
 						bind:value={eventType}
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 					>
-						<option value="rehearsal">Rehearsal</option>
-						<option value="concert">Concert</option>
-						<option value="retreat">Retreat</option>
-						<option value="festival">Festival</option>
+						{#each EVENT_TYPES as type}
+							<option value={type}>{getEventTypeLabel(type)}</option>
+						{/each}
 					</select>
 				</div>
 

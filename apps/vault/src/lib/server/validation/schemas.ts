@@ -1,13 +1,13 @@
 // Zod validation schemas for API requests
 import { z } from 'zod';
 import { error } from '@sveltejs/kit';
-import { ASSIGNABLE_ROLES } from '$lib/types';
+import { ASSIGNABLE_ROLES, EVENT_TYPES } from '$lib/types';
 
 // Role enum matching the database - uses ASSIGNABLE_ROLES constant to stay in sync
 const roleSchema = z.enum(ASSIGNABLE_ROLES);
 
-// Event type enum matching the database
-const eventTypeSchema = z.enum(['rehearsal', 'concert', 'retreat', 'festival']);
+// Event type enum matching the database - uses EVENT_TYPES constant to stay in sync
+const eventTypeSchema = z.enum(EVENT_TYPES);
 
 /**
  * Schema for creating a new member invitation
@@ -70,7 +70,7 @@ export const updateEventSchema = z.object({
 	location: z.string().optional(),
 	starts_at: z.string().datetime('Invalid start time format').optional(),
 	ends_at: z.string().datetime('Invalid end time format').optional(),
-	event_type: z.enum(['rehearsal', 'concert', 'retreat', 'festival']).optional()
+	event_type: eventTypeSchema.optional()
 });
 
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;

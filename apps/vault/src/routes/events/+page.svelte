@@ -190,6 +190,14 @@
 		>
 			Retreats
 		</button>
+		<button
+			onclick={() => (selectedFilter = 'festival')}
+			class="rounded-lg border px-4 py-2 text-sm transition {selectedFilter === 'festival'
+				? 'border-orange-500 bg-orange-50 text-orange-700'
+				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+		>
+			Festivals
+		</button>
 	</div>
 
 	<!-- Events List -->

@@ -481,7 +481,7 @@ CREATE TABLE events (
     id TEXT PRIMARY KEY,
     org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    event_type TEXT NOT NULL CHECK (event_type IN ('rehearsal', 'concert', 'retreat')),
+    event_type TEXT NOT NULL CHECK (event_type IN ('rehearsal', 'concert', 'retreat', 'festival')),
     start_date TEXT NOT NULL,
     end_date TEXT,
     location TEXT,

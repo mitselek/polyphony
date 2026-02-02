@@ -81,6 +81,12 @@ describe('Event type badges', () => {
 			expect(badge.text).toBe('text-green-800');
 		});
 
+		it('returns orange for festival', () => {
+			const badge = getEventTypeBadge('festival');
+			expect(badge.bg).toBe('bg-orange-100');
+			expect(badge.text).toBe('text-orange-800');
+		});
+
 		it('returns gray for unknown types', () => {
 			const badge = getEventTypeBadge('unknown');
 			expect(badge.bg).toBe('bg-gray-100');
