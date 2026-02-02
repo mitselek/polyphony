@@ -1,6 +1,7 @@
 // Invite database operations for member invitation system
 
 import type { Role, Voice, Section } from '$lib/types';
+import { DEFAULT_ORG_ID } from '$lib/config';
 
 export interface Invite {
 	id: string;
@@ -225,9 +226,9 @@ export async function acceptInvite(
 		const roleStatements = invite.roles.map((role) =>
 			db
 				.prepare(
-					'INSERT INTO member_roles (member_id, role, granted_by) VALUES (?, ?, ?)'
+					'INSERT INTO member_roles (member_id, org_id, role, granted_by) VALUES (?, ?, ?, ?)'
 				)
-				.bind(member.id, role, invite.invited_by)
+				.bind(member.id, DEFAULT_ORG_ID, role, invite.invited_by)
 		);
 		await db.batch(roleStatements);
 	}

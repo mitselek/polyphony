@@ -89,9 +89,10 @@ const createMockDb = () => {
 							}
 							return { success: true, meta: { changes: 1 } };
 						}
-						// INSERT INTO member_roles
+						// INSERT INTO member_roles (now includes org_id)
 						if (sql.includes('INSERT INTO member_roles')) {
-							const [member_id, role] = params as [string, string];
+							// New schema: (member_id, org_id, role, granted_by)
+							const [member_id, _org_id, role] = params as [string, string, string];
 							const roles = memberRoles.get(member_id) || [];
 							roles.push(role);
 							memberRoles.set(member_id, roles);

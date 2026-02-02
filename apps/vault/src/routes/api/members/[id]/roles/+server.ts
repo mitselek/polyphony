@@ -3,6 +3,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 import { parseBody, updateRolesSchema } from '$lib/server/validation/schemas';
+import { DEFAULT_ORG_ID } from '$lib/config';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -28,7 +29,8 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 	// Prevent removing last owner
 	if (role === 'owner' && action === 'remove') {
 		const ownerCount = await db
-			.prepare(`SELECT COUNT(*) as count FROM member_roles WHERE role = 'owner'`)
+			.prepare(`SELECT COUNT(*) as count FROM member_roles WHERE role = 'owner' AND org_id = ?`)
+			.bind(DEFAULT_ORG_ID)
 			.first<{ count: number }>();
 
 		if (ownerCount && ownerCount.count <= 1) {
@@ -42,25 +44,25 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 			const existing = await db
 				.prepare(
 					`SELECT 1 FROM member_roles
-					 WHERE member_id = ? AND role = ?`
+					 WHERE member_id = ? AND org_id = ? AND role = ?`
 				)
-				.bind(targetMemberId, role)
+				.bind(targetMemberId, DEFAULT_ORG_ID, role)
 				.first();
 
 			if (!existing) {
 				await db
 					.prepare(
-						`INSERT INTO member_roles (member_id, role, granted_by, granted_at)
-						 VALUES (?, ?, ?, datetime('now'))`
+						`INSERT INTO member_roles (member_id, org_id, role, granted_by, granted_at)
+						 VALUES (?, ?, ?, ?, datetime('now'))`
 					)
-					.bind(targetMemberId, role, currentMember.id)
+					.bind(targetMemberId, DEFAULT_ORG_ID, role, currentMember.id)
 					.run();
 			}
 		} else {
 			// Remove role
 			await db
-				.prepare(`DELETE FROM member_roles WHERE member_id = ? AND role = ?`)
-				.bind(targetMemberId, role)
+				.prepare(`DELETE FROM member_roles WHERE member_id = ? AND org_id = ? AND role = ?`)
+				.bind(targetMemberId, DEFAULT_ORG_ID, role)
 				.run();
 		}
 

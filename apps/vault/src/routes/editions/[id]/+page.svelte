@@ -6,6 +6,7 @@
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import { SectionBadge } from '$lib/components/badges';
 	import { toast } from '$lib/stores/toast';
+	import { getEditionViewUrl, getEditionDownloadUrl } from '$lib/utils/urls';
 
 	let { data }: { data: PageData } = $props();
 
@@ -421,13 +422,13 @@
 							</div>
 							<div class="flex gap-2">
 								<a
-									href="/editions/{data.edition.id}/view"
+									href={getEditionViewUrl(data.edition.id)}
 									class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
 								>
 									View
 								</a>
 								<a
-									href="/api/editions/{data.edition.id}/file?download=1"
+									href={getEditionDownloadUrl(data.edition.id)}
 									class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
 								>
 									Download

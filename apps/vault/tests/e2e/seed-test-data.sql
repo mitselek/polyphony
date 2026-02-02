@@ -34,16 +34,16 @@ INSERT INTO members (id, email, name, invited_by, joined_at) VALUES
 -- ============================================================================
 
 -- Owner has owner role
-INSERT INTO member_roles (member_id, role, granted_at, granted_by) VALUES
-    ('e2e-owner-001', 'owner', datetime('now'), NULL);
+INSERT INTO member_roles (member_id, org_id, role, granted_at, granted_by) VALUES
+    ('e2e-owner-001', 'org_crede_001', 'owner', datetime('now'), NULL);
 
 -- Admin has admin role
-INSERT INTO member_roles (member_id, role, granted_at, granted_by) VALUES
-    ('e2e-admin-001', 'admin', datetime('now'), 'e2e-owner-001');
+INSERT INTO member_roles (member_id, org_id, role, granted_at, granted_by) VALUES
+    ('e2e-admin-001', 'org_crede_001', 'admin', datetime('now'), 'e2e-owner-001');
 
 -- Librarian has librarian role
-INSERT INTO member_roles (member_id, role, granted_at, granted_by) VALUES
-    ('e2e-librarian-001', 'librarian', datetime('now'), 'e2e-owner-001');
+INSERT INTO member_roles (member_id, org_id, role, granted_at, granted_by) VALUES
+    ('e2e-librarian-001', 'org_crede_001', 'librarian', datetime('now'), 'e2e-owner-001');
 
 -- Singer has no special role (just a member)
 -- No INSERT needed - authenticated members have implicit view/download permissions

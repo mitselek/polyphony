@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { getEditionFileUrl, getEditionDownloadUrl } from '$lib/utils/urls';
 
 	let { data }: { data: PageData } = $props();
 
-	// PDF file URL (derived to capture data changes)
-	let pdfUrl = $derived(`/api/editions/${data.edition.id}/file`);
-	let downloadUrl = $derived(`/api/editions/${data.edition.id}/file?download=1`);
+	// PDF file URL from centralized utility
+	let pdfUrl = $derived(getEditionFileUrl(data.edition.id));
+	let downloadUrl = $derived(getEditionDownloadUrl(data.edition.id));
 </script>
 
 <svelte:head>

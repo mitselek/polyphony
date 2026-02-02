@@ -28,10 +28,12 @@ function createMockDb(options: { ownerCount?: number } = {}) {
 
 	const db = {
 		prepare: vi.fn().mockImplementation((sql: string) => {
-			// Handle owner count query (no bind)
+			// Handle owner count query (now uses bind for org_id)
 			if (sql.includes("SELECT COUNT(*) as count FROM member_roles WHERE role = 'owner'")) {
 				return {
-					first: vi.fn().mockResolvedValue({ count: options.ownerCount ?? 2 })
+					bind: vi.fn().mockReturnValue({
+						first: vi.fn().mockResolvedValue({ count: options.ownerCount ?? 2 })
+					})
 				};
 			}
 			// Handle other queries (with bind)

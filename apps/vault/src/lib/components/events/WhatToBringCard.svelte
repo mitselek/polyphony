@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import { getEditionDownloadUrl } from '$lib/utils/urls';
 
 	/**
 	 * Material info for a single edition
@@ -118,7 +119,7 @@
 									<!-- Digital download link -->
 									{#if material.hasDigitalFile}
 										<a 
-											href="/api/editions/{material.edition.id}/download"
+											href={getEditionDownloadUrl(material.edition.id)}
 											class="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 hover:bg-blue-200 transition"
 											title="Download PDF"
 										>

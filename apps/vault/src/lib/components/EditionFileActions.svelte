@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { getEditionViewUrl, getEditionDownloadUrl } from '$lib/utils/urls';
+
 	/**
 	 * Reusable component for View/Download buttons on editions
 	 * Single source of truth for file access UI
@@ -21,9 +23,9 @@
 
 	let { editionId, fileKey, externalUrl = null, size = 'sm', stopPropagation = false }: Props = $props();
 
-	// URL patterns - single source of truth
-	let viewUrl = $derived(`/editions/${editionId}/view`);
-	let downloadUrl = $derived(`/api/editions/${editionId}/file?download=1`);
+	// URL patterns from centralized utility
+	let viewUrl = $derived(getEditionViewUrl(editionId));
+	let downloadUrl = $derived(getEditionDownloadUrl(editionId));
 
 	// Size-based styling
 	let buttonClasses = $derived(
