@@ -32,10 +32,6 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
-	<!-- Back link -->
-	<div class="mb-4">
-		<a href="/seasons" class="text-blue-600 hover:underline">← All Seasons</a>
-	</div>
 
 	<!-- Season Navigation -->
 	<SeasonNavigation
