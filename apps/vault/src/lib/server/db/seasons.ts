@@ -207,6 +207,28 @@ export async function getSeasonEvents(
 }
 
 /**
+ * Get the date range for a season (start and end dates)
+ * End date is the day before the next season's start, or null if unbounded (most recent season)
+ */
+export async function getSeasonDateRange(
+	db: D1Database,
+	season: Season
+): Promise<{ start: string; end: string | null }> {
+	// Find the next season's start date (if any) for this org
+	const nextSeason = await db
+		.prepare(
+			'SELECT start_date FROM seasons WHERE org_id = ? AND start_date > ? ORDER BY start_date ASC LIMIT 1'
+		)
+		.bind(season.orgId, season.start_date)
+		.first<{ start_date: string }>();
+
+	return {
+		start: season.start_date,
+		end: nextSeason?.start_date ?? null
+	};
+}
+
+/**
  * Update a season
  * @throws Error if start_date already exists on another season
  */

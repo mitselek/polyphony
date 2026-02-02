@@ -7,6 +7,7 @@
 	import { formatDateShort, formatTime, isPast } from '$lib/utils/formatters';
 	import Card from '$lib/components/Card.svelte';
 	import { SectionBadge } from '$lib/components/badges';
+	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -20,20 +21,6 @@
 
 	// Filter state
 	let selectedSectionId = $state(untrack(() => filters.sectionId ?? ''));
-	
-	// Default start date: one month ago
-	function getDefaultStartDate(): string {
-		const date = new Date();
-		date.setMonth(date.getMonth() - 1);
-		return date.toISOString().split('T')[0];
-	}
-	
-	let startDate = $state(
-		untrack(() => (filters.start ? new Date(filters.start).toISOString().split('T')[0] : getDefaultStartDate()))
-	);
-	let endDate = $state(
-		untrack(() => (filters.end ? new Date(filters.end).toISOString().split('T')[0] : ''))
-	);
 
 	// Popup state
 	let activePopup = $state<{ memberId: string; eventId: string; type: 'rsvp' | 'attendance' } | null>(null);
@@ -266,8 +253,7 @@
 	// Apply filters by navigating with query params
 	function applyFilters() {
 		const params = new URLSearchParams();
-		if (startDate) params.set('start', new Date(startDate).toISOString());
-		if (endDate) params.set('end', new Date(endDate).toISOString());
+		if (data.season) params.set('seasonId', data.season.id);
 		if (selectedSectionId) params.set('sectionId', selectedSectionId);
 
 		goto(`/events/roster?${params.toString()}`);
@@ -306,36 +292,24 @@
 		<p class="mt-2 text-gray-600">Member participation across events</p>
 	</div>
 
+	<!-- Season Navigation -->
+	{#if data.season}
+		<SeasonNavigation
+			currentSeasonName={data.season.name}
+			prev={data.seasonNav.prev}
+			next={data.seasonNav.next}
+			basePath="/events/roster"
+			paramName="seasonId"
+		/>
+	{:else}
+		<Card class="mb-6">
+			<p class="text-gray-500">No active season</p>
+		</Card>
+	{/if}
+
 	<!-- Filter Controls -->
 	<Card class="mb-6">
 		<div class="flex flex-wrap items-end gap-4">
-			<!-- Date Range -->
-			<div class="flex-1 min-w-50">
-				<label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">
-					Start Date
-				</label>
-				<input
-					id="start-date"
-					type="date"
-					bind:value={startDate}
-					onchange={applyFilters}
-					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-				/>
-			</div>
-
-			<div class="flex-1 min-w-50">
-				<label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">
-					End Date
-				</label>
-				<input
-					id="end-date"
-					type="date"
-					bind:value={endDate}
-					onchange={applyFilters}
-					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-				/>
-			</div>
-
 			<!-- Section Filter (Epic #73 requirement: section-based, not voice) -->
 			<div class="flex-1 min-w-50">
 				<label for="section-filter" class="block text-sm font-medium text-gray-700 mb-1">
@@ -370,7 +344,7 @@
 	<!-- Roster Table -->
 	{#if roster.events.length === 0}
 		<Card padding="lg" class="text-center">
-			<p class="text-gray-500">No events in selected date range</p>
+			<p class="text-gray-500">No events in this season</p>
 		</Card>
 	{:else if roster.members.length === 0}
 		<Card padding="lg" class="text-center">

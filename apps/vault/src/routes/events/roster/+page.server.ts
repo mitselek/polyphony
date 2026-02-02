@@ -3,6 +3,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getRosterView } from '$lib/server/db/roster';
+import { getSeasonByDate, getSeason, getSeasonNavigation, getSeasonDateRange, type Season } from '$lib/server/db/seasons';
 import type { Section } from '$lib/types';
 
 interface SectionRow {
@@ -46,45 +47,44 @@ async function getActiveSections(db: D1Database): Promise<Section[]> {
 	}));
 }
 
-/**
- * Build filters from URL params with sensible defaults
- * Default: one month ago to four weeks from now
- */
-function buildFilters(url: URL): RosterFilters {
-	const startParam = url.searchParams.get('start');
-	const endParam = url.searchParams.get('end');
-	const sectionIdParam = url.searchParams.get('sectionId');
-
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-
-	const oneMonthAgo = new Date(today);
-	oneMonthAgo.setMonth(today.getMonth() - 1);
-
-	const fourWeeksFromNow = new Date(today);
-	fourWeeksFromNow.setDate(today.getDate() + 28);
-
-	const eightWeeksFromNow = new Date(today);
-	eightWeeksFromNow.setDate(today.getDate() + 56);
-
-	return {
-		start: startParam ?? oneMonthAgo.toISOString(),
-		end: endParam ?? eightWeeksFromNow.toISOString(),
-		...(sectionIdParam && { sectionId: sectionIdParam })
-	};
-}
-
-export const load: PageServerLoad = async ({ platform, cookies, url }) => {
+export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
 
 	const currentMember = await getAuthenticatedMember(db, cookies);
+	const orgId = locals.org.id;
 
-	const filters = buildFilters(url);
+	// Parse params from URL
+	const seasonIdParam = url.searchParams.get('seasonId');
+	const sectionIdParam = url.searchParams.get('sectionId');
 
-	const [roster, sections] = await Promise.all([
+	// Resolve season (same pattern as /events page)
+	let season: Season | null = null;
+
+	if (seasonIdParam) {
+		season = await getSeason(db, seasonIdParam);
+	}
+
+	if (!season) {
+		// Default to current season by date
+		const today = new Date().toISOString().split('T')[0];
+		season = await getSeasonByDate(db, orgId, today);
+	}
+
+	// Get season date range (end is start of next season, or null if unbounded)
+	const dateRange = season ? await getSeasonDateRange(db, season) : { start: undefined, end: undefined };
+
+	// Build filters from season date range
+	const filters: RosterFilters = {
+		start: dateRange.start,
+		end: dateRange.end ?? undefined,
+		...(sectionIdParam && { sectionId: sectionIdParam })
+	};
+
+	const [roster, sections, seasonNav] = await Promise.all([
 		getRosterView(db, filters),
-		getActiveSections(db)
+		getActiveSections(db),
+		season ? getSeasonNavigation(db, orgId, season.id) : Promise.resolve({ prev: null, next: null })
 	]);
 
 	// Determine if current user can manage others' participation
@@ -97,6 +97,8 @@ export const load: PageServerLoad = async ({ platform, cookies, url }) => {
 		sections, 
 		filters,
 		currentMemberId: currentMember.id,
-		canManageParticipation
+		canManageParticipation,
+		season: season ? { id: season.id, name: season.name } : null,
+		seasonNav
 	};
 };
