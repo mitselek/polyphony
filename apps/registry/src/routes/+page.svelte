@@ -7,7 +7,7 @@
 	<meta name="description" content="A federated platform for choirs to manage and share their music libraries securely within trusted circles." />
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+<div class="min-h-screen bg-linear-to-b from-slate-50 to-white">
 	<!-- Hero Section -->
 	<header class="mx-auto max-w-5xl px-6 pt-16 pb-12 text-center">
 		<div class="mb-6 flex items-center justify-center gap-3">

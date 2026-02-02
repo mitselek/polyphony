@@ -11,7 +11,7 @@ Polyphony empowers choirs to manage their sheet music privately while connecting
 **Vault:** [![Vault Deployment](https://img.shields.io/badge/vault-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://crede.polyphony.uk) `crede.polyphony.uk`  
 **Registry:** [![Registry Deployment](https://img.shields.io/badge/registry-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony.uk) `polyphony.uk`
 
-_First production deployment: Kammerkoor Crede (Feb 2026)_
+_First production deployment: Kammerkoor Crede (Feb 2026)_  
 
 ---
 

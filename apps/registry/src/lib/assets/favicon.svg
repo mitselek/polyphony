@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Polyphony</title>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#4f46e5"/>
+  <!-- Music notes - representing polyphony (multiple voices) -->
+  <g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- First note stem and beam -->
+    <path d="M40 85V35l48-12v50"/>
+    <!-- First note head -->
+    <ellipse cx="34" cy="88" rx="10" ry="7" fill="#fff" transform="rotate(-15 34 88)"/>
+    <!-- Second note head -->
+    <ellipse cx="82" cy="76" rx="10" ry="7" fill="#fff" transform="rotate(-15 82 76)"/>
+    <!-- Connecting beam -->
+    <path d="M40 42l48-12"/>
+  </g>
+</svg>
