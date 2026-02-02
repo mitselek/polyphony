@@ -271,3 +271,37 @@ export async function deleteSeason(
 
 	return (result.meta.changes ?? 0) > 0;
 }
+
+/**
+ * Season navigation links (prev/next)
+ */
+export interface SeasonNav {
+	prev: { id: string; name: string } | null;
+	next: { id: string; name: string } | null;
+}
+
+/**
+ * Get navigation links (prev/next seasons) for a given season
+ */
+export async function getSeasonNavigation(
+	db: D1Database,
+	orgId: string,
+	currentSeasonId: string
+): Promise<SeasonNav> {
+	const seasons = await getAllSeasons(db, orgId); // Ordered by start_date DESC
+	const currentIndex = seasons.findIndex(s => s.id === currentSeasonId);
+	
+	if (currentIndex === -1) {
+		return { prev: null, next: null };
+	}
+	
+	// Since seasons are DESC, prev is index+1 (older), next is index-1 (newer)
+	const prev = currentIndex < seasons.length - 1 
+		? { id: seasons[currentIndex + 1].id, name: seasons[currentIndex + 1].name }
+		: null;
+	const next = currentIndex > 0
+		? { id: seasons[currentIndex - 1].id, name: seasons[currentIndex - 1].name }
+		: null;
+	
+	return { prev, next };
+}

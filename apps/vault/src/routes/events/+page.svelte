@@ -6,6 +6,7 @@
 	import { formatDateTimeComponents } from '$lib/utils/formatters';
 	import { getEventTypeBadgeClass } from '$lib/utils/badges';
 	import Card from '$lib/components/Card.svelte';
+	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -122,38 +123,13 @@
 	</div>
 
 	<!-- Season Navigation -->
-	{#if data.season && (data.seasonNav.prev || data.seasonNav.next)}
-		<div class="mb-6 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2">
-			<div>
-				{#if data.seasonNav.prev}
-					<a
-						href="/events?seasonId={data.seasonNav.prev.id}"
-						class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-					>
-						<span>←</span>
-						<span>{data.seasonNav.prev.name}</span>
-					</a>
-				{:else}
-					<span class="text-sm text-gray-400">← No older season</span>
-				{/if}
-			</div>
-			<div class="text-sm font-medium text-gray-700">
-				{data.season.name}
-			</div>
-			<div>
-				{#if data.seasonNav.next}
-					<a
-						href="/events?seasonId={data.seasonNav.next.id}"
-						class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-					>
-						<span>{data.seasonNav.next.name}</span>
-						<span>→</span>
-					</a>
-				{:else}
-					<span class="text-sm text-gray-400">No newer season →</span>
-				{/if}
-			</div>
-		</div>
+	{#if data.season}
+		<SeasonNavigation
+			currentSeasonName={data.season.name}
+			prev={data.seasonNav.prev}
+			next={data.seasonNav.next}
+			basePath="/events"
+		/>
 	{/if}
 
 	<!-- Filter Buttons -->

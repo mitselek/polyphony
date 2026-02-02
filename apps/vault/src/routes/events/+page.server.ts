@@ -4,31 +4,7 @@ import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canCreateEvents } from '$lib/server/auth/permissions';
 import { getParticipation } from '$lib/server/db/participation';
-import { getSeasonByDate, getSeason, getSeasonEvents, getAllSeasons, type Season } from '$lib/server/db/seasons';
-
-interface SeasonNav {
-	prev: { id: string; name: string } | null;
-	next: { id: string; name: string } | null;
-}
-
-async function getSeasonNavigation(db: D1Database, orgId: string, currentSeasonId: string): Promise<SeasonNav> {
-	const seasons = await getAllSeasons(db, orgId); // Ordered by start_date DESC
-	const currentIndex = seasons.findIndex(s => s.id === currentSeasonId);
-	
-	if (currentIndex === -1) {
-		return { prev: null, next: null };
-	}
-	
-	// Since seasons are DESC, prev is index+1, next is index-1
-	const prev = currentIndex < seasons.length - 1 
-		? { id: seasons[currentIndex + 1].id, name: seasons[currentIndex + 1].name }
-		: null;
-	const next = currentIndex > 0
-		? { id: seasons[currentIndex - 1].id, name: seasons[currentIndex - 1].name }
-		: null;
-	
-	return { prev, next };
-}
+import { getSeasonByDate, getSeason, getSeasonEvents, getSeasonNavigation, type Season } from '$lib/server/db/seasons';
 
 export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	if (!platform) throw error(500, 'Platform not available');

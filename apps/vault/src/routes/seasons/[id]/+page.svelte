@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import SeasonRepertoireCard from '$lib/components/SeasonRepertoireCard.svelte';
 	import SeasonEventsCard from '$lib/components/SeasonEventsCard.svelte';
+	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 	import type { SeasonRepertoire, Work } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
@@ -35,6 +36,14 @@
 	<div class="mb-4">
 		<a href="/seasons" class="text-blue-600 hover:underline">← All Seasons</a>
 	</div>
+
+	<!-- Season Navigation -->
+	<SeasonNavigation
+		currentSeasonName={data.season.name}
+		prev={data.seasonNav.prev}
+		next={data.seasonNav.next}
+		basePath="/seasons"
+	/>
 
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold">{data.season.name}</h1>

@@ -3,6 +3,7 @@ import { error } from '@sveltejs/kit';
 import { getMemberById } from '$lib/server/db/members';
 import { canManageEvents, canUploadScores } from '$lib/server/auth/permissions';
 import type { Season } from '$lib/server/db/seasons';
+import { getSeasonNavigation } from '$lib/server/db/seasons';
 import type { Event } from '$lib/server/db/events';
 import type { SeasonRepertoire, Work, Edition } from '$lib/types';
 import { getEditionsByWorkId } from '$lib/server/db/editions';
@@ -42,6 +43,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 	// Get current user's permissions
 	let canManage = false;
 	let canManageLibrary = false;
+	let seasonNav = { prev: null, next: null } as { prev: { id: string; name: string } | null; next: { id: string; name: string } | null };
 
 	const db = platform?.env?.DB;
 	const memberId = cookies.get('member_id');
@@ -55,6 +57,9 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 			canManage = canManageEvents(member);
 			canManageLibrary = canUploadScores(member);
 		}
+		
+		// Get season navigation (prev/next)
+		seasonNav = await getSeasonNavigation(db, season.orgId, seasonId);
 		
 		// Load editions for each work in repertoire (for edition management UI)
 		for (const repWork of repertoire.works) {
@@ -74,6 +79,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 		availableWorks,
 		workEditionsMap,
 		canManage,
-		canManageLibrary
+		canManageLibrary,
+		seasonNav
 	};
 };
