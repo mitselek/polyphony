@@ -3,7 +3,7 @@
 
 import type { Handle } from '@sveltejs/kit';
 import { getOrganizationBySubdomain } from '$lib/server/db/organizations';
-import { setLogContext, clearLogContext } from '$lib/server/logger';
+import { setLogContext, clearLogContext, logger } from '$lib/server/logger';
 
 // Development fallback subdomain (for localhost:5173 without subdomain)
 const DEV_SUBDOMAIN = 'crede';
