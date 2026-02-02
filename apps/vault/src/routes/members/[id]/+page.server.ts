@@ -6,6 +6,7 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberAssignedCopies, type AssignedCopyWithDetails } from '$lib/server/db/copy-assignments';
+import { getPendingInviteToken, buildInviteLink } from '$lib/server/db/invites';
 
 interface AuthContext {
 	currentUser: Member | null;
@@ -65,7 +66,7 @@ function formatMemberData(member: Member) {
 	};
 }
 
-export const load: PageServerLoad = async ({ params, platform, cookies, locals }) => {
+export const load: PageServerLoad = async ({ params, platform, cookies, locals, url }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw new Error('Database not available');
 
@@ -80,6 +81,15 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 		loadAssignedCopies(db, params.id, authContext.currentUser?.id ?? null, authContext.isAdmin)
 	]);
 
+	// Check for pending invite if roster-only member
+	let pendingInviteLink: string | null = null;
+	if (!member.email_id && authContext.isAdmin) {
+		const token = await getPendingInviteToken(db, params.id);
+		if (token) {
+			pendingInviteLink = buildInviteLink(url.origin, token);
+		}
+	}
+
 	return {
 		member: formatMemberData(member),
 		currentUserId: authContext.currentUser?.id ?? null,
@@ -89,6 +99,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 		ownerCount: authContext.ownerCount,
 		availableVoices: adminData.availableVoices,
 		availableSections: adminData.availableSections,
-		assignedCopies
+		assignedCopies,
+		pendingInviteLink
 	};
 };

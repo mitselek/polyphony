@@ -314,3 +314,26 @@ export async function renewInvite(
 
 	return getInviteById(db, inviteId);
 }
+
+/**
+ * Get pending invite token for a roster member (if exists)
+ * Returns null if no pending invite
+ */
+export async function getPendingInviteToken(
+	db: D1Database,
+	rosterMemberId: string
+): Promise<string | null> {
+	const result = await db
+		.prepare('SELECT token FROM invites WHERE roster_member_id = ? AND expires_at > datetime("now")')
+		.bind(rosterMemberId)
+		.first<{ token: string }>();
+
+	return result?.token ?? null;
+}
+
+/**
+ * Build invite accept URL from token and origin
+ */
+export function buildInviteLink(origin: string, token: string): string {
+	return `${origin}/auth/accept?token=${token}`;
+}

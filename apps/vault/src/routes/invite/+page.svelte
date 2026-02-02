@@ -3,6 +3,7 @@
 	import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
 	import { toast } from '$lib/stores/toast';
 	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
+	import InviteLinkCard from '$lib/components/InviteLinkCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -116,33 +117,11 @@
 				</div>
 			</div>
 
-			<div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
-				<p class="mb-3 text-blue-800 font-medium">Invitation pending for {rosterMember.name}</p>
-				<p class="mb-3 text-sm text-blue-700">Share this link with the invitee:</p>
-				<div class="flex gap-2">
-					<input
-						type="text"
-						readonly
-						value={data.pendingInviteLink}
-						class="flex-1 rounded border border-blue-300 bg-white px-3 py-2 text-sm font-mono"
-						onclick={(e) => e.currentTarget.select()}
-					/>
-					<button
-						type="button"
-						onclick={async () => {
-							try {
-								await navigator.clipboard.writeText(data.pendingInviteLink ?? '');
-								toast.success('Invite link copied!');
-							} catch {
-								toast.error('Failed to copy link');
-							}
-						}}
-						class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-					>
-						Copy Link
-					</button>
-				</div>
-			</div>
+			<InviteLinkCard 
+				inviteLink={data.pendingInviteLink}
+				memberName={rosterMember.name}
+				variant="info"
+			/>
 
 			<div class="mt-4 text-center">
 				<a href="/members" class="text-blue-600 hover:underline">← Back to Members</a>
@@ -152,37 +131,11 @@
 		<!-- Inviting a roster member -->
 		<div class="rounded-lg bg-white p-6 shadow-md">
 			{#if success}
-				<div class="mb-4 rounded-lg bg-green-100 p-4 text-green-700">
-					<p class="font-semibold">{success}</p>
-					{#if inviteLink}
-						<div class="mt-3">
-							<p class="mb-2 text-sm">Share this link with the invitee:</p>
-							<div class="flex gap-2">
-								<input
-									type="text"
-									readonly
-									value={inviteLink}
-									class="flex-1 rounded border border-green-300 bg-white px-3 py-2 text-sm font-mono"
-									onclick={(e) => e.currentTarget.select()}
-								/>
-								<button
-									type="button"
-									onclick={async () => {
-										try {
-											await navigator.clipboard.writeText(inviteLink);
-											toast.success('Invite link copied!');
-										} catch {
-											toast.error('Failed to copy link');
-										}
-									}}
-									class="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700"
-								>
-									Copy
-								</button>
-							</div>
-						</div>
-					{/if}
-				</div>
+				<InviteLinkCard 
+					{inviteLink}
+					memberName={rosterMember.name}
+					variant="success"
+				/>
 			{:else}
 				<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
 					<h2 class="text-lg font-semibold">{rosterMember.name}</h2>

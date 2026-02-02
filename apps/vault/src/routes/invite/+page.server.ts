@@ -5,6 +5,7 @@ import { getAuthenticatedMember, assertAdmin, isOwner } from '$lib/server/auth/m
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberById } from '$lib/server/db/members';
+import { getPendingInviteToken, buildInviteLink } from '$lib/server/db/invites';
 
 export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	const db = platform?.env?.DB;
@@ -39,14 +40,10 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 			throw error(400, 'Member is already registered');
 		}
 
-		// Check for existing pending invite
-		const existingInvite = await db
-			.prepare('SELECT token FROM invites WHERE roster_member_id = ? AND expires_at > datetime("now")')
-			.bind(rosterId)
-			.first<{ token: string }>();
-		
-		if (existingInvite) {
-			pendingInviteLink = `${url.origin}/auth/accept?token=${existingInvite.token}`;
+		// Check for existing pending invite using shared function
+		const token = await getPendingInviteToken(db, rosterId);
+		if (token) {
+			pendingInviteLink = buildInviteLink(url.origin, token);
 		}
 	}
 

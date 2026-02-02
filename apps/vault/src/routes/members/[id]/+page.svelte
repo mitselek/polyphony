@@ -5,6 +5,7 @@
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
+	import InviteLinkCard from '$lib/components/InviteLinkCard.svelte';
 	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
 	import { toast } from '$lib/stores/toast';
@@ -398,23 +399,35 @@
 	<Card padding="lg">
 		<!-- Registration Status -->
 		{#if !member.email_id}
-			<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-				<div class="flex items-center justify-between">
-					<div>
-						<span class="font-medium text-amber-800">Roster-only member</span>
-						<p class="mt-1 text-sm text-amber-700">
-							This member has not yet completed OAuth registration.
-						</p>
+			<div class="mb-6">
+				{#if data.pendingInviteLink}
+					<!-- Show copy link for pending invite -->
+					<InviteLinkCard 
+						inviteLink={data.pendingInviteLink}
+						memberName={member.name}
+						variant="info"
+					/>
+				{:else}
+					<!-- No pending invite -->
+					<div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+						<div class="flex items-center justify-between">
+							<div>
+								<span class="font-medium text-amber-800">Roster-only member</span>
+								<p class="mt-1 text-sm text-amber-700">
+									This member has not yet completed OAuth registration.
+								</p>
+							</div>
+							{#if data.isAdmin}
+								<a
+									href="/invite?rosterId={member.id}"
+									class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+								>
+									Send Invitation
+								</a>
+							{/if}
+						</div>
 					</div>
-					{#if data.isAdmin}
-						<a
-							href="/invite?rosterId={member.id}"
-							class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-						>
-							Send Invitation
-						</a>
-					{/if}
-				</div>
+				{/if}
 			</div>
 		{/if}
 
