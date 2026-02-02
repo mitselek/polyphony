@@ -97,20 +97,56 @@
 				Add Roster Member
 			</a>
 		</div>
-	{:else if data.hasPendingInvite}
-		<!-- Member already has a pending invite -->
-		<div class="rounded-lg border border-blue-200 bg-blue-50 p-6">
-			<h2 class="mb-2 text-lg font-semibold text-blue-800">Invitation Already Pending</h2>
-			<p class="mb-4 text-blue-700">
-				<strong>{rosterMember.name}</strong> already has a pending invitation. 
-				You can view or renew the invite from the Members page.
-			</p>
-			<a
-				href="/members"
-				class="inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-			>
-				← Back to Members
-			</a>
+	{:else if data.pendingInviteLink}
+		<!-- Member already has a pending invite - show copy link -->
+		<div class="rounded-lg bg-white p-6 shadow-md">
+			<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+				<h2 class="text-lg font-semibold">{rosterMember.name}</h2>
+				<div class="mt-2 flex flex-wrap gap-2">
+					{#if rosterMember.voices.length > 0}
+						{#each rosterMember.voices as voice, index}
+							<VoiceBadge {voice} isPrimary={index === 0} />
+						{/each}
+					{/if}
+					{#if rosterMember.sections.length > 0}
+						{#each rosterMember.sections as section, index}
+							<SectionBadge {section} isPrimary={index === 0} />
+						{/each}
+					{/if}
+				</div>
+			</div>
+
+			<div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
+				<p class="mb-3 text-blue-800 font-medium">Invitation pending for {rosterMember.name}</p>
+				<p class="mb-3 text-sm text-blue-700">Share this link with the invitee:</p>
+				<div class="flex gap-2">
+					<input
+						type="text"
+						readonly
+						value={data.pendingInviteLink}
+						class="flex-1 rounded border border-blue-300 bg-white px-3 py-2 text-sm font-mono"
+						onclick={(e) => e.currentTarget.select()}
+					/>
+					<button
+						type="button"
+						onclick={async () => {
+							try {
+								await navigator.clipboard.writeText(data.pendingInviteLink ?? '');
+								toast.success('Invite link copied!');
+							} catch {
+								toast.error('Failed to copy link');
+							}
+						}}
+						class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+					>
+						Copy Link
+					</button>
+				</div>
+			</div>
+
+			<div class="mt-4 text-center">
+				<a href="/members" class="text-blue-600 hover:underline">← Back to Members</a>
+			</div>
 		</div>
 	{:else}
 		<!-- Inviting a roster member -->
