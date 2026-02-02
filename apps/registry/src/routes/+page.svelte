@@ -33,9 +33,31 @@
 			</p>
 			<p class="text-slate-600 leading-relaxed">
 				Each choir operates their own <strong>Vault</strong> — an independent instance with full control 
-				over their library, members, and events. Vaults can connect with trusted partner choirs to share 
-				resources while maintaining privacy and legal compliance.
+				over their library, members, and events. Umbrella organizations can manage multiple affiliated 
+				choirs from a single dashboard.
 			</p>
+		</section>
+
+		<!-- How it Works -->
+		<section class="mb-16">
+			<h2 class="mb-6 text-center text-2xl font-semibold text-slate-900">How it Works</h2>
+			<div class="grid gap-4 sm:grid-cols-3">
+				<div class="rounded-xl bg-slate-50 p-6 text-center">
+					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">1</div>
+					<h3 class="font-medium text-slate-900">Create Your Vault</h3>
+					<p class="mt-2 text-sm text-slate-500">Get your choir's own subdomain (e.g., yourchoir.polyphony.uk)</p>
+				</div>
+				<div class="rounded-xl bg-slate-50 p-6 text-center">
+					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">2</div>
+					<h3 class="font-medium text-slate-900">Invite Members</h3>
+					<p class="mt-2 text-sm text-slate-500">Add singers by name — they authenticate via Google when they join</p>
+				</div>
+				<div class="rounded-xl bg-slate-50 p-6 text-center">
+					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">3</div>
+					<h3 class="font-medium text-slate-900">Manage Everything</h3>
+					<p class="mt-2 text-sm text-slate-500">Scores, rehearsals, attendance, seasons — all in one place</p>
+				</div>
+			</div>
 		</section>
 
 		<!-- Action Cards -->
@@ -70,7 +92,7 @@
 		<!-- Features Preview -->
 		<section class="mt-16">
 			<h2 class="mb-8 text-center text-2xl font-semibold text-slate-900">Built for Choirs</h2>
-			<div class="grid gap-6 sm:grid-cols-3">
+			<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 				<div class="text-center">
 					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -78,7 +100,7 @@
 						</svg>
 					</div>
 					<h3 class="font-medium text-slate-900">Score Library</h3>
-					<p class="text-sm text-slate-500">Upload, organize, and share PDFs</p>
+					<p class="text-sm text-slate-500">Works, editions, physical copies</p>
 				</div>
 				<div class="text-center">
 					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
@@ -87,7 +109,7 @@
 						</svg>
 					</div>
 					<h3 class="font-medium text-slate-900">Member Management</h3>
-					<p class="text-sm text-slate-500">Roles, sections, and voice parts</p>
+					<p class="text-sm text-slate-500">Roles, voices, sections</p>
 				</div>
 				<div class="text-center">
 					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
@@ -95,8 +117,17 @@
 							<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 						</svg>
 					</div>
-					<h3 class="font-medium text-slate-900">Event Scheduling</h3>
-					<p class="text-sm text-slate-500">Rehearsals, concerts, attendance</p>
+					<h3 class="font-medium text-slate-900">Events & Attendance</h3>
+					<p class="text-sm text-slate-500">Rehearsals, concerts, RSVP</p>
+				</div>
+				<div class="text-center">
+					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+						</svg>
+					</div>
+					<h3 class="font-medium text-slate-900">Umbrella Support</h3>
+					<p class="text-sm text-slate-500">Manage affiliated choirs</p>
 				</div>
 			</div>
 		</section>
@@ -110,6 +141,11 @@
 			</p>
 			<p class="mt-2 text-xs text-slate-400">
 				Open source · Privacy-first · Built for choirs
+			</p>
+			<p class="mt-3 text-xs text-slate-400">
+				<a href="https://github.com/mitselek/polyphony" class="hover:text-indigo-600">GitHub</a>
+				<span class="mx-2">·</span>
+				<a href="/api/vaults" class="hover:text-indigo-600">API</a>
 			</p>
 		</div>
 	</footer>
