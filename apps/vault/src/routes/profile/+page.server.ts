@@ -11,12 +11,14 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	}
 
 	// Authenticate member - redirects to /login if not authenticated
+	let member;
 	try {
-		const member = await getAuthenticatedMember(db, cookies);
-		// Redirect to member detail page
-		redirect(302, `/members/${member.id}`);
-	} catch (error) {
+		member = await getAuthenticatedMember(db, cookies);
+	} catch {
 		// Not authenticated - redirect to login
 		redirect(302, '/login');
 	}
+
+	// Redirect to member detail page (must be outside try/catch - redirect throws)
+	redirect(302, `/members/${member.id}`);
 };
