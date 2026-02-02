@@ -10,28 +10,31 @@ Technical architecture for the Polyphony federated choral score ecosystem.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                           REGISTRY                                  │
+│                     REGISTRY (polyphony.uk)                         │
 │                    (Single Cloudflare deployment)                   │
 │                                                                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │  Deploy UI  │  │  Vault Dir  │  │  PD Catalog │  │ Handshake  │  │
-│  │             │  │  (listing)  │  │   (links)   │  │ Introducer │  │
+│  │  OAuth      │  │  JWKS       │  │  Vault      │  │ (Future)   │  │
+│  │  Gateway    │  │  Endpoint   │  │  Registry   │  │ PD Catalog │  │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │
 │                                                                     │
-│  Storage: D1 only (metadata)          Files: None                   │
+│  Storage: D1 (signing_keys, vaults)       Files: None               │
 └─────────────────────────────────────────────────────────────────────┘
                               │
-              deploys / registers / introduces
+              authenticates / registers
                               │
         ┌─────────────────────┼─────────────────────┐
         ▼                     ▼                     ▼
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   VAULT A    │      │   VAULT B    │      │   VAULT C    │
-│  (Choir X)   │◄────►│  (Choir Y)   │◄────►│  (Choir Z)   │
-│              │ P2P  │              │ P2P  │              │
-│     D1       │      │     D1       │      │     D1       │
-└──────────────┘      └──────────────┘      └──────────────┘
-     Each Vault = independent Cloudflare Pages deployment
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│   crede.         │  │   choir-b.       │  │   choir-c.       │
+│   polyphony.uk   │  │   polyphony.uk   │  │   polyphony.uk   │
+│   (Crede)        │  │   (Choir B)      │  │   (Choir C)      │
+│                  │  │                  │  │                  │
+│   D1 + Orgs      │  │   D1 + Orgs      │  │   D1 + Orgs      │
+└──────────────────┘  └──────────────────┘  └──────────────────┘
+     Each Vault = subdomain on Cloudflare Pages (custom domain)
+     
+ Note: Federation (P2P sharing) is deferred to Phase 2
 ```
 
 ---
@@ -214,68 +217,72 @@ DELETE /api/catalog/:id           # Remove from catalog (takedown)
 
 ### 5.2 Database Schema (D1)
 
-```sql
--- Vault configuration
-CREATE TABLE config (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
--- Keys: vault_name, vault_id, registry_url
+See [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) for complete schema. Key tables:
 
--- Choir members (see section 7.2 for details)
-CREATE TABLE members (
+```sql
+-- Organizations (Schema V2 - supports umbrellas + collectives)
+CREATE TABLE organizations (
     id TEXT PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,        -- Identity from Registry auth token
-    name TEXT,
-    role TEXT DEFAULT 'singer',        -- owner, admin, singer
+    name TEXT NOT NULL,
+    subdomain TEXT UNIQUE NOT NULL,    -- e.g., 'crede' → crede.polyphony.uk
+    type TEXT NOT NULL,                -- 'umbrella' | 'collective'
+    contact_email TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Auth nonces (prevents token replay)
-CREATE TABLE used_nonces (
-    nonce TEXT PRIMARY KEY,
-    used_at TEXT DEFAULT (datetime('now'))
+-- Members (global identity, org-agnostic)
+CREATE TABLE members (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,         -- Case-insensitive unique
+    nickname TEXT,                     -- Compact display name
+    email_id TEXT UNIQUE,              -- OAuth identity (NULL = roster-only)
+    email_contact TEXT,                -- Contact preference
+    invited_by TEXT REFERENCES members(id),
+    joined_at TEXT DEFAULT (datetime('now'))
 );
 
--- Scores
-CREATE TABLE scores (
+-- Member-Organization link (many-to-many)
+CREATE TABLE member_organizations (
+    member_id TEXT REFERENCES members(id),
+    org_id TEXT REFERENCES organizations(id),
+    nickname TEXT,                     -- Org-specific display name
+    invited_by TEXT,
+    joined_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (member_id, org_id)
+);
+
+-- Multi-role system (per-org roles)
+CREATE TABLE member_roles (
+    member_id TEXT NOT NULL,
+    org_id TEXT REFERENCES organizations(id),
+    role TEXT NOT NULL,                -- owner, admin, librarian, conductor, section_leader
+    granted_at TEXT DEFAULT (datetime('now')),
+    granted_by TEXT,
+    PRIMARY KEY (member_id, COALESCE(org_id, ''), role)
+);
+
+-- Score Library (works → editions → files)
+CREATE TABLE works (
     id TEXT PRIMARY KEY,
+    org_id TEXT REFERENCES organizations(id),
     title TEXT NOT NULL,
     composer TEXT,
-    file_key TEXT NOT NULL,            -- References score_files.score_id
-    file_size INTEGER,
-    content_type TEXT DEFAULT 'application/pdf',
-    license_type TEXT DEFAULT 'private', -- pd, cc, original, transcription
-    shareable INTEGER DEFAULT 0,       -- Can be shared with trusted Vaults
-    pd_catalog_listed INTEGER DEFAULT 0,
-    uploaded_by TEXT REFERENCES members(id),
-    uploaded_at TEXT DEFAULT (datetime('now'))
+    lyricist TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
 );
 
--- Trusted Vaults (Handshake partners)
-CREATE TABLE trusted_vaults (
+CREATE TABLE editions (
     id TEXT PRIMARY KEY,
-    vault_id TEXT NOT NULL UNIQUE,     -- Remote Vault's ID
-    vault_name TEXT,
-    vault_url TEXT NOT NULL,
-    public_key TEXT NOT NULL,          -- For verifying their JWTs
-    trust_established_at TEXT DEFAULT (datetime('now')),
-    trust_revoked_at TEXT              -- NULL = active trust
+    work_id TEXT REFERENCES works(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    edition_type TEXT DEFAULT 'vocal_score',
+    license_type TEXT DEFAULT 'owned',  -- public_domain, licensed, owned
+    file_key TEXT,                      -- References edition_files
+    created_at TEXT DEFAULT (datetime('now'))
 );
-
--- Access log (for audit)
-CREATE TABLE access_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    score_id TEXT REFERENCES scores(id),
-    accessor_type TEXT,                -- member, trusted_vault
-    accessor_id TEXT,
-    action TEXT,                       -- view, download
-    accessed_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE INDEX idx_scores_composer ON scores(composer);
-CREATE INDEX idx_scores_license ON scores(license_type);
 ```
+
+> **Note:** Federation tables (trusted_vaults, etc.) are deferred to Phase 2.
 
 ### 5.3 File Storage (D1 Chunked)
 
@@ -507,21 +514,22 @@ CREATE TABLE members (
 
 ### 7.3 Authorization Model
 
-```typescript
-type Role = "owner" | "admin" | "singer";
+Multi-role system where members can hold multiple roles simultaneously:
 
-const permissions: Record<Role, string[]> = {
-  owner: ["*"], // Everything
-  admin: [
-    "scores:read",
-    "scores:write",
-    "scores:delete",
-    "members:read",
-    "members:invite",
-    "federation:read",
-  ],
-  singer: ["scores:read", "members:read"],
+```typescript
+type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader';
+
+// Permissions are union of all assigned roles
+const PERMISSIONS: Record<Role, string[]> = {
+  owner: ['vault:delete'],              // Owner gets ALL permissions implicitly
+  admin: ['members:invite', 'roles:manage'],
+  librarian: ['scores:upload', 'scores:delete'],
+  conductor: ['events:create', 'events:manage', 'events:delete', 'attendance:record'],
+  section_leader: ['attendance:record'],
 };
+
+// All authenticated members have implicit permissions:
+// - 'scores:view', 'scores:download'
 ```
 
 ---
@@ -658,36 +666,44 @@ const FEDERATION_LIMITS = {
 
 ## 11. Development Phases
 
-### Phase 1: Standalone Vault (MVP)
+### ✅ Phase 0: Foundation (Complete)
 
-- [ ] Score upload/download (PDF only)
-- [ ] Member invitation (magic link)
-- [ ] Basic permission model
-- [ ] Takedown endpoint
+- [x] Registry OAuth gateway (Google)
+- [x] EdDSA JWT signing/verification
+- [x] JWKS endpoint for public keys
+- [x] Vault registration and callback flow
 
-**No Registry, no federation yet.**
+### ✅ Phase 0.5: Schema V2 (Complete)
 
-### Phase 2: Federation
+- [x] Multi-organization support (umbrellas + collectives)
+- [x] Affiliation tracking between organizations  
+- [x] Multi-role member system (5 roles)
+- [x] Voices & sections with primary assignments
+- [x] Score library (works → editions → files)
+- [x] Physical copy inventory tracking
+- [x] Event scheduling with participation/RSVP
+- [x] Season and event repertoire management
 
-- [ ] Registry deployment
-- [ ] Vault registration
-- [ ] Handshake protocol
+### 🚧 Phase 1: Core Features (In Progress)
+
+- [x] Score upload/download (D1 chunked, PDF only)
+- [x] Name-based member invitations
+- [x] Multi-role permission model
+- [x] Takedown endpoint
+- [ ] Roster view with attendance tracking
+- [ ] Season repertoire UI
+
+### Phase 2: Federation (Deferred)
+
+- [ ] Handshake protocol between Vaults
 - [ ] P2P score sharing
-- [ ] PD Catalog
+- [ ] PD Catalog in Registry
 
-### Phase 3: Polish
+### Phase 3: Enhanced Experience
 
-- [ ] Interactive music rendering (OSMD)
+- [ ] Public umbrella affiliates page
 - [ ] Mobile-responsive UI
 - [ ] Offline access (service worker)
-- [ ] MusicXML support
-
-### Phase 4: Ecosystem
-
-- [ ] Roster management
-- [ ] Rehearsal agenda
-- [ ] Public choir page
-- [ ] Event calendar
 
 ---
 
@@ -702,4 +718,4 @@ const FEDERATION_LIMITS = {
 
 ---
 
-_Last updated: 2026-01-25_
+_Last updated: 2026-02-02_

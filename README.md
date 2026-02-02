@@ -8,10 +8,10 @@ Polyphony empowers choirs to manage their sheet music privately while connecting
 
 ## Production Status
 
-**Vault:** [![Vault Deployment](https://img.shields.io/badge/vault%20deployment-demo-blue?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony-vault.pages.dev)  
-**Registry:** [![Registry Deployment](https://img.shields.io/badge/registry%20deployment-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony.uk)
+**Vault:** [![Vault Deployment](https://img.shields.io/badge/vault-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://crede.polyphony.uk) `crede.polyphony.uk`  
+**Registry:** [![Registry Deployment](https://img.shields.io/badge/registry-live-brightgreen?logo=cloudflare&logoColor=white&style=flat-square)](https://polyphony.uk) `polyphony.uk`
 
-_Updated on each push to main. Click badge to visit deployment._
+_First production deployment: Kammerkoor Crede (Feb 2026)_
 
 ---
 
@@ -147,9 +147,9 @@ Built on a modern, proven stack:
 | Framework | SvelteKit 2 + Svelte 5     |
 | Platform  | Cloudflare Pages + Workers |
 | Database  | Cloudflare D1 (SQLite)     |
-| Storage   | Cloudflare R2              |
-| Styling   | Tailwind CSS               |
-| Language  | TypeScript                 |
+| Storage   | D1 Chunked BLOBs (≤9.5MB)  |
+| Styling   | Tailwind CSS v4            |
+| Language  | TypeScript (strict)        |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical details.
 
@@ -157,32 +157,42 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical details.
 
 ## Roadmap
 
-### Phase 1: Standalone Vault _(In Progress)_
+### ✅ Phase 0: Foundation _(Complete)_
 
-- [ ] Score upload and management
-- [ ] Member invitations
-- [ ] Basic permissions
-- [ ] Takedown mechanism
+- [x] Registry OAuth + JWKS authentication
+- [x] EdDSA JWT token signing/verification
+- [x] Vault registration and callback flow
 
-### Phase 2: Federation
+### ✅ Phase 0.5: Schema V2 _(Complete)_
 
-- [ ] Registry deployment
-- [ ] Vault registration
-- [ ] Handshake protocol
+- [x] Multi-organization support (umbrellas + collectives)
+- [x] Affiliation tracking between organizations
+- [x] Multi-role member system (owner, admin, librarian, conductor, section_leader)
+- [x] Voices & sections with primary assignments
+- [x] Score library (works → editions → files)
+- [x] Physical copy inventory tracking
+- [x] Event scheduling with participation/RSVP
+- [x] Season and event repertoire management
+
+### 🚧 Phase 1: Core Features _(In Progress)_
+
+- [x] Member invitations with name-based matching
+- [x] Score upload and management (D1 chunked storage)
+- [x] Takedown mechanism
+- [ ] Roster view with attendance tracking
+- [ ] Season repertoire UI
+
+### Phase 2: Federation _(Deferred)_
+
+- [ ] Handshake protocol between Vaults
 - [ ] P2P score sharing
-- [ ] PD Catalog
+- [ ] PD Catalog in Registry
 
 ### Phase 3: Enhanced Experience
 
-- [ ] Interactive sheet music (MusicXML)
+- [ ] Public umbrella affiliates page
 - [ ] Mobile-optimized UI
-- [ ] Offline access
-
-### Phase 4: Full Ecosystem
-
-- [ ] Choir roster management
-- [ ] Rehearsal calendar
-- [ ] Public choir pages
+- [ ] Offline score access
 
 ---
 
@@ -237,12 +247,13 @@ pnpm test:e2e
 
 ## Documentation
 
-| Document                                      | Description                  |
-| --------------------------------------------- | ---------------------------- |
-| [GLOSSARY.md](docs/GLOSSARY.md)               | Terminology definitions      |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Technical architecture       |
-| [LEGAL-FRAMEWORK.md](docs/LEGAL-FRAMEWORK.md) | Legal design and compliance  |
-| [CONCERNS.md](docs/CONCERNS.md)               | Open questions and decisions |
+| Document                                      | Description                    |
+| --------------------------------------------- | ------------------------------ |
+| [GLOSSARY.md](docs/GLOSSARY.md)               | Terminology definitions        |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Technical architecture         |
+| [DATABASE-SCHEMA.md](docs/DATABASE-SCHEMA.md) | D1 schema reference (Schema V2)|
+| [LEGAL-FRAMEWORK.md](docs/LEGAL-FRAMEWORK.md) | Legal design and compliance    |
+| [CONCERNS.md](docs/CONCERNS.md)               | Open questions and decisions   |
 
 ---
 
