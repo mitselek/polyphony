@@ -469,14 +469,54 @@ pnpm --filter vault dev
 pnpm complexity <file>  # Run before starting work (see Section 2.5)
 ```
 
-**Database migrations:**
+**Database operations (Wrangler D1):**
 
 ```bash
-# Local dev
-wrangler d1 migrations apply DB --local
+# =============================================================================
+# MIGRATIONS
+# =============================================================================
 
-# Production (Lead only)
-wrangler d1 migrations apply DB
+# Apply pending migrations to local dev database
+cd apps/vault && pnpm wrangler d1 migrations apply DB --local
+
+# Apply pending migrations to production (Lead only)
+cd apps/vault && pnpm wrangler d1 migrations apply DB --remote
+
+# =============================================================================
+# QUERYING DATABASES
+# =============================================================================
+
+# Query local database
+pnpm wrangler d1 execute DB --local --command "SELECT * FROM members LIMIT 5;"
+
+# Query remote database - use DATABASE NAME (not binding)
+# Vault database:
+cd apps/vault && pnpm wrangler d1 execute polyphony-vault-db --remote --command "SELECT COUNT(*) FROM members;"
+
+# Registry database:
+cd apps/registry && pnpm wrangler d1 execute polyphony-registry-db --remote --command "SELECT * FROM vaults;"
+
+# Get results as JSON (for scripting)
+pnpm wrangler d1 execute polyphony-vault-db --remote --command "..." --json
+
+# =============================================================================
+# EXPORT / IMPORT (Sync remote → local)
+# =============================================================================
+
+# Export production database to SQL file
+cd apps/vault && pnpm wrangler d1 export polyphony-vault-db --remote --output=./prod-backup.sql
+
+# Import to local (requires sqlite3 CLI)
+rm -rf .wrangler/state/v3/d1
+mkdir -p .wrangler/state/v3/d1/<database-uuid>
+sqlite3 .wrangler/state/v3/d1/<database-uuid>/db.sqlite < prod-backup.sql
+
+# =============================================================================
+# KEY GOTCHA: DB vs database_name
+# =============================================================================
+# - "DB" is the BINDING name (works for --local only)
+# - "polyphony-vault-db" is the DATABASE NAME (required for --remote)
+# - Find database names in wrangler.toml under [[d1_databases]]
 ```
 
 ## Reference Documents
