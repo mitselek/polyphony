@@ -1,6 +1,6 @@
 // API endpoints for managing members
 // DELETE /api/members/[id] - Remove a member from the vault
-// PATCH /api/members/[id] - Update a member (admin only)
+// PATCH /api/members/[id] - Update a member (admin or own profile)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 import { updateMemberName, updateMemberNickname } from '$lib/server/db/members';
@@ -10,18 +10,24 @@ interface UpdateMemberRequest {
 	nickname?: string | null;
 }
 
-// PATCH - Update member details (admin only)
+// PATCH - Update member details (admin or own profile)
 export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
-	// Auth: get member and check admin role
+	// Auth: get current member
 	const currentMember = await getAuthenticatedMember(db, cookies);
-	assertAdmin(currentMember);
-
 	const targetMemberId = params.id;
+	const isOwnProfile = currentMember.id === targetMemberId;
+	const isAdmin = currentMember.roles.some((r) => ['admin', 'owner'].includes(r));
+
+	// Must be admin or editing own profile
+	if (!isAdmin && !isOwnProfile) {
+		throw error(403, 'Insufficient permissions');
+	}
+
 	if (!targetMemberId) {
 		throw error(400, 'Member ID is required');
 	}

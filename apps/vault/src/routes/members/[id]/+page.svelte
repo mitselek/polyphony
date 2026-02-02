@@ -30,8 +30,11 @@
 		member = data.member;
 	});
 
+	// Permission helpers: can edit name/nickname if admin OR own profile
+	const canEditProfile = $derived(data.isAdmin || data.isOwnProfile);
+
 	function startEditingName() {
-		if (!data.isAdmin) return;
+		if (!canEditProfile) return;
 		editedName = member.name;
 		isEditingName = true;
 	}
@@ -79,7 +82,7 @@
 	}
 
 	function startEditingNickname() {
-		if (!data.isAdmin) return;
+		if (!canEditProfile) return;
 		editedNickname = member.nickname ?? '';
 		isEditingNickname = true;
 	}
@@ -310,7 +313,7 @@
 </script>
 
 <svelte:head>
-	<title>{member.name} | Polyphony Vault</title>
+	<title>{data.isOwnProfile ? 'My Profile' : member.name} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-3xl px-4 py-8">
@@ -334,7 +337,7 @@
 				class="text-3xl font-bold border-b-2 border-blue-500 bg-transparent outline-none w-full max-w-md px-1 py-0.5"
 				autofocus
 			/>
-		{:else if data.isAdmin}
+		{:else if canEditProfile}
 			<button 
 				type="button"
 				onclick={startEditingName}
@@ -357,7 +360,7 @@
 		{/if}
 	</div>
 
-	<!-- Nickname (editable by admin) -->
+	<!-- Nickname (editable by admin or self) -->
 	<div class="mb-6 -mt-4">
 		{#if isEditingNickname}
 			<div class="flex items-center gap-2">
@@ -374,7 +377,7 @@
 					autofocus
 				/>
 			</div>
-		{:else if data.isAdmin}
+		{:else if canEditProfile}
 			<button 
 				type="button"
 				onclick={startEditingNickname}
