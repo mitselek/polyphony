@@ -184,7 +184,7 @@
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold">Create Event</h1>
-		<p class="mt-2 text-gray-600">Schedule rehearsals, concerts, or retreats</p>
+		<p class="mt-2 text-gray-600">Schedule rehearsals, concerts, retreats, or festivals</p>
 	</div>
 
 	{#if error}
@@ -227,6 +227,7 @@
 						<option value="rehearsal">Rehearsal</option>
 						<option value="concert">Concert</option>
 						<option value="retreat">Retreat</option>
+						<option value="festival">Festival</option>
 					</select>
 				</div>
 

@@ -246,13 +246,13 @@ erDiagram
 
 Abstract musical compositions (independent of specific publications).
 
-| Column     | Type | Constraints   | Description          |
-| ---------- | ---- | ------------- | -------------------- |
-| id         | TEXT | PK            | Work ID              |
-| title      | TEXT | NOT NULL      | Composition title    |
-| composer   | TEXT |               | Composer name        |
-| lyricist   | TEXT |               | Lyricist/librettist  |
-| created_at | TEXT | DEFAULT now() | Creation timestamp   |
+| Column     | Type | Constraints   | Description         |
+| ---------- | ---- | ------------- | ------------------- |
+| id         | TEXT | PK            | Work ID             |
+| title      | TEXT | NOT NULL      | Composition title   |
+| composer   | TEXT |               | Composer name       |
+| lyricist   | TEXT |               | Lyricist/librettist |
+| created_at | TEXT | DEFAULT now() | Creation timestamp  |
 
 **Indexes:**
 
@@ -265,24 +265,24 @@ Abstract musical compositions (independent of specific publications).
 
 Specific publications or arrangements of a work.
 
-| Column           | Type     | Constraints                        | Description                              |
-| ---------------- | -------- | ---------------------------------- | ---------------------------------------- |
-| id               | TEXT     | PK                                 | Edition ID                               |
-| work_id          | TEXT     | NOT NULL, FK → works(id) CASCADE   | Parent work                              |
-| name             | TEXT     | NOT NULL                           | Edition name (e.g., "Novello Vocal")     |
-| arranger         | TEXT     |                                    | Arranger name                            |
-| publisher        | TEXT     |                                    | Publisher name                           |
-| voicing          | TEXT     |                                    | Voice arrangement (e.g., "SATB")         |
-| edition_type     | TEXT     | NOT NULL, DEFAULT 'vocal_score'    | See Edition Types below                  |
-| license_type     | TEXT     | NOT NULL, DEFAULT 'owned'          | `public_domain`, `licensed`, `owned`     |
-| notes            | TEXT     |                                    | Internal notes                           |
-| external_url     | TEXT     |                                    | Link to external resource (IMSLP, etc.)  |
-| file_key         | TEXT     |                                    | Storage key (if uploaded)                |
-| file_name        | TEXT     |                                    | Original filename                        |
-| file_size        | INTEGER  |                                    | File size in bytes                       |
-| file_uploaded_at | DATETIME |                                    | Upload timestamp                         |
-| file_uploaded_by | TEXT     | FK → members(id)                   | Who uploaded                             |
-| created_at       | DATETIME | DEFAULT now()                      | Creation timestamp                       |
+| Column           | Type     | Constraints                      | Description                             |
+| ---------------- | -------- | -------------------------------- | --------------------------------------- |
+| id               | TEXT     | PK                               | Edition ID                              |
+| work_id          | TEXT     | NOT NULL, FK → works(id) CASCADE | Parent work                             |
+| name             | TEXT     | NOT NULL                         | Edition name (e.g., "Novello Vocal")    |
+| arranger         | TEXT     |                                  | Arranger name                           |
+| publisher        | TEXT     |                                  | Publisher name                          |
+| voicing          | TEXT     |                                  | Voice arrangement (e.g., "SATB")        |
+| edition_type     | TEXT     | NOT NULL, DEFAULT 'vocal_score'  | See Edition Types below                 |
+| license_type     | TEXT     | NOT NULL, DEFAULT 'owned'        | `public_domain`, `licensed`, `owned`    |
+| notes            | TEXT     |                                  | Internal notes                          |
+| external_url     | TEXT     |                                  | Link to external resource (IMSLP, etc.) |
+| file_key         | TEXT     |                                  | Storage key (if uploaded)               |
+| file_name        | TEXT     |                                  | Original filename                       |
+| file_size        | INTEGER  |                                  | File size in bytes                      |
+| file_uploaded_at | DATETIME |                                  | Upload timestamp                        |
+| file_uploaded_by | TEXT     | FK → members(id)                 | Who uploaded                            |
+| created_at       | DATETIME | DEFAULT now()                    | Creation timestamp                      |
 
 **Indexes:**
 
@@ -320,15 +320,15 @@ Junction table: which sections an edition covers (for coverage validation).
 
 PDF metadata and single-row storage (≤2MB files).
 
-| Column        | Type    | Constraints                            | Description                           |
-| ------------- | ------- | -------------------------------------- | ------------------------------------- |
-| edition_id    | TEXT    | PK, FK → editions(id) ON DELETE CASCADE| Edition reference                     |
-| data          | BLOB    |                                        | PDF binary (NULL if `is_chunked=1`)   |
-| size          | INTEGER | NOT NULL                               | Total file size in bytes              |
-| original_name | TEXT    |                                        | Original filename                     |
-| uploaded_at   | TEXT    | DEFAULT now()                          | Upload timestamp                      |
-| is_chunked    | INTEGER | NOT NULL, DEFAULT 0                    | 0=single row, 1=chunked               |
-| chunk_count   | INTEGER |                                        | Number of chunks (NULL if single row) |
+| Column        | Type    | Constraints                             | Description                           |
+| ------------- | ------- | --------------------------------------- | ------------------------------------- |
+| edition_id    | TEXT    | PK, FK → editions(id) ON DELETE CASCADE | Edition reference                     |
+| data          | BLOB    |                                         | PDF binary (NULL if `is_chunked=1`)   |
+| size          | INTEGER | NOT NULL                                | Total file size in bytes              |
+| original_name | TEXT    |                                         | Original filename                     |
+| uploaded_at   | TEXT    | DEFAULT now()                           | Upload timestamp                      |
+| is_chunked    | INTEGER | NOT NULL, DEFAULT 0                     | 0=single row, 1=chunked               |
+| chunk_count   | INTEGER |                                         | Number of chunks (NULL if single row) |
 
 ---
 
@@ -384,15 +384,15 @@ erDiagram
 
 Individual numbered copies of editions in the choir's inventory.
 
-| Column      | Type     | Constraints                            | Description                                |
-| ----------- | -------- | -------------------------------------- | ------------------------------------------ |
-| id          | TEXT     | PK                                     | Copy ID                                    |
-| edition_id  | TEXT     | NOT NULL, FK → editions(id) CASCADE    | Parent edition                             |
-| copy_number | TEXT     | NOT NULL                               | Copy identifier (e.g., "1", "M-01")        |
-| condition   | TEXT     | DEFAULT 'good', CHECK                  | `good`, `fair`, `poor`, `lost`             |
-| acquired_at | DATE     |                                        | When acquired                              |
-| notes       | TEXT     |                                        | Notes about this copy                      |
-| created_at  | DATETIME | DEFAULT now()                          | Creation timestamp                         |
+| Column      | Type     | Constraints                         | Description                         |
+| ----------- | -------- | ----------------------------------- | ----------------------------------- |
+| id          | TEXT     | PK                                  | Copy ID                             |
+| edition_id  | TEXT     | NOT NULL, FK → editions(id) CASCADE | Parent edition                      |
+| copy_number | TEXT     | NOT NULL                            | Copy identifier (e.g., "1", "M-01") |
+| condition   | TEXT     | DEFAULT 'good', CHECK               | `good`, `fair`, `poor`, `lost`      |
+| acquired_at | DATE     |                                     | When acquired                       |
+| notes       | TEXT     |                                     | Notes about this copy               |
+| created_at  | DATETIME | DEFAULT now()                       | Creation timestamp                  |
 
 **Indexes:**
 
@@ -409,16 +409,16 @@ Individual numbered copies of editions in the choir's inventory.
 
 Tracks who has which physical copy (check-out/return workflow).
 
-| Column      | Type | Constraints                                   | Description                            |
-| ----------- | ---- | --------------------------------------------- | -------------------------------------- |
-| id          | TEXT | PK                                            | Assignment ID                          |
-| copy_id     | TEXT | NOT NULL, FK → physical_copies(id) CASCADE    | Copy being assigned                    |
-| member_id   | TEXT | NOT NULL, FK → members(id) CASCADE            | Member receiving copy                  |
-| assigned_at | TEXT | NOT NULL, DEFAULT now()                       | Check-out timestamp                    |
-| assigned_by | TEXT | FK → members(id) ON DELETE SET NULL           | Librarian who assigned                 |
-| returned_at | TEXT |                                               | Return timestamp (NULL = still out)    |
-| notes       | TEXT |                                               | Assignment notes                       |
-| created_at  | TEXT | NOT NULL, DEFAULT now()                       | Record creation timestamp              |
+| Column      | Type | Constraints                                | Description                         |
+| ----------- | ---- | ------------------------------------------ | ----------------------------------- |
+| id          | TEXT | PK                                         | Assignment ID                       |
+| copy_id     | TEXT | NOT NULL, FK → physical_copies(id) CASCADE | Copy being assigned                 |
+| member_id   | TEXT | NOT NULL, FK → members(id) CASCADE         | Member receiving copy               |
+| assigned_at | TEXT | NOT NULL, DEFAULT now()                    | Check-out timestamp                 |
+| assigned_by | TEXT | FK → members(id) ON DELETE SET NULL        | Librarian who assigned              |
+| returned_at | TEXT |                                            | Return timestamp (NULL = still out) |
+| notes       | TEXT |                                            | Assignment notes                    |
+| created_at  | TEXT | NOT NULL, DEFAULT now()                    | Record creation timestamp           |
 
 **Indexes:**
 
@@ -492,15 +492,15 @@ Date-based groupings for repertoire organization.
 
 Works assigned to a season (season repertoire, ordered).
 
-| Column        | Type    | Constraints                            | Description                |
-| ------------- | ------- | -------------------------------------- | -------------------------- |
-| id            | TEXT    | PK                                     | Assignment ID              |
-| season_id     | TEXT    | NOT NULL, FK → seasons(id) CASCADE     | Season reference           |
-| work_id       | TEXT    | NOT NULL, FK → works(id) CASCADE       | Work reference             |
-| display_order | INTEGER | NOT NULL, DEFAULT 0                    | Order in repertoire        |
-| notes         | TEXT    |                                        | Notes about this work      |
-| added_at      | TEXT    | NOT NULL, DEFAULT now()                | When added                 |
-| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL    | Who added it               |
+| Column        | Type    | Constraints                         | Description           |
+| ------------- | ------- | ----------------------------------- | --------------------- |
+| id            | TEXT    | PK                                  | Assignment ID         |
+| season_id     | TEXT    | NOT NULL, FK → seasons(id) CASCADE  | Season reference      |
+| work_id       | TEXT    | NOT NULL, FK → works(id) CASCADE    | Work reference        |
+| display_order | INTEGER | NOT NULL, DEFAULT 0                 | Order in repertoire   |
+| notes         | TEXT    |                                     | Notes about this work |
+| added_at      | TEXT    | NOT NULL, DEFAULT now()             | When added            |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL | Who added it          |
 
 **Indexes:**
 
@@ -517,15 +517,15 @@ Works assigned to a season (season repertoire, ordered).
 
 Editions selected for each season-work pairing.
 
-| Column         | Type    | Constraints                                 | Description               |
-| -------------- | ------- | ------------------------------------------- | ------------------------- |
-| id             | TEXT    | PK                                          | Assignment ID             |
-| season_work_id | TEXT    | NOT NULL, FK → season_works(id) CASCADE     | Season-work reference     |
-| edition_id     | TEXT    | NOT NULL, FK → editions(id) CASCADE         | Edition reference         |
-| is_primary     | INTEGER | NOT NULL, DEFAULT 0                         | Mark the main edition     |
-| notes          | TEXT    |                                             | Notes about this edition  |
-| added_at       | TEXT    | NOT NULL, DEFAULT now()                     | When added                |
-| added_by       | TEXT    | FK → members(id) ON DELETE SET NULL         | Who added it              |
+| Column         | Type    | Constraints                             | Description              |
+| -------------- | ------- | --------------------------------------- | ------------------------ |
+| id             | TEXT    | PK                                      | Assignment ID            |
+| season_work_id | TEXT    | NOT NULL, FK → season_works(id) CASCADE | Season-work reference    |
+| edition_id     | TEXT    | NOT NULL, FK → editions(id) CASCADE     | Edition reference        |
+| is_primary     | INTEGER | NOT NULL, DEFAULT 0                     | Mark the main edition    |
+| notes          | TEXT    |                                         | Notes about this edition |
+| added_at       | TEXT    | NOT NULL, DEFAULT now()                 | When added               |
+| added_by       | TEXT    | FK → members(id) ON DELETE SET NULL     | Who added it             |
 
 **Indexes:**
 
@@ -774,17 +774,17 @@ erDiagram
 
 Rehearsals, concerts, and other choir events.
 
-| Column      | Type | Constraints      | Description                       |
-| ----------- | ---- | ---------------- | --------------------------------- |
-| id          | TEXT | PK               | Event ID                          |
-| title       | TEXT | NOT NULL         | Event title                       |
-| description | TEXT |                  | Event description                 |
-| location    | TEXT |                  | Event location                    |
-| starts_at   | TEXT | NOT NULL         | Start datetime (ISO 8601)         |
-| ends_at     | TEXT |                  | End datetime (ISO 8601)           |
-| event_type  | TEXT | CHECK            | `rehearsal`, `concert`, `retreat` |
-| created_by  | TEXT | FK → members(id) | Creator                           |
-| created_at  | TEXT | DEFAULT now()    | Creation timestamp                |
+| Column      | Type | Constraints      | Description                                   |
+| ----------- | ---- | ---------------- | --------------------------------------------- |
+| id          | TEXT | PK               | Event ID                                      |
+| title       | TEXT | NOT NULL         | Event title                                   |
+| description | TEXT |                  | Event description                             |
+| location    | TEXT |                  | Event location                                |
+| starts_at   | TEXT | NOT NULL         | Start datetime (ISO 8601)                     |
+| ends_at     | TEXT |                  | End datetime (ISO 8601)                       |
+| event_type  | TEXT | CHECK            | `rehearsal`, `concert`, `retreat`, `festival` |
+| created_by  | TEXT | FK → members(id) | Creator                                       |
+| created_at  | TEXT | DEFAULT now()    | Creation timestamp                            |
 
 **Indexes:**
 
@@ -797,15 +797,15 @@ Rehearsals, concerts, and other choir events.
 
 Works assigned to an event (event repertoire).
 
-| Column        | Type    | Constraints                             | Description                |
-| ------------- | ------- | --------------------------------------- | -------------------------- |
-| id            | TEXT    | PK                                      | Assignment ID              |
-| event_id      | TEXT    | FK → events(id) ON DELETE CASCADE       | Event reference            |
-| work_id       | TEXT    | FK → works(id) ON DELETE CASCADE        | Work reference             |
-| display_order | INTEGER | NOT NULL, DEFAULT 0                     | Order in repertoire        |
-| notes         | TEXT    |                                         | Notes about this work      |
-| added_at      | TEXT    | DEFAULT now()                           | When added                 |
-| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL     | Who added it               |
+| Column        | Type    | Constraints                         | Description           |
+| ------------- | ------- | ----------------------------------- | --------------------- |
+| id            | TEXT    | PK                                  | Assignment ID         |
+| event_id      | TEXT    | FK → events(id) ON DELETE CASCADE   | Event reference       |
+| work_id       | TEXT    | FK → works(id) ON DELETE CASCADE    | Work reference        |
+| display_order | INTEGER | NOT NULL, DEFAULT 0                 | Order in repertoire   |
+| notes         | TEXT    |                                     | Notes about this work |
+| added_at      | TEXT    | DEFAULT now()                       | When added            |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL | Who added it          |
 
 **Indexes:**
 
@@ -822,15 +822,15 @@ Works assigned to an event (event repertoire).
 
 Editions selected for each event-work pairing.
 
-| Column        | Type    | Constraints                                 | Description               |
-| ------------- | ------- | ------------------------------------------- | ------------------------- |
-| id            | TEXT    | PK                                          | Assignment ID             |
-| event_work_id | TEXT    | FK → event_works(id) ON DELETE CASCADE      | Event-work reference      |
-| edition_id    | TEXT    | FK → editions(id) ON DELETE CASCADE         | Edition reference         |
-| is_primary    | INTEGER | NOT NULL, DEFAULT 0                         | Mark the main edition     |
-| notes         | TEXT    |                                             | Notes about this edition  |
-| added_at      | TEXT    | DEFAULT now()                               | When added                |
-| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL         | Who added it              |
+| Column        | Type    | Constraints                            | Description              |
+| ------------- | ------- | -------------------------------------- | ------------------------ |
+| id            | TEXT    | PK                                     | Assignment ID            |
+| event_work_id | TEXT    | FK → event_works(id) ON DELETE CASCADE | Event-work reference     |
+| edition_id    | TEXT    | FK → editions(id) ON DELETE CASCADE    | Edition reference        |
+| is_primary    | INTEGER | NOT NULL, DEFAULT 0                    | Mark the main edition    |
+| notes         | TEXT    |                                        | Notes about this edition |
+| added_at      | TEXT    | DEFAULT now()                          | When added               |
+| added_by      | TEXT    | FK → members(id) ON DELETE SET NULL    | Who added it             |
 
 **Indexes:**
 
@@ -918,6 +918,7 @@ RSVP and attendance tracking for events.
 - `rehearsal` - Regular practice session
 - `concert` - Performance event
 - `retreat` - Multi-day gathering
+- `festival` - Festival, competition, or large multi-collective event
 
 ### Planned Status (RSVP)
 
@@ -961,16 +962,16 @@ RSVP and attendance tracking for events.
 
 ## Table Summary
 
-| Category           | Tables                                                                |
-| ------------------ | --------------------------------------------------------------------- |
-| **Core**           | members, member_roles                                                 |
-| **Voices/Sections**| voices, sections, member_voices, member_sections                      |
-| **Score Library**  | works, editions, edition_sections, edition_files, edition_chunks      |
-| **Inventory**      | physical_copies, copy_assignments                                     |
-| **Seasons**        | seasons, season_works, season_work_editions                           |
-| **Events**         | events, event_works, event_work_editions, participation               |
-| **Invitations**    | invites, invite_voices, invite_sections                               |
-| **Supporting**     | sessions, takedowns, vault_settings                                   |
+| Category            | Tables                                                           |
+| ------------------- | ---------------------------------------------------------------- |
+| **Core**            | members, member_roles                                            |
+| **Voices/Sections** | voices, sections, member_voices, member_sections                 |
+| **Score Library**   | works, editions, edition_sections, edition_files, edition_chunks |
+| **Inventory**       | physical_copies, copy_assignments                                |
+| **Seasons**         | seasons, season_works, season_work_editions                      |
+| **Events**          | events, event_works, event_work_editions, participation          |
+| **Invitations**     | invites, invite_voices, invite_sections                          |
+| **Supporting**      | sessions, takedowns, vault_settings                              |
 
 **Total: 22 tables** (after dropping scores, score_files, score_chunks, access_log, event_programs)
 

@@ -6,7 +6,7 @@ export type Role = 'owner' | 'admin' | 'librarian' | 'conductor' | 'section_lead
 // All assignable roles (used in members list and invite form)
 export const ASSIGNABLE_ROLES = ['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const;
 
-export type EventType = 'rehearsal' | 'concert' | 'retreat';
+export type EventType = 'rehearsal' | 'concert' | 'retreat' | 'festival';
 
 // ============================================================================
 // ORGANIZATIONS SYSTEM (Schema V2)
