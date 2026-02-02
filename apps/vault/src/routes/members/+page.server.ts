@@ -77,8 +77,11 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		inviteLink: `${baseUrl}?token=${inv.token}`
 	}));
 
-	// Create set of roster member IDs with pending invites
-	const pendingInviteMemberIds = new Set(pendingInvites.map((inv) => inv.roster_member_id));
+	// Create map of roster member IDs to their invite links
+	const pendingInviteLinks: Record<string, string> = {};
+	for (const inv of pendingInvites) {
+		pendingInviteLinks[inv.roster_member_id] = `${baseUrl}?token=${inv.token}`;
+	}
 
 	// Get available voices and sections for adding
 	console.log('[members] Loading available voices and sections...');
@@ -90,7 +93,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	return {
 		members,
 		invites,
-		pendingInviteMemberIds: Array.from(pendingInviteMemberIds), // Convert Set to Array for serialization
+		pendingInviteLinks, // Map of memberId -> inviteLink
 		availableVoices,
 		availableSections,
 		currentUserId: currentUser.id,

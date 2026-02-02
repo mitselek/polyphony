@@ -337,7 +337,7 @@
 		isAdmin={data.isAdmin}
 		availableVoices={data.availableVoices}
 		availableSections={data.availableSections}
-		pendingInviteMemberIds={data.pendingInviteMemberIds}
+		pendingInviteLinks={data.pendingInviteLinks}
 		{searchQuery}
 		onToggleRole={toggleRole}
 		onAddVoice={addVoice}

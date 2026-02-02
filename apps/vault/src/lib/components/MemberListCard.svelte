@@ -4,6 +4,7 @@
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import type { Role, Voice, Section } from '$lib/types';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
+	import { toast } from '$lib/stores/toast';
 
 	export interface DisplayMember {
 		id: string;
@@ -24,7 +25,7 @@
 		isAdmin: boolean;
 		availableVoices: Voice[];
 		availableSections: Section[];
-		pendingInviteMemberIds: string[];
+		pendingInviteLinks: Record<string, string>; // memberId -> inviteLink
 		searchQuery: string;
 		onToggleRole: (memberId: string, role: Role) => Promise<void>;
 		onAddVoice: (memberId: string, voiceId: string, isPrimary: boolean) => Promise<void>;
@@ -43,7 +44,7 @@
 		isAdmin,
 		availableVoices,
 		availableSections,
-		pendingInviteMemberIds,
+		pendingInviteLinks,
 		searchQuery,
 		onToggleRole,
 		onAddVoice,
@@ -57,6 +58,16 @@
 
 	let showingVoiceDropdown = $state<string | null>(null);
 	let showingSectionDropdown = $state<string | null>(null);
+
+	// Helper to copy invite link
+	async function copyInviteLink(link: string, memberName: string) {
+		try {
+			await navigator.clipboard.writeText(link);
+			toast.success(`Invite link copied for ${memberName}`);
+		} catch {
+			toast.error('Failed to copy link');
+		}
+	}
 
 	let filteredMembers = $derived(
 		members.filter(
@@ -234,12 +245,20 @@
 
 						{#if !member.email_id}
 							<!-- Roster-only member - show invitation status or button -->
-							{@const hasPendingInvite = pendingInviteMemberIds.includes(member.id)}
-							<div class="mt-3 rounded-lg border {hasPendingInvite ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50'} p-3">
-								{#if hasPendingInvite}
-									<p class="text-sm text-blue-800">
-										<span class="font-medium">Invitation pending</span> — waiting for member to accept.
-									</p>
+							{@const inviteLink = pendingInviteLinks[member.id]}
+							<div class="mt-3 rounded-lg border {inviteLink ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50'} p-3">
+								{#if inviteLink}
+									<div class="flex items-center justify-between">
+										<p class="text-sm text-blue-800">
+											<span class="font-medium">Invitation pending</span> — waiting for member to accept.
+										</p>
+										<button
+											onclick={() => copyInviteLink(inviteLink, member.name)}
+											class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-100"
+										>
+											Copy Link
+										</button>
+									</div>
 								{:else}
 									<p class="mb-2 text-sm text-amber-800">
 										This member cannot log in until invited. Send them an invitation to grant system access.
