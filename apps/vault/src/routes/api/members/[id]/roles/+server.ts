@@ -4,7 +4,6 @@ import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 import { parseBody, updateRolesSchema } from '$lib/server/validation/schemas';
 import { addMemberRole, removeMemberRole, countMembersWithRole } from '$lib/server/db/roles';
-import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
 	const db = platform?.env?.DB;
@@ -44,7 +43,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 
 		return json({ success: true });
 	} catch (err) {
-		logger.error('Failed to update role:', err);
+		console.error('Failed to update role:', err);
 		throw error(500, 'Failed to update role');
 	}
 };

@@ -12,7 +12,6 @@ import { getEventById } from '$lib/server/db/events';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getAllMembers } from '$lib/server/db/members';
 import type { PlannedStatus } from '$lib/types';
-import { logger } from '$lib/server/logger';
 
 /**
  * GET /api/events/[id]/participation
@@ -25,8 +24,7 @@ export async function GET(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require authentication
-	const member = await getAuthenticatedMember(db, cookies);
-	logger.info('GET participation for event:', params.id);
+	await getAuthenticatedMember(db, cookies);
 
 	const eventId = params.id;
 	if (!eventId) {
@@ -95,12 +93,10 @@ export async function POST(event: RequestEvent) {
 		throw error(400, 'Event ID required');
 	}
 
-	// Parse request body early for logging
+	// Parse request body early
 	const body = await request.json() as { status?: string; notes?: string };
 	const status = body.status as PlannedStatus;
 	const notes = body.notes as string | undefined;
-
-	logger.info('RSVP update:', { eventId, status });
 
 	// Check event exists
 	const eventData = await getEventById(db, eventId);

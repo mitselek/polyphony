@@ -4,7 +4,6 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { updateMemberName } from '$lib/server/db/members';
-import { logger } from '$lib/server/logger';
 
 interface UpdateProfileRequest {
 	name: string;
@@ -39,7 +38,7 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 		if (err instanceof Error && err.message.includes('already exists')) {
 			return json({ error: 'A member with this name already exists' }, { status: 409 });
 		}
-		logger.error('Failed to update member name:', err);
+		console.error('Failed to update member name:', err);
 		return json(
 			{ error: err instanceof Error ? err.message : 'Failed to update name' },
 			{ status: 500 }

@@ -6,38 +6,30 @@ import { getPendingInvites } from '$lib/server/db/invites';
 import { getAllMembers } from '$lib/server/db/members';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
-import { logger } from '$lib/server/logger';
 
 export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
-		logger.error('Database not available');
 		throw error(500, 'Database not available');
 	}
 
 	// Authenticate and get current user
 	let currentUser;
 	try {
-		logger.info('Authenticating member...');
 		currentUser = await getAuthenticatedMember(db, cookies);
-		logger.info('Authentication successful:', { id: currentUser.id, name: currentUser.name, roles: currentUser.roles });
 	} catch (err) {
 		// Not authenticated - redirect to login
-		logger.warn('Authentication failed, redirecting to login:', err instanceof Error ? err.message : err);
 		redirect(302, '/login');
 	}
 
 	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
 
 	if (!canManage) {
-		logger.warn('User lacks admin/owner role:', { id: currentUser.id, roles: currentUser.roles });
 		throw error(403, 'Insufficient permissions - admin or owner role required');
 	}
 
 	// Get all members with their roles, voices, and sections
-	logger.info('Loading all members...');
 	const allMembers = await getAllMembers(db);
-	logger.info('Loaded members:', { count: allMembers.length });
 
 	// Format for frontend and sort by nickname (if set) or name
 	const members = allMembers
@@ -61,9 +53,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	const orgId = locals.org.id;
 
 	// Get pending invites for this organization
-	logger.info('Loading pending invites...');
 	const pendingInvites = await getPendingInvites(db, orgId);
-	logger.info('Loaded invites:', { count: pendingInvites.length });
 	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = pendingInvites.map((inv) => ({
 		id: inv.id,
@@ -85,12 +75,9 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	}
 
 	// Get available voices and sections for adding
-	logger.info('Loading available voices and sections...');
 	const availableVoices = await getActiveVoices(db);
 	const availableSections = await getActiveSections(db, orgId);
-	logger.info('Loaded:', { voices: availableVoices.length, sections: availableSections.length });
 
-	logger.info('Page load complete');
 	return {
 		members,
 		invites,

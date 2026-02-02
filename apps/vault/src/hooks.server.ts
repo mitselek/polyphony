@@ -3,7 +3,6 @@
 
 import type { Handle } from '@sveltejs/kit';
 import { getOrganizationBySubdomain } from '$lib/server/db/organizations';
-import { setLogContext, clearLogContext, logger } from '$lib/server/logger';
 
 // Development fallback subdomain (for localhost:5173 without subdomain)
 const DEV_SUBDOMAIN = 'crede';
@@ -47,39 +46,16 @@ export function extractSubdomain(hostname: string): string | null {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// Generate request ID for log correlation
-	const requestId = crypto.randomUUID().slice(0, 8);
-	
-	// Get user ID from session cookie if available
-	const sessionCookie = event.cookies.get('session');
-	let userId: string | undefined;
-	if (sessionCookie) {
-		try {
-			const session = JSON.parse(sessionCookie);
-			userId = session.memberId;
-		} catch {
-			// Invalid session cookie, ignore
-		}
+	const db = event.platform?.env?.DB;
+	if (!db) {
+		// Dev mode without wrangler - skip org routing
+		// This allows running basic tests without DB
+		return resolve(event);
 	}
 
-	// Set logging context for this request
-	setLogContext({
-		requestId,
-		userId,
-		route: event.url.pathname
-	});
-
-	try {
-		const db = event.platform?.env?.DB;
-		if (!db) {
-			// Dev mode without wrangler - skip org routing
-			// This allows running basic tests without DB
-			return resolve(event);
-		}
-
-		// Extract subdomain from hostname
-		const hostname = event.url.hostname;
-		const subdomain = extractSubdomain(hostname);
+	// Extract subdomain from hostname
+	const hostname = event.url.hostname;
+	const subdomain = extractSubdomain(hostname);
 
 	// Skip non-org subdomains (www, api, static)
 	if (subdomain === null) {
@@ -99,8 +75,4 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.org = org;
 
 	return resolve(event);
-	} finally {
-		// Clear context at end of request
-		clearLogContext();
-	}
 };
