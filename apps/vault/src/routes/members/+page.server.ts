@@ -38,17 +38,24 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	const allMembers = await getAllMembers(db);
 	console.log('[members] Loaded members:', { count: allMembers.length });
 
-	// Format for frontend
-	const members = allMembers.map((m) => ({
-		id: m.id,
-		email: m.email_id, // For display
-		email_id: m.email_id, // For registration check (null = roster-only)
-		name: m.name,
-		voices: m.voices,
-		sections: m.sections,
-		joinedAt: m.joined_at,
-		roles: m.roles
-	}));
+	// Format for frontend and sort by nickname (if set) or name
+	const members = allMembers
+		.map((m) => ({
+			id: m.id,
+			email: m.email_id, // For display
+			email_id: m.email_id, // For registration check (null = roster-only)
+			name: m.name,
+			nickname: m.nickname,
+			voices: m.voices,
+			sections: m.sections,
+			joinedAt: m.joined_at,
+			roles: m.roles
+		}))
+		.sort((a, b) => {
+			const nameA = (a.nickname ?? a.name).toLowerCase();
+			const nameB = (b.nickname ?? b.name).toLowerCase();
+			return nameA.localeCompare(nameB);
+		});
 
 	const orgId = locals.org.id;
 

@@ -8,6 +8,7 @@
 	export interface DisplayMember {
 		id: string;
 		name: string;
+		nickname?: string | null;
 		email?: string | null;
 		email_id?: string | null;
 		roles: Role[];
@@ -59,7 +60,8 @@
 		members.filter(
 			(m) =>
 				(m.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-				m.name.toLowerCase().includes(searchQuery.toLowerCase())
+				m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(m.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 		)
 	);
 
@@ -109,7 +111,7 @@
 									href="/members/{member.id}"
 									class="hover:text-blue-600 hover:underline"
 								>
-									{member.name}
+									{member.nickname ?? member.name}{#if member.nickname} <span class="text-gray-400 font-normal">({member.name})</span>{/if}
 								</a>
 							</h3>
 							{#if member.id === currentUserId}
