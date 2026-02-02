@@ -335,5 +335,5 @@ export async function getPendingInviteToken(
  * Build invite accept URL from token and origin
  */
 export function buildInviteLink(origin: string, token: string): string {
-	return `${origin}/auth/accept?token=${token}`;
+	return `${origin}/invite/accept?token=${token}`;
 }
