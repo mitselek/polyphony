@@ -73,8 +73,35 @@
 				const result = (await response.json()) as { message?: string };
 				throw new Error(result.message ?? 'Failed to renew invite');
 			}
-			const renewedInvite = (await response.json()) as Invite;
+			
+			// API returns raw DB format, transform to UI format
+			const rawInvite = await response.json() as {
+				id: string;
+				roster_member_id: string;
+				roster_member_name: string;
+				expires_at: string;
+				created_at: string;
+				roles: typeof invites[0]['roles'];
+				voices: typeof invites[0]['voices'];
+				sections: typeof invites[0]['sections'];
+			};
+			
+			// Find original to preserve inviteLink and invitedBy
+			const original = invites.find((inv) => inv.id === inviteId);
+			
+			const renewedInvite: Invite = {
+				id: rawInvite.id,
+				name: rawInvite.roster_member_name,
+				expiresAt: rawInvite.expires_at,
+				invitedBy: original?.invitedBy ?? 'Unknown',
+				inviteLink: original?.inviteLink ?? '',
+				roles: rawInvite.roles,
+				voices: rawInvite.voices,
+				sections: rawInvite.sections
+			};
+			
 			invites = invites.map((inv) => (inv.id === inviteId ? renewedInvite : inv));
+			toast.success(`Renewed invite for ${name}`);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to renew invite');
 		} finally {
