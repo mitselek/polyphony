@@ -286,6 +286,7 @@ export async function revokeInvite(
 
 /**
  * Renew an invite by extending expiration by 48 hours from now
+ * Works for both expired and non-expired invites (as long as not accepted)
  */
 export async function renewInvite(
 	db: D1Database,
@@ -297,7 +298,7 @@ export async function renewInvite(
 		.prepare(
 			`UPDATE invites 
 			 SET expires_at = ? 
-			 WHERE id = ? AND expires_at > datetime('now')`
+			 WHERE id = ? AND accepted_at IS NULL`
 		)
 		.bind(newExpiresAt.toISOString(), inviteId)
 		.run();
