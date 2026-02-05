@@ -229,6 +229,25 @@ export async function getSeasonDateRange(
 }
 
 /**
+ * Build UPDATE SET clause for partial updates
+ */
+function buildSeasonUpdateSet(input: UpdateSeasonInput): { updates: string[]; values: (string | null)[] } {
+	const updates: string[] = [];
+	const values: (string | null)[] = [];
+
+	if (input.name !== undefined) {
+		updates.push('name = ?');
+		values.push(input.name);
+	}
+	if (input.start_date !== undefined) {
+		updates.push('start_date = ?');
+		values.push(input.start_date);
+	}
+
+	return { updates, values };
+}
+
+/**
  * Update a season
  * @throws Error if start_date already exists on another season
  */
@@ -238,30 +257,13 @@ export async function updateSeason(
 	input: UpdateSeasonInput
 ): Promise<Season | null> {
 	const existing = await getSeason(db, id);
-	if (!existing) {
-		return null;
-	}
+	if (!existing) return null;
 
-	const updates: string[] = [];
-	const values: (string | null)[] = [];
-
-	if (input.name !== undefined) {
-		updates.push('name = ?');
-		values.push(input.name);
-	}
-
-	if (input.start_date !== undefined) {
-		updates.push('start_date = ?');
-		values.push(input.start_date);
-	}
-
-	if (updates.length === 0) {
-		return existing;
-	}
+	const { updates, values } = buildSeasonUpdateSet(input);
+	if (updates.length === 0) return existing;
 
 	updates.push('updated_at = ?');
-	values.push(new Date().toISOString());
-	values.push(id);
+	values.push(new Date().toISOString(), id);
 
 	try {
 		await db
@@ -275,7 +277,7 @@ export async function updateSeason(
 		throw error;
 	}
 
-	return await getSeason(db, id);
+	return getSeason(db, id);
 }
 
 /**

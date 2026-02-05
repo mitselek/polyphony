@@ -38,8 +38,73 @@ export async function getMemberPreferences(
 }
 
 /**
+ * Build UPDATE SET clause for partial updates
+ * Returns { updates: [SET clauses], params: [values] }
+ */
+function buildUpdateSet(input: UpdateMemberPreferencesInput): { updates: string[]; params: (string | null)[] } {
+	const updates: string[] = [];
+	const params: (string | null)[] = [];
+
+	if (input.language !== undefined) {
+		updates.push('language = ?');
+		params.push(input.language);
+	}
+	if (input.locale !== undefined) {
+		updates.push('locale = ?');
+		params.push(input.locale);
+	}
+	if (input.timezone !== undefined) {
+		updates.push('timezone = ?');
+		params.push(input.timezone);
+	}
+
+	return { updates, params };
+}
+
+/**
+ * Execute update for existing preferences
+ */
+async function updateExistingPreferences(
+	db: D1Database,
+	memberId: string,
+	input: UpdateMemberPreferencesInput
+): Promise<void> {
+	const { updates, params } = buildUpdateSet(input);
+	if (updates.length === 0) return; // No changes
+
+	updates.push("updated_at = datetime('now')");
+	params.push(memberId);
+
+	await db
+		.prepare(`UPDATE member_preferences SET ${updates.join(', ')} WHERE member_id = ?`)
+		.bind(...params)
+		.run();
+}
+
+/**
+ * Execute insert for new preferences
+ */
+async function insertNewPreferences(
+	db: D1Database,
+	memberId: string,
+	input: UpdateMemberPreferencesInput
+): Promise<void> {
+	await db
+		.prepare(
+			`INSERT INTO member_preferences (member_id, language, locale, timezone)
+			 VALUES (?, ?, ?, ?)`
+		)
+		.bind(
+			memberId,
+			input.language ?? null,
+			input.locale ?? null,
+			input.timezone ?? null
+		)
+		.run();
+}
+
+/**
  * Upsert member preferences (creates or updates)
- * Uses INSERT ... ON CONFLICT to handle both cases
  * Partial updates preserve unchanged fields
  */
 export async function setMemberPreferences(
@@ -47,52 +112,12 @@ export async function setMemberPreferences(
 	memberId: string,
 	input: UpdateMemberPreferencesInput
 ): Promise<MemberPreferences> {
-	// Check if preferences already exist
 	const existing = await getMemberPreferences(db, memberId);
-
+	
 	if (existing) {
-		// Update existing - only update fields that are provided
-		const updates: string[] = [];
-		const params: (string | null)[] = [];
-
-		if (input.language !== undefined) {
-			updates.push('language = ?');
-			params.push(input.language);
-		}
-
-		if (input.locale !== undefined) {
-			updates.push('locale = ?');
-			params.push(input.locale);
-		}
-
-		if (input.timezone !== undefined) {
-			updates.push('timezone = ?');
-			params.push(input.timezone);
-		}
-
-		if (updates.length > 0) {
-			updates.push("updated_at = datetime('now')");
-			params.push(memberId);
-
-			await db
-				.prepare(`UPDATE member_preferences SET ${updates.join(', ')} WHERE member_id = ?`)
-				.bind(...params)
-				.run();
-		}
+		await updateExistingPreferences(db, memberId, input);
 	} else {
-		// Insert new preferences
-		await db
-			.prepare(
-				`INSERT INTO member_preferences (member_id, language, locale, timezone)
-				 VALUES (?, ?, ?, ?)`
-			)
-			.bind(
-				memberId,
-				input.language ?? null,
-				input.locale ?? null,
-				input.timezone ?? null
-			)
-			.run();
+		await insertNewPreferences(db, memberId, input);
 	}
 
 	const result = await getMemberPreferences(db, memberId);

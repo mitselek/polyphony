@@ -46,13 +46,10 @@ function isValidEmail(email: string): boolean {
 }
 
 /**
- * Create a new takedown request
+ * Validate takedown input fields
+ * Throws error if validation fails
  */
-export async function createTakedownRequest(
-	db: D1Database,
-	input: CreateTakedownInput
-): Promise<TakedownRequest> {
-	// Validation
+function validateCreateInput(input: CreateTakedownInput): void {
 	if (!input.claimant_name?.trim()) {
 		throw new Error('Claimant name is required');
 	}
@@ -76,24 +73,44 @@ export async function createTakedownRequest(
 	if (!input.attestation) {
 		throw new Error('Attestation must be acknowledged');
 	}
+}
+
+/**
+ * Prepare takedown data for insertion
+ */
+function prepareTakedownData(input: CreateTakedownInput, id: string, now: string) {
+	return {
+		id,
+		score_id: input.score_id.trim(),
+		claimant_name: input.claimant_name.trim(),
+		claimant_email: input.claimant_email.trim(),
+		reason: input.reason.trim(),
+		attestation: input.attestation ? 1 : 0,
+		status: 'pending' as const,
+		created_at: now
+	};
+}
+
+/**
+ * Create a new takedown request
+ */
+export async function createTakedownRequest(
+	db: D1Database,
+	input: CreateTakedownInput
+): Promise<TakedownRequest> {
+	// Validate input
+	validateCreateInput(input);
 
 	const id = generateId();
 	const now = new Date().toISOString();
+	const data = prepareTakedownData(input, id, now);
 
 	await db
 		.prepare(
 			`INSERT INTO takedowns (id, score_id, claimant_name, claimant_email, reason, attestation, status, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 		)
-		.bind(
-			id,
-			input.score_id,
-			input.claimant_name.trim(),
-			input.claimant_email.trim(),
-			input.reason.trim(),
-			input.attestation ? 1 : 0,
-			now
-		)
+		.bind(data.id, data.score_id, data.claimant_name, data.claimant_email, data.reason, data.attestation, data.status, data.created_at)
 		.run();
 
 	const takedown = await getTakedownById(db, id);
@@ -156,6 +173,47 @@ export async function listTakedownRequests(
 }
 
 /**
+ * Check if takedown can be processed (must be pending)
+ */
+function canProcessTakedown(takedown: TakedownRequest | null): { valid: boolean; error?: string } {
+	if (!takedown) {
+		return { valid: false, error: 'Takedown request not found' };
+	}
+	if (takedown.status !== 'pending') {
+		return { valid: false, error: 'Takedown has already been processed' };
+	}
+	return { valid: true };
+}
+
+/**
+ * Update takedown status and metadata
+ */
+async function updateTakedownStatus(
+	db: D1Database,
+	takedownId: string,
+	status: 'approved' | 'rejected',
+	processedBy: string,
+	notes: string
+): Promise<void> {
+	const now = new Date().toISOString();
+	await db
+		.prepare(
+			`UPDATE takedowns SET status = ?, processed_at = ?, processed_by = ?, resolution_notes = ?
+			 WHERE id = ?`
+		)
+		.bind(status, now, processedBy, notes, takedownId)
+		.run();
+}
+
+/**
+ * Soft-delete score if takedown approved
+ */
+async function softDeleteApprovedScore(db: D1Database, scoreId: string): Promise<void> {
+	const now = new Date().toISOString();
+	await db.prepare(`UPDATE scores SET deleted_at = ? WHERE id = ?`).bind(now, scoreId).run();
+}
+
+/**
  * Process a takedown request (approve or reject)
  */
 export async function processTakedown(
@@ -163,32 +221,16 @@ export async function processTakedown(
 	input: ProcessTakedownInput
 ): Promise<ProcessTakedownResult> {
 	const takedown = await getTakedownById(db, input.takedownId);
+	const validation = canProcessTakedown(takedown);
 
-	if (!takedown) {
-		return { success: false, error: 'Takedown request not found' };
+	if (!validation.valid) {
+		return { success: false, error: validation.error };
 	}
 
-	if (takedown.status !== 'pending') {
-		return { success: false, error: 'Takedown has already been processed' };
-	}
+	await updateTakedownStatus(db, input.takedownId, input.status, input.processedBy, input.notes);
 
-	const now = new Date().toISOString();
-
-	// Update takedown status
-	await db
-		.prepare(
-			`UPDATE takedowns SET status = ?, processed_at = ?, processed_by = ?, resolution_notes = ?
-			 WHERE id = ?`
-		)
-		.bind(input.status, now, input.processedBy, input.notes, input.takedownId)
-		.run();
-
-	// If approved, soft-delete the score
 	if (input.status === 'approved') {
-		await db
-			.prepare(`UPDATE scores SET deleted_at = ? WHERE id = ?`)
-			.bind(now, takedown.score_id)
-			.run();
+		await softDeleteApprovedScore(db, takedown!.score_id);
 	}
 
 	return { success: true };

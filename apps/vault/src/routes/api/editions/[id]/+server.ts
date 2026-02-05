@@ -10,6 +10,21 @@ import { LICENSE_TYPES } from '$lib/types';
 
 const VALID_EDITION_TYPES: EditionType[] = ['full_score', 'vocal_score', 'part', 'reduction', 'audio', 'video', 'supplementary'];
 
+// Helper: Validation error response
+function validationError(message: string) {
+	return json({ error: message }, { status: 400 });
+}
+
+// Helper: Database error response
+function dbError(message = 'Database not available') {
+	return error(500, message);
+}
+
+// Helper: Not found error response
+function notFound(resource = 'Edition') {
+	return error(404, `${resource} not found`);
+}
+
 function validateUpdateInput(body: Partial<UpdateEditionInput>): string | null {
 	if (body.name !== undefined && (typeof body.name !== 'string' || body.name.trim().length === 0)) return 'Name cannot be empty';
 	if (body.editionType !== undefined && !VALID_EDITION_TYPES.includes(body.editionType)) return 'Invalid edition type';
@@ -39,29 +54,22 @@ function buildUpdateInput(body: Partial<UpdateEditionInput>): UpdateEditionInput
 
 export async function GET({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
+	if (!db) throw dbError();
 
-	// Auth: any authenticated member can view editions
 	await getAuthenticatedMember(db, cookies);
 
 	const editionId = params.id;
-	if (!editionId) {
-		throw error(400, 'Edition ID is required');
-	}
+	if (!editionId) throw error(400, 'Edition ID is required');
 
 	const edition = await getEditionById(db, editionId);
-	if (!edition) {
-		throw error(404, 'Edition not found');
-	}
+	if (!edition) throw notFound();
 
 	return json(edition);
 }
 
 export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) throw error(500, 'Database not available');
+	if (!db) throw dbError();
 
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
@@ -70,34 +78,27 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	if (!editionId) throw error(400, 'Edition ID is required');
 
 	const body = (await request.json()) as Partial<UpdateEditionInput>;
-	const validationError = validateUpdateInput(body);
-	if (validationError) return json({ error: validationError }, { status: 400 });
+	const validationErr = validateUpdateInput(body);
+	if (validationErr) return validationError(validationErr);
 
 	const edition = await updateEdition(db, editionId, buildUpdateInput(body));
-	if (!edition) throw error(404, 'Edition not found');
+	if (!edition) throw notFound();
 
 	return json(edition);
 }
 
 export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
+	if (!db) throw dbError();
 
-	// Auth: require librarian role
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
 
 	const editionId = params.id;
-	if (!editionId) {
-		throw error(400, 'Edition ID is required');
-	}
+	if (!editionId) throw error(400, 'Edition ID is required');
 
 	const deleted = await deleteEdition(db, editionId);
-	if (!deleted) {
-		throw error(404, 'Edition not found');
-	}
+	if (!deleted) throw notFound();
 
 	return json({ success: true });
 }

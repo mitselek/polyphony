@@ -88,14 +88,9 @@ export async function getAllOrganizations(db: D1Database): Promise<Organization[
 }
 
 /**
- * Update organization (name, contact email, and i18n preferences - subdomain and type are immutable)
+ * Build UPDATE SET clause for partial updates
  */
-export async function updateOrganization(
-	db: D1Database,
-	id: string,
-	input: UpdateOrganizationInput
-): Promise<Organization | null> {
-	// Build dynamic UPDATE statement based on provided fields
+function buildOrgUpdateSet(input: UpdateOrganizationInput): { updates: string[]; params: (string | null)[] } {
 	const updates: string[] = [];
 	const params: (string | null)[] = [];
 
@@ -103,44 +98,44 @@ export async function updateOrganization(
 		updates.push('name = ?');
 		params.push(input.name);
 	}
-
 	if (input.contactEmail !== undefined) {
 		updates.push('contact_email = ?');
 		params.push(input.contactEmail);
 	}
-
-	// i18n preferences (Epic #183)
 	if (input.language !== undefined) {
 		updates.push('language = ?');
 		params.push(input.language);
 	}
-
 	if (input.locale !== undefined) {
 		updates.push('locale = ?');
 		params.push(input.locale);
 	}
-
 	if (input.timezone !== undefined) {
 		updates.push('timezone = ?');
 		params.push(input.timezone);
 	}
 
-	if (updates.length === 0) {
-		// Nothing to update, just return existing organization
-		return getOrganizationById(db, id);
-	}
+	return { updates, params };
+}
 
-	params.push(id); // WHERE clause parameter
+/**
+ * Update organization (name, contact email, and i18n preferences - subdomain and type are immutable)
+ */
+export async function updateOrganization(
+	db: D1Database,
+	id: string,
+	input: UpdateOrganizationInput
+): Promise<Organization | null> {
+	const { updates, params } = buildOrgUpdateSet(input);
+	if (updates.length === 0) return getOrganizationById(db, id);
 
+	params.push(id);
 	const result = await db
 		.prepare(`UPDATE organizations SET ${updates.join(', ')} WHERE id = ?`)
 		.bind(...params)
 		.run();
 
-	if ((result.meta.changes ?? 0) === 0) {
-		return null;
-	}
-
+	if ((result.meta.changes ?? 0) === 0) return null;
 	return getOrganizationById(db, id);
 }
 

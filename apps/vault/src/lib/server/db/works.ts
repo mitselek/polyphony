@@ -80,15 +80,10 @@ export async function getAllWorks(db: D1Database, orgId: string): Promise<Work[]
 }
 
 /**
- * Update a work
- * Returns the updated work, or null if not found
+ * Build SET clause for partial updates
+ * Returns { updates: [SET clauses], values: [values] }
  */
-export async function updateWork(
-	db: D1Database,
-	id: string,
-	input: UpdateWorkInput
-): Promise<Work | null> {
-	// Build SET clause dynamically based on provided fields
+function buildUpdateSet(input: UpdateWorkInput): { updates: string[]; values: (string | null)[] } {
 	const updates: string[] = [];
 	const values: (string | null)[] = [];
 
@@ -105,23 +100,43 @@ export async function updateWork(
 		values.push(input.lyricist);
 	}
 
+	return { updates, values };
+}
+
+/**
+ * Execute update and fetch result
+ */
+async function executeUpdate(db: D1Database, id: string, updates: string[], values: (string | null)[]): Promise<Work | null> {
 	if (updates.length === 0) {
-		// No updates, just return current state
+		// No updates provided, return current state
 		return getWorkById(db, id);
 	}
 
 	values.push(id);
-
 	const result = await db
 		.prepare(`UPDATE works SET ${updates.join(', ')} WHERE id = ?`)
 		.bind(...values)
 		.run();
 
+	// Return null if work not found
 	if ((result.meta.changes ?? 0) === 0) {
 		return null;
 	}
 
 	return getWorkById(db, id);
+}
+
+/**
+ * Update a work
+ * Returns the updated work, or null if not found
+ */
+export async function updateWork(
+	db: D1Database,
+	id: string,
+	input: UpdateWorkInput
+): Promise<Work | null> {
+	const { updates, values } = buildUpdateSet(input);
+	return executeUpdate(db, id, updates, values);
 }
 
 /**

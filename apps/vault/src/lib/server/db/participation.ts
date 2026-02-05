@@ -69,6 +69,33 @@ export async function getParticipation(
 }
 
 /**
+ * Build UPDATE SET clauses for participation changes
+ */
+function buildParticipationUpdateSet(input: UpdateParticipationInput, now: string): { updates: string[]; bindings: unknown[] } {
+	const updates: string[] = ['updated_at = ?'];
+	const bindings: unknown[] = [now];
+
+	if (input.plannedStatus !== undefined) {
+		updates.push('planned_status = ?', 'planned_at = ?');
+		bindings.push(input.plannedStatus, now);
+	}
+	if (input.plannedNotes !== undefined) {
+		updates.push('planned_notes = ?');
+		bindings.push(input.plannedNotes);
+	}
+	if (input.actualStatus !== undefined) {
+		updates.push('actual_status = ?', 'recorded_at = ?');
+		bindings.push(input.actualStatus, now);
+	}
+	if (input.recordedBy !== undefined) {
+		updates.push('recorded_by = ?');
+		bindings.push(input.recordedBy);
+	}
+
+	return { updates, bindings };
+}
+
+/**
  * Update participation (RSVP or record attendance)
  */
 export async function updateParticipation(
@@ -78,46 +105,16 @@ export async function updateParticipation(
 	input: UpdateParticipationInput
 ): Promise<Participation | null> {
 	const now = new Date().toISOString();
-	const updates: string[] = ['updated_at = ?'];
-	const bindings: unknown[] = [now];
-
-	// Update planned status
-	if (input.plannedStatus !== undefined) {
-		updates.push('planned_status = ?', 'planned_at = ?');
-		bindings.push(input.plannedStatus, now);
-	}
-
-	if (input.plannedNotes !== undefined) {
-		updates.push('planned_notes = ?');
-		bindings.push(input.plannedNotes);
-	}
-
-	// Update actual status
-	if (input.actualStatus !== undefined) {
-		updates.push('actual_status = ?', 'recorded_at = ?');
-		bindings.push(input.actualStatus, now);
-	}
-
-	if (input.recordedBy !== undefined) {
-		updates.push('recorded_by = ?');
-		bindings.push(input.recordedBy);
-	}
+	const { updates, bindings } = buildParticipationUpdateSet(input, now);
 
 	bindings.push(memberId, eventId);
 
 	const result = await db
-		.prepare(
-			`UPDATE participation 
-       SET ${updates.join(', ')}
-       WHERE member_id = ? AND event_id = ?`
-		)
+		.prepare(`UPDATE participation SET ${updates.join(', ')} WHERE member_id = ? AND event_id = ?`)
 		.bind(...bindings)
 		.run();
 
-	if ((result.meta.changes ?? 0) === 0) {
-		return null;
-	}
-
+	if ((result.meta.changes ?? 0) === 0) return null;
 	return getParticipation(db, memberId, eventId);
 }
 
