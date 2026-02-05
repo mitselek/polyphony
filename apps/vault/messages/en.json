@@ -1,0 +1,83 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav": {
+    "home": "Home",
+    "members": "Members",
+    "events": "Events",
+    "library": "Library",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "refresh": "Refresh",
+    "copy": "Copy",
+    "download": "Download",
+    "upload": "Upload"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "confirmPrompt": "Are you sure?",
+    "noResults": "No results found",
+    "required": "Required",
+    "optional": "Optional",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "loginRequired": "Please log in to continue",
+    "unauthorized": "You don't have permission to access this page"
+  },
+  "members": {
+    "title": "Members",
+    "addMember": "Add Member",
+    "inviteMember": "Invite Member",
+    "editMember": "Edit Member",
+    "removeMember": "Remove Member",
+    "roles": "Roles",
+    "voices": "Voices",
+    "sections": "Sections",
+    "memberSince": "Member since",
+    "pendingInvites": "Pending Invitations"
+  },
+  "events": {
+    "title": "Events",
+    "addEvent": "Add Event",
+    "editEvent": "Edit Event",
+    "deleteEvent": "Delete Event",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "type": "Type",
+    "rehearsal": "Rehearsal",
+    "concert": "Concert",
+    "retreat": "Retreat",
+    "festival": "Festival",
+    "attendance": "Attendance",
+    "rsvp": "RSVP"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "locale": "Date & Number Format",
+    "timezone": "Timezone",
+    "preferences": "Preferences",
+    "organizationSettings": "Organization Settings",
+    "memberPreferences": "Your Preferences",
+    "useOrgDefault": "Use organization default ({value})"
+  }
+}

@@ -1,8 +1,11 @@
 // Server hooks for subdomain-based organization routing
 // Implements #165 - Schema V2 multi-organization support
+// Implements #188 - i18n Paraglide integration
 
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
 import { getOrganizationBySubdomain } from '$lib/server/db/organizations';
+import { paraglideMiddleware } from '$lib/paraglide/server';
 
 // Development fallback subdomain (for localhost:5173 without subdomain)
 const DEV_SUBDOMAIN = 'crede';
@@ -45,7 +48,8 @@ export function extractSubdomain(hostname: string): string | null {
 	return subdomain;
 }
 
-export const handle: Handle = async ({ event, resolve }) => {
+// Organization routing handle
+const orgHandle: Handle = async ({ event, resolve }) => {
 	const db = event.platform?.env?.DB;
 	if (!db) {
 		// Dev mode without wrangler - skip org routing
@@ -76,3 +80,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	return resolve(event);
 };
+
+// Paraglide i18n handle - transforms page with locale
+const paraglideHandle: Handle = ({ event, resolve }) =>
+	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+		event.request = localizedRequest;
+		return resolve(event, {
+			transformPageChunk: ({ html }) => html.replace('%lang%', locale)
+		});
+	});
+
+// Chain handles: org routing first, then paraglide i18n
+export const handle: Handle = sequence(orgHandle, paraglideHandle);
