@@ -6,7 +6,12 @@
     "events": "Sündmused",
     "library": "Noodid",
     "settings": "Seaded",
-    "profile": "Profiil"
+    "profile": "Profiil",
+    "roster": "Nimekiri",
+    "seasons": "Hooajad",
+    "editions": "Väljaanded",
+    "logout": "Logi välja",
+    "sign_in": "Logi sisse"
   },
   "actions": {
     "save": "Salvesta",

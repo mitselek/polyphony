@@ -1,0 +1,88 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav": {
+    "home": "Головна",
+    "members": "Учасники",
+    "events": "Події",
+    "library": "Бібліотека",
+    "settings": "Налаштування",
+    "profile": "Профіль",
+    "roster": "Список",
+    "seasons": "Сезони",
+    "editions": "Видання",
+    "logout": "Вийти",
+    "sign_in": "Увійти"
+  },
+  "actions": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "add": "Додати",
+    "search": "Пошук",
+    "close": "Закрити",
+    "confirm": "Підтвердити",
+    "back": "Назад",
+    "next": "Далі",
+    "submit": "Надіслати",
+    "refresh": "Оновити",
+    "copy": "Копіювати",
+    "download": "Завантажити",
+    "upload": "Вивантажити"
+  },
+  "common": {
+    "loading": "Завантаження...",
+    "error": "Сталася помилка",
+    "success": "Успішно",
+    "confirmPrompt": "Ви впевнені?",
+    "noResults": "Результатів не знайдено",
+    "required": "Обов'язкове",
+    "optional": "Необов'язкове",
+    "yes": "Так",
+    "no": "Ні"
+  },
+  "auth": {
+    "login": "Увійти",
+    "logout": "Вийти",
+    "loginRequired": "Будь ласка, увійдіть, щоб продовжити",
+    "unauthorized": "У вас немає доступу до цієї сторінки"
+  },
+  "members": {
+    "title": "Учасники",
+    "addMember": "Додати учасника",
+    "inviteMember": "Запросити учасника",
+    "editMember": "Редагувати учасника",
+    "removeMember": "Видалити учасника",
+    "roles": "Ролі",
+    "voices": "Голоси",
+    "sections": "Секції",
+    "memberSince": "Учасник з",
+    "pendingInvites": "Очікуючі запрошення"
+  },
+  "events": {
+    "title": "Події",
+    "addEvent": "Додати подію",
+    "editEvent": "Редагувати подію",
+    "deleteEvent": "Видалити подію",
+    "date": "Дата",
+    "time": "Час",
+    "location": "Місце",
+    "type": "Тип",
+    "rehearsal": "Репетиція",
+    "concert": "Концерт",
+    "retreat": "Табір",
+    "festival": "Фестиваль",
+    "attendance": "Відвідуваність",
+    "rsvp": "Відповідь"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "language": "Мова",
+    "locale": "Формат дати та чисел",
+    "timezone": "Часовий пояс",
+    "preferences": "Налаштування",
+    "organizationSettings": "Налаштування організації",
+    "memberPreferences": "Ваші налаштування",
+    "useOrgDefault": "Використовувати значення організації ({value})"
+  }
+}

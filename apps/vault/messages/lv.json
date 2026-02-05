@@ -1,0 +1,88 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav": {
+    "home": "Sākums",
+    "members": "Dalībnieki",
+    "events": "Notikumi",
+    "library": "Bibliotēka",
+    "settings": "Iestatījumi",
+    "profile": "Profils",
+    "roster": "Saraksts",
+    "seasons": "Sezonas",
+    "editions": "Izdevumi",
+    "logout": "Iziet",
+    "sign_in": "Ieiet"
+  },
+  "actions": {
+    "save": "Saglabāt",
+    "cancel": "Atcelt",
+    "delete": "Dzēst",
+    "edit": "Rediģēt",
+    "add": "Pievienot",
+    "search": "Meklēt",
+    "close": "Aizvērt",
+    "confirm": "Apstiprināt",
+    "back": "Atpakaļ",
+    "next": "Tālāk",
+    "submit": "Iesniegt",
+    "refresh": "Atsvaidzināt",
+    "copy": "Kopēt",
+    "download": "Lejupielādēt",
+    "upload": "Augšupielādēt"
+  },
+  "common": {
+    "loading": "Ielādē...",
+    "error": "Radās kļūda",
+    "success": "Izdevās",
+    "confirmPrompt": "Vai esat pārliecināts?",
+    "noResults": "Nav rezultātu",
+    "required": "Obligāts",
+    "optional": "Neobligāts",
+    "yes": "Jā",
+    "no": "Nē"
+  },
+  "auth": {
+    "login": "Ieiet",
+    "logout": "Iziet",
+    "loginRequired": "Lūdzu, ieejiet, lai turpinātu",
+    "unauthorized": "Jums nav piekļuves šai lapai"
+  },
+  "members": {
+    "title": "Dalībnieki",
+    "addMember": "Pievienot dalībnieku",
+    "inviteMember": "Uzaicināt dalībnieku",
+    "editMember": "Rediģēt dalībnieku",
+    "removeMember": "Noņemt dalībnieku",
+    "roles": "Lomas",
+    "voices": "Balsis",
+    "sections": "Sekcijas",
+    "memberSince": "Dalībnieks kopš",
+    "pendingInvites": "Gaidošie uzaicinājumi"
+  },
+  "events": {
+    "title": "Notikumi",
+    "addEvent": "Pievienot notikumu",
+    "editEvent": "Rediģēt notikumu",
+    "deleteEvent": "Dzēst notikumu",
+    "date": "Datums",
+    "time": "Laiks",
+    "location": "Vieta",
+    "type": "Tips",
+    "rehearsal": "Mēģinājums",
+    "concert": "Koncerts",
+    "retreat": "Nometne",
+    "festival": "Festivāls",
+    "attendance": "Apmeklējums",
+    "rsvp": "Atbilde"
+  },
+  "settings": {
+    "title": "Iestatījumi",
+    "language": "Valoda",
+    "locale": "Datuma un skaitļu formāts",
+    "timezone": "Laika josla",
+    "preferences": "Preferences",
+    "organizationSettings": "Organizācijas iestatījumi",
+    "memberPreferences": "Jūsu preferences",
+    "useOrgDefault": "Izmantot organizācijas noklusējumu ({value})"
+  }
+}
