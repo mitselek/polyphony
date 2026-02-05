@@ -41,5 +41,19 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 	const body = (await request.json()) as UpdatePreferencesBody;
 	const updated = await setMemberPreferences(db, member.id, parseUpdateInput(body));
 	
+	// Set Paraglide locale cookie when language changes
+	// This syncs the DB preference with Paraglide's cookie-based strategy
+	if (updated.language) {
+		cookies.set('PARAGLIDE_LOCALE', updated.language, {
+			path: '/',
+			maxAge: 60 * 60 * 24 * 400, // ~400 days (same as Paraglide default)
+			httpOnly: false, // Paraglide needs to read this client-side
+			sameSite: 'lax'
+		});
+	} else {
+		// Clear cookie if language is set to null (use system default)
+		cookies.delete('PARAGLIDE_LOCALE', { path: '/' });
+	}
+	
 	return json(updated);
 };

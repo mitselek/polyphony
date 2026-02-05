@@ -76,7 +76,9 @@ function createMockEvent(
 			env: { DB: {} }
 		},
 		cookies: {
-			get: vi.fn(() => (isAuthenticated ? mockMember.id : undefined))
+			get: vi.fn(() => (isAuthenticated ? mockMember.id : undefined)),
+			set: vi.fn(),
+			delete: vi.fn()
 		},
 		locals: {}
 	} as any;
@@ -159,6 +161,13 @@ describe('PATCH /api/profile/preferences', () => {
 		expect(data.language).toBe('en');
 		expect(data.locale).toBe('en-US');
 		expect(data.timezone).toBe('America/New_York');
+		
+		// Verify PARAGLIDE_LOCALE cookie was set
+		expect(event.cookies.set).toHaveBeenCalledWith(
+			'PARAGLIDE_LOCALE',
+			'en',
+			expect.objectContaining({ path: '/' })
+		);
 	});
 
 	it('allows setting values to null (use defaults)', async () => {
@@ -185,6 +194,9 @@ describe('PATCH /api/profile/preferences', () => {
 		expect(data.language).toBeNull();
 		expect(data.locale).toBeNull();
 		expect(data.timezone).toBeNull();
+		
+		// Verify PARAGLIDE_LOCALE cookie was deleted
+		expect(event.cookies.delete).toHaveBeenCalledWith('PARAGLIDE_LOCALE', { path: '/' });
 	});
 
 	it('allows partial updates', async () => {
