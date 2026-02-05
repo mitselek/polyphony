@@ -15,6 +15,9 @@ declare global {
 				REGISTRY_OAUTH_URL: string;
 				SESSION_SECRET: string;
 				VAULT_ID: string;
+				// Email notifications (#202)
+				RESEND_API_KEY?: string;
+				ADMIN_EMAIL?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;
