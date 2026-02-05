@@ -1,0 +1,83 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav": {
+    "home": "Avaleht",
+    "members": "Liikmed",
+    "events": "Sündmused",
+    "library": "Noodid",
+    "settings": "Seaded",
+    "profile": "Profiil"
+  },
+  "actions": {
+    "save": "Salvesta",
+    "cancel": "Tühista",
+    "delete": "Kustuta",
+    "edit": "Muuda",
+    "add": "Lisa",
+    "search": "Otsi",
+    "close": "Sulge",
+    "confirm": "Kinnita",
+    "back": "Tagasi",
+    "next": "Edasi",
+    "submit": "Esita",
+    "refresh": "Värskenda",
+    "copy": "Kopeeri",
+    "download": "Laadi alla",
+    "upload": "Laadi üles"
+  },
+  "common": {
+    "loading": "Laadimine...",
+    "error": "Tekkis viga",
+    "success": "Õnnestus",
+    "confirmPrompt": "Kas oled kindel?",
+    "noResults": "Tulemusi ei leitud",
+    "required": "Kohustuslik",
+    "optional": "Valikuline",
+    "yes": "Jah",
+    "no": "Ei"
+  },
+  "auth": {
+    "login": "Logi sisse",
+    "logout": "Logi välja",
+    "loginRequired": "Palun logi sisse, et jätkata",
+    "unauthorized": "Sul pole õigust sellele lehele siseneda"
+  },
+  "members": {
+    "title": "Liikmed",
+    "addMember": "Lisa liige",
+    "inviteMember": "Kutsu liige",
+    "editMember": "Muuda liiget",
+    "removeMember": "Eemalda liige",
+    "roles": "Rollid",
+    "voices": "Hääled",
+    "sections": "Partiid",
+    "memberSince": "Liige alates",
+    "pendingInvites": "Ootel kutsed"
+  },
+  "events": {
+    "title": "Sündmused",
+    "addEvent": "Lisa sündmus",
+    "editEvent": "Muuda sündmust",
+    "deleteEvent": "Kustuta sündmus",
+    "date": "Kuupäev",
+    "time": "Aeg",
+    "location": "Koht",
+    "type": "Tüüp",
+    "rehearsal": "Proov",
+    "concert": "Kontsert",
+    "retreat": "Laager",
+    "festival": "Festival",
+    "attendance": "Kohalolu",
+    "rsvp": "Vastus"
+  },
+  "settings": {
+    "title": "Seaded",
+    "language": "Keel",
+    "locale": "Kuupäeva ja numbrite vorming",
+    "timezone": "Ajavöönd",
+    "preferences": "Eelistused",
+    "organizationSettings": "Organisatsiooni seaded",
+    "memberPreferences": "Sinu eelistused",
+    "useOrgDefault": "Kasuta organisatsiooni vaikeväärtust ({value})"
+  }
+}

@@ -38,6 +38,9 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 
+# Paraglide (auto-generated at build time)
+apps/vault/src/lib/paraglide/
+
 # Temporary
 *.tmp
 *.temp
