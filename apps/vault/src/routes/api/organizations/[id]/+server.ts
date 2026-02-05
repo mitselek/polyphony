@@ -14,6 +14,15 @@ interface OrgUpdateBody {
 	timezone?: string | null;
 }
 
+/** Build UpdateOrganizationInput from request body */
+function buildOrgUpdateInput(body: OrgUpdateBody): UpdateOrganizationInput {
+	const input: UpdateOrganizationInput = {};
+	if ('language' in body) input.language = body.language;
+	if ('locale' in body) input.locale = body.locale;
+	if ('timezone' in body) input.timezone = body.timezone;
+	return input;
+}
+
 export async function GET(event: RequestEvent) {
 	const { params, platform, cookies, locals } = event;
 	if (!platform) throw error(500, 'Platform not available');
@@ -51,12 +60,7 @@ export async function PATCH(event: RequestEvent) {
 	}
 
 	const body = (await request.json()) as OrgUpdateBody;
-
-	// Build update input with proper types
-	const updateInput: UpdateOrganizationInput = {};
-	if ('language' in body) updateInput.language = body.language;
-	if ('locale' in body) updateInput.locale = body.locale;
-	if ('timezone' in body) updateInput.timezone = body.timezone;
+	const updateInput = buildOrgUpdateInput(body);
 
 	// Update organization with i18n fields
 	const updated = await updateOrganization(db, params.id!, updateInput);

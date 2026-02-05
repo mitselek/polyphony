@@ -3,7 +3,7 @@
   "nav": {
     "home": "Sākums",
     "members": "Dalībnieki",
-    "events": "Notikumi",
+    "events": "Pasākumi",
     "library": "Bibliotēka",
     "settings": "Iestatījumi",
     "profile": "Profils",
@@ -11,7 +11,7 @@
     "seasons": "Sezonas",
     "editions": "Izdevumi",
     "logout": "Iziet",
-    "sign_in": "Ieiet"
+    "sign_in": "Pieteikties"
   },
   "actions": {
     "save": "Saglabāt",
@@ -25,7 +25,7 @@
     "back": "Atpakaļ",
     "next": "Tālāk",
     "submit": "Iesniegt",
-    "refresh": "Atsvaidzināt",
+    "refresh": "Atjaunot",
     "copy": "Kopēt",
     "download": "Lejupielādēt",
     "upload": "Augšupielādēt"
@@ -33,41 +33,41 @@
   "common": {
     "loading": "Ielādē...",
     "error": "Radās kļūda",
-    "success": "Izdevās",
-    "confirmPrompt": "Vai esat pārliecināts?",
-    "noResults": "Nav rezultātu",
+    "success": "Veiksmīgi",
+    "confirm_prompt": "Vai esat pārliecināts?",
+    "no_results": "Rezultāti nav atrasti",
     "required": "Obligāts",
     "optional": "Neobligāts",
     "yes": "Jā",
     "no": "Nē"
   },
   "auth": {
-    "login": "Ieiet",
+    "login": "Pieteikties",
     "logout": "Iziet",
-    "loginRequired": "Lūdzu, ieejiet, lai turpinātu",
+    "login_required": "Lūdzu, piesakieties, lai turpinātu",
     "unauthorized": "Jums nav piekļuves šai lapai"
   },
   "members": {
     "title": "Dalībnieki",
-    "addMember": "Pievienot dalībnieku",
-    "inviteMember": "Uzaicināt dalībnieku",
-    "editMember": "Rediģēt dalībnieku",
-    "removeMember": "Noņemt dalībnieku",
+    "add_member": "Pievienot dalībnieku",
+    "invite_member": "Uzaicināt dalībnieku",
+    "edit_member": "Rediģēt dalībnieku",
+    "remove_member": "Noņemt dalībnieku",
     "roles": "Lomas",
     "voices": "Balsis",
     "sections": "Sekcijas",
-    "memberSince": "Dalībnieks kopš",
-    "pendingInvites": "Gaidošie uzaicinājumi"
+    "member_since": "Dalībnieks kopš",
+    "pending_invites": "Gaidošie uzaicinājumi"
   },
   "events": {
-    "title": "Notikumi",
-    "addEvent": "Pievienot notikumu",
-    "editEvent": "Rediģēt notikumu",
-    "deleteEvent": "Dzēst notikumu",
+    "title": "Pasākumi",
+    "add_event": "Pievienot pasākumu",
+    "edit_event": "Rediģēt pasākumu",
+    "delete_event": "Dzēst pasākumu",
     "date": "Datums",
     "time": "Laiks",
     "location": "Vieta",
-    "type": "Tips",
+    "type": "Veids",
     "rehearsal": "Mēģinājums",
     "concert": "Koncerts",
     "retreat": "Nometne",
@@ -81,8 +81,8 @@
     "locale": "Datuma un skaitļu formāts",
     "timezone": "Laika josla",
     "preferences": "Preferences",
-    "organizationSettings": "Organizācijas iestatījumi",
-    "memberPreferences": "Jūsu preferences",
-    "useOrgDefault": "Izmantot organizācijas noklusējumu ({value})"
+    "organization_settings": "Organizācijas iestatījumi",
+    "member_preferences": "Jūsu preferences",
+    "use_org_default": "Lietot organizācijas noklusējumu ({value})"
   }
 }
