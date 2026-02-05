@@ -99,8 +99,8 @@ export const actions: Actions = {
 			// Add owner role for this organization
 			await addMemberRoles(db, member.id, ['owner'], null, org.id);
 
-			// TODO: Send notification email to admin
-			// For now, just log it
+			// TODO(#199): Replace console.log with email notification to admin
+			// See Epic #199 for admin notification requirements
 			console.log(`[REGISTRATION] New organization registered:
   Name: ${org.name}
   Subdomain: ${org.subdomain}
