@@ -148,6 +148,36 @@
     "error_help": "If you believe this is an error, please contact your choir administrator.",
     "go_home": "Go Home"
   },
+  "register": {
+    "title": "Register Your Choir",
+    "subtitle": "Create a Polyphony vault for your choir's sheet music library",
+    "org_name": "Choir Name",
+    "org_name_placeholder": "e.g., City Chamber Choir",
+    "contact_email": "Contact Email",
+    "email_hint": "This will be the primary contact for your organization",
+    "subdomain": "Your Vault URL",
+    "subdomain_placeholder": "mycitychoir",
+    "checking": "Checking availability...",
+    "subdomain_available": "Available!",
+    "subdomain_taken": "This subdomain is already taken",
+    "subdomain_reserved": "This subdomain is reserved",
+    "subdomain_too_short": "Minimum 3 characters",
+    "submitting": "Creating your vault...",
+    "submit": "Register Choir",
+    "note": "Your vault will be reviewed and activated within 24-48 hours.",
+    "error_subdomain_taken": "This subdomain is no longer available. Please choose another.",
+    "error_already_owner": "You already own an organization. Contact support if you need another.",
+    "success": {
+      "title": "Registration Submitted!",
+      "message": "Your choir vault has been submitted for review.",
+      "subdomain_label": "Your vault will be available at:",
+      "next_steps_title": "What happens next?",
+      "next_step_1": "We'll review your registration within 24-48 hours",
+      "next_step_2": "You'll receive an email when your vault is activated",
+      "next_step_3": "You can then start uploading scores and inviting members",
+      "back_home": "Back to Home"
+    }
+  },
   "copyright": {
     "title": "Copyright Takedown Request",
     "intro": "If you believe copyrighted material has been uploaded without authorization, please submit a takedown request using the form below.",

@@ -148,6 +148,36 @@
     "error_help": "Kui arvad, et tegemist on veaga, võta ühendust oma koori administraatoriga.",
     "go_home": "Avalehele"
   },
+  "register": {
+    "title": "Registreeri oma koor",
+    "subtitle": "Loo Polyphony hoidla oma koori noodikogule",
+    "org_name": "Koori nimi",
+    "org_name_placeholder": "nt Linna Kamerkoor",
+    "contact_email": "Kontakt e-post",
+    "email_hint": "See saab olema teie organisatsiooni peamine kontakt",
+    "subdomain": "Teie hoidla URL",
+    "subdomain_placeholder": "meimelinn",
+    "checking": "Kontrollin saadavust...",
+    "subdomain_available": "Saadaval!",
+    "subdomain_taken": "See alamdomeen on juba võetud",
+    "subdomain_reserved": "See alamdomeen on reserveeritud",
+    "subdomain_too_short": "Vähemalt 3 tähemärki",
+    "submitting": "Loon teie hoidlat...",
+    "submit": "Registreeri koor",
+    "note": "Teie hoidla vaadatakse üle ja aktiveeritakse 24-48 tunni jooksul.",
+    "error_subdomain_taken": "See alamdomeen ei ole enam saadaval. Palun vali teine.",
+    "error_already_owner": "Sa oled juba organisatsiooni omanik. Võta ühendust toega, kui vajad veel ühte.",
+    "success": {
+      "title": "Registreerimine esitatud!",
+      "message": "Teie koori hoidla on esitatud ülevaatamiseks.",
+      "subdomain_label": "Teie hoidla on saadaval aadressil:",
+      "next_steps_title": "Mis juhtub edasi?",
+      "next_step_1": "Vaatame teie registreeringu üle 24-48 tunni jooksul",
+      "next_step_2": "Saate e-kirja, kui teie hoidla on aktiveeritud",
+      "next_step_3": "Seejärel saate hakata noote üles laadima ja liikmeid kutsuma",
+      "back_home": "Tagasi avalehele"
+    }
+  },
   "copyright": {
     "title": "Autoriõiguse rikkumise teade",
     "intro": "Kui arvad, et autoriõigusega kaitstud materjal on üles laaditud loata, esita palun alloleva vormi kaudu eemaldamistaotlus.",
