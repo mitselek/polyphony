@@ -29,6 +29,10 @@ export interface Organization {
 	type: OrganizationType;
 	contactEmail: string;
 	createdAt: string;
+	// i18n preferences (Epic #183)
+	language: string | null;  // ISO 639-1: 'et', 'en'
+	locale: string | null;    // BCP 47: 'et-EE', 'en-US'
+	timezone: string | null;  // IANA: 'Europe/Tallinn'
 }
 
 /**
@@ -47,6 +51,34 @@ export interface CreateOrganizationInput {
 export interface UpdateOrganizationInput {
 	name?: string;
 	contactEmail?: string;
+	// i18n preferences (Epic #183)
+	language?: string | null;
+	locale?: string | null;
+	timezone?: string | null;
+}
+
+// ============================================================================
+// MEMBER PREFERENCES (Epic #183 - i18n)
+// ============================================================================
+
+/**
+ * Member i18n preferences (overrides organization defaults)
+ */
+export interface MemberPreferences {
+	memberId: string;
+	language: string | null;
+	locale: string | null;
+	timezone: string | null;
+	updatedAt: string;
+}
+
+/**
+ * Input for updating member preferences
+ */
+export interface UpdateMemberPreferencesInput {
+	language?: string | null;
+	locale?: string | null;
+	timezone?: string | null;
 }
 
 // ============================================================================

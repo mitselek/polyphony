@@ -20,7 +20,7 @@ export async function createOrganization(
 
 	await db
 		.prepare(
-			'INSERT INTO organizations (id, name, subdomain, type, contact_email, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+			'INSERT INTO organizations (id, name, subdomain, type, contact_email, created_at, language, locale, timezone) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL)'
 		)
 		.bind(id, input.name, input.subdomain.toLowerCase(), input.type, input.contactEmail, now)
 		.run();
@@ -31,7 +31,10 @@ export async function createOrganization(
 		subdomain: input.subdomain.toLowerCase(),
 		type: input.type,
 		contactEmail: input.contactEmail,
-		createdAt: now
+		createdAt: now,
+		language: null,
+		locale: null,
+		timezone: null
 	};
 }
 
@@ -43,7 +46,7 @@ export async function getOrganizationById(
 	id: string
 ): Promise<Organization | null> {
 	const row = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at FROM organizations WHERE id = ?')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations WHERE id = ?')
 		.bind(id)
 		.first<OrganizationRow>();
 
@@ -62,7 +65,7 @@ export async function getOrganizationBySubdomain(
 	subdomain: string
 ): Promise<Organization | null> {
 	const row = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at FROM organizations WHERE subdomain = ?')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations WHERE subdomain = ?')
 		.bind(subdomain.toLowerCase())
 		.first<OrganizationRow>();
 
@@ -78,14 +81,14 @@ export async function getOrganizationBySubdomain(
  */
 export async function getAllOrganizations(db: D1Database): Promise<Organization[]> {
 	const { results } = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at FROM organizations ORDER BY name')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations ORDER BY name')
 		.all<OrganizationRow>();
 
 	return results.map(mapRowToOrganization);
 }
 
 /**
- * Update organization (name and/or contact email only - subdomain and type are immutable)
+ * Update organization (name, contact email, and i18n preferences - subdomain and type are immutable)
  */
 export async function updateOrganization(
 	db: D1Database,
@@ -104,6 +107,22 @@ export async function updateOrganization(
 	if (input.contactEmail !== undefined) {
 		updates.push('contact_email = ?');
 		params.push(input.contactEmail);
+	}
+
+	// i18n preferences (Epic #183)
+	if (input.language !== undefined) {
+		updates.push('language = ?');
+		params.push(input.language);
+	}
+
+	if (input.locale !== undefined) {
+		updates.push('locale = ?');
+		params.push(input.locale);
+	}
+
+	if (input.timezone !== undefined) {
+		updates.push('timezone = ?');
+		params.push(input.timezone);
 	}
 
 	if (updates.length === 0) {
@@ -136,6 +155,10 @@ interface OrganizationRow {
 	type: 'umbrella' | 'collective';
 	contact_email: string;
 	created_at: string;
+	// i18n preferences (Epic #183)
+	language: string | null;
+	locale: string | null;
+	timezone: string | null;
 }
 
 function mapRowToOrganization(row: OrganizationRow): Organization {
@@ -145,6 +168,10 @@ function mapRowToOrganization(row: OrganizationRow): Organization {
 		subdomain: row.subdomain,
 		type: row.type,
 		contactEmail: row.contact_email,
-		createdAt: row.created_at
+		createdAt: row.created_at,
+		// i18n preferences (Epic #183)
+		language: row.language,
+		locale: row.locale,
+		timezone: row.timezone
 	};
 }
