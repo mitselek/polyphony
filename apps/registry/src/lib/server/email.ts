@@ -76,3 +76,71 @@ export async function sendMagicLink(
 		return { success: false, error: 'Failed to send email' };
 	}
 }
+
+// =============================================================================
+// Admin Notification Emails (Issue #202)
+// =============================================================================
+
+export interface RegistrationNotificationData {
+	orgName: string;
+	subdomain: string;
+	contactEmail: string;
+	memberName: string;
+	memberEmail: string;
+	orgId: string;
+}
+
+export interface AdminNotificationResult {
+	success: boolean;
+	emailId?: string;
+	error?: string;
+}
+
+/**
+ * Send admin notification email for new organization registration
+ */
+export async function sendAdminNotification(
+	apiKey: string,
+	adminEmail: string,
+	data: RegistrationNotificationData
+): Promise<AdminNotificationResult> {
+	const subject = `New Polyphony Registration: ${data.orgName}`;
+
+	const text = `New organization registered:
+
+Name: ${data.orgName}
+Subdomain: ${data.subdomain}.polyphony.uk
+Contact: ${data.contactEmail}
+Registered by: ${data.memberName} (${data.memberEmail})
+Org ID: ${data.orgId}
+
+ACTION REQUIRED:
+1. Add custom domain in Cloudflare Pages
+2. Update organization status to 'active'
+`;
+
+	try {
+		const response = await fetch(RESEND_API_URL, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				from: 'Polyphony <noreply@scoreinstitute.eu>',
+				to: [adminEmail],
+				subject,
+				text
+			})
+		});
+
+		if (!response.ok) {
+			const errorBody = await response.text();
+			console.error('Resend API error (admin notification):', response.status, errorBody);
+			return { success: false, error: `Email service error: ${response.status}` };
+		}
+
+		const result = await response.json() as { id: string };
+		return { success: true, emailId: result.id };
+	} catch (err) {
+		console.error('Resend API exception (admin notification):', err);
+		return { success: false, error: 'Failed to send email' };
+	}
+}

@@ -9,6 +9,9 @@ declare global {
 		interface Platform {
 			env: {
 				DB: D1Database;
+				RESEND_API_KEY?: string;
+				ADMIN_EMAIL?: string;
+				NOTIFY_API_KEY?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;

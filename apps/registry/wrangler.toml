@@ -7,3 +7,9 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 binding = "DB"
 database_name = "polyphony-registry-db"
 database_id = "1b804304-94ad-4e32-ade4-9b3c363e3c48"
+
+# Environment variables (use wrangler secret for production)
+# Secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, NOTIFY_API_KEY
+
+[vars]
+ADMIN_EMAIL = ""  # Admin email for registration notifications (#202)

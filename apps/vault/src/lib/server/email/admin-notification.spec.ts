@@ -1,18 +1,14 @@
-// Tests for admin notification email service
-// TDD: Tests written first per DEVELOPER-WORKFLOW.md
+// Tests for admin notification via Registry API
+// Issue #202 - Refactored to call Registry instead of Resend directly
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-	sendAdminNotification,
-	buildAdminNotificationEmail,
-	type RegistrationNotificationData
-} from './admin-notification';
+import { sendAdminNotification, type RegistrationNotificationData, type NotifyConfig } from './admin-notification';
 
-// Mock fetch for Resend API calls
+// Mock fetch for Registry API calls
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-describe('Admin Notification Email', () => {
+describe('Admin Notification via Registry', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -26,94 +22,66 @@ describe('Admin Notification Email', () => {
 		orgId: 'org_abc123'
 	};
 
-	describe('buildAdminNotificationEmail', () => {
-		it('builds email with all required fields', () => {
-			const email = buildAdminNotificationEmail(testData, 'admin@polyphony.uk');
-
-			expect(email.to).toBe('admin@polyphony.uk');
-			expect(email.subject).toBe('New Polyphony Registration: City Chamber Choir');
-			expect(email.text).toContain('City Chamber Choir');
-			expect(email.text).toContain('citychamber.polyphony.uk');
-			expect(email.text).toContain('admin@citychoir.org');
-			expect(email.text).toContain('John Director');
-			expect(email.text).toContain('john@example.com');
-			expect(email.text).toContain('org_abc123');
-		});
-
-		it('includes action required section', () => {
-			const email = buildAdminNotificationEmail(testData, 'admin@polyphony.uk');
-
-			expect(email.text).toContain('ACTION REQUIRED');
-			expect(email.text).toContain('Cloudflare Pages');
-		});
-
-		it('uses from address with Polyphony domain', () => {
-			const email = buildAdminNotificationEmail(testData, 'admin@polyphony.uk');
-
-			expect(email.from).toContain('polyphony');
-		});
-	});
+	const validConfig: NotifyConfig = {
+		registryUrl: 'https://polyphony.uk',
+		notifyApiKey: 'test-notify-key'
+	};
 
 	describe('sendAdminNotification', () => {
-		it('sends email successfully via Resend API', async () => {
+		it('sends notification via Registry API', async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({ id: 'email_123' })
+				json: async () => ({ success: true, emailId: 'email_123' })
 			});
 
-			const result = await sendAdminNotification(testData, {
-				resendApiKey: 'test_api_key',
-				adminEmail: 'admin@polyphony.uk'
-			});
+			const result = await sendAdminNotification(testData, validConfig);
 
 			expect(result.success).toBe(true);
 			expect(result.emailId).toBe('email_123');
 
-			// Verify API call
+			// Verify API call to Registry
 			expect(mockFetch).toHaveBeenCalledOnce();
 			const [url, options] = mockFetch.mock.calls[0];
-			expect(url).toBe('https://api.resend.com/emails');
+			expect(url).toBe('https://polyphony.uk/api/notify/registration');
 			expect(options.method).toBe('POST');
-			expect(options.headers['Authorization']).toBe('Bearer test_api_key');
+			expect(options.headers['Content-Type']).toBe('application/json');
 
 			const body = JSON.parse(options.body);
-			expect(body.to).toBe('admin@polyphony.uk');
-			expect(body.subject).toContain('City Chamber Choir');
+			expect(body.apiKey).toBe('test-notify-key');
+			expect(body.orgName).toBe('City Chamber Choir');
+			expect(body.subdomain).toBe('citychamber');
+			expect(body.contactEmail).toBe('admin@citychoir.org');
+			expect(body.memberName).toBe('John Director');
+			expect(body.memberEmail).toBe('john@example.com');
+			expect(body.orgId).toBe('org_abc123');
 		});
 
-		it('handles API error gracefully', async () => {
+		it('handles Registry API error gracefully', async () => {
 			mockFetch.mockResolvedValueOnce({
 				ok: false,
-				status: 401,
-				statusText: 'Unauthorized',
-				json: async () => ({ message: 'Invalid API key' })
+				status: 500,
+				json: async () => ({ success: false, error: 'Email service error' })
 			});
 
-			const result = await sendAdminNotification(testData, {
-				resendApiKey: 'invalid_key',
-				adminEmail: 'admin@polyphony.uk'
-			});
+			const result = await sendAdminNotification(testData, validConfig);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toContain('401');
+			expect(result.error).toContain('500');
 		});
 
 		it('handles network error gracefully', async () => {
 			mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-			const result = await sendAdminNotification(testData, {
-				resendApiKey: 'test_api_key',
-				adminEmail: 'admin@polyphony.uk'
-			});
+			const result = await sendAdminNotification(testData, validConfig);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Network error');
 		});
 
-		it('does nothing when API key is missing', async () => {
+		it('does nothing when Registry URL is missing', async () => {
 			const result = await sendAdminNotification(testData, {
-				resendApiKey: '',
-				adminEmail: 'admin@polyphony.uk'
+				registryUrl: '',
+				notifyApiKey: 'test-key'
 			});
 
 			expect(result.success).toBe(false);
@@ -121,10 +89,10 @@ describe('Admin Notification Email', () => {
 			expect(mockFetch).not.toHaveBeenCalled();
 		});
 
-		it('does nothing when admin email is missing', async () => {
+		it('does nothing when notify API key is missing', async () => {
 			const result = await sendAdminNotification(testData, {
-				resendApiKey: 'test_api_key',
-				adminEmail: ''
+				registryUrl: 'https://polyphony.uk',
+				notifyApiKey: ''
 			});
 
 			expect(result.success).toBe(false);
@@ -137,14 +105,24 @@ describe('Admin Notification Email', () => {
 			mockFetch.mockRejectedValueOnce(new Error('API down'));
 
 			// Should not throw
-			const result = await sendAdminNotification(testData, {
-				resendApiKey: 'test_api_key',
-				adminEmail: 'admin@polyphony.uk'
-			});
+			const result = await sendAdminNotification(testData, validConfig);
 
 			expect(result.success).toBe(false);
 			expect(consoleSpy).toHaveBeenCalled();
 			consoleSpy.mockRestore();
+		});
+
+		it('handles auth error (401) from Registry', async () => {
+			mockFetch.mockResolvedValueOnce({
+				ok: false,
+				status: 401,
+				json: async () => ({ success: false, error: 'Invalid API key' })
+			});
+
+			const result = await sendAdminNotification(testData, validConfig);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('401');
 		});
 	});
 });
