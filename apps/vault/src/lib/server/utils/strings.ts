@@ -7,7 +7,8 @@
  * Used for partial updates where empty = unset
  */
 export function trimOrNull(value: unknown): string | null {
-	if (value === null) return null;
+	// Explicitly handle null and undefined
+	if (value == null) return null;
 	return typeof value === 'string' ? value.trim() || null : null;
 }
 

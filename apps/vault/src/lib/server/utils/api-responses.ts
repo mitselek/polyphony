@@ -28,3 +28,9 @@ export const notFoundError = (resource: string) =>
  */
 export const unauthorizedError = (message = 'Unauthorized') =>
 	error(401, message);
+
+/**
+ * Return a forbidden error (403) response
+ */
+export const forbiddenError = (message = 'Forbidden') =>
+	error(403, message);

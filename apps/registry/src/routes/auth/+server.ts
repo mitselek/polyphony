@@ -5,6 +5,7 @@ import { json, redirect } from '@sveltejs/kit';
 import { signToken, verifyToken } from '@polyphony/shared/crypto';
 import { nanoid } from 'nanoid';
 import type { Cookies } from '@sveltejs/kit';
+import { jwkToPem } from '$lib/crypto/jwk';
 
 interface CloudflarePlatform {
 	env: { DB: D1Database; API_KEY: string; GOOGLE_CLIENT_ID: string };
@@ -105,35 +106,4 @@ export const GET = async ({
 	return redirect(302, googleAuthUrl.toString());
 };
 
-/**
- * Convert JWK to PEM format for jose verification
- */
-function jwkToPem(jwk: { x: string }): string {
-	// Ed25519 public key is 32 bytes, x coordinate is base64url encoded
-	const xBytes = base64UrlDecode(jwk.x);
 
-	// SPKI format for Ed25519
-	const oid = new Uint8Array([0x06, 0x03, 0x2b, 0x65, 0x70]);
-	const algoId = new Uint8Array([0x30, 0x05, ...oid]);
-	const pubKeyBits = new Uint8Array([0x03, 0x21, 0x00, ...xBytes]);
-	const spki = new Uint8Array([0x30, 0x2a, ...algoId, ...pubKeyBits]);
-
-	// Convert to PEM format
-	const base64 = btoa(String.fromCharCode(...spki));
-	return (
-		'-----BEGIN PUBLIC KEY-----\n' +
-		base64.match(/.{1,64}/g)!.join('\n') +
-		'\n-----END PUBLIC KEY-----'
-	);
-}
-
-/**
- * Decode base64url to Uint8Array
- */
-function base64UrlDecode(str: string): Uint8Array {
-	// Convert base64url to base64
-	const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-	const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-	const binary = atob(padded);
-	return new Uint8Array([...binary].map((c) => c.charCodeAt(0)));
-}
