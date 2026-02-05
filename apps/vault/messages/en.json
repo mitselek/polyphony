@@ -6,7 +6,12 @@
     "events": "Events",
     "library": "Library",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "roster": "Roster",
+    "seasons": "Seasons",
+    "editions": "Editions",
+    "logout": "Logout",
+    "sign_in": "Sign In"
   },
   "actions": {
     "save": "Save",
