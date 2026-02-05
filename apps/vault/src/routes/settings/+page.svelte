@@ -35,7 +35,6 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           default_event_duration: parseInt(settings.default_event_duration) || DEFAULT_EVENT_DURATION_MINUTES,
-          locale: settings.locale || "system",
         }),
       });
 
@@ -97,34 +96,6 @@
 
   <Card padding="lg">
     <form onsubmit={handleSubmit} class="space-y-6">
-      <!-- Locale Setting -->
-      <div>
-        <label for="locale" class="block text-sm font-medium text-gray-700">
-          Date & Time Format
-        </label>
-        <select
-          id="locale"
-          bind:value={settings.locale}
-          class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="system">System (browser default)</option>
-          <option value="et-EE">Estonian (et-EE)</option>
-          <option value="en-US">English US (en-US)</option>
-          <option value="en-GB">English UK (en-GB)</option>
-          <option value="de-DE">German (de-DE)</option>
-          <option value="fi-FI">Finnish (fi-FI)</option>
-          <option value="sv-SE">Swedish (sv-SE)</option>
-          <option value="lv-LV">Latvian (lv-LV)</option>
-          <option value="lt-LT">Lithuanian (lt-LT)</option>
-          <option value="uk-UA">Ukrainian (uk-UA)</option>
-          <option value="fr-FR">French (fr-FR)</option>
-          <option value="nl-NL">Dutch (nl-NL)</option>
-        </select>
-        <p class="mt-1 text-sm text-gray-500">
-          Format for displaying dates and times throughout the vault
-        </p>
-      </div>
-
       <!-- Default Event Duration -->
       <div>
         <label for="default_event_duration" class="block text-sm font-medium text-gray-700">
