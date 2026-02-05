@@ -6,6 +6,7 @@ import { createOrganization, getOrganizationBySubdomain } from '$lib/server/db/o
 import { createMember } from '$lib/server/db/members';
 import { addMemberToOrganization } from '$lib/server/db/member-organizations';
 import { addMemberRoles } from '$lib/server/db/roles';
+import { sendAdminNotification } from '$lib/server/email/admin-notification';
 
 export const load: PageServerLoad = async ({ cookies, url, platform }) => {
 	const memberId = cookies.get('member_id');
@@ -99,16 +100,22 @@ export const actions: Actions = {
 			// Add owner role for this organization
 			await addMemberRoles(db, member.id, ['owner'], null, org.id);
 
-			// TODO(#199): Replace console.log with email notification to admin
-			// See Epic #199 for admin notification requirements
-			console.log(`[REGISTRATION] New organization registered:
-  Name: ${org.name}
-  Subdomain: ${org.subdomain}
-  Contact: ${contactEmail}
-  Owner: ${member.name} (${member.email_id})
-  Org ID: ${org.id}
-  
-  ACTION REQUIRED: Add custom domain in Cloudflare Pages dashboard`);
+			// Send admin notification email (graceful failure - don't block registration)
+			// Uses Resend API via RESEND_API_KEY and ADMIN_EMAIL env vars
+			await sendAdminNotification(
+				{
+					orgName: org.name,
+					subdomain: org.subdomain,
+					contactEmail,
+					memberName: member.name,
+					memberEmail: member.email_id ?? '',
+					orgId: org.id
+				},
+				{
+					resendApiKey: platform.env.RESEND_API_KEY ?? '',
+					adminEmail: platform.env.ADMIN_EMAIL ?? ''
+				}
+			);
 
 			// Redirect to success page
 			redirect(302, `/register/success?org=${encodeURIComponent(org.name)}&subdomain=${subdomain}`);
