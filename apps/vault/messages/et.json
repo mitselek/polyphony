@@ -84,5 +84,20 @@
     "organization_settings": "Organisatsiooni seaded",
     "member_preferences": "Sinu eelistused",
     "use_org_default": "Kasuta organisatsiooni vaikeväärtust ({value})"
+  },
+  "landing": {
+    "title": "Polyphony Vault",
+    "subtitle": "Kooride noodikogu haldamine",
+    "browse_library": "Sirvi noodikogu",
+    "phase_title": "Faas 1: MVP",
+    "phase_description": "Iseseisev rakendus koori noodikogu haldamiseks.",
+    "feature_upload_title": "Laadi üles noote",
+    "feature_upload_desc": "Halda oma koori PDF-noodikogu",
+    "feature_invite_title": "Kutsu liikmeid",
+    "feature_invite_desc": "Jaga noote koori liikmetega",
+    "feature_permissions_title": "Õiguste haldamine",
+    "feature_permissions_desc": "Kontrolli, kes saab noote vaadata ja alla laadida",
+    "feature_copyright_title": "Autoriõiguste kaitse",
+    "feature_copyright_desc": "Käitle eemaldamistaotlusi läbipaistvalt"
   }
 }

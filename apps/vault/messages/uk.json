@@ -84,5 +84,20 @@
     "organization_settings": "Налаштування організації",
     "member_preferences": "Ваші уподобання",
     "use_org_default": "Використовувати стандарт організації ({value})"
+  },
+  "landing": {
+    "title": "Polyphony Vault",
+    "subtitle": "Керування нотною бібліотекою для хорів",
+    "browse_library": "Переглянути бібліотеку",
+    "phase_title": "Фаза 1: MVP",
+    "phase_description": "Автономний застосунок для керування нотною бібліотекою хору.",
+    "feature_upload_title": "Завантажити ноти",
+    "feature_upload_desc": "Керуйте PDF-нотами вашого хору",
+    "feature_invite_title": "Запросити учасників",
+    "feature_invite_desc": "Діліться нотами з учасниками хору",
+    "feature_permissions_title": "Контроль доступу",
+    "feature_permissions_desc": "Контролюйте, хто може переглядати та завантажувати ноти",
+    "feature_copyright_title": "Захист авторських прав",
+    "feature_copyright_desc": "Обробляйте запити на видалення прозоро"
   }
 }

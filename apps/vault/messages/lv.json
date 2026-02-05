@@ -84,5 +84,20 @@
     "organization_settings": "Organizācijas iestatījumi",
     "member_preferences": "Jūsu preferences",
     "use_org_default": "Lietot organizācijas noklusējumu ({value})"
+  },
+  "landing": {
+    "title": "Polyphony Vault",
+    "subtitle": "Nošu bibliotēkas pārvaldība koriem",
+    "browse_library": "Pārlūkot bibliotēku",
+    "phase_title": "1. fāze: MVP",
+    "phase_description": "Atsevišķa lietotne kora nošu bibliotēkas pārvaldībai.",
+    "feature_upload_title": "Augšupielādēt notis",
+    "feature_upload_desc": "Pārvaldiet sava kora PDF nošu bibliotēku",
+    "feature_invite_title": "Uzaicināt dalībniekus",
+    "feature_invite_desc": "Dalieties ar notīm ar kora dalībniekiem",
+    "feature_permissions_title": "Piekļuves kontrole",
+    "feature_permissions_desc": "Kontrolējiet, kas var skatīt un lejupielādēt notis",
+    "feature_copyright_title": "Autortiesību aizsardzība",
+    "feature_copyright_desc": "Apstrādājiet noņemšanas pieprasījumus caurspīdīgi"
   }
 }

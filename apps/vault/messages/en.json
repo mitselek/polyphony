@@ -84,5 +84,20 @@
     "organization_settings": "Organization Settings",
     "member_preferences": "Your Preferences",
     "use_org_default": "Use organization default ({value})"
+  },
+  "landing": {
+    "title": "Polyphony Vault",
+    "subtitle": "Sheet Music Library Management for Choirs",
+    "browse_library": "Browse Library",
+    "phase_title": "Phase 1: MVP",
+    "phase_description": "A standalone vault application for managing choir sheet music libraries.",
+    "feature_upload_title": "Upload Scores",
+    "feature_upload_desc": "Manage your choir's PDF sheet music library",
+    "feature_invite_title": "Invite Members",
+    "feature_invite_desc": "Share scores with choir members via magic links",
+    "feature_permissions_title": "Permission Control",
+    "feature_permissions_desc": "Control who can view and download each score",
+    "feature_copyright_title": "Copyright Protection",
+    "feature_copyright_desc": "Handle takedown requests transparently"
   }
 }
