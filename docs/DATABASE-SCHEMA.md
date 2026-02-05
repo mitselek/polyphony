@@ -41,14 +41,14 @@ erDiagram
 
 Multi-organization support. Umbrellas contain collectives (choirs).
 
-| Column        | Type | Constraints       | Description                           |
-| ------------- | ---- | ----------------- | ------------------------------------- |
-| id            | TEXT | PK                | Organization ID                       |
-| name          | TEXT | NOT NULL          | Display name                          |
-| subdomain     | TEXT | NOT NULL, UNIQUE  | URL subdomain (routing)               |
-| type          | TEXT | NOT NULL, CHECK   | `umbrella` or `collective`            |
-| contact_email | TEXT | NOT NULL          | Contact email                         |
-| created_at    | TEXT | DEFAULT now()     | Creation timestamp                    |
+| Column        | Type | Constraints      | Description                |
+| ------------- | ---- | ---------------- | -------------------------- |
+| id            | TEXT | PK               | Organization ID            |
+| name          | TEXT | NOT NULL         | Display name               |
+| subdomain     | TEXT | NOT NULL, UNIQUE | URL subdomain (routing)    |
+| type          | TEXT | NOT NULL, CHECK  | `umbrella` or `collective` |
+| contact_email | TEXT | NOT NULL         | Contact email              |
+| created_at    | TEXT | DEFAULT now()    | Creation timestamp         |
 
 **Indexes:**
 
@@ -66,13 +66,13 @@ Multi-organization support. Umbrellas contain collectives (choirs).
 
 Junction table linking members to organizations with org-specific data.
 
-| Column     | Type | Constraints                            | Description                     |
-| ---------- | ---- | -------------------------------------- | ------------------------------- |
-| member_id  | TEXT | PK, FK → members(id) ON DELETE CASCADE | Member reference                |
-| org_id     | TEXT | PK, FK → organizations(id) CASCADE     | Organization reference          |
-| nickname   | TEXT |                                        | Org-specific display name       |
-| invited_by | TEXT | FK → members(id) ON DELETE SET NULL    | Who invited to this org         |
-| joined_at  | TEXT | NOT NULL, DEFAULT now()                | When joined this org            |
+| Column     | Type | Constraints                            | Description               |
+| ---------- | ---- | -------------------------------------- | ------------------------- |
+| member_id  | TEXT | PK, FK → members(id) ON DELETE CASCADE | Member reference          |
+| org_id     | TEXT | PK, FK → organizations(id) CASCADE     | Organization reference    |
+| nickname   | TEXT |                                        | Org-specific display name |
+| invited_by | TEXT | FK → members(id) ON DELETE SET NULL    | Who invited to this org   |
+| joined_at  | TEXT | NOT NULL, DEFAULT now()                | When joined this org      |
 
 **Indexes:**
 
@@ -85,13 +85,13 @@ Junction table linking members to organizations with org-specific data.
 
 Tracks collective ↔ umbrella relationships with history.
 
-| Column        | Type | Constraints                               | Description                |
-| ------------- | ---- | ----------------------------------------- | -------------------------- |
-| id            | TEXT | PK                                        | Affiliation ID             |
-| collective_id | TEXT | NOT NULL, FK → organizations(id) CASCADE  | Child collective           |
-| umbrella_id   | TEXT | NOT NULL, FK → organizations(id) CASCADE  | Parent umbrella            |
-| joined_at     | TEXT | NOT NULL, DEFAULT now()                   | When affiliation started   |
-| left_at       | TEXT |                                           | When ended (NULL = active) |
+| Column        | Type | Constraints                              | Description                |
+| ------------- | ---- | ---------------------------------------- | -------------------------- |
+| id            | TEXT | PK                                       | Affiliation ID             |
+| collective_id | TEXT | NOT NULL, FK → organizations(id) CASCADE | Child collective           |
+| umbrella_id   | TEXT | NOT NULL, FK → organizations(id) CASCADE | Parent umbrella            |
+| joined_at     | TEXT | NOT NULL, DEFAULT now()                  | When affiliation started   |
+| left_at       | TEXT |                                          | When ended (NULL = active) |
 
 **Indexes:**
 
@@ -161,13 +161,13 @@ Vault members. Can be roster-only (no email_id) or registered via OAuth (has ema
 
 Multi-role support via junction table. **Schema V2: Roles are org-scoped.**
 
-| Column     | Type | Constraints                          | Description                                                  |
-| ---------- | ---- | ------------------------------------ | ------------------------------------------------------------ |
-| member_id  | TEXT | PK, FK → members(id) ON DELETE CASCADE | Member reference                                           |
-| org_id     | TEXT | PK, FK → organizations(id) CASCADE   | Organization scope (Schema V2)                               |
-| role       | TEXT | PK, CHECK                            | `owner`, `admin`, `librarian`, `conductor`, `section_leader` |
-| granted_at | TEXT | DEFAULT now()                        | When role assigned                                           |
-| granted_by | TEXT | FK → members(id)                     | Who granted role                                             |
+| Column     | Type | Constraints                            | Description                                                  |
+| ---------- | ---- | -------------------------------------- | ------------------------------------------------------------ |
+| member_id  | TEXT | PK, FK → members(id) ON DELETE CASCADE | Member reference                                             |
+| org_id     | TEXT | PK, FK → organizations(id) CASCADE     | Organization scope (Schema V2)                               |
+| role       | TEXT | PK, CHECK                              | `owner`, `admin`, `librarian`, `conductor`, `section_leader` |
+| granted_at | TEXT | DEFAULT now()                          | When role assigned                                           |
+| granted_by | TEXT | FK → members(id)                       | Who granted role                                             |
 
 **Indexes:**
 
@@ -237,15 +237,15 @@ Vocal capabilities that members can have (what they CAN sing). **Global across o
 
 Performance assignments (where members DO sing). **Schema V2: Sections are per-organization.**
 
-| Column            | Type    | Constraints                          | Description                             |
-| ----------------- | ------- | ------------------------------------ | --------------------------------------- |
-| id                | TEXT    | PK                                   | Section ID (e.g., 'soprano', 'tenor-1') |
-| org_id            | TEXT    | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2)      |
-| name              | TEXT    | NOT NULL                             | Display name                            |
-| abbreviation      | TEXT    | NOT NULL                             | Short code (e.g., 'S', 'T1')            |
-| parent_section_id | TEXT    | FK → sections(id)                    | Parent section for subdivisions         |
-| display_order     | INTEGER | NOT NULL                             | Sort order for UI                       |
-| is_active         | INTEGER | NOT NULL, DEFAULT 1                  | 0=hidden, 1=available                   |
+| Column            | Type    | Constraints                              | Description                             |
+| ----------------- | ------- | ---------------------------------------- | --------------------------------------- |
+| id                | TEXT    | PK                                       | Section ID (e.g., 'soprano', 'tenor-1') |
+| org_id            | TEXT    | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2)          |
+| name              | TEXT    | NOT NULL                                 | Display name                            |
+| abbreviation      | TEXT    | NOT NULL                                 | Short code (e.g., 'S', 'T1')            |
+| parent_section_id | TEXT    | FK → sections(id)                        | Parent section for subdivisions         |
+| display_order     | INTEGER | NOT NULL                                 | Sort order for UI                       |
+| is_active         | INTEGER | NOT NULL, DEFAULT 1                      | 0=hidden, 1=available                   |
 
 **Indexes:**
 
@@ -362,14 +362,14 @@ erDiagram
 
 Abstract musical compositions (independent of specific publications). **Schema V2: Per-organization.**
 
-| Column     | Type | Constraints                          | Description         |
-| ---------- | ---- | ------------------------------------ | ------------------- |
-| id         | TEXT | PK                                   | Work ID             |
-| org_id     | TEXT | FK → organizations(id) CASCADE       | Organization owner (Schema V2) |
-| title      | TEXT | NOT NULL                             | Composition title   |
-| composer   | TEXT |                                      | Composer name       |
-| lyricist   | TEXT |                                      | Lyricist/librettist |
-| created_at | TEXT | DEFAULT now()                        | Creation timestamp  |
+| Column     | Type | Constraints                    | Description                    |
+| ---------- | ---- | ------------------------------ | ------------------------------ |
+| id         | TEXT | PK                             | Work ID                        |
+| org_id     | TEXT | FK → organizations(id) CASCADE | Organization owner (Schema V2) |
+| title      | TEXT | NOT NULL                       | Composition title              |
+| composer   | TEXT |                                | Composer name                  |
+| lyricist   | TEXT |                                | Lyricist/librettist            |
+| created_at | TEXT | DEFAULT now()                  | Creation timestamp             |
 
 **Indexes:**
 
@@ -588,14 +588,14 @@ erDiagram
 
 Date-based groupings for repertoire organization. **Schema V2: Per-organization.**
 
-| Column     | Type | Constraints                          | Description                     |
-| ---------- | ---- | ------------------------------------ | ------------------------------- |
-| id         | TEXT | PK                                   | Season ID                       |
-| org_id     | TEXT | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2) |
-| name       | TEXT | NOT NULL                             | Season name (e.g., "Fall 2026") |
-| start_date | TEXT | NOT NULL                             | Start date (YYYY-MM-DD)         |
-| created_at | TEXT | NOT NULL, DEFAULT now()              | Creation timestamp              |
-| updated_at | TEXT | NOT NULL, DEFAULT now()              | Last update timestamp           |
+| Column     | Type | Constraints                              | Description                     |
+| ---------- | ---- | ---------------------------------------- | ------------------------------- |
+| id         | TEXT | PK                                       | Season ID                       |
+| org_id     | TEXT | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2)  |
+| name       | TEXT | NOT NULL                                 | Season name (e.g., "Fall 2026") |
+| start_date | TEXT | NOT NULL                                 | Start date (YYYY-MM-DD)         |
+| created_at | TEXT | NOT NULL, DEFAULT now()                  | Creation timestamp              |
+| updated_at | TEXT | NOT NULL, DEFAULT now()                  | Last update timestamp           |
 
 **Indexes:**
 
@@ -702,16 +702,16 @@ erDiagram
 
 Pending member invitations (name-based, with optional pre-assigned voices/sections). **Schema V2: Per-organization.**
 
-| Column           | Type | Constraints                          | Description                             |
-| ---------------- | ---- | ------------------------------------ | --------------------------------------- |
-| id               | TEXT | PK                                   | Invite ID                               |
-| org_id           | TEXT | FK → organizations(id) CASCADE       | Organization scope (Schema V2)          |
-| token            | TEXT | NOT NULL, UNIQUE                     | Secret invite token                     |
-| name             | TEXT | NOT NULL                             | Invitee name (tracking only)            |
-| invited_by       | TEXT | NOT NULL, FK → members(id)           | Inviter                                 |
-| created_at       | TEXT | NOT NULL, DEFAULT now()              | Created timestamp                       |
-| expires_at       | TEXT | NOT NULL                             | Expiration timestamp (48h default)      |
-| roster_member_id | TEXT | FK → members(id)                     | Optional link to existing roster member |
+| Column           | Type | Constraints                    | Description                             |
+| ---------------- | ---- | ------------------------------ | --------------------------------------- |
+| id               | TEXT | PK                             | Invite ID                               |
+| org_id           | TEXT | FK → organizations(id) CASCADE | Organization scope (Schema V2)          |
+| token            | TEXT | NOT NULL, UNIQUE               | Secret invite token                     |
+| name             | TEXT | NOT NULL                       | Invitee name (tracking only)            |
+| invited_by       | TEXT | NOT NULL, FK → members(id)     | Inviter                                 |
+| created_at       | TEXT | NOT NULL, DEFAULT now()        | Created timestamp                       |
+| expires_at       | TEXT | NOT NULL                       | Expiration timestamp (48h default)      |
+| roster_member_id | TEXT | FK → members(id)               | Optional link to existing roster member |
 
 **Indexes:**
 
@@ -905,18 +905,18 @@ erDiagram
 
 Rehearsals, concerts, and other choir events. **Schema V2: Per-organization.**
 
-| Column      | Type | Constraints                          | Description                                   |
-| ----------- | ---- | ------------------------------------ | --------------------------------------------- |
-| id          | TEXT | PK                                   | Event ID                                      |
-| org_id      | TEXT | FK → organizations(id) CASCADE       | Organization owner (Schema V2)                |
-| title       | TEXT | NOT NULL                             | Event title                                   |
-| description | TEXT |                                      | Event description                             |
-| location    | TEXT |                                      | Event location                                |
-| starts_at   | TEXT | NOT NULL                             | Start datetime (ISO 8601)                     |
-| ends_at     | TEXT |                                      | End datetime (ISO 8601)                       |
-| event_type  | TEXT | CHECK                                | `rehearsal`, `concert`, `retreat`, `festival` |
-| created_by  | TEXT | FK → members(id)                     | Creator                                       |
-| created_at  | TEXT | DEFAULT now()                        | Creation timestamp                            |
+| Column      | Type | Constraints                    | Description                                   |
+| ----------- | ---- | ------------------------------ | --------------------------------------------- |
+| id          | TEXT | PK                             | Event ID                                      |
+| org_id      | TEXT | FK → organizations(id) CASCADE | Organization owner (Schema V2)                |
+| title       | TEXT | NOT NULL                       | Event title                                   |
+| description | TEXT |                                | Event description                             |
+| location    | TEXT |                                | Event location                                |
+| starts_at   | TEXT | NOT NULL                       | Start datetime (ISO 8601)                     |
+| ends_at     | TEXT |                                | End datetime (ISO 8601)                       |
+| event_type  | TEXT | CHECK                          | `rehearsal`, `concert`, `retreat`, `festival` |
+| created_by  | TEXT | FK → members(id)               | Creator                                       |
+| created_at  | TEXT | DEFAULT now()                  | Creation timestamp                            |
 
 **Indexes:**
 
@@ -1108,17 +1108,17 @@ RSVP and attendance tracking for events.
 
 ## Table Summary
 
-| Category            | Tables                                                                   |
-| ------------------- | ------------------------------------------------------------------------ |
-| **Organizations**   | organizations, member_organizations, affiliations                        |
-| **Core**            | members, member_roles                                                    |
-| **Voices/Sections** | voices, sections, member_voices, member_sections                         |
-| **Score Library**   | works, editions, edition_sections, edition_files, edition_chunks         |
-| **Inventory**       | physical_copies, copy_assignments                                        |
-| **Seasons**         | seasons, season_works, season_work_editions                              |
-| **Events**          | events, event_works, event_work_editions, participation                  |
-| **Invitations**     | invites, invite_voices, invite_sections                                  |
-| **Supporting**      | sessions, takedowns, vault_settings                                      |
+| Category            | Tables                                                           |
+| ------------------- | ---------------------------------------------------------------- |
+| **Organizations**   | organizations, member_organizations, affiliations                |
+| **Core**            | members, member_roles                                            |
+| **Voices/Sections** | voices, sections, member_voices, member_sections                 |
+| **Score Library**   | works, editions, edition_sections, edition_files, edition_chunks |
+| **Inventory**       | physical_copies, copy_assignments                                |
+| **Seasons**         | seasons, season_works, season_work_editions                      |
+| **Events**          | events, event_works, event_work_editions, participation          |
+| **Invitations**     | invites, invite_voices, invite_sections                          |
+| **Supporting**      | sessions, takedowns, vault_settings                              |
 
 **Total: 25 tables** (after Schema V2 additions: organizations, member_organizations, affiliations)
 
