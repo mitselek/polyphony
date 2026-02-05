@@ -116,7 +116,7 @@
           <option value="sv-SE">Swedish (sv-SE)</option>
           <option value="lv-LV">Latvian (lv-LV)</option>
           <option value="lt-LT">Lithuanian (lt-LT)</option>
-          <option value="ru-RU">Russian (ru-RU)</option>
+          <option value="uk-UA">Ukrainian (uk-UA)</option>
           <option value="fr-FR">French (fr-FR)</option>
           <option value="nl-NL">Dutch (nl-NL)</option>
         </select>
@@ -180,7 +180,7 @@
           <option value="sv">Swedish</option>
           <option value="lv">Latvian</option>
           <option value="lt">Lithuanian</option>
-          <option value="ru">Russian</option>
+          <option value="uk">Ukrainian</option>
           <option value="fr">French</option>
           <option value="nl">Dutch</option>
         </select>
@@ -208,7 +208,7 @@
           <option value="sv-SE">Swedish (sv-SE)</option>
           <option value="lv-LV">Latvian (lv-LV)</option>
           <option value="lt-LT">Lithuanian (lt-LT)</option>
-          <option value="ru-RU">Russian (ru-RU)</option>
+          <option value="uk-UA">Ukrainian (uk-UA)</option>
           <option value="fr-FR">French (fr-FR)</option>
           <option value="nl-NL">Dutch (nl-NL)</option>
         </select>
