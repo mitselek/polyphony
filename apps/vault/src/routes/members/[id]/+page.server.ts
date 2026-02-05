@@ -7,6 +7,9 @@ import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 import { getMemberAssignedCopies, type AssignedCopyWithDetails } from '$lib/server/db/copy-assignments';
 import { getPendingInviteToken, buildInviteLink } from '$lib/server/db/invites';
+import { resolvePreferences, type ResolvedI18nPreferences } from '$lib/server/i18n/preferences';
+import { getMemberPreferences } from '$lib/server/db/member-preferences';
+import type { MemberPreferences } from '$lib/types';
 
 interface AuthContext {
 	currentUser: Member | null;
@@ -81,6 +84,16 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 		loadAssignedCopies(db, params.id, authContext.currentUser?.id ?? null, authContext.isAdmin)
 	]);
 
+	// Load i18n data for own profile
+	let resolvedPrefs: ResolvedI18nPreferences | null = null;
+	let memberPrefs: MemberPreferences | null = null;
+	if (isOwnProfile) {
+		[resolvedPrefs, memberPrefs] = await Promise.all([
+			resolvePreferences(db, params.id, orgId),
+			getMemberPreferences(db, params.id)
+		]);
+	}
+
 	// Check for pending invite if roster-only member
 	let pendingInviteLink: string | null = null;
 	if (!member.email_id && authContext.isAdmin) {
@@ -100,6 +113,8 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 		availableVoices: adminData.availableVoices,
 		availableSections: adminData.availableSections,
 		assignedCopies,
-		pendingInviteLink
+		pendingInviteLink,
+		resolvedPrefs,
+		memberPrefs
 	};
 };
