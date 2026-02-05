@@ -445,15 +445,10 @@ export interface UpdateWorkInput {
 	lyricist?: string | null;
 }
 
-// Edition type categories
-export type EditionType =
-	| 'full_score'
-	| 'vocal_score'
-	| 'part'
-	| 'reduction'
-	| 'audio'
-	| 'video'
-	| 'supplementary';
+// Edition type categories - single source of truth
+// Database CHECK constraint must be kept in sync manually (migrations)
+export const EDITION_TYPES = ['full_score', 'vocal_score', 'part', 'reduction', 'audio', 'video', 'supplementary'] as const;
+export type EditionType = (typeof EDITION_TYPES)[number];
 
 // License types - single source of truth
 // Database CHECK constraint must be kept in sync manually (migrations)

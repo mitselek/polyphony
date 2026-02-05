@@ -2,40 +2,20 @@
 // GET /api/editions/[id] - Get edition by ID
 // PATCH /api/editions/[id] - Update edition
 // DELETE /api/editions/[id] - Delete edition
-import { json, error, type RequestEvent } from '@sveltejs/kit';
+import { error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { getEditionById, updateEdition, deleteEdition } from '$lib/server/db/editions';
-import type { UpdateEditionInput, EditionType } from '$lib/types';
-import { LICENSE_TYPES } from '$lib/types';
-
-const VALID_EDITION_TYPES: EditionType[] = ['full_score', 'vocal_score', 'part', 'reduction', 'audio', 'video', 'supplementary'];
-
-// Helper: Validation error response
-function validationError(message: string) {
-	return json({ error: message }, { status: 400 });
-}
-
-// Helper: Database error response
-function dbError(message = 'Database not available') {
-	return error(500, message);
-}
-
-// Helper: Not found error response
-function notFound(resource = 'Edition') {
-	return error(404, `${resource} not found`);
-}
+import type { UpdateEditionInput } from '$lib/types';
+import { EDITION_TYPES, LICENSE_TYPES } from '$lib/types';
+import { validationError, serverError, notFoundError } from '$lib/server/utils/api-responses';
+import { trimOrNull } from '$lib/server/utils/strings';
 
 function validateUpdateInput(body: Partial<UpdateEditionInput>): string | null {
 	if (body.name !== undefined && (typeof body.name !== 'string' || body.name.trim().length === 0)) return 'Name cannot be empty';
-	if (body.editionType !== undefined && !VALID_EDITION_TYPES.includes(body.editionType)) return 'Invalid edition type';
+	if (body.editionType !== undefined && !EDITION_TYPES.includes(body.editionType)) return 'Invalid edition type';
 	if (body.licenseType !== undefined && !LICENSE_TYPES.includes(body.licenseType)) return 'Invalid license type';
 	if (body.sectionIds !== undefined && !Array.isArray(body.sectionIds)) return 'sectionIds must be an array';
 	return null;
-}
-
-function trimOrNull(value: unknown): string | null {
-	if (value === null) return null;
-	return typeof value === 'string' ? value.trim() || null : null;
 }
 
 function buildUpdateInput(body: Partial<UpdateEditionInput>): UpdateEditionInput {
@@ -54,7 +34,7 @@ function buildUpdateInput(body: Partial<UpdateEditionInput>): UpdateEditionInput
 
 export async function GET({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) throw dbError();
+	if (!db) throw serverError();
 
 	await getAuthenticatedMember(db, cookies);
 
@@ -62,14 +42,16 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	if (!editionId) throw error(400, 'Edition ID is required');
 
 	const edition = await getEditionById(db, editionId);
-	if (!edition) throw notFound();
+	if (!edition) throw notFoundError('Edition');
 
-	return json(edition);
+	return new Response(JSON.stringify(edition), {
+		headers: { 'Content-Type': 'application/json' }
+	});
 }
 
 export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) throw dbError();
+	if (!db) throw serverError();
 
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
@@ -82,14 +64,16 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	if (validationErr) return validationError(validationErr);
 
 	const edition = await updateEdition(db, editionId, buildUpdateInput(body));
-	if (!edition) throw notFound();
+	if (!edition) throw notFoundError('Edition');
 
-	return json(edition);
+	return new Response(JSON.stringify(edition), {
+		headers: { 'Content-Type': 'application/json' }
+	});
 }
 
 export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
-	if (!db) throw dbError();
+	if (!db) throw serverError();
 
 	const member = await getAuthenticatedMember(db, cookies);
 	assertLibrarian(member);
@@ -98,7 +82,9 @@ export async function DELETE({ params, platform, cookies }: RequestEvent) {
 	if (!editionId) throw error(400, 'Edition ID is required');
 
 	const deleted = await deleteEdition(db, editionId);
-	if (!deleted) throw notFound();
+	if (!deleted) throw notFoundError('Edition');
 
-	return json({ success: true });
+	return new Response(JSON.stringify({ success: true }), {
+		headers: { 'Content-Type': 'application/json' }
+	});
 }

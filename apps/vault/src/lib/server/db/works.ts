@@ -1,5 +1,6 @@
 // Works database operations
 import type { Work, CreateWorkInput, UpdateWorkInput } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 
 interface WorkRow {
 	id: string;
@@ -22,13 +23,6 @@ function rowToWork(row: WorkRow): Work {
 		lyricist: row.lyricist,
 		createdAt: row.created_at
 	};
-}
-
-/**
- * Generate a unique ID for a work
- */
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

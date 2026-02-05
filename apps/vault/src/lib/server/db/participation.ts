@@ -7,11 +7,7 @@ import type {
 	PlannedStatus,
 	ActualStatus
 } from '$lib/types';
-
-// Simple ID generator
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
-}
+import { generateId } from '$lib/server/utils/id';
 
 /**
  * Create a new participation record

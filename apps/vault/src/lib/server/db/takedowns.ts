@@ -1,5 +1,7 @@
 // Takedown database operations for copyright claims
 
+import { generateId } from '$lib/server/utils/id';
+
 export type TakedownStatus = 'pending' | 'approved' | 'rejected';
 
 export interface TakedownRequest {
@@ -34,11 +36,6 @@ export interface ProcessTakedownInput {
 export interface ProcessTakedownResult {
 	success: boolean;
 	error?: string;
-}
-
-// Simple ID generator
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 function isValidEmail(email: string): boolean {

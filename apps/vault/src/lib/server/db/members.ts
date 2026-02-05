@@ -1,5 +1,6 @@
 // Member database operations
 import type { Role, Voice, Section, Member } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 import { queryMemberSections, queryMemberVoices } from './queries/members';
 import { addMemberRoles } from './roles';
 
@@ -44,11 +45,6 @@ export function getAuthEmail(member: Member): string | null {
  */
 export function getContactEmail(member: Member): string | null {
 	return member.email_contact ?? member.email_id;
-}
-
-// Simple ID generator (nanoid replacement for testing)
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

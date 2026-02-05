@@ -1,6 +1,7 @@
 // Invite database operations for member invitation system
 
 import type { Role, Voice, Section } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 import { addMemberRoles } from './roles';
 
 export interface Invite {
@@ -41,11 +42,6 @@ function generateToken(): string {
 	return Array.from(bytes)
 		.map(b => b.toString(16).padStart(2, '0'))
 		.join('');
-}
-
-// Simple ID generator
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

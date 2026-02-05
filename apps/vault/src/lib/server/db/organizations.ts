@@ -2,11 +2,7 @@
 // Part of Schema V2 multi-organization support
 
 import type { Organization, CreateOrganizationInput, UpdateOrganizationInput } from '$lib/types';
-
-// Simple ID generator (consistent with members.ts pattern)
-function generateId(): string {
-	return 'org_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
-}
+import { generateId } from '$lib/server/utils/id';
 
 /**
  * Create a new organization
@@ -15,7 +11,7 @@ export async function createOrganization(
 	db: D1Database,
 	input: CreateOrganizationInput
 ): Promise<Organization> {
-	const id = generateId();
+	const id = generateId('org_');
 	const now = new Date().toISOString();
 
 	await db

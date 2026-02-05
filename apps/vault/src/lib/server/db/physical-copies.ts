@@ -2,6 +2,7 @@
 // Part of Epic #106 - Phase B: Physical Inventory
 
 import type { CopyCondition } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 
 // Re-export for consumers that import from here
 export type { CopyCondition };
@@ -62,13 +63,6 @@ function rowToCopy(row: PhysicalCopyRow): PhysicalCopy {
 		notes: row.notes,
 		createdAt: row.created_at
 	};
-}
-
-/**
- * Generate a unique ID
- */
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

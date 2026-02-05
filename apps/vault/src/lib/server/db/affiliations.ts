@@ -2,6 +2,7 @@
 // Tracks collective ↔ umbrella relationships with history
 
 import type { Affiliation, CreateAffiliationInput } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 
 // Database row interface (snake_case)
 interface AffiliationRow {
@@ -10,11 +11,6 @@ interface AffiliationRow {
 	umbrella_id: string;
 	joined_at: string;
 	left_at: string | null;
-}
-
-// Simple ID generator
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

@@ -2,6 +2,8 @@
 // Issue #116 - Copy Assignment/Return workflow
 // Part of Epic #106 - Phase B: Physical Inventory
 
+import { generateId } from '$lib/server/utils/id';
+
 export interface CopyAssignment {
 	id: string;
 	copyId: string;
@@ -46,13 +48,6 @@ function rowToAssignment(row: CopyAssignmentRow): CopyAssignment {
 		returnedAt: row.returned_at,
 		notes: row.notes
 	};
-}
-
-/**
- * Generate a unique ID
- */
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**

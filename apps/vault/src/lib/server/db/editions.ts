@@ -6,6 +6,7 @@ import type {
 	CreateEditionInput,
 	UpdateEditionInput
 } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 
 interface EditionRow {
 	id: string;
@@ -49,13 +50,6 @@ function rowToEdition(row: EditionRow, sectionIds: string[] = []): Edition {
 		createdAt: row.created_at,
 		sectionIds
 	};
-}
-
-/**
- * Generate a unique ID for an edition
- */
-function generateId(): string {
-	return crypto.randomUUID().replace(/-/g, '').slice(0, 21);
 }
 
 /**
