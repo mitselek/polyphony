@@ -2,6 +2,8 @@
 	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
+	import type { MemberPreferences } from '$lib/types';
+	import type { ResolvedI18nPreferences, PreferenceSource } from '$lib/server/i18n/preferences';
 	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import EditionFileActions from '$lib/components/EditionFileActions.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -26,9 +28,24 @@
 	let isEditingNickname = $state(false);
 	let editedNickname = $state('');
 
+	// i18n preferences state (only for own profile)
+	let memberPrefs = $state(untrack(() => data.memberPrefs as MemberPreferences | null));
+	let resolvedPrefs = $state(untrack(() => data.resolvedPrefs as ResolvedI18nPreferences | null));
+	let savingPrefs = $state(false);
+
+	// Local form values (initialized from memberPrefs or empty for 'use default')
+	let prefLanguage = $state(untrack(() => memberPrefs?.language ?? ''));
+	let prefLocale = $state(untrack(() => memberPrefs?.locale ?? ''));
+	let prefTimezone = $state(untrack(() => memberPrefs?.timezone ?? ''));
+
 	// Watch for data changes and update local state
 	$effect(() => {
 		member = data.member;
+		memberPrefs = data.memberPrefs as MemberPreferences | null;
+		resolvedPrefs = data.resolvedPrefs as ResolvedI18nPreferences | null;
+		prefLanguage = (data.memberPrefs as MemberPreferences | null)?.language ?? '';
+		prefLocale = (data.memberPrefs as MemberPreferences | null)?.locale ?? '';
+		prefTimezone = (data.memberPrefs as MemberPreferences | null)?.timezone ?? '';
 	});
 
 	// Permission helpers: can edit name/nickname if admin OR own profile
@@ -311,6 +328,43 @@
 			updating = false;
 		}
 	}
+
+	// i18n preferences functions
+	function getEffectiveLabel(source: PreferenceSource | undefined): string {
+		if (!source) return '';
+		switch (source) {
+			case 'member': return '(your preference)';
+			case 'organization': return '(organization default)';
+			case 'system': return '(system default)';
+		}
+	}
+
+	async function savePreferences() {
+		savingPrefs = true;
+		try {
+			const response = await fetch('/api/profile/preferences', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					language: prefLanguage || null,
+					locale: prefLocale || null,
+					timezone: prefTimezone || null
+				})
+			});
+
+			if (!response.ok) {
+				const errData = await response.json() as { message?: string };
+				throw new Error(errData.message ?? 'Failed to save preferences');
+			}
+
+			memberPrefs = await response.json() as MemberPreferences;
+			toast.success('Preferences saved');
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to save preferences');
+		} finally {
+			savingPrefs = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -584,6 +638,114 @@
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
 	</Card>
+
+	<!-- Language & Regional Preferences - Only for own profile -->
+	{#if data.isOwnProfile && resolvedPrefs}
+		<Card padding="lg" class="mt-6">
+			<h2 class="mb-4 text-lg font-semibold">Language & Regional Preferences</h2>
+			<p class="mb-6 text-sm text-gray-600">
+				Override organization defaults for your personal experience.
+			</p>
+
+			<form onsubmit={(e) => { e.preventDefault(); savePreferences(); }} class="space-y-6">
+				<!-- Language -->
+				<div>
+					<label for="pref-language" class="block text-sm font-medium text-gray-700">
+						Language
+					</label>
+					<select
+						id="pref-language"
+						bind:value={prefLanguage}
+						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					>
+						<option value="">Use organization default ({resolvedPrefs.language})</option>
+						<option value="en">English</option>
+						<option value="et">Estonian</option>
+						<option value="de">German</option>
+						<option value="fi">Finnish</option>
+						<option value="sv">Swedish</option>
+						<option value="lv">Latvian</option>
+						<option value="lt">Lithuanian</option>
+						<option value="ru">Russian</option>
+						<option value="fr">French</option>
+						<option value="nl">Dutch</option>
+					</select>
+					<p class="mt-1 text-xs text-gray-500">
+						Effective: {resolvedPrefs.language} {getEffectiveLabel(resolvedPrefs.source.language)}
+					</p>
+				</div>
+
+				<!-- Locale -->
+				<div>
+					<label for="pref-locale" class="block text-sm font-medium text-gray-700">
+						Date & Number Format
+					</label>
+					<select
+						id="pref-locale"
+						bind:value={prefLocale}
+						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					>
+						<option value="">Use organization default ({resolvedPrefs.locale})</option>
+						<option value="et-EE">Estonian (et-EE)</option>
+						<option value="en-US">English US (en-US)</option>
+						<option value="en-GB">English UK (en-GB)</option>
+						<option value="de-DE">German (de-DE)</option>
+						<option value="fi-FI">Finnish (fi-FI)</option>
+						<option value="sv-SE">Swedish (sv-SE)</option>
+						<option value="lv-LV">Latvian (lv-LV)</option>
+						<option value="lt-LT">Lithuanian (lt-LT)</option>
+						<option value="ru-RU">Russian (ru-RU)</option>
+						<option value="fr-FR">French (fr-FR)</option>
+						<option value="nl-NL">Dutch (nl-NL)</option>
+					</select>
+					<p class="mt-1 text-xs text-gray-500">
+						Effective: {resolvedPrefs.locale} {getEffectiveLabel(resolvedPrefs.source.locale)}
+					</p>
+				</div>
+
+				<!-- Timezone -->
+				<div>
+					<label for="pref-timezone" class="block text-sm font-medium text-gray-700">
+						Timezone
+					</label>
+					<select
+						id="pref-timezone"
+						bind:value={prefTimezone}
+						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					>
+						<option value="">Use organization default ({resolvedPrefs.timezone})</option>
+						<option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
+						<option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
+						<option value="Europe/Riga">Riga (EET/EEST)</option>
+						<option value="Europe/Vilnius">Vilnius (EET/EEST)</option>
+						<option value="Europe/Stockholm">Stockholm (CET/CEST)</option>
+						<option value="Europe/Berlin">Berlin (CET/CEST)</option>
+						<option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
+						<option value="Europe/Paris">Paris (CET/CEST)</option>
+						<option value="Europe/London">London (GMT/BST)</option>
+						<option value="Europe/Moscow">Moscow (MSK)</option>
+						<option value="America/New_York">New York (EST/EDT)</option>
+						<option value="America/Chicago">Chicago (CST/CDT)</option>
+						<option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+						<option value="UTC">UTC</option>
+					</select>
+					<p class="mt-1 text-xs text-gray-500">
+						Effective: {resolvedPrefs.timezone} {getEffectiveLabel(resolvedPrefs.source.timezone)}
+					</p>
+				</div>
+
+				<div class="flex justify-end">
+					<button
+						type="submit"
+						disabled={savingPrefs}
+						class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{savingPrefs ? 'Saving...' : 'Save Preferences'}
+					</button>
+				</div>
+			</form>
+		</Card>
+	{/if}
 
 	<!-- My Scores Section - Only visible to profile owner or admins -->
 	{#if data.assignedCopies}
