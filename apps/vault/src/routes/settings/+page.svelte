@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { PageData } from "./$types";
+  import type { Organization } from "$lib/types";
   import Card from "$lib/components/Card.svelte";
   import SettingsEntityCard from "$lib/components/settings/SettingsEntityCard.svelte";
   import { DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
@@ -12,13 +13,16 @@
   let settings = $state(untrack(() => data.settings));
   let voices = $state(untrack(() => data.voices));
   let sections = $state(untrack(() => data.sections));
+  let organization = $state(untrack(() => data.organization as Organization));
   let saving = $state(false);
+  let savingOrg = $state(false);
 
   // Watch for data changes (e.g., on navigation)
   $effect(() => {
     settings = data.settings;
     voices = data.voices;
     sections = data.sections;
+    organization = data.organization as Organization;
   });
 
   async function handleSubmit(e: Event) {
@@ -47,6 +51,36 @@
       toast.error(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
       saving = false;
+    }
+  }
+
+  async function handleOrgSubmit(e: Event) {
+    e.preventDefault();
+    savingOrg = true;
+
+    try {
+      const response = await fetch(`/api/organizations/${organization.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: organization.language || null,
+          locale: organization.locale || null,
+          timezone: organization.timezone || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = (await response.json()) as { message?: string };
+        throw new Error(result.message ?? "Failed to save organization settings");
+      }
+
+      const updated = (await response.json()) as Organization;
+      organization = updated;
+      toast.success("Organization settings saved successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save organization settings");
+    } finally {
+      savingOrg = false;
     }
   }
 </script>
@@ -116,6 +150,112 @@
           class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Settings"}
+        </button>
+      </div>
+    </form>
+  </Card>
+
+  <!-- Organization Settings -->
+  <Card padding="lg" class="mt-6">
+    <h2 class="mb-4 text-lg font-semibold">Organization Settings</h2>
+    <p class="mb-6 text-sm text-gray-600">
+      Default language, locale, and timezone for all members. Members can override these in their personal settings.
+    </p>
+    <form onsubmit={handleOrgSubmit} class="space-y-6">
+      <!-- Language Setting -->
+      <div>
+        <label for="org-language" class="block text-sm font-medium text-gray-700">
+          Language
+        </label>
+        <select
+          id="org-language"
+          bind:value={organization.language}
+          class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">System default (English)</option>
+          <option value="en">English</option>
+          <option value="et">Estonian</option>
+          <option value="de">German</option>
+          <option value="fi">Finnish</option>
+          <option value="sv">Swedish</option>
+          <option value="lv">Latvian</option>
+          <option value="lt">Lithuanian</option>
+          <option value="ru">Russian</option>
+          <option value="fr">French</option>
+          <option value="nl">Dutch</option>
+        </select>
+        <p class="mt-1 text-sm text-gray-500">
+          UI language for the organization (ISO 639-1)
+        </p>
+      </div>
+
+      <!-- Locale Setting -->
+      <div>
+        <label for="org-locale" class="block text-sm font-medium text-gray-700">
+          Date & Number Format
+        </label>
+        <select
+          id="org-locale"
+          bind:value={organization.locale}
+          class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">System default (en-US)</option>
+          <option value="et-EE">Estonian (et-EE)</option>
+          <option value="en-US">English US (en-US)</option>
+          <option value="en-GB">English UK (en-GB)</option>
+          <option value="de-DE">German (de-DE)</option>
+          <option value="fi-FI">Finnish (fi-FI)</option>
+          <option value="sv-SE">Swedish (sv-SE)</option>
+          <option value="lv-LV">Latvian (lv-LV)</option>
+          <option value="lt-LT">Lithuanian (lt-LT)</option>
+          <option value="ru-RU">Russian (ru-RU)</option>
+          <option value="fr-FR">French (fr-FR)</option>
+          <option value="nl-NL">Dutch (nl-NL)</option>
+        </select>
+        <p class="mt-1 text-sm text-gray-500">
+          Format for dates, times, and numbers (BCP 47)
+        </p>
+      </div>
+
+      <!-- Timezone Setting -->
+      <div>
+        <label for="org-timezone" class="block text-sm font-medium text-gray-700">
+          Timezone
+        </label>
+        <select
+          id="org-timezone"
+          bind:value={organization.timezone}
+          class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">System default (UTC)</option>
+          <option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
+          <option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
+          <option value="Europe/Riga">Riga (EET/EEST)</option>
+          <option value="Europe/Vilnius">Vilnius (EET/EEST)</option>
+          <option value="Europe/Stockholm">Stockholm (CET/CEST)</option>
+          <option value="Europe/Berlin">Berlin (CET/CEST)</option>
+          <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
+          <option value="Europe/Paris">Paris (CET/CEST)</option>
+          <option value="Europe/London">London (GMT/BST)</option>
+          <option value="Europe/Moscow">Moscow (MSK)</option>
+          <option value="America/New_York">New York (EST/EDT)</option>
+          <option value="America/Chicago">Chicago (CST/CDT)</option>
+          <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+          <option value="UTC">UTC</option>
+        </select>
+        <p class="mt-1 text-sm text-gray-500">
+          Timezone for events and schedules (IANA)
+        </p>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          disabled={savingOrg}
+          class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {savingOrg ? "Saving..." : "Save Organization Settings"}
         </button>
       </div>
     </form>

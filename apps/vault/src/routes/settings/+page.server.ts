@@ -3,6 +3,7 @@ import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware
 import { getAllSettings } from '$lib/server/db/settings';
 import { getAllVoicesWithCounts } from '$lib/server/db/voices';
 import { getAllSectionsWithCounts } from '$lib/server/db/sections';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
@@ -15,16 +16,18 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 
 	const orgId = locals.org.id;
 
-	// Load settings, voices (with counts), and sections (with counts)
-	const [settings, voices, sections] = await Promise.all([
+	// Load settings, voices (with counts), sections (with counts), and organization
+	const [settings, voices, sections, organization] = await Promise.all([
 		getAllSettings(db),
 		getAllVoicesWithCounts(db),
-		getAllSectionsWithCounts(db, orgId)
+		getAllSectionsWithCounts(db, orgId),
+		getOrganizationById(db, orgId)
 	]);
 
 	return {
 		settings,
 		voices,
-		sections
+		sections,
+		organization
 	};
 };
