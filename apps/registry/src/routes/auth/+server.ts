@@ -2,12 +2,23 @@
 // GET /auth?vault_id=xxx&callback=https://vault.../callback
 /// <reference types="@cloudflare/workers-types" />
 import { json, redirect } from '@sveltejs/kit';
+import { signToken, verifyToken } from '@polyphony/shared/crypto';
+import { nanoid } from 'nanoid';
+import type { Cookies } from '@sveltejs/kit';
 
 interface CloudflarePlatform {
 	env: { DB: D1Database; API_KEY: string; GOOGLE_CLIENT_ID: string };
 }
 
-export const GET = async ({ url, platform }: { url: URL; platform?: CloudflarePlatform }) => {
+export const GET = async ({
+	url,
+	platform,
+	cookies
+}: {
+	url: URL;
+	platform?: CloudflarePlatform;
+	cookies?: Cookies;
+}) => {
 	if (!platform) throw new Error('Platform not available');
 
 	const vaultId = url.searchParams.get('vault_id');
@@ -38,6 +49,51 @@ export const GET = async ({ url, platform }: { url: URL; platform?: CloudflarePl
 		return json({ error: 'Invalid callback URL' }, { status: 400 });
 	}
 
+	// Check for existing SSO session
+	const ssoCookie = cookies?.get('polyphony_sso');
+	if (ssoCookie) {
+		try {
+			// Fetch active signing key for verification
+			const signingKey = await platform.env.DB.prepare(
+				'SELECT id, private_key, public_key FROM signing_keys WHERE revoked_at IS NULL ORDER BY created_at DESC LIMIT 1'
+			).first<{ id: string; private_key: string; public_key: string }>();
+
+			if (signingKey) {
+				// Convert JWK public key to PEM for verification
+				const publicKeyPem = jwkToPem(JSON.parse(signingKey.public_key));
+				const ssoPayload = await verifyToken(ssoCookie, publicKeyPem);
+
+				// Validate SSO-specific claims
+				if (ssoPayload.aud !== 'polyphony-sso') {
+					throw new Error('Invalid SSO token audience');
+				}
+
+				// Valid SSO - issue vault JWT directly
+				const vaultToken = await signToken(
+					{
+						iss: 'https://polyphony.uk',
+						sub: ssoPayload.email,
+						aud: vaultId,
+						nonce: nanoid(),
+						email: ssoPayload.email,
+						name: ssoPayload.name,
+						picture: ssoPayload.picture
+					},
+					signingKey.private_key
+				);
+
+				const callback = new URL(callbackUrl);
+				callback.searchParams.set('token', vaultToken);
+				return new Response(null, {
+					status: 302,
+					headers: { Location: callback.toString() }
+				});
+			}
+		} catch {
+			// Invalid/expired SSO cookie - proceed to OAuth
+		}
+	}
+
 	// Build Google OAuth URL
 	const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
 	googleAuthUrl.searchParams.set('client_id', platform.env.GOOGLE_CLIENT_ID);
@@ -48,3 +104,36 @@ export const GET = async ({ url, platform }: { url: URL; platform?: CloudflarePl
 
 	return redirect(302, googleAuthUrl.toString());
 };
+
+/**
+ * Convert JWK to PEM format for jose verification
+ */
+function jwkToPem(jwk: { x: string }): string {
+	// Ed25519 public key is 32 bytes, x coordinate is base64url encoded
+	const xBytes = base64UrlDecode(jwk.x);
+
+	// SPKI format for Ed25519
+	const oid = new Uint8Array([0x06, 0x03, 0x2b, 0x65, 0x70]);
+	const algoId = new Uint8Array([0x30, 0x05, ...oid]);
+	const pubKeyBits = new Uint8Array([0x03, 0x21, 0x00, ...xBytes]);
+	const spki = new Uint8Array([0x30, 0x2a, ...algoId, ...pubKeyBits]);
+
+	// Convert to PEM format
+	const base64 = btoa(String.fromCharCode(...spki));
+	return (
+		'-----BEGIN PUBLIC KEY-----\n' +
+		base64.match(/.{1,64}/g)!.join('\n') +
+		'\n-----END PUBLIC KEY-----'
+	);
+}
+
+/**
+ * Decode base64url to Uint8Array
+ */
+function base64UrlDecode(str: string): Uint8Array {
+	// Convert base64url to base64
+	const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+	const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+	const binary = atob(padded);
+	return new Uint8Array([...binary].map((c) => c.charCodeAt(0)));
+}
