@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let submitting = $state(false);
 	let submitted = $state(false);
@@ -43,23 +44,22 @@
 </script>
 
 <svelte:head>
-	<title>Copyright Takedown Request - Polyphony</title>
+	<title>{m["copyright.title"]()} - Polyphony</title>
 </svelte:head>
 
 <main class="mx-auto max-w-2xl px-4 py-8">
-	<h1 class="mb-6 text-3xl font-bold">Copyright Takedown Request</h1>
+	<h1 class="mb-6 text-3xl font-bold">{m["copyright.title"]()}</h1>
 
 	{#if submitted}
 		<div class="rounded-lg bg-green-100 p-6 text-green-800">
-			<h2 class="mb-2 text-xl font-semibold">Request Submitted</h2>
+			<h2 class="mb-2 text-xl font-semibold">{m["copyright.submitted_title"]()}</h2>
 			<p>
-				Thank you for your submission. We will review your request and respond within 48 hours.
+				{m["copyright.submitted_message"]()}
 			</p>
 		</div>
 	{:else}
 		<p class="mb-6 text-gray-600">
-			If you believe copyrighted material has been uploaded without authorization, 
-			please submit a takedown request using the form below.
+			{m["copyright.intro"]()}
 		</p>
 
 		{#if error}
@@ -71,20 +71,20 @@
 		<form onsubmit={handleSubmit} class="space-y-6">
 			<div>
 				<label for="score_id" class="mb-1 block text-sm font-medium text-gray-700">
-					Score ID (if known)
+					{m["copyright.score_id_label"]()}
 				</label>
 				<input
 					type="text"
 					id="score_id"
 					name="score_id"
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder="Optional: paste the score URL or ID"
+					placeholder={m["copyright.score_id_placeholder"]()}
 				/>
 			</div>
 
 			<div>
 				<label for="claimant_email" class="mb-1 block text-sm font-medium text-gray-700">
-					Your Email *
+					{m["copyright.email_label"]()} *
 				</label>
 				<input
 					type="email"
@@ -92,13 +92,13 @@
 					name="claimant_email"
 					required
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder="your.email@example.com"
+					placeholder={m["copyright.email_placeholder"]()}
 				/>
 			</div>
 
 			<div>
 				<label for="claim_type" class="mb-1 block text-sm font-medium text-gray-700">
-					Claim Type *
+					{m["copyright.claim_type_label"]()} *
 				</label>
 				<select
 					id="claim_type"
@@ -106,15 +106,15 @@
 					required
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
 				>
-					<option value="copyright">Copyright Infringement</option>
-					<option value="trademark">Trademark Violation</option>
-					<option value="other">Other Legal Claim</option>
+					<option value="copyright">{m["copyright.claim_type_copyright"]()}</option>
+					<option value="trademark">{m["copyright.claim_type_trademark"]()}</option>
+					<option value="other">{m["copyright.claim_type_other"]()}</option>
 				</select>
 			</div>
 
 			<div>
 				<label for="description" class="mb-1 block text-sm font-medium text-gray-700">
-					Description *
+					{m["copyright.description_label"]()} *
 				</label>
 				<textarea
 					id="description"
@@ -122,7 +122,7 @@
 					required
 					rows="5"
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder="Please describe the copyrighted work and explain why you believe the uploaded content infringes your rights."
+					placeholder={m["copyright.description_placeholder"]()}
 				></textarea>
 			</div>
 
@@ -135,8 +135,7 @@
 					class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 				/>
 				<label for="attestation" class="text-sm text-gray-700">
-					I declare under penalty of perjury that I am the copyright owner or authorized to act on their behalf,
-					and that I have a good faith belief that use of the copyrighted material is not authorized.
+					{m["copyright.attestation"]()}
 				</label>
 			</div>
 
@@ -145,7 +144,7 @@
 				disabled={submitting}
 				class="w-full rounded-md bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
 			>
-				{submitting ? 'Submitting...' : 'Submit Takedown Request'}
+				{submitting ? m["copyright.submitting"]() : m["copyright.submit"]()}
 			</button>
 		</form>
 	{/if}

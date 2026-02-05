@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { REGISTRY_URL } from '$lib/config';
+	import * as m from '$lib/paraglide/messages.js';
 
 	const email = $derived($page.url.searchParams.get('email') || '');
 	const inviteToken = $derived($page.url.searchParams.get('invite') || '');
@@ -33,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>Check Your Email | Polyphony Vault</title>
+	<title>{m["login.check_email_title"]()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -55,14 +56,14 @@
 			</svg>
 		</div>
 
-		<h1 class="mb-2 text-2xl font-bold text-gray-900">Check Your Email</h1>
+		<h1 class="mb-2 text-2xl font-bold text-gray-900">{m["login.check_email_title"]()}</h1>
 		<p class="mb-8 text-gray-600">
-			We sent a magic link to <strong class="text-gray-900">{email}</strong>
+			{m["login.check_email_sent"]()} <strong class="text-gray-900">{email}</strong>
 		</p>
 
 		<div class="rounded-xl bg-white p-6 shadow-sm">
 			<p class="mb-4 text-sm text-gray-500">
-				Click the link in the email, or enter the 6-character code below:
+				{m["login.enter_code"]()}
 			</p>
 
 			<form onsubmit={(e) => { e.preventDefault(); verifyCode(); }}>
@@ -70,7 +71,7 @@
 					type="text"
 					value={code}
 					oninput={handleCodeInput}
-					placeholder="ABC123"
+					placeholder={m["login.code_placeholder"]()}
 					maxlength="6"
 					autocomplete="one-time-code"
 					class="w-full rounded-lg border border-gray-300 px-4 py-4 text-center font-mono text-3xl uppercase tracking-[0.3em] focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
@@ -81,20 +82,20 @@
 					disabled={code.length !== 6 || isVerifying}
 					class="mt-4 w-full rounded-lg bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					{isVerifying ? 'Verifying...' : 'Verify Code'}
+					{isVerifying ? m["login.verifying"]() : m["login.verify_code"]()}
 				</button>
 			</form>
 
 			<p class="mt-6 text-sm text-gray-500">
-				Didn't receive it?
+				{m["login.didnt_receive"]()}
 				<button onclick={resendCode} class="text-blue-600 hover:underline">
-					Try again
+					{m["login.try_again"]()}
 				</button>
 			</p>
 		</div>
 
 		<p class="mt-8 text-sm text-gray-400">
-			The code expires in 10 minutes.
+			{m["login.code_expires"]()}
 		</p>
 	</div>
 </div>

@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { REGISTRY_URL, VAULT_ID } from '$lib/config';
 	import type { PageData } from './$types';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -58,14 +59,14 @@
 </script>
 
 <svelte:head>
-	<title>Sign In | Polyphony Vault</title>
+	<title>{m["login.title"]()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
 	<div class="w-full max-w-md">
 		<div class="mb-8 text-center">
-			<h1 class="text-3xl font-bold text-gray-900">Sign In</h1>
-			<p class="mt-2 text-gray-600">to Polyphony Vault</p>
+			<h1 class="text-3xl font-bold text-gray-900">{m["login.title"]()}</h1>
+			<p class="mt-2 text-gray-600">{m["login.subtitle"]()}</p>
 		</div>
 
 		<div class="rounded-xl bg-white p-6 shadow-sm">
@@ -79,13 +80,13 @@
 			<!-- Email Form -->
 			<form onsubmit={(e) => { e.preventDefault(); sendMagicLink(); }}>
 				<label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-					Email address
+					{m["login.email_label"]()}
 				</label>
 				<input
 					type="email"
 					id="email"
 					bind:value={email}
-					placeholder="you@example.com"
+					placeholder={m["login.email_placeholder"]()}
 					required
 					disabled={isSubmitting}
 					class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
@@ -100,7 +101,7 @@
 					disabled={isSubmitting || !email}
 					class="mt-4 w-full rounded-lg bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					{isSubmitting ? 'Sending...' : 'Send Magic Link'}
+					{isSubmitting ? m["login.sending"]() : m["login.send_magic_link"]()}
 				</button>
 			</form>
 
@@ -110,7 +111,7 @@
 					<div class="w-full border-t border-gray-200"></div>
 				</div>
 				<div class="relative flex justify-center text-sm">
-					<span class="bg-white px-4 text-gray-500">or</span>
+					<span class="bg-white px-4 text-gray-500">{m["login.or"]()}</span>
 				</div>
 			</div>
 
@@ -137,12 +138,12 @@
 						d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
 					/>
 				</svg>
-				<span class="font-medium text-gray-700">Sign in with Google</span>
+				<span class="font-medium text-gray-700">{m["login.sign_in_google"]()}</span>
 			</button>
 		</div>
 
 		<p class="mt-6 text-center text-sm text-gray-500">
-			Don't have an account? Ask your choir administrator for an invitation.
+			{m["login.no_account"]()}
 		</p>
 	</div>
 </div>
