@@ -1,5 +1,6 @@
-// Admin notification email for new organization registrations
-// Sends email to admin when a new organization is registered
+// Admin notification via Registry API
+// Issue #202 - Calls Registry endpoint instead of Resend directly
+// This centralizes email sending in Registry (which already has Resend configured)
 
 export interface RegistrationNotificationData {
 	orgName: string;
@@ -10,9 +11,9 @@ export interface RegistrationNotificationData {
 	orgId: string;
 }
 
-export interface EmailConfig {
-	resendApiKey: string;
-	adminEmail: string;
+export interface NotifyConfig {
+	registryUrl: string;
+	notifyApiKey: string;
 }
 
 export interface SendResult {
@@ -21,86 +22,53 @@ export interface SendResult {
 	error?: string;
 }
 
-export interface EmailPayload {
-	from: string;
-	to: string;
-	subject: string;
-	text: string;
-}
-
-const RESEND_API_URL = 'https://api.resend.com/emails';
-const FROM_ADDRESS = 'Polyphony <noreply@polyphony.uk>';
-
 /**
- * Build the email content for admin notification
- */
-export function buildAdminNotificationEmail(
-	data: RegistrationNotificationData,
-	adminEmail: string
-): EmailPayload {
-	const subject = `New Polyphony Registration: ${data.orgName}`;
-
-	const text = `New organization registered:
-
-Name: ${data.orgName}
-Subdomain: ${data.subdomain}.polyphony.uk
-Contact: ${data.contactEmail}
-Registered by: ${data.memberName} (${data.memberEmail})
-Org ID: ${data.orgId}
-
-ACTION REQUIRED:
-1. Add custom domain in Cloudflare Pages
-2. Update organization status to 'active'
-`;
-
-	return {
-		from: FROM_ADDRESS,
-		to: adminEmail,
-		subject,
-		text
-	};
-}
-
-/**
- * Send admin notification email for new registration
+ * Send admin notification for new registration via Registry API
+ * Registry handles the actual email sending via Resend
  * Gracefully handles failures - logs error but doesn't throw
  */
 export async function sendAdminNotification(
 	data: RegistrationNotificationData,
-	config: EmailConfig
+	config: NotifyConfig
 ): Promise<SendResult> {
 	// Validate configuration
-	if (!config.resendApiKey || !config.adminEmail) {
-		const error = 'Email service not configured (missing API key or admin email)';
+	if (!config.registryUrl || !config.notifyApiKey) {
+		const error = 'Notification service not configured (missing Registry URL or API key)';
 		console.warn(`[Admin Notification] ${error}`);
 		return { success: false, error };
 	}
 
-	const email = buildAdminNotificationEmail(data, config.adminEmail);
+	const url = `${config.registryUrl}/api/notify/registration`;
 
 	try {
-		const response = await fetch(RESEND_API_URL, {
+		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${config.resendApiKey}`,
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(email)
+			body: JSON.stringify({
+				apiKey: config.notifyApiKey,
+				...data
+			})
 		});
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}));
-			const error = `Resend API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`;
+			const errorData = await response.json().catch(() => ({})) as { error?: string };
+			const error = `Registry API error: ${response.status} - ${errorData.error || 'Unknown error'}`;
 			console.error(`[Admin Notification] ${error}`);
 			return { success: false, error };
 		}
 
-		const result = await response.json() as { id: string };
-		console.log(`[Admin Notification] Email sent successfully: ${result.id}`);
-		return { success: true, emailId: result.id };
+		const result = await response.json() as { success: boolean; emailId?: string };
+		if (result.success) {
+			console.log(`[Admin Notification] Email sent via Registry: ${result.emailId}`);
+			return { success: true, emailId: result.emailId };
+		} else {
+			return { success: false, error: 'Registry returned failure' };
+		}
 	} catch (err) {
 		const error = err instanceof Error ? err.message : 'Unknown error';
-		console.error(`[Admin Notification] Failed to send email: ${error}`);
+		console.error(`[Admin Notification] Failed to call Registry: ${error}`);
 		return { success: false, error };
 	}
 }

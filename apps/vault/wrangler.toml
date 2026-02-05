@@ -13,9 +13,8 @@ database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 # See issue #33 for rationale, #34 for future chunked storage support
 
 # Environment variables (use wrangler secret for production)
-# Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET, RESEND_API_KEY
+# Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET, NOTIFY_API_KEY
 
 [vars]
 REGISTRY_OAUTH_URL = "https://polyphony.uk"
 VAULT_ID = "BQ6u9ENTnZk_danhhIbUB"  # Vault identifier (public, appears in JWT aud claim)
-ADMIN_EMAIL = ""  # Set to admin email for registration notifications (#202)

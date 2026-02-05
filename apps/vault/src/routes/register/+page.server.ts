@@ -100,8 +100,8 @@ export const actions: Actions = {
 			// Add owner role for this organization
 			await addMemberRoles(db, member.id, ['owner'], null, org.id);
 
-			// Send admin notification email (graceful failure - don't block registration)
-			// Uses Resend API via RESEND_API_KEY and ADMIN_EMAIL env vars
+			// Send admin notification via Registry (graceful failure - don't block registration)
+			// Registry handles email sending via Resend
 			await sendAdminNotification(
 				{
 					orgName: org.name,
@@ -112,8 +112,8 @@ export const actions: Actions = {
 					orgId: org.id
 				},
 				{
-					resendApiKey: platform.env.RESEND_API_KEY ?? '',
-					adminEmail: platform.env.ADMIN_EMAIL ?? ''
+					registryUrl: platform.env.REGISTRY_OAUTH_URL ?? '',
+					notifyApiKey: platform.env.NOTIFY_API_KEY ?? ''
 				}
 			);
 
