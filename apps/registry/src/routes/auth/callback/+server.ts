@@ -1,9 +1,13 @@
 // OAuth callback endpoint
 // GET /auth/callback?code=xxx&state=xxx
 /// <reference types="@cloudflare/workers-types" />
-import { redirect } from '@sveltejs/kit';
 import { signToken } from '@polyphony/shared/crypto';
 import { nanoid } from 'nanoid';
+
+// SSO cookie constants
+const SSO_COOKIE_NAME = 'polyphony_sso';
+const SSO_COOKIE_DOMAIN = '.polyphony.uk';
+const SSO_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
 
 interface CloudflarePlatform {
 	env: {
@@ -84,8 +88,8 @@ export const GET = async ({
 		return new Response('No active signing key', { status: 500 });
 	}
 
-	// Create JWT
-	const token = await signToken(
+	// Create JWT for vault (includes vault-specific claims)
+	const vaultToken = await signToken(
 		{
 			iss: 'https://polyphony.uk',
 			sub: userInfo.email,
@@ -98,9 +102,40 @@ export const GET = async ({
 		signingKey.private_key as string
 	);
 
-	// Redirect to vault callback with token
-	const callbackUrl = new URL(state.callbackUrl);
-	callbackUrl.searchParams.set('token', token);
+	// Create SSO token for cross-vault convenience (simpler claims)
+	const ssoToken = await signToken(
+		{
+			iss: 'https://polyphony.uk',
+			sub: userInfo.email,
+			aud: 'polyphony-sso',
+			nonce: nanoid(),
+			email: userInfo.email,
+			name: userInfo.name,
+			picture: userInfo.picture
+		},
+		signingKey.private_key as string
+	);
 
-	return redirect(302, callbackUrl.toString());
+	// Build SSO cookie
+	const ssoCookie = [
+		`${SSO_COOKIE_NAME}=${ssoToken}`,
+		`Domain=${SSO_COOKIE_DOMAIN}`,
+		'Path=/',
+		'HttpOnly',
+		'Secure',
+		'SameSite=Lax',
+		`Max-Age=${SSO_COOKIE_MAX_AGE}`
+	].join('; ');
+
+	// Redirect to vault callback with token and set SSO cookie
+	const callbackUrl = new URL(state.callbackUrl);
+	callbackUrl.searchParams.set('token', vaultToken);
+
+	return new Response(null, {
+		status: 302,
+		headers: {
+			Location: callbackUrl.toString(),
+			'Set-Cookie': ssoCookie
+		}
+	});
 };

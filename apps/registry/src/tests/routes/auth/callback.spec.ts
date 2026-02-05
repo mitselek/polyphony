@@ -83,28 +83,24 @@ describe('GET /auth/callback', () => {
 		});
 		const url = new URL(`http://localhost/auth/callback?code=test-code&state=${state}`);
 		
-		try {
-			await GET({
-				url,
-				platform: {
-					env: {
-						DB: createMockDb(),
-						API_KEY: 'test',
-						GOOGLE_CLIENT_ID: 'test-client-id',
-						GOOGLE_CLIENT_SECRET: 'test-client-secret'
-					}
-				},
-				fetch: createMockFetch(true)
-			} satisfies TestRequestEvent);
-			
-			// Should not reach here - redirect throws
-			expect(true).toBe(false);
-		} catch (redirect: any) {
-			// SvelteKit redirect throws an error
-			expect(redirect.status).toBe(302);
-			expect(redirect.location).toContain('https://vault.example.com/callback');
-			expect(redirect.location).toContain('token=');
-		}
+		const response = await GET({
+			url,
+			platform: {
+				env: {
+					DB: createMockDb(),
+					API_KEY: 'test',
+					GOOGLE_CLIENT_ID: 'test-client-id',
+					GOOGLE_CLIENT_SECRET: 'test-client-secret'
+				}
+			},
+			fetch: createMockFetch(true)
+		} satisfies TestRequestEvent);
+		
+		// Now returns Response with Location header (not throw)
+		expect(response.status).toBe(302);
+		const location = response.headers.get('Location');
+		expect(location).toContain('https://vault.example.com/callback');
+		expect(location).toContain('token=');
 	});
 
 	it('should handle Google token exchange failure', async () => {
@@ -130,5 +126,129 @@ describe('GET /auth/callback', () => {
 		expect(response.status).toBe(400);
 		const text = await response.text();
 		expect(text).toContain('Failed to exchange');
+	});
+
+	// SSO Cookie tests (Issue #208)
+	describe('SSO Cookie', () => {
+		it('should set polyphony_sso cookie on successful auth', async () => {
+			const state = JSON.stringify({
+				vaultId: 'vault-test-id',
+				callbackUrl: 'https://vault.example.com/callback'
+			});
+			const url = new URL(`http://localhost/auth/callback?code=test-code&state=${state}`);
+			
+			const response = await GET({
+				url,
+				platform: {
+					env: {
+						DB: createMockDb(),
+						API_KEY: 'test',
+						GOOGLE_CLIENT_ID: 'test-client-id',
+						GOOGLE_CLIENT_SECRET: 'test-client-secret'
+					}
+				},
+				fetch: createMockFetch(true)
+			} satisfies TestRequestEvent);
+
+			// Should be a redirect response (not throw)
+			expect(response.status).toBe(302);
+			
+			// Check Set-Cookie header
+			const setCookie = response.headers.get('Set-Cookie');
+			expect(setCookie).toBeTruthy();
+			expect(setCookie).toContain('polyphony_sso=');
+		});
+
+		it('should set cookie with correct attributes', async () => {
+			const state = JSON.stringify({
+				vaultId: 'vault-test-id',
+				callbackUrl: 'https://vault.example.com/callback'
+			});
+			const url = new URL(`http://localhost/auth/callback?code=test-code&state=${state}`);
+			
+			const response = await GET({
+				url,
+				platform: {
+					env: {
+						DB: createMockDb(),
+						API_KEY: 'test',
+						GOOGLE_CLIENT_ID: 'test-client-id',
+						GOOGLE_CLIENT_SECRET: 'test-client-secret'
+					}
+				},
+				fetch: createMockFetch(true)
+			} satisfies TestRequestEvent);
+
+			const setCookie = response.headers.get('Set-Cookie');
+			expect(setCookie).toContain('Domain=.polyphony.uk');
+			expect(setCookie).toContain('HttpOnly');
+			expect(setCookie).toContain('Secure');
+			expect(setCookie).toContain('SameSite=Lax');
+			expect(setCookie).toContain('Max-Age=2592000'); // 30 days
+			expect(setCookie).toContain('Path=/');
+		});
+
+		it('should redirect to vault callback with token', async () => {
+			const state = JSON.stringify({
+				vaultId: 'vault-test-id',
+				callbackUrl: 'https://vault.example.com/callback'
+			});
+			const url = new URL(`http://localhost/auth/callback?code=test-code&state=${state}`);
+			
+			const response = await GET({
+				url,
+				platform: {
+					env: {
+						DB: createMockDb(),
+						API_KEY: 'test',
+						GOOGLE_CLIENT_ID: 'test-client-id',
+						GOOGLE_CLIENT_SECRET: 'test-client-secret'
+					}
+				},
+				fetch: createMockFetch(true)
+			} satisfies TestRequestEvent);
+
+			expect(response.status).toBe(302);
+			const location = response.headers.get('Location');
+			expect(location).toContain('https://vault.example.com/callback');
+			expect(location).toContain('token=');
+		});
+
+		it('should include valid JWT in SSO cookie', async () => {
+			const state = JSON.stringify({
+				vaultId: 'vault-test-id',
+				callbackUrl: 'https://vault.example.com/callback'
+			});
+			const url = new URL(`http://localhost/auth/callback?code=test-code&state=${state}`);
+			
+			const response = await GET({
+				url,
+				platform: {
+					env: {
+						DB: createMockDb(),
+						API_KEY: 'test',
+						GOOGLE_CLIENT_ID: 'test-client-id',
+						GOOGLE_CLIENT_SECRET: 'test-client-secret'
+					}
+				},
+				fetch: createMockFetch(true)
+			} satisfies TestRequestEvent);
+
+			const setCookie = response.headers.get('Set-Cookie');
+			// Extract token from cookie
+			const match = setCookie?.match(/polyphony_sso=([^;]+)/);
+			expect(match).toBeTruthy();
+			const ssoToken = match![1];
+			
+			// JWT has 3 parts separated by dots
+			const parts = ssoToken.split('.');
+			expect(parts).toHaveLength(3);
+			
+			// Decode payload (base64url)
+			const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+			expect(payload.email).toBe('user@example.com');
+			expect(payload.name).toBe('Test User');
+			expect(payload.exp).toBeGreaterThan(Date.now() / 1000);
+		});
 	});
 });
