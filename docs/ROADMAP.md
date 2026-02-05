@@ -3,7 +3,7 @@
 Strategic roadmap for evolving Polyphony from single-vault to multi-tenant umbrella architecture.
 
 **Status**: Active  
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-02-05
 
 ---
 
@@ -40,6 +40,7 @@ See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for complete schema design.
 - ✅ **Schema V2 design complete** (see SCHEMA-V2-EVOLUTION.md)
 - ✅ **Schema V2 migrations applied to production** (2026-02-01)
 - ✅ **Subdomain routing implemented** (crede.polyphony.uk live)
+- ✅ **i18n Epic complete** - Paraglide JS + 4 locales (en, et, lv, uk)
 - 🔲 No umbrella organization support (UI pending)
 - 🔲 No billing/subscriptions
 
@@ -112,6 +113,52 @@ Migrated existing Crede data to V2 structure:
 - [x] Subdomain routing working
 - [x] All tests passing with new schema
 - [x] **Crede fully functional on V2 schema at crede.polyphony.uk**
+
+---
+
+## Phase 0.6: Internationalization (i18n) ✅ COMPLETE
+
+**Goal**: Multi-language support with user/org preferences.
+
+**Completed 2026-02-05**. See Epic #183.
+
+### 0.6.1 i18n Framework ✅
+
+- [x] Chose Paraglide JS (compile-time, type-safe)
+- [x] Integrated with SvelteKit
+- [x] 4 locales: English (en), Estonian (et), Latvian (lv), Ukrainian (uk)
+
+### 0.6.2 Database Schema ✅
+
+- [x] Added language/locale/timezone to organizations table
+- [x] Created member_preferences table
+- [x] Cascading resolution: member → org → defaults
+
+### 0.6.3 Settings UI ✅
+
+- [x] Organization settings page (admin-only)
+- [x] Member profile preferences page
+- [x] "Use organization default" option
+
+### 0.6.4 String Extraction ✅
+
+- [x] Navigation strings
+- [x] Login/welcome/invite pages
+- [x] Landing page
+- [x] Copyright/takedown pages
+
+### 0.6.5 Testing ✅
+
+- [x] Message consistency tests (key presence, snake_case naming)
+- [x] Placeholder validation
+- [x] All 940+ tests passing
+
+**Deliverables** ✅:
+
+- [x] Paraglide JS integrated
+- [x] 4 locales with translations
+- [x] User/org preference UI
+- [x] i18n test coverage
 
 ---
 
@@ -401,7 +448,8 @@ Upgrade from Free to Pro plan when approaching DNS record limits.
 | Phase                        | Effort | Value    | Priority |
 | ---------------------------- | ------ | -------- | -------- |
 | 0: Schema V2 Design          | Medium | Critical | ✅ Done  |
-| 0.5: Schema V2 + Routing     | Medium | Critical | **P0**   |
+| 0.5: Schema V2 + Routing     | Medium | Critical | ✅ Done  |
+| 0.6: Internationalization    | Medium | High     | ✅ Done  |
 | 1: SSO Cookie                | Low    | Medium   | **P2**   |
 | 2: Organization Registration | Medium | High     | **P1**   |
 | 3: DNS Automation            | Low    | Medium   | **P1**   |
@@ -413,18 +461,15 @@ Upgrade from Free to Pro plan when approaching DNS record limits.
 
 ## Current Sprint
 
-**Focus**: Phase 0.5 - Schema V2 + Subdomain Routing
+**Focus**: Phase 2 - Organization Registration
 
-**Goal**: Crede fully functional on V2 schema
+**Goal**: Allow new choirs to register and get their own subdomain.
 
-- [ ] Create vault migration for organizations table
-- [ ] Create vault migration for member_organizations junction
-- [ ] Add org_id to member_roles, sections, events, works, seasons, invites
-- [ ] Create affiliations table with history tracking
-- [ ] Migrate existing Crede data to new structure
-- [ ] Implement subdomain → org routing in hooks
-- [ ] Update member queries for org context
-- [ ] Update tests for new schema
+- [ ] `/register` page with organization type selection
+- [ ] Registration form (name, contact email, subdomain)
+- [ ] Subdomain availability checker (real-time)
+- [ ] Create organization + first owner member on submit
+- [ ] Update Cloudflare DNS via API (manual for now, automate in Phase 3)
 
 ---
 
@@ -439,4 +484,4 @@ Upgrade from Free to Pro plan when approaching DNS record limits.
 
 ---
 
-_Last updated: 2026-02-01_
+_Last updated: 2026-02-05_
