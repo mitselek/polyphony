@@ -34,8 +34,8 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "success": "Success",
-    "confirmPrompt": "Are you sure?",
-    "noResults": "No results found",
+    "confirm_prompt": "Are you sure?",
+    "no_results": "No results found",
     "required": "Required",
     "optional": "Optional",
     "yes": "Yes",
@@ -44,26 +44,26 @@
   "auth": {
     "login": "Log in",
     "logout": "Log out",
-    "loginRequired": "Please log in to continue",
+    "login_required": "Please log in to continue",
     "unauthorized": "You don't have permission to access this page"
   },
   "members": {
     "title": "Members",
-    "addMember": "Add Member",
-    "inviteMember": "Invite Member",
-    "editMember": "Edit Member",
-    "removeMember": "Remove Member",
+    "add_member": "Add Member",
+    "invite_member": "Invite Member",
+    "edit_member": "Edit Member",
+    "remove_member": "Remove Member",
     "roles": "Roles",
     "voices": "Voices",
     "sections": "Sections",
-    "memberSince": "Member since",
-    "pendingInvites": "Pending Invitations"
+    "member_since": "Member since",
+    "pending_invites": "Pending Invitations"
   },
   "events": {
     "title": "Events",
-    "addEvent": "Add Event",
-    "editEvent": "Edit Event",
-    "deleteEvent": "Delete Event",
+    "add_event": "Add Event",
+    "edit_event": "Edit Event",
+    "delete_event": "Delete Event",
     "date": "Date",
     "time": "Time",
     "location": "Location",
@@ -81,8 +81,8 @@
     "locale": "Date & Number Format",
     "timezone": "Timezone",
     "preferences": "Preferences",
-    "organizationSettings": "Organization Settings",
-    "memberPreferences": "Your Preferences",
-    "useOrgDefault": "Use organization default ({value})"
+    "organization_settings": "Organization Settings",
+    "member_preferences": "Your Preferences",
+    "use_org_default": "Use organization default ({value})"
   }
 }

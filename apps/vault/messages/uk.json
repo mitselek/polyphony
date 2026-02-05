@@ -19,7 +19,7 @@
     "delete": "Видалити",
     "edit": "Редагувати",
     "add": "Додати",
-    "search": "Пошук",
+    "search": "Шукати",
     "close": "Закрити",
     "confirm": "Підтвердити",
     "back": "Назад",
@@ -34,36 +34,36 @@
     "loading": "Завантаження...",
     "error": "Сталася помилка",
     "success": "Успішно",
-    "confirmPrompt": "Ви впевнені?",
-    "noResults": "Результатів не знайдено",
-    "required": "Обов'язкове",
-    "optional": "Необов'язкове",
+    "confirm_prompt": "Ви впевнені?",
+    "no_results": "Результатів не знайдено",
+    "required": "Обов'язково",
+    "optional": "Необов'язково",
     "yes": "Так",
     "no": "Ні"
   },
   "auth": {
     "login": "Увійти",
     "logout": "Вийти",
-    "loginRequired": "Будь ласка, увійдіть, щоб продовжити",
+    "login_required": "Будь ласка, увійдіть, щоб продовжити",
     "unauthorized": "У вас немає доступу до цієї сторінки"
   },
   "members": {
     "title": "Учасники",
-    "addMember": "Додати учасника",
-    "inviteMember": "Запросити учасника",
-    "editMember": "Редагувати учасника",
-    "removeMember": "Видалити учасника",
+    "add_member": "Додати учасника",
+    "invite_member": "Запросити учасника",
+    "edit_member": "Редагувати учасника",
+    "remove_member": "Видалити учасника",
     "roles": "Ролі",
     "voices": "Голоси",
     "sections": "Секції",
-    "memberSince": "Учасник з",
-    "pendingInvites": "Очікуючі запрошення"
+    "member_since": "Учасник з",
+    "pending_invites": "Очікувані запрошення"
   },
   "events": {
     "title": "Події",
-    "addEvent": "Додати подію",
-    "editEvent": "Редагувати подію",
-    "deleteEvent": "Видалити подію",
+    "add_event": "Додати подію",
+    "edit_event": "Редагувати подію",
+    "delete_event": "Видалити подію",
     "date": "Дата",
     "time": "Час",
     "location": "Місце",
@@ -78,11 +78,11 @@
   "settings": {
     "title": "Налаштування",
     "language": "Мова",
-    "locale": "Формат дати та чисел",
+    "locale": "Формат дати і чисел",
     "timezone": "Часовий пояс",
-    "preferences": "Налаштування",
-    "organizationSettings": "Налаштування організації",
-    "memberPreferences": "Ваші налаштування",
-    "useOrgDefault": "Використовувати значення організації ({value})"
+    "preferences": "Уподобання",
+    "organization_settings": "Налаштування організації",
+    "member_preferences": "Ваші уподобання",
+    "use_org_default": "Використовувати стандарт організації ({value})"
   }
 }

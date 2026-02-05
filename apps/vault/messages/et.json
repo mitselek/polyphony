@@ -34,8 +34,8 @@
     "loading": "Laadimine...",
     "error": "Tekkis viga",
     "success": "Õnnestus",
-    "confirmPrompt": "Kas oled kindel?",
-    "noResults": "Tulemusi ei leitud",
+    "confirm_prompt": "Kas oled kindel?",
+    "no_results": "Tulemusi ei leitud",
     "required": "Kohustuslik",
     "optional": "Valikuline",
     "yes": "Jah",
@@ -44,26 +44,26 @@
   "auth": {
     "login": "Logi sisse",
     "logout": "Logi välja",
-    "loginRequired": "Palun logi sisse, et jätkata",
+    "login_required": "Palun logi sisse, et jätkata",
     "unauthorized": "Sul pole õigust sellele lehele siseneda"
   },
   "members": {
     "title": "Liikmed",
-    "addMember": "Lisa liige",
-    "inviteMember": "Kutsu liige",
-    "editMember": "Muuda liiget",
-    "removeMember": "Eemalda liige",
+    "add_member": "Lisa liige",
+    "invite_member": "Kutsu liige",
+    "edit_member": "Muuda liiget",
+    "remove_member": "Eemalda liige",
     "roles": "Rollid",
     "voices": "Hääled",
     "sections": "Partiid",
-    "memberSince": "Liige alates",
-    "pendingInvites": "Ootel kutsed"
+    "member_since": "Liige alates",
+    "pending_invites": "Ootel kutsed"
   },
   "events": {
     "title": "Sündmused",
-    "addEvent": "Lisa sündmus",
-    "editEvent": "Muuda sündmust",
-    "deleteEvent": "Kustuta sündmus",
+    "add_event": "Lisa sündmus",
+    "edit_event": "Muuda sündmust",
+    "delete_event": "Kustuta sündmus",
     "date": "Kuupäev",
     "time": "Aeg",
     "location": "Koht",
@@ -81,8 +81,8 @@
     "locale": "Kuupäeva ja numbrite vorming",
     "timezone": "Ajavöönd",
     "preferences": "Eelistused",
-    "organizationSettings": "Organisatsiooni seaded",
-    "memberPreferences": "Sinu eelistused",
-    "useOrgDefault": "Kasuta organisatsiooni vaikeväärtust ({value})"
+    "organization_settings": "Organisatsiooni seaded",
+    "member_preferences": "Sinu eelistused",
+    "use_org_default": "Kasuta organisatsiooni vaikeväärtust ({value})"
   }
 }

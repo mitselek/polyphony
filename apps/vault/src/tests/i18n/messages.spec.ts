@@ -156,15 +156,15 @@ describe('i18n message consistency', () => {
 	});
 
 	describe('key naming conventions', () => {
-		it('all keys use valid identifiers (no spaces or special chars)', () => {
+		it('all keys use snake_case (lowercase with underscores)', () => {
 			const messages = loadMessages(BASE_LOCALE);
 			const keys = Object.keys(flattenMessages(messages));
-			// Keys should only contain alphanumeric, dots, and underscores
-			const invalidKeys = keys.filter((k) => !/^[a-zA-Z0-9_.]+$/.test(k));
+			// snake_case: lowercase letters, numbers, underscores only (dots for nesting)
+			const invalidKeys = keys.filter((k) => !/^[a-z0-9_.]+$/.test(k));
 
 			if (invalidKeys.length > 0) {
 				throw new Error(
-					`Keys contain invalid characters:\n  - ${invalidKeys.join('\n  - ')}`
+					`Keys must be snake_case (lowercase). Invalid keys:\n  - ${invalidKeys.join('\n  - ')}`
 				);
 			}
 
