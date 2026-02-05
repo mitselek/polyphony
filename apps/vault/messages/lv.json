@@ -148,6 +148,36 @@
     "error_help": "Ja uzskatāt, ka tā ir kļūda, sazinieties ar savu kora administratoru.",
     "go_home": "Uz sākumu"
   },
+  "register": {
+    "title": "Reģistrējiet savu kori",
+    "subtitle": "Izveidojiet Polyphony glabātuvi sava kora nošu bibliotēkai",
+    "org_name": "Kora nosaukums",
+    "org_name_placeholder": "piem., Pilsētas kamerkori",
+    "contact_email": "Kontakta e-pasts",
+    "email_hint": "Šis būs jūsu organizācijas galvenais kontakts",
+    "subdomain": "Jūsu glabātuves URL",
+    "subdomain_placeholder": "manapilseta",
+    "checking": "Pārbauda pieejamību...",
+    "subdomain_available": "Pieejams!",
+    "subdomain_taken": "Šis apakšdomēns jau ir aizņemts",
+    "subdomain_reserved": "Šis apakšdomēns ir rezervēts",
+    "subdomain_too_short": "Vismaz 3 rakstzīmes",
+    "submitting": "Veido jūsu glabātuvi...",
+    "submit": "Reģistrēt kori",
+    "note": "Jūsu glabātuve tiks pārskatīta un aktivizēta 24-48 stundu laikā.",
+    "error_subdomain_taken": "Šis apakšdomēns vairs nav pieejams. Lūdzu, izvēlieties citu.",
+    "error_already_owner": "Jūs jau esat organizācijas īpašnieks. Sazinieties ar atbalstu, ja nepieciešama vēl viena.",
+    "success": {
+      "title": "Reģistrācija iesniegta!",
+      "message": "Jūsu kora glabātuve ir iesniegta pārskatīšanai.",
+      "subdomain_label": "Jūsu glabātuve būs pieejama:",
+      "next_steps_title": "Kas notiek tālāk?",
+      "next_step_1": "Mēs pārskatīsim jūsu reģistrāciju 24-48 stundu laikā",
+      "next_step_2": "Jūs saņemsiet e-pastu, kad jūsu glabātuve būs aktivizēta",
+      "next_step_3": "Pēc tam varēsiet sākt augšupielādēt notis un uzaicināt dalībniekus",
+      "back_home": "Atpakaļ uz sākumu"
+    }
+  },
   "copyright": {
     "title": "Autortiesību pārkāpuma ziņojums",
     "intro": "Ja uzskatāt, ka ar autortiesībām aizsargāts materiāls ir augšupielādēts bez atļaujas, lūdzu, iesniedziet noņemšanas pieprasījumu, izmantojot zemāk esošo veidlapu.",
