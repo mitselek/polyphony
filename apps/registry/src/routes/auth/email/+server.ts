@@ -22,6 +22,13 @@ interface CloudflarePlatform {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Allowed callback URL domains (zero-storage: no vault table lookup)
+const ALLOWED_CALLBACK_DOMAINS = [
+	'polyphony.uk',      // Production vaults
+	'localhost:5174',    // Development
+	'localhost:5173'     // Alternative dev port
+];
+
 // CORS headers for cross-origin requests from vaults
 const CORS_HEADERS = {
 	'Access-Control-Allow-Origin': '*',
@@ -42,7 +49,23 @@ export const OPTIONS: RequestHandler = async () => {
 	return new Response(null, { status: 204, headers: CORS_HEADERS });
 };
 
-interface Vault { id: string; name: string; callback_url: string; }
+/** Validate callback URL is on allowed domain */
+function isCallbackAllowed(callbackUrl: string): boolean {
+	try {
+		const url = new URL(callbackUrl);
+		const host = url.host; // includes port if present
+		
+		// Check exact match or subdomain match
+		return ALLOWED_CALLBACK_DOMAINS.some(domain => {
+			if (host === domain) return true;
+			// Check if it's a subdomain (e.g., "testorg.polyphony.uk" matches "polyphony.uk")
+			if (host.endsWith(`.${domain}`)) return true;
+			return false;
+		});
+	} catch {
+		return false;
+	}
+}
 
 /** Validate request body and return parsed data or error response */
 function validateRequest(body: unknown): { data?: EmailAuthRequest; error?: Response } {
@@ -56,16 +79,10 @@ function validateRequest(body: unknown): { data?: EmailAuthRequest; error?: Resp
 	if (!callback || typeof callback !== 'string') {
 		return { error: corsJson({ success: false, error: 'Missing callback' }, { status: 400 }) };
 	}
+	if (!isCallbackAllowed(callback)) {
+		return { error: corsJson({ success: false, error: 'Invalid callback URL' }, { status: 400 }) };
+	}
 	return { data: { email, vault_id, callback } };
-}
-
-/** Lookup vault and verify callback matches */
-async function lookupVault(db: D1Database, vaultId: string, callback: string): Promise<Vault | null> {
-	const vault = await db
-		.prepare('SELECT id, name, callback_url FROM vaults WHERE id = ? AND active = 1')
-		.bind(vaultId)
-		.first<Vault>();
-	return vault?.callback_url === callback ? vault : null;
 }
 
 interface SendMagicLinkContext {
@@ -102,11 +119,18 @@ export const POST: RequestHandler = async ({ request, platform, url }) => {
 	if (validation.error) return validation.error;
 	const { email, vault_id, callback } = validation.data!;
 
-	const vault = await lookupVault(env.DB, vault_id, callback);
-	if (!vault) return corsJson({ success: true, message: 'If valid, check your email' });
+	// Extract vault name from subdomain for email (e.g., "testorg.polyphony.uk" → "testorg")
+	let vaultName = vault_id;
+	try {
+		const callbackUrl = new URL(callback);
+		const parts = callbackUrl.hostname.split('.');
+		if (parts.length >= 3) vaultName = parts[0];
+	} catch {
+		// Use vault_id as fallback
+	}
 
 	return createAndSendMagicLink({
 		db: env.DB, resendKey: env.RESEND_API_KEY, origin: url.origin,
-		email, vaultId: vault_id, callback, vaultName: vault.name
+		email, vaultId: vault_id, callback, vaultName
 	});
 };

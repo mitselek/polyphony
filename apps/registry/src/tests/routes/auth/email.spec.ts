@@ -31,11 +31,11 @@ function createMockRequest(body: unknown): Request {
 	});
 }
 
-function createMockDb(vault?: { id: string; name: string; callback_url: string }) {
+function createMockDb() {
 	return {
 		prepare: () => ({
 			bind: () => ({
-				first: async () => vault || null
+				first: async () => null
 			})
 		})
 	} as unknown as D1Database;
@@ -116,11 +116,11 @@ describe('POST /auth/email', () => {
 		expect(data.error).toContain('callback');
 	});
 
-	it('should return generic success for unregistered vault (prevent enumeration)', async () => {
+	it('should reject callback URL not on allowed domain', async () => {
 		const request = createMockRequest({
 			email: 'user@example.com',
-			vault_id: 'unknown-vault',
-			callback: 'https://vault.example.com/callback'
+			vault_id: 'testorg',
+			callback: 'https://evil.com/auth/callback'
 		});
 
 		const response = await POST({
@@ -128,25 +128,23 @@ describe('POST /auth/email', () => {
 			url: new URL('http://localhost/auth/email'),
 			platform: {
 				env: {
-					DB: createMockDb(), // No vault returned
+					DB: createMockDb(),
 					RESEND_API_KEY: 'test-key'
 				}
 			}
 		} as unknown as Parameters<typeof POST>[0]);
 
-		expect(response.status).toBe(200);
+		expect(response.status).toBe(400);
 		const data = (await response.json()) as ApiResponse;
-		expect(data.success).toBe(true);
-		// Should NOT call createAuthCode or sendMagicLink
-		expect(createAuthCode).not.toHaveBeenCalled();
-		expect(sendMagicLink).not.toHaveBeenCalled();
+		expect(data.success).toBe(false);
+		expect(data.error).toContain('callback');
 	});
 
-	it('should return generic success for mismatched callback (prevent enumeration)', async () => {
+	it('should accept callback URL on polyphony.uk domain', async () => {
 		const request = createMockRequest({
 			email: 'user@example.com',
-			vault_id: 'vault-123',
-			callback: 'https://evil.com/callback'
+			vault_id: 'testorg',
+			callback: 'https://testorg.polyphony.uk/auth/callback'
 		});
 
 		const response = await POST({
@@ -154,41 +152,7 @@ describe('POST /auth/email', () => {
 			url: new URL('http://localhost/auth/email'),
 			platform: {
 				env: {
-					DB: createMockDb({
-						id: 'vault-123',
-						name: 'Test Vault',
-						callback_url: 'https://vault.example.com/callback' // Different from request
-					}),
-					RESEND_API_KEY: 'test-key'
-				}
-			}
-		} as unknown as Parameters<typeof POST>[0]);
-
-		expect(response.status).toBe(200);
-		const data = (await response.json()) as ApiResponse;
-		expect(data.success).toBe(true);
-		// Should NOT call createAuthCode or sendMagicLink
-		expect(createAuthCode).not.toHaveBeenCalled();
-		expect(sendMagicLink).not.toHaveBeenCalled();
-	});
-
-	it('should create code and send email for valid request', async () => {
-		const request = createMockRequest({
-			email: 'user@example.com',
-			vault_id: 'vault-123',
-			callback: 'https://vault.example.com/callback'
-		});
-
-		const response = await POST({
-			request,
-			url: new URL('http://localhost/auth/email'),
-			platform: {
-				env: {
-					DB: createMockDb({
-						id: 'vault-123',
-						name: 'Test Vault',
-						callback_url: 'https://vault.example.com/callback'
-					}),
+					DB: createMockDb(),
 					RESEND_API_KEY: 'test-key'
 				}
 			}
@@ -203,19 +167,44 @@ describe('POST /auth/email', () => {
 		expect(createAuthCode).toHaveBeenCalledWith(
 			expect.anything(),
 			'user@example.com',
-			'vault-123',
-			'https://vault.example.com/callback'
+			'testorg',
+			'https://testorg.polyphony.uk/auth/callback'
 		);
 
-		// Verify email was sent
+		// Verify magic link email was sent
 		expect(sendMagicLink).toHaveBeenCalledWith(
 			'test-key',
 			expect.objectContaining({
 				to: 'user@example.com',
 				code: 'ABC123',
-				vaultName: 'Test Vault'
+				vaultName: 'testorg'
 			})
 		);
+	});
+
+	it('should accept localhost callback URL in development', async () => {
+		const request = createMockRequest({
+			email: 'dev@example.com',
+			vault_id: 'localvault',
+			callback: 'http://localhost:5174/auth/callback'
+		});
+
+		const response = await POST({
+			request,
+			url: new URL('http://localhost/auth/email'),
+			platform: {
+				env: {
+					DB: createMockDb(),
+					RESEND_API_KEY: 'test-key'
+				}
+			}
+		} as unknown as Parameters<typeof POST>[0]);
+
+		expect(response.status).toBe(200);
+		const data = (await response.json()) as ApiResponse;
+		expect(data.success).toBe(true);
+		expect(createAuthCode).toHaveBeenCalled();
+		expect(sendMagicLink).toHaveBeenCalled();
 	});
 
 	it('should return 429 when rate limited', async () => {
@@ -228,7 +217,7 @@ describe('POST /auth/email', () => {
 		const request = createMockRequest({
 			email: 'user@example.com',
 			vault_id: 'vault-123',
-			callback: 'https://vault.example.com/callback'
+			callback: 'https://testorg.polyphony.uk/auth/callback'
 		});
 
 		const response = await POST({
@@ -236,11 +225,7 @@ describe('POST /auth/email', () => {
 			url: new URL('http://localhost/auth/email'),
 			platform: {
 				env: {
-					DB: createMockDb({
-						id: 'vault-123',
-						name: 'Test Vault',
-						callback_url: 'https://vault.example.com/callback'
-					}),
+					DB: createMockDb(),
 					RESEND_API_KEY: 'test-key'
 				}
 			}
@@ -261,7 +246,7 @@ describe('POST /auth/email', () => {
 		const request = createMockRequest({
 			email: 'user@example.com',
 			vault_id: 'vault-123',
-			callback: 'https://vault.example.com/callback'
+			callback: 'https://testorg.polyphony.uk/auth/callback'
 		});
 
 		const response = await POST({
@@ -269,11 +254,7 @@ describe('POST /auth/email', () => {
 			url: new URL('http://localhost/auth/email'),
 			platform: {
 				env: {
-					DB: createMockDb({
-						id: 'vault-123',
-						name: 'Test Vault',
-						callback_url: 'https://vault.example.com/callback'
-					}),
+					DB: createMockDb(),
 					RESEND_API_KEY: 'test-key'
 				}
 			}
