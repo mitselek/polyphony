@@ -49,6 +49,24 @@ async function getActiveSections(db: D1Database, orgId: string): Promise<Section
 	}));
 }
 
+async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId: string): Promise<Season | null> {
+	if (seasonIdParam) {
+		return await getSeason(db, seasonIdParam);
+	}
+	// Default to current season by date
+	const today = new Date().toISOString().split('T')[0];
+	return await getSeasonByDate(db, orgId, today);
+}
+
+function buildRosterFilters(dateRange: { start?: string; end?: string | null }, orgId: string, sectionIdParam: string | null): RosterFilters {
+	return {
+		orgId,
+		start: dateRange.start,
+		end: dateRange.end ?? undefined,
+		...(sectionIdParam && { sectionId: sectionIdParam })
+	};
+}
+
 export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
@@ -56,33 +74,12 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	const currentMember = await getAuthenticatedMember(db, cookies);
 	const orgId = locals.org.id;
 
-	// Parse params from URL
 	const seasonIdParam = url.searchParams.get('seasonId');
 	const sectionIdParam = url.searchParams.get('sectionId');
 
-	// Resolve season (same pattern as /events page)
-	let season: Season | null = null;
-
-	if (seasonIdParam) {
-		season = await getSeason(db, seasonIdParam);
-	}
-
-	if (!season) {
-		// Default to current season by date
-		const today = new Date().toISOString().split('T')[0];
-		season = await getSeasonByDate(db, orgId, today);
-	}
-
-	// Get season date range (end is start of next season, or null if unbounded)
+	const season = await resolveSeason(db, seasonIdParam, orgId);
 	const dateRange = season ? await getSeasonDateRange(db, season) : { start: undefined, end: undefined };
-
-	// Build filters from season date range
-	const filters: RosterFilters = {
-		orgId,
-		start: dateRange.start,
-		end: dateRange.end ?? undefined,
-		...(sectionIdParam && { sectionId: sectionIdParam })
-	};
+	const filters = buildRosterFilters(dateRange, orgId, sectionIdParam);
 
 	const [roster, sections, seasonNav] = await Promise.all([
 		getRosterView(db, filters),
@@ -90,7 +87,6 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		season ? getSeasonNavigation(db, orgId, season.id) : Promise.resolve({ prev: null, next: null })
 	]);
 
-	// Determine if current user can manage others' participation
 	const canManageParticipation = currentMember.roles.some(r => 
 		['conductor', 'section_leader', 'owner'].includes(r)
 	);

@@ -56,6 +56,7 @@ Rate limiting for email sending (5 per hour per address).
 **Purpose**: Prevent abuse of magic link emails.
 
 **Discovery Data**: Registry queries Vault public APIs at runtime:
+
 - Organization directory: `GET /api/public/organizations` (Vault)
 - Public Domain scores: `GET /api/public/scores/pd` (Vault)
 

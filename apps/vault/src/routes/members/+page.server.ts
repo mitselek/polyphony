@@ -7,38 +7,12 @@ import { getAllMembers } from '$lib/server/db/members';
 import { getActiveVoices } from '$lib/server/db/voices';
 import { getActiveSections } from '$lib/server/db/sections';
 
-export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
-	const db = platform?.env?.DB;
-	if (!db) {
-		throw error(500, 'Database not available');
-	}
-
-	// Authenticate and get current user
-	let currentUser;
-	try {
-		currentUser = await getAuthenticatedMember(db, cookies);
-	} catch (err) {
-		// Not authenticated - redirect to login
-		redirect(302, '/login');
-	}
-
-	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
-
-	if (!canManage) {
-		throw error(403, 'Insufficient permissions - admin or owner role required');
-	}
-
-	const orgId = locals.org.id;
-
-	// Get all members with their roles, voices, and sections (scoped to org)
-	const allMembers = await getAllMembers(db, orgId);
-
-	// Format for frontend and sort by nickname (if set) or name
-	const members = allMembers
+function formatMembers(allMembers: Awaited<ReturnType<typeof getAllMembers>>) {
+	return allMembers
 		.map((m) => ({
 			id: m.id,
-			email: m.email_id, // For display
-			email_id: m.email_id, // For registration check (null = roster-only)
+			email: m.email_id,
+			email_id: m.email_id,
 			name: m.name,
 			nickname: m.nickname,
 			voices: m.voices,
@@ -51,11 +25,10 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 			const nameB = (b.nickname ?? b.name).toLowerCase();
 			return nameA.localeCompare(nameB);
 		});
+}
 
-	// Get pending invites for this organization
-	const pendingInvites = await getPendingInvites(db, orgId);
-	const baseUrl = `${url.origin}/invite/accept`;
-	const invites = pendingInvites.map((inv) => ({
+function formatInvites(pendingInvites: Awaited<ReturnType<typeof getPendingInvites>>, baseUrl: string) {
+	return pendingInvites.map((inv) => ({
 		id: inv.id,
 		roster_member_id: inv.roster_member_id,
 		name: inv.roster_member_name,
@@ -67,23 +40,56 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		invitedBy: inv.inviter_name ?? inv.inviter_email ?? 'Unknown',
 		inviteLink: `${baseUrl}?token=${inv.token}`
 	}));
+}
 
-	// Create map of roster member IDs to their invite links
+function createInviteLinkMap(pendingInvites: Awaited<ReturnType<typeof getPendingInvites>>, baseUrl: string) {
 	const pendingInviteLinks: Record<string, string> = {};
 	for (const inv of pendingInvites) {
 		pendingInviteLinks[inv.roster_member_id] = `${baseUrl}?token=${inv.token}`;
 	}
+	return pendingInviteLinks;
+}
 
-	// Get available voices and sections for adding
-	const availableVoices = await getActiveVoices(db);
-	const availableSections = await getActiveSections(db, orgId);
+async function loadMemberPageData(db: D1Database, orgId: string, url: URL) {
+	const allMembers = await getAllMembers(db, orgId);
+	const members = formatMembers(allMembers);
+
+	const pendingInvites = await getPendingInvites(db, orgId);
+	const baseUrl = `${url.origin}/invite/accept`;
+	const invites = formatInvites(pendingInvites, baseUrl);
+	const pendingInviteLinks = createInviteLinkMap(pendingInvites, baseUrl);
+
+	const [availableVoices, availableSections] = await Promise.all([
+		getActiveVoices(db),
+		getActiveSections(db, orgId)
+	]);
+
+	return { members, invites, pendingInviteLinks, availableVoices, availableSections };
+}
+
+export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {
+	const db = platform?.env?.DB;
+	if (!db) {
+		throw error(500, 'Database not available');
+	}
+
+	let currentUser;
+	try {
+		currentUser = await getAuthenticatedMember(db, cookies);
+	} catch (err) {
+		redirect(302, '/login');
+	}
+
+	const canManage = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
+	if (!canManage) {
+		throw error(403, 'Insufficient permissions - admin or owner role required');
+	}
+
+	const orgId = locals.org.id;
+	const data = await loadMemberPageData(db, orgId, url);
 
 	return {
-		members,
-		invites,
-		pendingInviteLinks, // Map of memberId -> inviteLink
-		availableVoices,
-		availableSections,
+		...data,
 		currentUserId: currentUser.id,
 		isOwner: currentUser.roles.includes('owner'),
 		isAdmin: currentUser.roles.some((r) => ['admin', 'owner'].includes(r))

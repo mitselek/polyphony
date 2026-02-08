@@ -69,6 +69,28 @@ function parseOrgCreationInput(body: unknown): CreateOrganizationInput {
 	};
 }
 
+async function performOrganizationCreation(db: D1Database, orgInput: CreateOrganizationInput, env: {
+	CF_ACCOUNT_ID?: string;
+	CF_API_TOKEN?: string;
+	CF_PAGES_PROJECT?: string;
+}, waitUntil?: (promise: Promise<unknown>) => void) {
+	const organization = await createOrganization(db, orgInput);
+
+	const domainPromise = registerSubdomain(orgInput.subdomain, {
+		CF_ACCOUNT_ID: env.CF_ACCOUNT_ID,
+		CF_API_TOKEN: env.CF_API_TOKEN,
+		CF_PAGES_PROJECT: env.CF_PAGES_PROJECT
+	});
+
+	if (waitUntil) {
+		waitUntil(domainPromise);
+	} else {
+		await domainPromise;
+	}
+
+	return organization;
+}
+
 /**
  * POST /api/public/organizations
  * Creates a new organization
@@ -88,28 +110,20 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 
 	const orgInput = parseOrgCreationInput(body);
 
-	// Create organization
 	try {
-		const organization = await createOrganization(platform.env.DB, orgInput);
-
-		// Register subdomain as Cloudflare Pages custom domain (non-blocking)
-		const domainPromise = registerSubdomain(orgInput.subdomain, {
-			CF_ACCOUNT_ID: platform.env.CF_ACCOUNT_ID,
-			CF_API_TOKEN: platform.env.CF_API_TOKEN,
-			CF_PAGES_PROJECT: platform.env.CF_PAGES_PROJECT
-		});
-
-		// Use waitUntil so the response returns immediately
-		if (platform.context?.waitUntil) {
-			platform.context.waitUntil(domainPromise);
-		} else {
-			// Dev mode — await it
-			await domainPromise;
-		}
+		const organization = await performOrganizationCreation(
+			platform.env.DB, 
+			orgInput, 
+			{
+				CF_ACCOUNT_ID: platform.env.CF_ACCOUNT_ID,
+				CF_API_TOKEN: platform.env.CF_API_TOKEN,
+				CF_PAGES_PROJECT: platform.env.CF_PAGES_PROJECT
+			},
+			platform.context?.waitUntil
+		);
 
 		return json({ organization }, { status: 201 });
 	} catch (err) {
-		// Handle unique constraint violations
 		if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
 			throw error(409, 'Organization with this subdomain already exists');
 		}

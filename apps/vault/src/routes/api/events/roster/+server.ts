@@ -16,20 +16,12 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
  * - end: ISO 8601 datetime (required) - End date for event filter
  * - sectionId: string (optional) - Filter members by section
  */
-export async function GET(event: RequestEvent) {
-	const { platform, cookies, url } = event;
-	if (!platform) throw new Error('Platform not available');
-	const db = platform.env.DB;
-
-	// Require authentication
-	await getAuthenticatedMember(db, cookies);
-
-	// Parse and validate query parameters
+function parseQueryParams(url: URL) {
 	const startParam = url.searchParams.get('start');
 	const endParam = url.searchParams.get('end');
 	const sectionIdParam = url.searchParams.get('sectionId');
 
-	const queryParams: any = {};
+	const queryParams: Record<string, unknown> = {};
 	if (startParam) queryParams.start = startParam;
 	if (endParam) queryParams.end = endParam;
 	if (sectionIdParam) queryParams.sectionId = sectionIdParam;
@@ -40,9 +32,18 @@ export async function GET(event: RequestEvent) {
 		throw error(400, errorMessage);
 	}
 
-	const { start, end, sectionId } = result.data;
+	return result.data;
+}
 
-	// Build filters for roster view
+export async function GET(event: RequestEvent) {
+	const { platform, cookies, url } = event;
+	if (!platform) throw new Error('Platform not available');
+	const db = platform.env.DB;
+
+	await getAuthenticatedMember(db, cookies);
+
+	const { start, end, sectionId } = parseQueryParams(url);
+
 	const filters = {
 		orgId: event.locals.org.id,
 		start,
@@ -50,7 +51,6 @@ export async function GET(event: RequestEvent) {
 		...(sectionId && { sectionId })
 	};
 
-	// Fetch roster data
 	const roster = await getRosterView(db, filters);
 
 	return json(roster);

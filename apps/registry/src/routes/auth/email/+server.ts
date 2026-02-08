@@ -107,6 +107,17 @@ async function createAndSendMagicLink(ctx: SendMagicLinkContext): Promise<Respon
 	return corsJson({ success: true, message: 'Check your email for a magic link' });
 }
 
+function extractVaultName(callback: string, vaultId: string): string {
+	try {
+		const callbackUrl = new URL(callback);
+		const parts = callbackUrl.hostname.split('.');
+		if (parts.length >= 3) return parts[0];
+	} catch {
+		// Use vault_id as fallback
+	}
+	return vaultId;
+}
+
 export const POST: RequestHandler = async ({ request, platform, url }) => {
 	const env = (platform as CloudflarePlatform | undefined)?.env;
 	if (!env?.DB) return corsJson({ success: false, error: 'Database unavailable' }, { status: 500 });
@@ -119,15 +130,7 @@ export const POST: RequestHandler = async ({ request, platform, url }) => {
 	if (validation.error) return validation.error;
 	const { email, vault_id, callback } = validation.data!;
 
-	// Extract vault name from subdomain for email (e.g., "testorg.polyphony.uk" → "testorg")
-	let vaultName = vault_id;
-	try {
-		const callbackUrl = new URL(callback);
-		const parts = callbackUrl.hostname.split('.');
-		if (parts.length >= 3) vaultName = parts[0];
-	} catch {
-		// Use vault_id as fallback
-	}
+	const vaultName = extractVaultName(callback, vault_id);
 
 	return createAndSendMagicLink({
 		db: env.DB, resendKey: env.RESEND_API_KEY, origin: url.origin,

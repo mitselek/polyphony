@@ -69,6 +69,31 @@ function formatMemberData(member: Member) {
 	};
 }
 
+async function loadI18nPreferences(db: D1Database, memberId: string, orgId: string, isOwnProfile: boolean) {
+	if (!isOwnProfile) return { resolvedPrefs: null, memberPrefs: null };
+	
+	const [resolvedPrefs, memberPrefs] = await Promise.all([
+		resolvePreferences(db, memberId, orgId),
+		getMemberPreferences(db, memberId)
+	]);
+	return { resolvedPrefs, memberPrefs };
+}
+
+async function loadPendingInviteLink(
+	db: D1Database,
+	member: Member,
+	isAdmin: boolean,
+	urlOrigin: string
+): Promise<string | null> {
+	if (!member.email_id && isAdmin) {
+		const token = await getPendingInviteToken(db, member.id);
+		if (token) {
+			return buildInviteLink(urlOrigin, token);
+		}
+	}
+	return null;
+}
+
 export const load: PageServerLoad = async ({ params, platform, cookies, locals, url }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw new Error('Database not available');
@@ -79,29 +104,13 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 	if (!member) error(404, 'Member not found');
 
 	const isOwnProfile = authContext.currentUser?.id === params.id;
-	const [adminData, assignedCopies] = await Promise.all([
+	
+	const [adminData, assignedCopies, i18nPrefs, pendingInviteLink] = await Promise.all([
 		loadAdminData(db, authContext.isAdmin, orgId),
-		loadAssignedCopies(db, params.id, authContext.currentUser?.id ?? null, authContext.isAdmin)
+		loadAssignedCopies(db, params.id, authContext.currentUser?.id ?? null, authContext.isAdmin),
+		loadI18nPreferences(db, params.id, orgId, isOwnProfile),
+		loadPendingInviteLink(db, member, authContext.isAdmin, url.origin)
 	]);
-
-	// Load i18n data for own profile
-	let resolvedPrefs: ResolvedI18nPreferences | null = null;
-	let memberPrefs: MemberPreferences | null = null;
-	if (isOwnProfile) {
-		[resolvedPrefs, memberPrefs] = await Promise.all([
-			resolvePreferences(db, params.id, orgId),
-			getMemberPreferences(db, params.id)
-		]);
-	}
-
-	// Check for pending invite if roster-only member
-	let pendingInviteLink: string | null = null;
-	if (!member.email_id && authContext.isAdmin) {
-		const token = await getPendingInviteToken(db, params.id);
-		if (token) {
-			pendingInviteLink = buildInviteLink(url.origin, token);
-		}
-	}
 
 	return {
 		member: formatMemberData(member),
@@ -114,7 +123,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 		availableSections: adminData.availableSections,
 		assignedCopies,
 		pendingInviteLink,
-		resolvedPrefs,
-		memberPrefs
+		resolvedPrefs: i18nPrefs.resolvedPrefs,
+		memberPrefs: i18nPrefs.memberPrefs
 	};
 };
