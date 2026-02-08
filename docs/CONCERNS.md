@@ -65,10 +65,10 @@ This document tracks unresolved questions that need answers before implementatio
 
 ### Authentication
 
-- [ ] Is there a master identity provider, or per-Vault authentication?
-- [ ] "Login with Choir-ID" - how does cross-Vault authentication work?
-- [ ] How do individual singers authenticate across federated Vaults?
-- [ ] Social login support? (Google, Microsoft, etc.)
+- [x] ~~Is there a master identity provider, or per-Vault authentication?~~ **RESOLVED**: Single Vault deployment. Registry handles OAuth + magic link. SSO cookie on `.polyphony.uk` domain.
+- [ ] How does cross-organization authentication work? (Currently: same identity across all orgs via Registry SSO)
+- [ ] How do individual singers authenticate across organizations?
+- [x] ~~Social login support? (Google, Microsoft, etc.)~~ **IMPLEMENTED**: Google OAuth via Registry.
 
 ### Authorization
 
@@ -162,9 +162,9 @@ This document tracks unresolved questions that need answers before implementatio
 
 ## 7. Scaling Considerations
 
-- [ ] What if 1000+ Vaults federate? Discovery becomes complex.
-- [ ] Registry search performance at scale?
-- [ ] CDN/caching strategy for popular PD scores? (Scores stay in Vaults - CDN per-Vault?)
+- [ ] What if 1000+ organizations register? Discovery/directory performance?
+- [ ] Registry API performance when querying Vault public endpoints at scale?
+- [ ] CDN/caching strategy for popular PD scores? (Files currently in D1, future: R2 + CDN)
 
 ---
 

@@ -92,8 +92,8 @@ polyphony/
 │   │   │   │   └── components/
 │   │   │   └── routes/
 │   │   │       ├── api/        # API endpoints
-│   │   │       ├── deploy/     # Vault deployment wizard
-│   │   │       ├── directory/  # Vault listing
+│   │   │       ├── register/   # Organization registration form
+│   │   │       ├── directory/  # Organization directory
 │   │   │       └── catalog/    # PD score links
 │   │   ├── migrations/
 │   │   └── wrangler.toml
@@ -671,7 +671,7 @@ Vault Owner → POST /api/scores/{id}/publish-pd
 ### 10.2 Rate Limiting
 
 ```typescript
-// Per-Vault limits for federation endpoints
+// Per-organization limits for federation endpoints (future)
 const FEDERATION_LIMITS = {
   requests_per_minute: 60,
   downloads_per_hour: 100,
