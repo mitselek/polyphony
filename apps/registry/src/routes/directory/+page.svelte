@@ -28,7 +28,7 @@
 			Choirs and ensembles using Polyphony.
 		</p>
 
-		{#if data.vaults.length === 0}
+		{#if data.organizations.length === 0}
 			<!-- Empty State -->
 			<div class="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-slate-100">
 				<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
@@ -44,7 +44,7 @@
 		{:else}
 			<!-- Vault List -->
 			<div class="grid gap-4">
-				{#each data.vaults as vault}
+				{#each data.organizations as vault}
 					<a 
 						href={vault.url}
 						target="_blank"
@@ -72,7 +72,7 @@
 			</div>
 
 			<p class="mt-8 text-center text-sm text-slate-400">
-				{data.vaults.length} {data.vaults.length === 1 ? 'choir' : 'choirs'} registered
+				{data.organizations.length} {data.organizations.length === 1 ? 'choir' : 'choirs'} registered
 			</p>
 		{/if}
 	</main>

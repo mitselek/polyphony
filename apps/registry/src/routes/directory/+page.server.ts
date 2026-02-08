@@ -20,13 +20,13 @@ export const load: PageServerLoad = async ({ platform }) => {
 		const response = await fetch(`${vaultApiUrl}/api/public/organizations`);
 		if (!response.ok) {
 			console.error(`Failed to fetch organizations from Vault: ${response.status}`);
-			return { vaults: [] };
+			return { organizations: [] };
 		}
 
 		const data = await response.json() as { organizations: VaultOrganization[] };
 		
 		// Transform to match directory display format
-		const vaults = data.organizations.map((org) => ({
+		const organizations = data.organizations.map((org) => ({
 			id: org.id,
 			name: org.name,
 			subdomain: org.subdomain,
@@ -34,9 +34,9 @@ export const load: PageServerLoad = async ({ platform }) => {
 			registeredAt: org.createdAt
 		}));
 
-		return { vaults };
+		return { organizations };
 	} catch (error) {
 		console.error('Error fetching organizations from Vault:', error);
-		return { vaults: [] };
+		return { organizations: [] };
 	}
 };
