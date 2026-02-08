@@ -15,11 +15,13 @@ The single **app deployment** hosting all organizations. Think of it like Gmail 
 - **Organization Context**: Determined from subdomain in URL
 
 **What's shared** (infrastructure):
+
 - The application code
 - The D1 database instance
 - Authentication via Registry
 
 **What's independent** (per organization):
+
 - Score library - each choir has its own
 - Roster/members - separate per org
 - Events & schedules - separate per org
@@ -185,14 +187,14 @@ Cloudflare's object storage. **Not currently used** - files are stored in D1 for
 
 ## Deprecated Terms
 
-| Don't use                | Use instead            | Why                                              |
-| ------------------------ | ---------------------- | ------------------------------------------------ |
-| Node                     | Vault                  | Clarity                                          |
-| Hub                      | Registry               | Clarity                                          |
-| Central Hub              | Registry               | Clarity                                          |
-| Private Node             | Vault                  | Clarity                                          |
-| Per-choir deployment     | Single Vault deployment| One app hosts all orgs (but data is separate)    |
-| Vault owner (deployment) | Organization owner     | "Vault" is infrastructure, not a choir           |
+| Don't use                | Use instead             | Why                                           |
+| ------------------------ | ----------------------- | --------------------------------------------- |
+| Node                     | Vault                   | Clarity                                       |
+| Hub                      | Registry                | Clarity                                       |
+| Central Hub              | Registry                | Clarity                                       |
+| Private Node             | Vault                   | Clarity                                       |
+| Per-choir deployment     | Single Vault deployment | One app hosts all orgs (but data is separate) |
+| Vault owner (deployment) | Organization owner      | "Vault" is infrastructure, not a choir        |
 
 ---
 
