@@ -47,6 +47,33 @@ export interface PDScore {
 }
 
 /**
+ * Transform database row to PDScore format
+ */
+function transformPDScoreRow(row: PDScoreRow): PDScore {
+	return {
+		editionId: row.edition_id,
+		editionName: row.edition_name,
+		arranger: row.edition_arranger,
+		publisher: row.edition_publisher,
+		voicing: row.edition_voicing,
+		editionType: row.edition_type,
+		notes: row.edition_notes,
+		externalUrl: row.edition_external_url,
+		work: {
+			id: row.work_id,
+			title: row.work_title,
+			composer: row.work_composer,
+			lyricist: row.work_lyricist
+		},
+		organization: {
+			id: row.org_id,
+			name: row.org_name,
+			subdomain: row.org_subdomain
+		}
+	};
+}
+
+/**
  * GET /api/public/scores/pd
  * Returns all public domain scores across all organizations
  */
@@ -81,27 +108,7 @@ export const GET: RequestHandler = async ({ platform }) => {
 		`)
 		.all<PDScoreRow>();
 
-	const scores: PDScore[] = results.map(row => ({
-		editionId: row.edition_id,
-		editionName: row.edition_name,
-		arranger: row.edition_arranger,
-		publisher: row.edition_publisher,
-		voicing: row.edition_voicing,
-		editionType: row.edition_type,
-		notes: row.edition_notes,
-		externalUrl: row.edition_external_url,
-		work: {
-			id: row.work_id,
-			title: row.work_title,
-			composer: row.work_composer,
-			lyricist: row.work_lyricist
-		},
-		organization: {
-			id: row.org_id,
-			name: row.org_name,
-			subdomain: row.org_subdomain
-		}
-	}));
+	const scores = results.map(transformPDScoreRow);
 
 	return json({ scores });
 };

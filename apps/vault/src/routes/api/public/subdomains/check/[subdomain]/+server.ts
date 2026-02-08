@@ -41,10 +41,11 @@ export interface SubdomainCheckResponse {
 	reason?: 'taken' | 'reserved' | 'invalid' | string;
 }
 
-export const GET: RequestHandler = async ({ params, platform }) => {
-	const subdomain = params.subdomain.toLowerCase().trim();
-
-	// Validate length
+/**
+ * Validate subdomain format and length
+ * Returns error response if invalid, null if valid
+ */
+function validateSubdomain(subdomain: string): Response | null {
 	if (subdomain.length < 3) {
 		return json(
 			{ available: false, reason: 'Subdomain must be at least 3 characters' } satisfies SubdomainCheckResponse,
@@ -59,7 +60,6 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 		);
 	}
 
-	// Validate format
 	if (!SUBDOMAIN_REGEX.test(subdomain)) {
 		const reason = subdomain.startsWith('-') || subdomain.endsWith('-')
 			? 'Subdomain cannot start or end with a hyphen'
@@ -70,6 +70,16 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 			{ status: 400 }
 		);
 	}
+
+	return null;
+}
+
+export const GET: RequestHandler = async ({ params, platform }) => {
+	const subdomain = params.subdomain.toLowerCase().trim();
+
+	// Validate format and length
+	const validationError = validateSubdomain(subdomain);
+	if (validationError) return validationError;
 
 	// Check reserved list
 	if (RESERVED_SUBDOMAINS.includes(subdomain)) {

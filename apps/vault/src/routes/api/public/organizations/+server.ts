@@ -32,6 +32,43 @@ export const GET: RequestHandler = async ({ platform }) => {
 };
 
 /**
+ * Validate a required string field
+ */
+function validateStringField(input: Record<string, unknown>, fieldName: string): string {
+	const value = input[fieldName];
+	if (!value || typeof value !== 'string' || value.trim() === '') {
+		throw error(400, `Missing or invalid field: ${fieldName}`);
+	}
+	return value.trim();
+}
+
+/**
+ * Parse and validate organization creation request body
+ */
+function parseOrgCreationInput(body: unknown): CreateOrganizationInput {
+	if (!body || typeof body !== 'object') {
+		throw error(400, 'Request body must be an object');
+	}
+
+	const input = body as Record<string, unknown>;
+
+	const name = validateStringField(input, 'name');
+	const subdomain = validateStringField(input, 'subdomain');
+	const contactEmail = validateStringField(input, 'contactEmail');
+
+	if (!input.type || (input.type !== 'collective' && input.type !== 'umbrella')) {
+		throw error(400, 'Invalid field: type (must be "collective" or "umbrella")');
+	}
+
+	return {
+		name,
+		subdomain: subdomain.toLowerCase(),
+		type: input.type,
+		contactEmail
+	};
+}
+
+/**
  * POST /api/public/organizations
  * Creates a new organization
  * Called by Registry during registration flow
@@ -48,36 +85,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		throw error(400, 'Invalid JSON body');
 	}
 
-	// Validate required fields
-	if (!body || typeof body !== 'object') {
-		throw error(400, 'Request body must be an object');
-	}
-
-	const input = body as Record<string, unknown>;
-
-	if (!input.name || typeof input.name !== 'string' || input.name.trim() === '') {
-		throw error(400, 'Missing or invalid field: name');
-	}
-
-	if (!input.subdomain || typeof input.subdomain !== 'string' || input.subdomain.trim() === '') {
-		throw error(400, 'Missing or invalid field: subdomain');
-	}
-
-	if (!input.type || (input.type !== 'collective' && input.type !== 'umbrella')) {
-		throw error(400, 'Invalid field: type (must be "collective" or "umbrella")');
-	}
-
-	if (!input.contactEmail || typeof input.contactEmail !== 'string' || input.contactEmail.trim() === '') {
-		throw error(400, 'Missing or invalid field: contactEmail');
-	}
-
-	// Construct validated input
-	const orgInput: CreateOrganizationInput = {
-		name: input.name.trim(),
-		subdomain: input.subdomain.trim().toLowerCase(),
-		type: input.type,
-		contactEmail: input.contactEmail.trim()
-	};
+	const orgInput = parseOrgCreationInput(body);
 
 	// Create organization
 	try {
