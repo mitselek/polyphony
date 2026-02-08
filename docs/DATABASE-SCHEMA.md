@@ -67,8 +67,6 @@ All organizational data lives here. Single deployment hosts all organizations (d
 
 Current state after migrations 0001-0032 (Schema V2).
 
-### Tables
-
 ### Organizations (Schema V2)
 
 ```mermaid
