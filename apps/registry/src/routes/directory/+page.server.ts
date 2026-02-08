@@ -1,50 +1,42 @@
 // Server-side load for directory page
+// Fetches organization list from Vault public API (zero-storage)
 /// <reference types="@cloudflare/workers-types" />
 import type { PageServerLoad } from './$types';
 
-interface Vault {
+interface VaultOrganization {
 	id: string;
 	name: string;
-	callback_url: string;
-	registered_at: string;
-	active: number;
+	subdomain: string;
+	type: string;
+	contactEmail: string;
+	createdAt: string;
 }
 
 export const load: PageServerLoad = async ({ platform }) => {
-	if (!platform?.env?.DB) {
-		return { vaults: [] };
-	}
-
-	const { results } = await platform.env.DB.prepare(
-		'SELECT id, name, callback_url, registered_at FROM vaults WHERE active = 1 ORDER BY name ASC'
-	).all<Vault>();
-
-	// Extract subdomain from callback_url for display
-	const vaults = results.map((vault) => {
-		let subdomain = '';
-		let url = '';
-		try {
-			const parsed = new URL(vault.callback_url);
-			// callback_url is like https://crede.polyphony.uk/api/auth/callback
-			// We want the origin: https://crede.polyphony.uk
-			url = parsed.origin;
-			// Extract subdomain from hostname
-			const parts = parsed.hostname.split('.');
-			if (parts.length >= 3) {
-				subdomain = parts[0];
-			}
-		} catch {
-			url = vault.callback_url;
+	// Query Vault public API for organizations (zero-storage principle)
+	const vaultApiUrl = platform?.env?.VAULT_API_URL || 'https://vault.polyphony.uk';
+	
+	try {
+		const response = await fetch(`${vaultApiUrl}/api/public/organizations`);
+		if (!response.ok) {
+			console.error(`Failed to fetch organizations from Vault: ${response.status}`);
+			return { organizations: [] };
 		}
 
-		return {
-			id: vault.id,
-			name: vault.name,
-			subdomain,
-			url,
-			registeredAt: vault.registered_at
-		};
-	});
+		const data = await response.json() as { organizations: VaultOrganization[] };
+		
+		// Transform to match directory display format
+		const organizations = data.organizations.map((org) => ({
+			id: org.id,
+			name: org.name,
+			subdomain: org.subdomain,
+			url: `https://${org.subdomain}.polyphony.uk`,
+			registeredAt: org.createdAt
+		}));
 
-	return { vaults };
+		return { organizations };
+	} catch (error) {
+		console.error('Error fetching organizations from Vault:', error);
+		return { organizations: [] };
+	}
 };

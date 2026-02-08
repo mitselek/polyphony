@@ -164,9 +164,9 @@ describe('Phase 0 - Epic #11 Acceptance Criteria', () => {
 		it('should reject HTTP URLs (not HTTPS)', () => {
 			const httpUrl = 'http://vault.example.com/callback';
 			expect(httpUrl.startsWith('http://')).toBe(true);
-			// This validation happens in vault registration endpoint
-			// See apps/registry/src/routes/api/vaults/+server.ts
-			// The validation rejects URLs that don't start with 'https://'
+			// This validation happens via domain allowlist in auth endpoints
+			// See apps/registry/src/routes/auth/+server.ts (isCallbackAllowed)
+			// and apps/registry/src/routes/auth/email/+server.ts
 		});
 
 		it('should accept HTTPS URLs', () => {

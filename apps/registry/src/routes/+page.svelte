@@ -145,7 +145,7 @@
 			<p class="mt-3 text-xs text-slate-400">
 				<a href="https://github.com/mitselek/polyphony" class="hover:text-indigo-600">GitHub</a>
 				<span class="mx-2">·</span>
-				<a href="/api/vaults" class="hover:text-indigo-600">API</a>
+				<a href="/directory" class="hover:text-indigo-600">Directory</a>
 			</p>
 		</div>
 	</footer>

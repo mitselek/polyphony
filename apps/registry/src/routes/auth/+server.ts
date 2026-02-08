@@ -11,6 +11,29 @@ interface CloudflarePlatform {
 	env: { DB: D1Database; API_KEY: string; GOOGLE_CLIENT_ID: string };
 }
 
+// Allowed callback URL domains (zero-storage: no vault table lookup)
+const ALLOWED_CALLBACK_DOMAINS = [
+	'polyphony.uk', // Production vaults
+	'localhost:5174', // Development
+	'localhost:5173' // Alternative dev port
+];
+
+/** Validate callback URL is on allowed domain */
+function isCallbackAllowed(callbackUrl: string): boolean {
+	try {
+		const url = new URL(callbackUrl);
+		const host = url.host; // includes port if present
+
+		return ALLOWED_CALLBACK_DOMAINS.some((domain) => {
+			if (host === domain) return true;
+			if (host.endsWith(`.${domain}`)) return true;
+			return false;
+		});
+	} catch {
+		return false;
+	}
+}
+
 export const GET = async ({
 	url,
 	platform,
@@ -34,19 +57,8 @@ export const GET = async ({
 		return json({ error: 'Missing callback parameter' }, { status: 400 });
 	}
 
-	// Verify vault exists and is active
-	const vault = await platform.env.DB.prepare(
-		'SELECT id, callback_url, active FROM vaults WHERE id = ? AND active = 1'
-	)
-		.bind(vaultId)
-		.first();
-
-	if (!vault) {
-		return json({ error: 'Vault not registered' }, { status: 400 });
-	}
-
-	// Verify callback URL matches registered callback
-	if (vault.callback_url !== callbackUrl) {
+	// Validate callback URL is on an allowed domain (zero-storage: no vault table)
+	if (!isCallbackAllowed(callbackUrl)) {
 		return json({ error: 'Invalid callback URL' }, { status: 400 });
 	}
 

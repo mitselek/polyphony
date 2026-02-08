@@ -35,20 +35,10 @@ interface AuthRequestEvent {
 	};
 }
 
-// Mock D1 database
-const createMockDb = (vaultExists: boolean, callback?: string, includePrivateKey: boolean = false, privateKey?: string) => ({
+// Mock D1 database (no vault table - zero-storage)
+const createMockDb = (includePrivateKey: boolean = false, privateKey?: string) => ({
 	prepare: (sql: string) => {
 		const queryResult = async () => {
-			if (sql.includes('vaults')) {
-				return vaultExists
-					? {
-							id: 'vault-test-id',
-							name: 'Test Vault',
-							callback_url: callback || 'https://vault.example.com/callback',
-							active: 1
-						}
-					: null;
-			}
 			if (sql.includes('signing_keys') && includePrivateKey) {
 				return {
 					id: 'test-key-id',
@@ -95,7 +85,7 @@ describe('GET /auth', () => {
 		const url = new URL('http://localhost/auth');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(false), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
+			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies AuthRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -107,7 +97,7 @@ describe('GET /auth', () => {
 		const url = new URL('http://localhost/auth?vault_id=vault-test-id');
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(true), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
+			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies AuthRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -115,33 +105,13 @@ describe('GET /auth', () => {
 		expect(data.error).toContain('callback');
 	});
 
-	it('should reject unregistered vault_id', async () => {
+	it('should reject callback URL not on allowed domain', async () => {
 		const url = new URL(
-			'http://localhost/auth?vault_id=unknown-vault&callback=https://vault.example.com/callback'
+			'http://localhost/auth?vault_id=testorg&callback=https://evil.com/callback'
 		);
 		const response = await GET({
 			url,
-			platform: { env: { DB: createMockDb(false), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
-		} satisfies AuthRequestEvent);
-
-		expect(response.status).toBe(400);
-		const data = await response.json() as ErrorResponse;
-		expect(data.error).toContain('not registered');
-	});
-
-	it('should reject mismatched callback URL', async () => {
-		const url = new URL(
-			'http://localhost/auth?vault_id=vault-test-id&callback=https://evil.com/callback'
-		);
-		const response = await GET({
-			url,
-			platform: {
-				env: {
-					DB: createMockDb(true, 'https://vault.example.com/callback'),
-					API_KEY: 'test',
-					GOOGLE_CLIENT_ID: 'test-google-client-id'
-				}
-			}
+			platform: { env: { DB: createMockDb(), API_KEY: 'test', GOOGLE_CLIENT_ID: 'test-client-id' } }
 		} satisfies AuthRequestEvent);
 
 		expect(response.status).toBe(400);
@@ -151,7 +121,7 @@ describe('GET /auth', () => {
 
 	it('should redirect to Google OAuth with valid parameters', async () => {
 		const url = new URL(
-			'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+			'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 		);
 		
 		try {
@@ -159,7 +129,7 @@ describe('GET /auth', () => {
 				url,
 				platform: {
 					env: {
-						DB: createMockDb(true, 'https://vault.example.com/callback'),
+						DB: createMockDb(),
 						API_KEY: 'test',
 						GOOGLE_CLIENT_ID: 'test-client-id'
 					}
@@ -186,14 +156,14 @@ describe('GET /auth', () => {
 		it('should skip OAuth and redirect with vault token when valid SSO cookie present', async () => {
 			const ssoToken = await createValidSSOToken(testPrivateKey);
 			const url = new URL(
-				'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+				'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 			);
 
 			const response = await GET({
 				url,
 				platform: {
 					env: {
-						DB: createMockDb(true, 'https://vault.example.com/callback', true, testPrivateKey),
+						DB: createMockDb(true, testPrivateKey),
 						API_KEY: 'test',
 						GOOGLE_CLIENT_ID: 'test-client-id'
 					}
@@ -204,7 +174,7 @@ describe('GET /auth', () => {
 			// Should return Response (not throw redirect)
 			expect(response.status).toBe(302);
 			const location = response.headers.get('Location');
-			expect(location).toContain('https://vault.example.com/callback');
+			expect(location).toContain('https://testorg.polyphony.uk/auth/callback');
 			expect(location).toContain('token=');
 			// Should NOT go to Google OAuth
 			expect(location).not.toContain('accounts.google.com');
@@ -213,14 +183,14 @@ describe('GET /auth', () => {
 		it('should include valid vault JWT in redirect when SSO cookie used', async () => {
 			const ssoToken = await createValidSSOToken(testPrivateKey);
 			const url = new URL(
-				'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+				'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 			);
 
 			const response = await GET({
 				url,
 				platform: {
 					env: {
-						DB: createMockDb(true, 'https://vault.example.com/callback', true, testPrivateKey),
+						DB: createMockDb(true, testPrivateKey),
 						API_KEY: 'test',
 						GOOGLE_CLIENT_ID: 'test-client-id'
 					}
@@ -238,7 +208,7 @@ describe('GET /auth', () => {
 
 			// Decode payload and check claims
 			const payload = JSON.parse(atob(parts[1]));
-			expect(payload.aud).toBe('vault-test-id'); // Vault-specific audience
+			expect(payload.aud).toBe('testorg'); // Vault-specific audience
 			expect(payload.email).toBe('user@example.com');
 			expect(payload.iss).toBe('https://polyphony.uk');
 		});
@@ -251,7 +221,7 @@ describe('GET /auth', () => {
 			vi.useRealTimers();
 
 			const url = new URL(
-				'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+				'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 			);
 
 			try {
@@ -259,7 +229,7 @@ describe('GET /auth', () => {
 					url,
 					platform: {
 						env: {
-							DB: createMockDb(true, 'https://vault.example.com/callback', true, testPrivateKey),
+							DB: createMockDb(true, testPrivateKey),
 							API_KEY: 'test',
 							GOOGLE_CLIENT_ID: 'test-client-id'
 						}
@@ -277,7 +247,7 @@ describe('GET /auth', () => {
 
 		it('should proceed to OAuth when SSO cookie is invalid', async () => {
 			const url = new URL(
-				'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+				'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 			);
 
 			try {
@@ -285,7 +255,7 @@ describe('GET /auth', () => {
 					url,
 					platform: {
 						env: {
-							DB: createMockDb(true, 'https://vault.example.com/callback', true, testPrivateKey),
+							DB: createMockDb(true, testPrivateKey),
 							API_KEY: 'test',
 							GOOGLE_CLIENT_ID: 'test-client-id'
 						}
@@ -303,7 +273,7 @@ describe('GET /auth', () => {
 
 		it('should proceed to OAuth when no SSO cookie present', async () => {
 			const url = new URL(
-				'http://localhost/auth?vault_id=vault-test-id&callback=https://vault.example.com/callback'
+				'http://localhost/auth?vault_id=testorg&callback=https://testorg.polyphony.uk/auth/callback'
 			);
 
 			try {
@@ -311,7 +281,7 @@ describe('GET /auth', () => {
 					url,
 					platform: {
 						env: {
-							DB: createMockDb(true, 'https://vault.example.com/callback'),
+							DB: createMockDb(),
 							API_KEY: 'test',
 							GOOGLE_CLIENT_ID: 'test-client-id'
 						}
