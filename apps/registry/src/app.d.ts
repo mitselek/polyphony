@@ -12,6 +12,7 @@ declare global {
 				RESEND_API_KEY?: string;
 				ADMIN_EMAIL?: string;
 				NOTIFY_API_KEY?: string;
+				VAULT_API_URL?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;
