@@ -17,9 +17,10 @@
   interface Props {
     type: EntityType;
     items: EntityWithCount[];
+    orgId: string;
   }
 
-  let { type, items = $bindable() }: Props = $props();
+  let { type, items = $bindable(), orgId }: Props = $props();
 
   // Derived config based on type
   let config = $derived({
@@ -199,6 +200,7 @@
 
     try {
       const body: Record<string, string | number> = {
+        orgId: orgId,
         name: newName.trim(),
         abbreviation: newAbbr.trim(),
         displayOrder: items.length,
