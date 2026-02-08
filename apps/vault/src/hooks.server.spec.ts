@@ -49,5 +49,10 @@ describe('extractSubdomain', () => {
 			expect(extractSubdomain('static.polyphony.uk')).toBeNull();
 			expect(extractSubdomain('static.localhost')).toBeNull();
 		});
+
+		it('returns null for vault subdomain', () => {
+			expect(extractSubdomain('vault.polyphony.uk')).toBeNull();
+			expect(extractSubdomain('vault.localhost')).toBeNull();
+		});
 	});
 });

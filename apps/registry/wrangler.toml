@@ -13,4 +13,4 @@ database_id = "1b804304-94ad-4e32-ade4-9b3c363e3c48"
 
 [vars]
 ADMIN_EMAIL = ""  # Admin email for registration notifications (#202)
-VAULT_API_URL = "http://localhost:5174"  # Vault API base URL for registration flow (#220)
+VAULT_API_URL = "https://vault.polyphony.uk"  # Vault API base URL for registration flow (#220)

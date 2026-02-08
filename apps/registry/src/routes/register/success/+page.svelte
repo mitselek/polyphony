@@ -34,6 +34,7 @@
 				>
 					{vaultUrl}
 				</a>
+				<p class="text-xs text-gray-400 mt-2">It may take up to a minute for the URL to become active.</p>
 			</div>
 
 			<!-- Next Steps -->

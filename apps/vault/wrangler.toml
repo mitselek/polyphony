@@ -13,8 +13,10 @@ database_id = "0ecb378b-b9e3-4243-a5e9-9cf4ffe98fd2"
 # See issue #33 for rationale, #34 for future chunked storage support
 
 # Environment variables (use wrangler secret for production)
-# Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET, NOTIFY_API_KEY
+# Secrets: REGISTRY_CLIENT_ID, REGISTRY_CLIENT_SECRET, SESSION_SECRET, NOTIFY_API_KEY, CF_API_TOKEN
 
 [vars]
 REGISTRY_OAUTH_URL = "https://polyphony.uk"
 VAULT_ID = "BQ6u9ENTnZk_danhhIbUB"  # Vault identifier (public, appears in JWT aud claim)
+CF_ACCOUNT_ID = "1431b76f0b65e3d23833966744ff2bdf"  # Cloudflare account (public, not a secret)
+CF_PAGES_PROJECT = "polyphony-vault"  # Pages project name for domain registration

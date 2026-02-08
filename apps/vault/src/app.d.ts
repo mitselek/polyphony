@@ -17,6 +17,10 @@ declare global {
 				VAULT_ID: string;
 				// Admin notification via Registry (#202)
 				NOTIFY_API_KEY?: string;
+				// Cloudflare domain registration (auto-register subdomains)
+				CF_ACCOUNT_ID?: string;
+				CF_API_TOKEN?: string;
+				CF_PAGES_PROJECT?: string;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;

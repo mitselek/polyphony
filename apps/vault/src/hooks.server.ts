@@ -11,7 +11,7 @@ import { paraglideMiddleware } from '$lib/paraglide/server';
 const DEV_SUBDOMAIN = 'crede';
 
 // Subdomains to skip (not organization routing)
-const SKIP_SUBDOMAINS = new Set(['www', 'api', 'static']);
+const SKIP_SUBDOMAINS = new Set(['www', 'api', 'static', 'vault']);
 
 /**
  * Extract the subdomain from a hostname

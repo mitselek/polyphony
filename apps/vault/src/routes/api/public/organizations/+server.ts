@@ -6,6 +6,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createOrganization, getAllOrganizations } from '$lib/server/db/organizations';
+import { registerSubdomain } from '$lib/server/cloudflare/domains';
 import type { CreateOrganizationInput } from '$lib/types';
 
 /**
@@ -90,6 +91,22 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	// Create organization
 	try {
 		const organization = await createOrganization(platform.env.DB, orgInput);
+
+		// Register subdomain as Cloudflare Pages custom domain (non-blocking)
+		const domainPromise = registerSubdomain(orgInput.subdomain, {
+			CF_ACCOUNT_ID: platform.env.CF_ACCOUNT_ID,
+			CF_API_TOKEN: platform.env.CF_API_TOKEN,
+			CF_PAGES_PROJECT: platform.env.CF_PAGES_PROJECT
+		});
+
+		// Use waitUntil so the response returns immediately
+		if (platform.context?.waitUntil) {
+			platform.context.waitUntil(domainPromise);
+		} else {
+			// Dev mode — await it
+			await domainPromise;
+		}
+
 		return json({ organization }, { status: 201 });
 	} catch (err) {
 		// Handle unique constraint violations

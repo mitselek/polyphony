@@ -7,12 +7,24 @@
 	let name = $state('');
 	let email = $state('');
 	let subdomain = $state('');
+	let subdomainTouched = $state(false); // Has user manually edited subdomain?
 	let subdomainStatus = $state<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'reserved'>('idle');
 	let subdomainError = $state('');
 	let isSubmitting = $state(false);
 
 	// Debounce timer for subdomain check
 	let checkTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Slugify a name into a valid subdomain
+	function slugify(value: string): string {
+		return value
+			.toLowerCase()
+			.normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Strip diacritics
+			.replace(/[^a-z0-9]+/g, '-') // Non-alphanumeric → hyphen
+			.replace(/^-+|-+$/g, '')     // Trim leading/trailing hyphens
+			.replace(/--+/g, '-')        // No double hyphens
+			.slice(0, 30);               // Max length
+	}
 
 	// Format subdomain as user types
 	function formatSubdomain(value: string): string {
@@ -124,9 +136,14 @@
 						id="name"
 						name="name"
 						bind:value={name}
+						oninput={() => {
+							if (!subdomainTouched) {
+								subdomain = slugify(name);
+							}
+						}}
 						required
 						class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-						placeholder="Your Choir Name"
+						placeholder="Kammerkoor Credo"
 					/>
 				</div>
 
@@ -150,7 +167,7 @@
 				<!-- Subdomain -->
 				<div>
 					<label for="subdomain" class="block text-sm font-medium text-gray-700 mb-1">
-						Choose Your URL
+						Your URL
 					</label>
 					<div class="flex items-center">
 						<input
@@ -158,13 +175,16 @@
 							id="subdomain"
 							name="subdomain"
 							value={subdomain}
-							oninput={handleSubdomainInput}
+							oninput={(e) => {
+								subdomainTouched = true;
+								handleSubdomainInput(e);
+							}}
 							required
 							minlength="3"
 							maxlength="30"
 							pattern="[a-z0-9][a-z0-9-]*[a-z0-9]|[a-z0-9]"
 							class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-							placeholder="yourchoir"
+							placeholder="kammerkoor-credo"
 						/>
 						<span class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-600">
 							.polyphony.uk
