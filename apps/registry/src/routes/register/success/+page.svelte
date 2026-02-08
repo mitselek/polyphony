@@ -34,7 +34,7 @@
 				>
 					{vaultUrl}
 				</a>
-				<p class="text-xs text-gray-400 mt-2">It may take up to a minute for the URL to become active.</p>
+				<p class="text-xs text-gray-400 mt-2">It may take a few minutes for the URL to become active while the SSL certificate is provisioned.</p>
 			</div>
 
 			<!-- Next Steps -->
