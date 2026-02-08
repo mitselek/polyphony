@@ -1,8 +1,16 @@
 # Polyphony Architecture
 
-Technical architecture for the Polyphony federated choral score ecosystem.
+Technical architecture for the Polyphony choral score platform.
 
 > **Terminology**: See [GLOSSARY.md](GLOSSARY.md) for definitions.
+
+---
+
+## Architecture Fundamentals
+
+1. **Single Vault Deployment**: One vault app hosts ALL organizations (collectives and umbrellas). No separate deployments per organization. Subdomains route to the same app.
+
+2. **Zero-Storage Registry**: Handles auth (OAuth, magic link, SSO cookie) and messaging. Queries Vault public APIs for discovery. Does NOT store org/user/score data.
 
 ---
 
@@ -11,30 +19,34 @@ Technical architecture for the Polyphony federated choral score ecosystem.
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     REGISTRY (polyphony.uk)                         │
-│                    (Single Cloudflare deployment)                   │
+│                    (Zero-storage auth gateway)                      │
 │                                                                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │  OAuth      │  │  JWKS       │  │  Vault      │  │ (Future)   │  │
-│  │  Gateway    │  │  Endpoint   │  │  Registry   │  │ PD Catalog │  │
+│  │  OAuth      │  │  JWKS       │  │  SSO Cookie │  │ Org Reg UI │  │
+│  │  Gateway    │  │  Endpoint   │  │  Management │  │ (calls API)│  │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │
 │                                                                     │
-│  Storage: D1 (signing_keys, vaults)       Files: None               │
+│  Storage: D1 (signing_keys, email_codes only)   Files: None         │
+│  Directory & PD Catalog: Queries Vault public APIs at runtime       │
 └─────────────────────────────────────────────────────────────────────┘
                               │
-              authenticates / registers
+            queries public APIs / authenticates
                               │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│   crede.         │  │   choir-b.       │  │   choir-c.       │
-│   polyphony.uk   │  │   polyphony.uk   │  │   polyphony.uk   │
-│   (Crede)        │  │   (Choir B)      │  │   (Choir C)      │
-│                  │  │                  │  │                  │
-│   D1 + Orgs      │  │   D1 + Orgs      │  │   D1 + Orgs      │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-     Each Vault = subdomain on Cloudflare Pages (custom domain)
-     
- Note: Federation (P2P sharing) is deferred to Phase 2
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     VAULT (*.polyphony.uk)                          │
+│                (Single deployment, all organizations)               │
+│                                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
+│  │ Public APIs │  │ Orgs/Members│  │ Score       │  │ Events/    │  │
+│  │ /api/public │  │ Management  │  │ Library     │  │ Attendance │  │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │
+│                                                                     │
+│  Storage: D1 (all data)                 Files: D1 chunked BLOBs     │
+│  Subdomain routing: crede.*, kamari.*, eca.* → same app             │
+└─────────────────────────────────────────────────────────────────────┘
+
+ Note: Federation (P2P sharing) is deferred to future phase
 ```
 
 ---
@@ -133,73 +145,68 @@ polyphony/
 
 | Function                 | Description                                                          |
 | ------------------------ | -------------------------------------------------------------------- |
-| **Auth Gateway**         | Stateless authentication service for all Vaults (OAuth, magic link)  |
-| **Deploy UI**            | Wizard to create new Vault on user's Cloudflare account              |
-| **Vault Directory**      | Opt-in listing of registered Vaults (name, location, public profile) |
-| **PD Catalog**           | Searchable index of Public Domain scores (links to Vaults)           |
-| **Handshake Introducer** | Facilitates initial contact between Vaults                           |
+| **Auth Gateway**         | Stateless authentication service (OAuth, magic link, SSO cookie)     |
+| **SSO Management**       | Cookie on `.polyphony.uk` for cross-subdomain auth                   |
+| **Registration UI**      | Form to create new organization (calls Vault public API)             |
+| **Directory**            | Queries Vault `/api/public/organizations` at runtime                 |
+| **PD Catalog**           | Queries Vault `/api/public/scores/pd` at runtime                     |
+
+**Zero-Storage Principle**: Registry stores NO organization, user, or score data. Only auth-related data.
 
 ### 4.2 Database Schema (D1)
 
 ```sql
--- Registered Vaults
-CREATE TABLE vaults (
+-- JWT Signing Keys (Ed25519)
+CREATE TABLE signing_keys (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    url TEXT NOT NULL UNIQUE,
-    public_key TEXT NOT NULL,          -- For JWT verification
-    callback_url TEXT NOT NULL,        -- Auth callback URL
-    listed_in_directory INTEGER DEFAULT 0,
+    private_key TEXT NOT NULL,     -- JWK format
+    public_key TEXT NOT NULL,      -- JWK format
     created_at TEXT DEFAULT (datetime('now')),
-    last_seen_at TEXT
+    revoked_at TEXT                -- NULL = active
 );
 
--- PD Catalog entries (links to scores in Vaults)
-CREATE TABLE pd_catalog (
+-- Email Auth Codes (magic link)
+CREATE TABLE email_auth_codes (
     id TEXT PRIMARY KEY,
-    vault_id TEXT NOT NULL REFERENCES vaults(id),
-    title TEXT NOT NULL,
-    composer TEXT,
-    score_url TEXT NOT NULL,           -- Deep link to Vault
-    submitted_at TEXT DEFAULT (datetime('now')),
-    verified INTEGER DEFAULT 0,
-    UNIQUE(vault_id, score_url)
-);
-
--- Pending Handshake introductions
-CREATE TABLE handshake_requests (
-    id TEXT PRIMARY KEY,
-    requester_vault_id TEXT NOT NULL REFERENCES vaults(id),
-    target_vault_id TEXT NOT NULL REFERENCES vaults(id),
-    status TEXT DEFAULT 'pending',     -- pending, delivered, expired
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    vault_id TEXT NOT NULL,        -- Target vault/org
+    callback_url TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now')),
-    expires_at TEXT NOT NULL
+    expires_at TEXT NOT NULL,
+    used_at TEXT
 );
 
-CREATE INDEX idx_pd_catalog_composer ON pd_catalog(composer);
-CREATE INDEX idx_pd_catalog_title ON pd_catalog(title);
+-- Rate Limiting
+CREATE TABLE email_rate_limits (
+    email TEXT PRIMARY KEY,
+    attempts INTEGER DEFAULT 1,
+    last_attempt TEXT DEFAULT (datetime('now'))
+);
 ```
+
+**Note**: No `vaults` table. Registry discovers organizations by querying Vault public APIs.
 
 ### 4.3 API Endpoints
 
 ```text
 # Authentication (stateless gateway)
 GET    /auth                      # Start auth flow (redirect from Vault)
-POST   /auth/callback             # OAuth callback handler
-GET    /auth/.well-known/jwks     # Public key for token verification
+GET    /auth/callback             # OAuth callback handler
+POST   /auth/logout               # Clear SSO cookie
+GET    /.well-known/jwks.json     # Public key for token verification
 
-# Vault management
-POST   /api/vaults/register       # Register new Vault with Registry
-GET    /api/vaults/directory      # List public Vaults
+# Email Auth (magic link)
+POST   /auth/email                # Request magic link
+GET    /auth/email/verify         # Verify email code
 
-# Federation
-POST   /api/handshake/request     # Request introduction to another Vault
-GET    /api/handshake/pending     # Check for pending requests (polled by Vaults)
+# Discovery (queries Vault public APIs)
+GET    /directory                 # UI - queries Vault /api/public/organizations
+GET    /catalog                   # UI - queries Vault /api/public/scores/pd
 
-# PD Catalog
-GET    /api/catalog               # Search PD catalog
-POST   /api/catalog/submit        # Submit score link for PD catalog
-DELETE /api/catalog/:id           # Remove from catalog (takedown)
+# Registration (calls Vault API)
+GET    /register                  # Registration form
+POST   /register                  # Calls Vault POST /api/public/organizations
 ```
 
 ---
@@ -210,12 +217,23 @@ DELETE /api/catalog/:id           # Remove from catalog (takedown)
 
 | Function              | Description                                       |
 | --------------------- | ------------------------------------------------- |
+| **Multi-Org Hosting** | Single deployment hosts all organizations         |
 | **Score Library**     | Upload, organize, view PDF scores                 |
 | **Member Management** | Invite members, assign permissions                |
-| **Federation**        | Handshake with other Vaults, access shared scores |
+| **Public APIs**       | Discovery endpoints for Registry queries          |
 | **Takedown**          | Copyright complaint handling                      |
 
-### 5.2 Database Schema (D1)
+### 5.2 Public APIs (for Registry)
+
+```text
+# Discovery (no auth required)
+GET    /api/public/organizations            # List all orgs (for directory)
+GET    /api/public/subdomains/check/:sub    # Check subdomain availability
+GET    /api/public/scores/pd                # List PD scores (for catalog)
+POST   /api/public/organizations            # Create new organization (from Registry)
+```
+
+### 5.3 Database Schema (D1)
 
 See [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) for complete schema. Key tables:
 
@@ -349,6 +367,8 @@ GET    /api/takedowns             # Admin view of notices
 ---
 
 ## 6. Handshake Protocol
+
+> ⏳ **DEFERRED**: Federation (Handshake protocol) is planned for a future phase. Current focus is on single-vault multi-organization functionality.
 
 ### 6.1 Flow Diagram
 
@@ -552,25 +572,22 @@ wrangler pages deploy .svelte-kit/cloudflare
 
 ### 8.2 Vault Deployment
 
-Each choir gets their own Cloudflare Pages project:
+Single Cloudflare Pages project hosting all organizations:
 
-**Option A: Registry-assisted (recommended for non-technical users)**
+```bash
+# Deploy from polyphony/apps/vault
+wrangler pages deploy .svelte-kit/cloudflare
+```
 
-1. User clicks "Deploy Vault" on Registry
-2. Registry walks user through Cloudflare account creation/login
-3. Registry uses Cloudflare API to create Pages project
-4. Vault automatically registers with Registry
+**Subdomain Routing**:
 
-**Option B: Self-deploy**
+- Wildcard domain `*.polyphony.uk` routes to the same deployment
+- Organization context determined from subdomain in request URL
+- Example: `crede.polyphony.uk` → loads Crede organization data
 
-1. User clones Vault repo
-2. User runs `wrangler pages deploy`
-3. User manually registers with Registry via API
+**Bindings**:
 
-**Bindings per Vault**:
-
-- D1: Vault's own database
-- (Files stored in D1 using chunked storage)
+- D1: Single database for all organizations
 
 ### 8.3 Environment Variables
 
@@ -690,14 +707,15 @@ const FEDERATION_LIMITS = {
 - [x] Name-based member invitations
 - [x] Multi-role permission model
 - [x] Takedown endpoint
+- [x] SSO cookie across subdomains
+- [ ] Public APIs for Registry
 - [ ] Roster view with attendance tracking
 - [ ] Season repertoire UI
 
 ### Phase 2: Federation (Deferred)
 
-- [ ] Handshake protocol between Vaults
-- [ ] P2P score sharing
-- [ ] PD Catalog in Registry
+- [ ] Handshake protocol between organizations
+- [ ] Private Circle score sharing
 
 ### Phase 3: Enhanced Experience
 
@@ -711,11 +729,11 @@ const FEDERATION_LIMITS = {
 
 > See [CONCERNS.md](CONCERNS.md) for full list.
 
-- [ ] Cloudflare API permissions needed for automated Vault deployment
-- [ ] Key rotation strategy for long-lived Vaults
+- [ ] Public API design for Registry queries
+- [ ] Key rotation strategy for long-lived signing keys
 - [ ] Backup/restore workflow for D1 data
-- [ ] Monitoring/alerting for distributed Vaults
+- [ ] Monitoring/alerting for single deployment
 
 ---
 
-_Last updated: 2026-02-02_
+_Last updated: 2026-02-08_

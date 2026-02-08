@@ -1,6 +1,6 @@
 # Polyphony
 
-**A federated platform for choral music sharing.**
+**A platform for choral music sharing.**
 
 Polyphony empowers choirs to manage their sheet music privately while connecting with other choirs through a trusted network. No paywalls, no central control—your music library belongs to you.
 
@@ -27,23 +27,23 @@ Choirs today face a difficult choice:
 
 Polyphony is a **two-tier system**:
 
-### 🏠 Your Vault
+### 🏠 The Vault
 
-A private, self-hosted library for your choir.
+A single deployment hosting all choir organizations.
 
 - Upload and organize PDF scores
 - Invite choir members with role-based access
-- Your data stays under your control
-- Connect with other choirs you trust
+- Your organization's data stays organized and secure
+- Support for umbrella organizations (e.g., Estonian Choral Association)
 
 ### 🌐 The Registry
 
-A public hub that connects the ecosystem.
+A zero-storage auth gateway and discovery service.
 
-- Deploy your Vault with one click (no technical skills needed)
-- Discover other choirs and their public offerings
-- Browse Public Domain scores shared by the community
-- Single sign-on across all Vaults
+- Register your organization at `polyphony.uk/register`
+- Discover other choirs and browse Public Domain scores
+- Single sign-on across all organizations (SSO cookie)
+- No storage of user or score data—queries Vault APIs at runtime
 
 ---
 
@@ -51,24 +51,31 @@ A public hub that connects the ecosystem.
 
 ```text
 ┌──────────────────────────────────────────────────┐
-│                   REGISTRY                       │
-│      • Deploy Vaults  • Directory  • PD Catalog  │
+│          REGISTRY (polyphony.uk)                 │
+│   • Auth (OAuth, SSO)  • Directory  • PD Catalog │
+│   • Zero storage - queries Vault APIs            │
 └──────────────────────────────────────────────────┘
                         │
-          ┌─────────────┼─────────────┐
-          ▼             ▼             ▼
-     ┌─────────┐   ┌─────────┐   ┌─────────┐
-     │ Vault A │◄─►│ Vault B │◄─►│ Vault C │
-     │ Choir X │   │ Choir Y │   │ Choir Z │
-     └─────────┘   └─────────┘   └─────────┘
-          Direct P2P sharing between trusted choirs
+              Queries public APIs
+                        ▼
+┌──────────────────────────────────────────────────┐
+│          VAULT (*.polyphony.uk)                  │
+│   • Single deployment, all organizations         │
+│   • Scores, members, events, participation       │
+└──────────────────────────────────────────────────┘
+                        │
+              Subdomain routing
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+   crede.           kamari.         eca.
+   polyphony.uk     polyphony.uk    polyphony.uk
+   (collective)     (collective)    (umbrella)
 ```
 
-1. **Create your Vault** via the Registry (takes 2 minutes)
-2. **Upload scores** to your private library
-3. **Invite members** by email—they log in via Registry
-4. **Connect with other choirs** through a mutual "Handshake"
-5. **Share scores** directly between trusted Vaults
+1. **Register your organization** via the Registry (`polyphony.uk/register`)
+2. **Upload scores** to your organization's library
+3. **Invite members** by email—they log in via Registry SSO
+4. **Access multiple orgs** with one account (SSO across subdomains)
 
 ---
 
@@ -79,17 +86,17 @@ A public hub that connects the ecosystem.
 | Feature               | Description                                          |
 | --------------------- | ---------------------------------------------------- |
 | **Private Library**   | Upload PDFs, organize by composer/season/voice part  |
-| **Member Management** | Invite singers, assign roles (admin, singer)         |
-| **Trusted Sharing**   | Connect with other choirs, share specific scores     |
+| **Member Management** | Invite singers, assign roles (admin, librarian, etc) |
+| **Roster & Events**   | Track attendance, manage rehearsals and concerts     |
 | **Legal Safety**      | Built-in takedown process, Private Circle compliance |
 
 ### For Singers
 
-| Feature         | Description                                         |
-| --------------- | --------------------------------------------------- |
-| **Easy Access** | Log in once, access any Vault you're a member of    |
-| **View Scores** | Browser-based PDF viewer—no app required            |
-| **Multi-Choir** | Sing in multiple choirs? One login works everywhere |
+| Feature         | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| **Easy Access** | Log in once, access all your organizations             |
+| **View Scores** | Browser-based PDF viewer—no app required               |
+| **Multi-Choir** | Sing in multiple choirs? One login works everywhere    |
 
 ### For the Community
 
@@ -97,7 +104,7 @@ A public hub that connects the ecosystem.
 | --------------- | ------------------------------------------- |
 | **PD Catalog**  | Searchable index of Public Domain works     |
 | **Open Source** | Inspect, modify, contribute to the codebase |
-| **No Lock-in**  | Export your data anytime, host anywhere     |
+| **No Lock-in**  | Export your data anytime                    |
 
 ---
 
@@ -105,16 +112,16 @@ A public hub that connects the ecosystem.
 
 ### For Choir Directors
 
-1. Visit [scoreinstitute.eu](https://scoreinstitute.eu) _(coming soon)_
-2. Click "Create Your Vault"
-3. Follow the setup wizard
+1. Visit [polyphony.uk/register](https://polyphony.uk/register)
+2. Create your organization (choose subdomain)
+3. Invite your members
 4. Start uploading scores!
 
 ### For Singers
 
 1. Receive an invite from your choir director
-2. Click the link to visit your choir's Vault
-3. Log in with Google or email
+2. Click the link to visit your organization's subdomain
+3. Log in with Google (SSO across all organizations)
 4. Access your sheet music
 
 ### For Developers
@@ -127,10 +134,10 @@ See [Development](#development) section below.
 
 Polyphony is built with legal safety in mind:
 
-- **Private Circle**: Sharing between trusted choirs follows EU "private use" guidelines
-- **Vault Owner Responsibility**: Each choir controls and is responsible for their content
-- **Registry Neutrality**: The Registry hosts no files—only links and metadata
-- **Takedown Support**: Every Vault includes a copyright complaint mechanism
+- **Organization Responsibility**: Each choir controls and is responsible for their content
+- **Registry Neutrality**: The Registry stores no files—queries Vault APIs for directory and PD catalog
+- **Takedown Support**: Built-in copyright complaint mechanism
+- **Private Circle** _(future)_: Planned sharing between trusted organizations follows EU "private use" guidelines
 
 For full details, see [docs/LEGAL-FRAMEWORK.md](docs/LEGAL-FRAMEWORK.md).
 
@@ -179,14 +186,15 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for technical details.
 - [x] Member invitations with name-based matching
 - [x] Score upload and management (D1 chunked storage)
 - [x] Takedown mechanism
+- [x] SSO cookie across subdomains
 - [ ] Roster view with attendance tracking
 - [ ] Season repertoire UI
+- [ ] PD Catalog (Registry queries Vault public API)
 
 ### Phase 2: Federation _(Deferred)_
 
-- [ ] Handshake protocol between Vaults
-- [ ] P2P score sharing
-- [ ] PD Catalog in Registry
+- [ ] Handshake protocol between organizations
+- [ ] Private Circle score sharing
 
 ### Phase 3: Enhanced Experience
 

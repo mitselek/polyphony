@@ -8,41 +8,59 @@ Canonical terminology for the Polyphony ecosystem. Use these terms consistently 
 
 ### Vault
 
-A self-contained, independently hosted instance serving a single choir.
+The single **app deployment** hosting all organizations. Think of it like Gmail - one deployment, millions of independent accounts.
 
-- **Owner**: The person who deployed the Vault (typically choir director or admin)
-- **Members**: Choir singers with access to the Vault
-- **Hosted on**: Cloudflare (via Registry deploy) or self-hosted
+- **Single Deployment**: One app instance (infrastructure)
+- **Subdomain Routing**: `crede.polyphony.uk`, `kamari.polyphony.uk` etc. route to the same app
+- **Organization Context**: Determined from subdomain in URL
 
-**Current Features**:
+**What's shared** (infrastructure):
 
-- Score library (upload, organize, view)
-- Member access control
-- Roster management
-- Event scheduling and attendance
+- The application code
+- The D1 database instance
+- Authentication via Registry
 
-**Future Features**:
+**What's independent** (per organization):
 
-- Press releases / public page
-- Federation (Handshake) - deferred
+- Score library - each choir has its own
+- Roster/members - separate per org
+- Events & schedules - separate per org
+- Participation records - separate per org
+
+### Organization
+
+A choir (collective) or umbrella entity. Each organization has **completely independent data**:
+
+- Its own score library (works, editions, files)
+- Its own member roster
+- Its own event schedule
+- Its own participation/attendance records
+
+Organizations are isolated - Choir A cannot see Choir B's scores or members (unless future federation features enable explicit sharing).
 
 ### Registry
 
-The central coordination service for the Polyphony ecosystem.
+Zero-storage auth gateway and discovery layer.
 
 **Responsibilities**:
 
-1. **Auth Gateway**: Stateless authentication for all Vaults (OAuth, magic link)
-2. **Deployment**: One-click Vault creation on Cloudflare
-3. **Discovery**: Directory of registered Vaults (opt-in listing)
-4. **Introduction**: Facilitates Handshake between Vaults (then steps out)
-5. **PD Catalog**: Searchable index of Public Domain scores (links to Vaults, not hosted)
+1. **Auth Gateway**: OAuth, magic link, SSO cookie on `.polyphony.uk`
+2. **Discovery**: Queries Vault public APIs for org directory
+3. **PD Catalog**: Queries Vault public APIs for Public Domain scores
+4. **Messaging**: Email notifications via Resend
+5. **Registration UI**: Serves form, calls Vault API to create org
 
-**Does NOT**:
+**Stores ONLY**:
 
-- Host score files (only links)
-- Route federated traffic (Vaults communicate P2P)
-- Store user data (stateless auth - no user database)
+- `signing_keys`: JWT signing keys
+- `email_auth_codes`: Magic link codes
+- `email_rate_limits`: Rate limiting
+
+**Does NOT Store**:
+
+- Organizations or user data
+- Scores or files
+- Anything queryable from Vault
 
 ---
 
@@ -112,29 +130,29 @@ Works where the Vault owner holds full copyright.
 
 ## User Roles
 
-### Vault Owner
+### Organization Owner
 
-The person who deployed/registered the Vault. Has full administrative rights:
+The person who registered the organization. Has full administrative rights:
 
-- Manage members
-- Approve Handshakes
-- Configure sharing permissions
-- Mark scores as PD/CC for Registry listing
+- Manage members and roles
+- Configure organization settings
+- Mark scores as PD/CC for public listing
 
-### Vault Member
+### Organization Member
 
-A choir singer with access to a specific Vault:
+A choir singer with access to a specific organization:
 
 - View/download scores (based on permissions)
-- Access shared content from trusted Vaults (if enabled)
+- RSVP to events
+- Access shared content within the organization
 
 ### Registry User
 
 Anyone using the public Registry interface:
 
-- Browse PD Catalog
-- Search Vault Directory
-- Deploy new Vault (creates Vault Owner role)
+- Browse PD Catalog (queried from Vault)
+- Search Organization Directory (queried from Vault)
+- Register new organization (via Vault API)
 
 ---
 
@@ -150,11 +168,14 @@ Two-way certificate authentication. Potential mechanism for Vault-to-Vault trust
 
 ### Cloudflare Workers
 
-Serverless compute platform. Primary deployment target for Vaults.
+Serverless compute platform. Deployment target for both Registry and Vault.
 
 ### D1
 
-Cloudflare's serverless SQL database. Used for Vault data and file storage.
+Cloudflare's serverless SQL database.
+
+- **Vault D1**: All org/member/score data (single database for all orgs)
+- **Registry D1**: Auth-only data (signing keys, email codes)
 
 Score files are stored in D1 using chunked storage (files >2MB are split into ~1.9MB chunks). Maximum file size: 9.5MB.
 
@@ -166,13 +187,15 @@ Cloudflare's object storage. **Not currently used** - files are stored in D1 for
 
 ## Deprecated Terms
 
-| Don't use    | Use instead |
-| ------------ | ----------- |
-| Node         | Vault       |
-| Hub          | Registry    |
-| Central Hub  | Registry    |
-| Private Node | Vault       |
+| Don't use                | Use instead             | Why                                           |
+| ------------------------ | ----------------------- | --------------------------------------------- |
+| Node                     | Vault                   | Clarity                                       |
+| Hub                      | Registry                | Clarity                                       |
+| Central Hub              | Registry                | Clarity                                       |
+| Private Node             | Vault                   | Clarity                                       |
+| Per-choir deployment     | Single Vault deployment | One app hosts all orgs (but data is separate) |
+| Vault owner (deployment) | Organization owner      | "Vault" is infrastructure, not a choir        |
 
 ---
 
-_Last updated: 2026-01-25_
+_Last updated: 2026-02-08_
