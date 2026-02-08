@@ -1,7 +1,7 @@
 // Registration page server logic
 // Issue #220 - Moved from Vault to Registry, calls Vault public APIs
 
-import { redirect } from '@sveltejs/kit';
+import { redirect, isRedirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
 /**
@@ -83,11 +83,8 @@ export const actions: Actions = {
 			// Success - redirect to success page
 			redirect(303, `/register/success?subdomain=${subdomain}`);
 		} catch (error) {
-			// Only catch non-redirect errors
 			// SvelteKit redirects are special control flow exceptions
-			if (error && typeof error === 'object' && 'status' in error && error.status === 303) {
-				throw error; // Re-throw redirects
-			}
+			if (isRedirect(error)) throw error;
 			
 			console.error('Registration error:', error);
 			return { 
