@@ -60,6 +60,10 @@ const createMockDb = () => {
 						}
 						return { success: true, meta: { changes: 1 } };
 					}
+					// INSERT INTO member_organizations (org link)
+					if (sql.includes('INSERT INTO member_organizations')) {
+						return { success: true, meta: { changes: 1 } };
+					}
 					// UPDATE members SET email_id
 					if (sql.includes('UPDATE members SET email_id')) {
 						const [email_id, id] = params as [string, string];
@@ -73,8 +77,8 @@ const createMockDb = () => {
 					return { success: true };
 				},
 				first: async () => {
-					// SELECT id FROM members WHERE LOWER(name) = LOWER(?)
-					if (sql.includes('LOWER(name)')) {
+					// SELECT member with name check (org-scoped or global)
+					if (sql.includes('LOWER(m.name)') || sql.includes('LOWER(name)')) {
 						const name = params[0] as string;
 						for (const member of members.values()) {
 							if (member.name.toLowerCase() === name.toLowerCase()) {
@@ -173,6 +177,7 @@ describe('Two-tier member system', () => {
 
 		it('isRegistered should return false for roster-only members', async () => {
 			const member = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Roster Only',
 				addedBy: 'admin-id'
 			});
@@ -192,6 +197,7 @@ describe('Two-tier member system', () => {
 
 		it('getAuthEmail should return null for roster-only members', async () => {
 			const member = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Roster Member',
 				addedBy: 'admin-id'
 			});
@@ -201,6 +207,7 @@ describe('Two-tier member system', () => {
 
 		it('getContactEmail should prefer email_contact over email_id', async () => {
 			const member = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Contact Test',
 				email_contact: 'contact@example.com',
 				addedBy: 'admin-id'
@@ -226,6 +233,7 @@ describe('Two-tier member system', () => {
 	describe('createRosterMember', () => {
 		it('should create a roster-only member without OAuth', async () => {
 			const member = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Jane Doe',
 				addedBy: 'admin-123'
 			});
@@ -240,6 +248,7 @@ describe('Two-tier member system', () => {
 
 		it('should create roster member with contact email', async () => {
 			const member = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Contact Member',
 				email_contact: 'contact@personal.com',
 				addedBy: 'admin-123'
@@ -251,12 +260,14 @@ describe('Two-tier member system', () => {
 
 		it('should enforce case-insensitive name uniqueness', async () => {
 			await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Unique Name',
 				addedBy: 'admin-123'
 			});
 
 			await expect(
 				createRosterMember(db, {
+				orgId: 'org_test_001',
 					name: 'UNIQUE NAME', // Different case
 					addedBy: 'admin-123'
 				})
@@ -267,6 +278,7 @@ describe('Two-tier member system', () => {
 	describe('upgradeToRegistered', () => {
 		it('should add email_id to roster-only member', async () => {
 			const rosterMember = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Upgrader',
 				addedBy: 'admin-123'
 			});
@@ -290,6 +302,7 @@ describe('Two-tier member system', () => {
 
 			// Create roster member
 			const roster = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Roster',
 				addedBy: 'admin-123'
 			});
@@ -302,6 +315,7 @@ describe('Two-tier member system', () => {
 
 		it('should allow upgrading with same email (idempotent)', async () => {
 			const roster = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Idempotent',
 				addedBy: 'admin-123'
 			});
@@ -330,6 +344,7 @@ describe('Two-tier member system', () => {
 
 		it('should not find roster-only members by email_id', async () => {
 			await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Roster Only',
 				email_contact: 'contact@example.com',
 				addedBy: 'admin-123'
@@ -349,6 +364,7 @@ describe('Two-tier member system', () => {
 	describe('getMemberByName', () => {
 		it('should find member by exact name', async () => {
 			const created = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Exact Match',
 				addedBy: 'admin-123'
 			});
@@ -361,6 +377,7 @@ describe('Two-tier member system', () => {
 
 		it('should find member by case-insensitive name', async () => {
 			const created = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'Case Insensitive',
 				addedBy: 'admin-123'
 			});
@@ -381,6 +398,7 @@ describe('Two-tier member system', () => {
 		it('should support complete workflow: roster → upgrade → roles', async () => {
 			// 1. Add to roster (before OAuth)
 			const roster = await createRosterMember(db, {
+				orgId: 'org_test_001',
 				name: 'New Singer',
 				email_contact: 'personal@email.com',
 				addedBy: 'conductor-id'

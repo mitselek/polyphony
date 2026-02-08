@@ -22,6 +22,7 @@ export interface CreateRosterMemberInput {
 	voiceIds?: string[];
 	sectionIds?: string[];
 	addedBy: string; // Admin who added them
+	orgId: string; // Organization to add member to
 }
 
 // Helper functions
@@ -106,10 +107,14 @@ export async function createRosterMember(
 	db: D1Database,
 	input: CreateRosterMemberInput
 ): Promise<Member> {
-	// Check name uniqueness (case-insensitive)
+	// Check name uniqueness within the organization (case-insensitive)
 	const existing = await db
-		.prepare('SELECT id FROM members WHERE LOWER(name) = LOWER(?)')
-		.bind(input.name)
+		.prepare(
+			`SELECT m.id FROM members m
+			 JOIN member_organizations mo ON m.id = mo.member_id
+			 WHERE LOWER(m.name) = LOWER(?) AND mo.org_id = ?`
+		)
+		.bind(input.name, input.orgId)
 		.first();
 
 	if (existing) {
@@ -122,6 +127,15 @@ export async function createRosterMember(
 	await db
 		.prepare('INSERT INTO members (id, name, email_id, email_contact, invited_by) VALUES (?, ?, NULL, ?, ?)')
 		.bind(id, input.name, input.email_contact ?? null, input.addedBy)
+		.run();
+
+	// Link member to organization
+	await db
+		.prepare(
+			`INSERT INTO member_organizations (member_id, org_id, invited_by, joined_at)
+			 VALUES (?, ?, ?, datetime('now'))`
+		)
+		.bind(id, input.orgId, input.addedBy)
 		.run();
 
 	// NO roles inserted (roster-only members can't have roles)

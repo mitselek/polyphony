@@ -3,7 +3,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
-import { createRosterMember, getMemberByName } from '$lib/server/db/members';
+import { createRosterMember } from '$lib/server/db/members';
 
 interface CreateRosterMemberRequest {
 	name: string;
@@ -12,11 +12,13 @@ interface CreateRosterMemberRequest {
 	sectionIds?: string[];
 }
 
-export const POST: RequestHandler = async ({ request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
+
+	const orgId = locals.org.id;
 
 	// Authenticate and authorize
 	const currentUser = await getAuthenticatedMember(db, cookies);
@@ -43,8 +45,15 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		}
 	}
 
-	// Check name uniqueness (case-insensitive)
-	const existingMember = await getMemberByName(db, name);
+	// Check name uniqueness within the organization (case-insensitive)
+	const existingMember = await db
+		.prepare(
+			`SELECT m.id FROM members m
+			 JOIN member_organizations mo ON m.id = mo.member_id
+			 WHERE LOWER(m.name) = LOWER(?) AND mo.org_id = ?`
+		)
+		.bind(name, orgId)
+		.first();
 	if (existingMember) {
 		return json({ error: `Member with name "${name}" already exists` }, { status: 409 });
 	}
@@ -56,7 +65,8 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 			email_contact: body.emailContact?.trim() || undefined,
 			voiceIds: body.voiceIds,
 			sectionIds: body.sectionIds,
-			addedBy: currentUser.id
+			addedBy: currentUser.id,
+			orgId
 		});
 
 		return json({

@@ -11,6 +11,7 @@ function createMockDb() {
 	const invites: Map<string, Record<string, unknown>> = new Map();
 	const invitesByToken: Map<string, string> = new Map(); // token -> id mapping
 	const members: Map<string, Record<string, unknown>> = new Map();
+	const memberOrgs: Map<string, Set<string>> = new Map(); // member_id -> Set<org_id>
 	const memberRoles: Map<string, string[]> = new Map();
 	const memberVoices: Map<string, { voice_id: string; is_primary: number }[]> = new Map();
 	const memberSections: Map<string, { section_id: string; is_primary: number }[]> = new Map();
@@ -160,6 +161,15 @@ function createMockDb() {
 						return { meta: { changes: 1 } };
 					}
 
+					// Handle INSERT INTO member_organizations
+					if (sql.startsWith('INSERT INTO member_organizations')) {
+						const [member_id, org_id] = params as any[];
+						const orgs = memberOrgs.get(member_id as string) ?? new Set();
+						orgs.add(org_id as string);
+						memberOrgs.set(member_id as string, orgs);
+						return { meta: { changes: 1 } };
+					}
+
 					// Handle INSERT INTO member_voices
 					if (sql.startsWith('INSERT INTO member_voices')) {
 						const [member_id, voice_id, is_primary, assigned_by] = params as any[];
@@ -185,6 +195,18 @@ function createMockDb() {
 					return { meta: { changes: 0 } };
 				},
 				first: async () => {
+					// Handle name uniqueness check (org-scoped)
+					if (sql.includes('FROM members m') && sql.includes('member_organizations') && sql.includes('LOWER')) {
+						const [name, org_id] = params as any[];
+						for (const [id, member] of members.entries()) {
+							const orgs = memberOrgs.get(id);
+							if ((member.name as string).toLowerCase() === (name as string).toLowerCase() && orgs?.has(org_id as string)) {
+								return { id };
+							}
+						}
+						return null;
+					}
+
 					// Handle SELECT from invites by token
 					if (sql.includes('FROM invites WHERE token = ?')) {
 						const [token] = params as any[];
@@ -322,7 +344,8 @@ describe('createInvite (roster-linked)', () => {
 			name: 'John Doe',
 			voiceIds: ['soprano'],
 			sectionIds: ['s1'],
-			addedBy: adminId
+			addedBy: adminId,
+			orgId: TEST_ORG_ID
 		});
 		rosterId = rosterMember.id;
 	});
@@ -401,7 +424,8 @@ describe('acceptInvite (roster upgrade)', () => {
 			name: 'Jane Doe',
 			voiceIds: ['alto'],
 			sectionIds: ['a1'],
-			addedBy: adminId
+			addedBy: adminId,
+			orgId: TEST_ORG_ID
 		});
 		rosterId = rosterMember.id;
 
@@ -450,7 +474,8 @@ describe('acceptInvite (roster upgrade)', () => {
 		// Create invite with past expiration
 		const expiredRoster = await createRosterMember(mockDb, {
 			name: 'Expired User',
-			addedBy: adminId
+			addedBy: adminId,
+			orgId: TEST_ORG_ID
 		});
 
 		const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(); // 72 hours ago

@@ -61,7 +61,9 @@ function createMockEvent(body: any, isAuthenticated: boolean = true): RequestEve
 		cookies: {
 			get: vi.fn(() => (isAuthenticated ? 'mock-token' : undefined))
 		},
-		locals: {}
+		locals: {
+			org: { id: 'org_test_001' }
+		}
 	} as any;
 }
 
@@ -123,7 +125,8 @@ describe('POST /api/members/roster', () => {
 			email_contact: undefined,
 			voiceIds: undefined,
 			sectionIds: undefined,
-			addedBy: 'admin-id'
+			addedBy: 'admin-id',
+			orgId: 'org_test_001'
 		});
 	});
 
@@ -163,7 +166,8 @@ describe('POST /api/members/roster', () => {
 			email_contact: 'jane@example.com',
 			voiceIds: ['voice1'],
 			sectionIds: ['sec1'],
-			addedBy: 'admin-id'
+			addedBy: 'admin-id',
+			orgId: 'org_test_001'
 		});
 	});
 
@@ -198,18 +202,14 @@ describe('POST /api/members/roster', () => {
 	});
 
 	it('rejects duplicate name (case-insensitive)', async () => {
-		const { getMemberByName } = await import('$lib/server/db/members');
-		vi.mocked(getMemberByName).mockResolvedValue({
-			id: 'existing-id',
-			name: 'John Doe',
-			nickname: null,
-			email_id: null,
-			email_contact: null,
-			roles: [],
-			voices: [],
-			sections: [],
-			invited_by: null,
-			joined_at: '2024-01-01T00:00:00Z'
+		// Mock db.prepare().bind().first() to return an existing member
+		const mockFirst = vi.fn().mockResolvedValue({ id: 'existing-id' });
+		mockDb.prepare.mockReturnValueOnce({
+			bind: vi.fn(() => ({
+				first: mockFirst,
+				run: vi.fn(),
+				all: vi.fn()
+			}))
 		});
 
 		const event = createMockEvent({ name: 'John Doe' });
@@ -286,7 +286,8 @@ describe('POST /api/members/roster', () => {
 			email_contact: 'john@example.com',
 			voiceIds: undefined,
 			sectionIds: undefined,
-			addedBy: 'admin-id'
+			addedBy: 'admin-id',
+			orgId: 'org_test_001'
 		});
 	});
 
@@ -317,7 +318,8 @@ describe('POST /api/members/roster', () => {
 			email_contact: undefined,
 			voiceIds: undefined,
 			sectionIds: undefined,
-			addedBy: 'admin-id'
+			addedBy: 'admin-id',
+			orgId: 'org_test_001'
 		});
 	});
 });
