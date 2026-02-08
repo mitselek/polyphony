@@ -212,7 +212,7 @@ Vault members. Can be roster-only (no email_id) or registered via OAuth (has ema
 
 **Indexes:**
 
-- `idx_members_name_lower` UNIQUE on LOWER(name)
+- `idx_members_name_lower` ~~UNIQUE~~ on LOWER(name) — **dropped in migration 0035** (name uniqueness now per-org via application logic)
 - `idx_members_email_id` UNIQUE on email_id WHERE email_id IS NOT NULL
 - `idx_members_nickname` on nickname WHERE nickname IS NOT NULL
 
