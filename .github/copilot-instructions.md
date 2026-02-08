@@ -1,8 +1,14 @@
 # Copilot Instructions: Polyphony
 
-**Federated choral music sharing platform.** Two-tier system: Registry (auth gateway + discovery) + distributed Vaults (choir libraries). Built on SvelteKit + Cloudflare (D1/Pages).
+**Choral music sharing platform.** Two-tier system: Registry (zero-storage auth) + Vault (single deployment, all orgs). Built on SvelteKit + Cloudflare (D1/Pages).
 
 **Operated by**: Institute of Beautiful Scores (https://scoreinstitute.eu)
+
+## Architecture Fundamentals
+
+1. **Single Vault Deployment**: One vault app hosts ALL organizations (collectives and umbrellas). No separate deployments per organization. Subdomains route to the same app.
+
+2. **Zero-Storage Registry**: Handles auth (OAuth, magic link, SSO cookie) and messaging. Queries Vault public APIs for discovery. Does NOT store org/user/score data.
 
 ## System Architecture
 
@@ -12,11 +18,11 @@
 polyphony/
 ├── packages/shared/         # @polyphony/shared - Types, crypto, validators
 ├── apps/
-│   ├── registry/           # Single global instance (OAuth, Vault deploy, directory)
-│   └── vault/              # Per-choir instance (library, members, federation)
+│   ├── registry/           # Zero-storage auth gateway + discovery
+│   └── vault/              # Single deployment hosting all organizations
 ```
 
-**Critical boundary**: Registry does NOT host score files (only links). Vaults are independent deployments, each with own D1 database. After Handshake, Vaults communicate P2P—Registry only introduces them.
+**Critical boundary**: Registry stores only auth data (signing keys, email codes). All org/user/score data lives in Vault. Registry queries Vault's public APIs (`/api/public/*`) for directory and PD catalog.
 
 ### Technology Stack
 
@@ -129,10 +135,13 @@ $effect(() => { localState = data.value; }); // Sync on navigation
 
 ## Database Schemas
 
-### Registry (`apps/registry/migrations/`)
+### Registry (`apps/registry/migrations/`) - Auth Only
 
-- **vaults**: Registered Vaults (id, name, callback_url)
 - **signing_keys**: Ed25519 keypairs for JWT signing
+- **email_auth_codes**: Magic link verification codes
+- **email_rate_limits**: Rate limiting for email auth
+
+**Note**: Registry does NOT store organizations or users. It queries Vault public APIs.
 
 ### Vault (`apps/vault/migrations/`)
 

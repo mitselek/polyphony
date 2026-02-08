@@ -4,12 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Polyphony is a federated platform for choral music sharing. It's a two-tier system:
+Polyphony is a platform for choral music sharing. It's a two-tier system:
 
-- **Registry**: Single global instance providing OAuth authentication, vault discovery, and Public Domain catalog
-- **Vault**: Per-choir instances for private library management, member access, and P2P federation
+- **Registry**: Zero-storage auth gateway. Handles OAuth, magic link, SSO cookies, and email notifications. Queries Vault's public APIs for discovery. Does NOT store user data, organization data, or scores.
+- **Vault**: Single deployment hosting ALL organizations (collectives and umbrellas). All org/member/score data lives here. Subdomains route to the same app.
 
 Built on SvelteKit 2 + Svelte 5 (Runes), deployed on Cloudflare Pages + Workers with D1 (SQLite) database.
+
+## Architecture Fundamentals
+
+1. **Single Vault Deployment**: One vault app deployment. All organizations are hosted in this single app. No separate deployments per organization.
+
+2. **Zero-Storage Registry**: Registry handles auth and discovery only. It queries Vault's public APIs at runtime—no local storage of org/user/score data.
 
 ## Monorepo Structure
 
@@ -18,8 +24,8 @@ This is a pnpm workspace with three main packages:
 ```
 polyphony/
 ├── packages/shared/        # @polyphony/shared - Shared types, crypto, validators
-├── apps/registry/          # Registry application (single global instance)
-└── apps/vault/             # Vault application (per-choir deployment)
+├── apps/registry/          # Registry application (auth + discovery)
+└── apps/vault/             # Vault application (single deployment, all orgs)
 ```
 
 ## Common Development Commands
@@ -90,8 +96,8 @@ wrangler d1 migrations apply DB
 
 ### Two-App System
 
-- **Registry**: Stateless authentication gateway. Does NOT store user data or host score files. Only stores vault registrations and PD catalog links.
-- **Vault**: Independent per-choir deployment with its own D1 database. Stores members, scores, and file data. After handshake, vaults communicate P2P without registry involvement.
+- **Registry**: Zero-storage auth gateway. Handles OAuth, magic link, SSO cookies (`.polyphony.uk`), and email notifications. Queries Vault public APIs for org directory and PD catalog. Stores only auth-related data (signing keys, email auth codes).
+- **Vault**: Single deployment hosting all organizations. Stores members, scores, organizations, and file data. Exposes public APIs (`/api/public/*`) for Registry to query.
 
 ### Technology Stack
 
@@ -182,11 +188,13 @@ $effect(() => { localState = data.value; });
 
 ## Database Schemas
 
-### Registry Tables
+### Registry Tables (Auth Only)
 
-- `vaults`: Registered Vaults (id, name, callback_url, public_key)
 - `signing_keys`: Ed25519 keypairs for JWT signing
-- `pd_catalog`: Public Domain score links (future phase)
+- `email_auth_codes`: Magic link verification codes
+- `email_rate_limits`: Rate limiting for email auth
+
+**Note**: Registry does NOT store organizations, users, or scores. It queries Vault's public APIs.
 
 ### Vault Tables
 

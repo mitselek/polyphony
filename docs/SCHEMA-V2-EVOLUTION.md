@@ -1,40 +1,23 @@
-# Schema V2: Multi-Organization Evolution
+# Schema V2: Multi-Organization Architecture
 
-Documenting the evolution from single-vault schema to unified multi-organization architecture.
+Documenting the unified multi-organization architecture.
 
-**Status**: Design  
-**Last Updated**: 2026-02-01
+**Status**: Current (Implemented)  
+**Last Updated**: 2026-02-08
+
+---
+
+## Architecture Fundamentals
+
+1. **Single Vault Deployment**: One vault app hosts ALL organizations. No separate deployments per organization.
+
+2. **Zero-Storage Registry**: Handles auth and discovery only. Queries Vault public APIs. Does NOT store org/user/score data.
 
 ---
 
 ## Architecture Overview
 
-### V1 (Current): Per-Vault Deployment
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Registry (polyphony.uk)                                     │
-│ ├── D1: vaults, signing_keys                                │
-│ └── Stateless auth only                                     │
-└─────────────────────────────────────────────────────────────┘
-        │
-        │ OAuth/magic-link
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Vault A (crede.polyphony.uk)    │ Vault B (tallinn...)      │
-│ ├── D1: members, scores, ...    │ ├── D1: members, ...      │
-│ └── Independent deployment      │ └── Independent deployment│
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Problems:**
-
-- Each vault is isolated - no shared identity
-- No umbrella organization support
-- Same person = separate accounts in each vault
-- Manual subdomain provisioning
-
-### V2 (Target): Unified Multi-Organization
+### Current Architecture: Unified Multi-Organization
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
