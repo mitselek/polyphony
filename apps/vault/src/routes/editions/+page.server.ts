@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	const orgId = locals.org.id;
 
 	const [editions, sections] = await Promise.all([
-		getAllEditions(db),
+		getAllEditions(db, orgId),
 		getAllSections(db, orgId)
 	]);
 

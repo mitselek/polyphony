@@ -40,8 +40,8 @@ export async function GET(event: RequestEvent) {
 	// Get all participation records
 	const participation = await getEventParticipation(db, eventId);
 
-	// Get all members with sections
-	const members = await getAllMembers(db);
+	// Get all members with sections (scoped to org)
+	const members = await getAllMembers(db, event.locals.org.id);
 
 	// Build response with member details and participation status
 	const participationWithMembers = members.map((member) => {

@@ -17,6 +17,7 @@ interface SectionRow {
 }
 
 interface RosterFilters {
+	orgId?: string;
 	start?: string;
 	end?: string;
 	sectionId?: string;
@@ -25,15 +26,16 @@ interface RosterFilters {
 /**
  * Get unique primary sections that have singers assigned
  */
-async function getActiveSections(db: D1Database): Promise<Section[]> {
+async function getActiveSections(db: D1Database, orgId: string): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
 			`SELECT DISTINCT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
 			 FROM sections s
 			 JOIN member_sections ms ON s.id = ms.section_id
-			 WHERE ms.is_primary = 1 AND s.is_active = 1
+			 WHERE ms.is_primary = 1 AND s.is_active = 1 AND s.org_id = ?
 			 ORDER BY s.display_order`
 		)
+		.bind(orgId)
 		.all<SectionRow>();
 
 	return results.map((row) => ({
@@ -76,6 +78,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 
 	// Build filters from season date range
 	const filters: RosterFilters = {
+		orgId,
 		start: dateRange.start,
 		end: dateRange.end ?? undefined,
 		...(sectionIdParam && { sectionId: sectionIdParam })
@@ -83,7 +86,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 
 	const [roster, sections, seasonNav] = await Promise.all([
 		getRosterView(db, filters),
-		getActiveSections(db),
+		getActiveSections(db, orgId),
 		season ? getSeasonNavigation(db, orgId, season.id) : Promise.resolve({ prev: null, next: null })
 	]);
 

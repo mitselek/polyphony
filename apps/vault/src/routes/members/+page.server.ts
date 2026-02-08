@@ -28,8 +28,10 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		throw error(403, 'Insufficient permissions - admin or owner role required');
 	}
 
-	// Get all members with their roles, voices, and sections
-	const allMembers = await getAllMembers(db);
+	const orgId = locals.org.id;
+
+	// Get all members with their roles, voices, and sections (scoped to org)
+	const allMembers = await getAllMembers(db, orgId);
 
 	// Format for frontend and sort by nickname (if set) or name
 	const members = allMembers
@@ -49,8 +51,6 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 			const nameB = (b.nickname ?? b.name).toLowerCase();
 			return nameA.localeCompare(nameB);
 		});
-
-	const orgId = locals.org.id;
 
 	// Get pending invites for this organization
 	const pendingInvites = await getPendingInvites(db, orgId);

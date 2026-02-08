@@ -180,11 +180,23 @@ interface EditionWithWorkRow extends EditionRow {
 }
 
 /**
- * Get all editions with work info (for global edition list)
+ * Get all editions with work info
+ * When orgId is provided, only returns editions for works belonging to that organization
  */
-export async function getAllEditions(db: D1Database): Promise<EditionWithWork[]> {
-	const { results } = await db
-		.prepare(`
+export async function getAllEditions(db: D1Database, orgId?: string): Promise<EditionWithWork[]> {
+	const query = orgId
+		? db.prepare(`
+			SELECT e.id, e.work_id, e.name, e.arranger, e.publisher, e.voicing,
+				e.edition_type, e.license_type, e.notes, e.external_url,
+				e.file_key, e.file_name, e.file_size, e.file_uploaded_at, e.file_uploaded_by,
+				e.created_at,
+				w.title as work_title, w.composer as work_composer
+			FROM editions e
+			JOIN works w ON e.work_id = w.id
+			WHERE w.org_id = ?
+			ORDER BY w.title ASC, e.name ASC
+		`).bind(orgId)
+		: db.prepare(`
 			SELECT e.id, e.work_id, e.name, e.arranger, e.publisher, e.voicing,
 				e.edition_type, e.license_type, e.notes, e.external_url,
 				e.file_key, e.file_name, e.file_size, e.file_uploaded_at, e.file_uploaded_by,
@@ -193,8 +205,9 @@ export async function getAllEditions(db: D1Database): Promise<EditionWithWork[]>
 			FROM editions e
 			JOIN works w ON e.work_id = w.id
 			ORDER BY w.title ASC, e.name ASC
-		`)
-		.all<EditionWithWorkRow>();
+		`);
+
+	const { results } = await query.all<EditionWithWorkRow>();
 
 	return results.map((row) => ({
 		...rowToEdition(row, []),

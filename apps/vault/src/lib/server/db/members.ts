@@ -235,15 +235,31 @@ export async function getMemberById(db: D1Database, id: string): Promise<Member 
 
 /**
  * Get all members with their roles, voices, and sections
+ * When orgId is provided, only returns members belonging to that organization
  */
-export async function getAllMembers(db: D1Database): Promise<Member[]> {
-	const { results: memberRows } = await db
-		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members')
-		.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
+export async function getAllMembers(db: D1Database, orgId?: string): Promise<Member[]> {
+	let memberRows;
+	if (orgId) {
+		const result = await db
+			.prepare(
+				`SELECT m.id, m.name, m.nickname, m.email_id, m.email_contact, m.invited_by, m.joined_at
+				 FROM members m
+				 JOIN member_organizations mo ON m.id = mo.member_id
+				 WHERE mo.org_id = ?`
+			)
+			.bind(orgId)
+			.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
+		memberRows = result.results;
+	} else {
+		const result = await db
+			.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members')
+			.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
+		memberRows = result.results;
+	}
 
 	// Load relations for all members
 	const membersWithRelations = await Promise.all(
-		memberRows.map((memberRow) => loadMemberRelations(db, memberRow))
+		memberRows.map((memberRow) => loadMemberRelations(db, memberRow, orgId))
 	);
 
 	return membersWithRelations;
@@ -251,16 +267,23 @@ export async function getAllMembers(db: D1Database): Promise<Member[]> {
 
 /**
  * Helper function to load roles, voices, and sections for a member
+ * When orgId is provided, only loads roles for that organization
  */
 async function loadMemberRelations(
 	db: D1Database,
-	memberRow: Omit<Member, 'roles' | 'voices' | 'sections'>
+	memberRow: Omit<Member, 'roles' | 'voices' | 'sections'>,
+	orgId?: string
 ): Promise<Member> {
-	// Get roles
-	const rolesResult = await db
-		.prepare('SELECT role FROM member_roles WHERE member_id = ?')
-		.bind(memberRow.id)
-		.all<{ role: Role }>();
+	// Get roles (scoped to org if provided)
+	const rolesResult = orgId
+		? await db
+			.prepare('SELECT role FROM member_roles WHERE member_id = ? AND org_id = ?')
+			.bind(memberRow.id, orgId)
+			.all<{ role: Role }>()
+		: await db
+			.prepare('SELECT role FROM member_roles WHERE member_id = ?')
+			.bind(memberRow.id)
+			.all<{ role: Role }>();
 	const roles = rolesResult.results.map((r) => r.role);
 
 	// Get voices and sections using shared queries

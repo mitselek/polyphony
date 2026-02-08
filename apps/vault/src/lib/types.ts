@@ -403,6 +403,7 @@ export interface SectionSummaryStats {
  * Filters for roster view query
  */
 export interface RosterViewFilters {
+	orgId?: string; // Filter by organization
 	start?: string; // ISO datetime
 	end?: string; // ISO datetime
 	sectionId?: string; // Filter members by section

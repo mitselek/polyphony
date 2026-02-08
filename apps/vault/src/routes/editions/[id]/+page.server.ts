@@ -29,10 +29,11 @@ interface MemberForAssignment {
 
 async function loadCopiesWithAssignments(
 	db: D1Database,
-	editionId: string
+	editionId: string,
+	orgId?: string
 ): Promise<CopyWithAssignment[]> {
 	const copies = await getPhysicalCopiesByEdition(db, editionId);
-	const members = await getAllMembers(db);
+	const members = await getAllMembers(db, orgId);
 	const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
 	const copiesWithAssignments: CopyWithAssignment[] = [];
@@ -65,7 +66,7 @@ async function checkCanManage(db: D1Database, memberId: string | undefined): Pro
 	return member ? canUploadScores(member) : false;
 }
 
-async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean) {
+async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean, orgId: string) {
 	if (!canManage) {
 		return { 
 			copies: [] as CopyWithAssignment[], 
@@ -75,8 +76,8 @@ async function loadLibrarianData(db: D1Database, editionId: string, canManage: b
 		};
 	}
 	const [copies, members, assignmentHistory, currentHolders] = await Promise.all([
-		loadCopiesWithAssignments(db, editionId),
-		getAllMembers(db),
+		loadCopiesWithAssignments(db, editionId, orgId),
+		getAllMembers(db, orgId),
 		getEditionAssignmentHistory(db, editionId),
 		getCurrentHolders(db, editionId)
 	]);
@@ -110,7 +111,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 
 	const [sections, librarianData] = await Promise.all([
 		getAllSections(db, orgId),
-		loadLibrarianData(db, params.id, canManage)
+		loadLibrarianData(db, params.id, canManage, orgId)
 	]);
 
 	return {

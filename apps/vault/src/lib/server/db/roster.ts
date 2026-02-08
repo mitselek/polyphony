@@ -15,21 +15,30 @@ import type {
 import { queryMemberSections } from './queries/members';
 
 /**
- * Build events query with optional date filtering
+ * Build events query with optional date and org filtering
  */
 function buildEventsQuery(filters?: RosterViewFilters): { sql: string; params: string[] } {
 	let sql = 'SELECT id, title as name, starts_at as date, event_type as type FROM events';
+	const conditions: string[] = [];
 	const params: string[] = [];
 
-	if (filters?.start && filters?.end) {
-		sql += ' WHERE starts_at >= ? AND starts_at <= ?';
-		params.push(filters.start, filters.end);
-	} else if (filters?.start) {
-		sql += ' WHERE starts_at >= ?';
+	if (filters?.orgId) {
+		conditions.push('org_id = ?');
+		params.push(filters.orgId);
+	}
+
+	if (filters?.start) {
+		conditions.push('starts_at >= ?');
 		params.push(filters.start);
-	} else if (filters?.end) {
-		sql += ' WHERE starts_at <= ?';
+	}
+
+	if (filters?.end) {
+		conditions.push('starts_at <= ?');
 		params.push(filters.end);
+	}
+
+	if (conditions.length > 0) {
+		sql += ' WHERE ' + conditions.join(' AND ');
 	}
 
 	sql += ' ORDER BY starts_at ASC';
@@ -38,7 +47,7 @@ function buildEventsQuery(filters?: RosterViewFilters): { sql: string; params: s
 }
 
 /**
- * Build members query with optional section filtering
+ * Build members query with optional section and org filtering
  * Sorts by primary section display order, then by member name
  * Includes primary section details for statistics
  */
@@ -50,14 +59,25 @@ function buildMembersQuery(filters?: RosterViewFilters): { sql: string; params: 
 	       s.abbreviation as section_abbr,
 	       s.is_active as section_is_active,
 	       s.display_order as section_display_order
-	FROM members m
-	LEFT JOIN member_sections ms ON m.id = ms.member_id AND ms.is_primary = 1
-	LEFT JOIN sections s ON ms.section_id = s.id`;
+	FROM members m`;
+	const conditions: string[] = [];
 	const params: string[] = [];
 
+	if (filters?.orgId) {
+		sql += `\n\tJOIN member_organizations mo ON m.id = mo.member_id AND mo.org_id = ?`;
+		params.push(filters.orgId);
+	}
+
+	sql += `\n\tLEFT JOIN member_sections ms ON m.id = ms.member_id AND ms.is_primary = 1
+	LEFT JOIN sections s ON ms.section_id = s.id`;
+
 	if (filters?.sectionId) {
-		sql += ' WHERE ms.section_id = ?';
+		conditions.push('ms.section_id = ?');
 		params.push(filters.sectionId);
+	}
+
+	if (conditions.length > 0) {
+		sql += ' WHERE ' + conditions.join(' AND ');
 	}
 
 	sql += ' ORDER BY s.display_order ASC NULLS LAST, m.name ASC';
@@ -192,19 +212,32 @@ export async function getRosterView(
 
 	const members = membersResult.results;
 
-	// Fetch all participation records
-	const participationResult = await db
-		.prepare('SELECT * FROM participation')
-		.all<{
-			id: string;
-			member_id: string;
-			event_id: string;
-			planned_status: PlannedStatus | null;
-			actual_status: ActualStatus | null;
-			recorded_at: string | null;
-		}>();
+	// Fetch all participation records for the scoped events
+	const eventIds = events.map(e => e.id);
+	let participation: {
+		id: string;
+		member_id: string;
+		event_id: string;
+		planned_status: PlannedStatus | null;
+		actual_status: ActualStatus | null;
+		recorded_at: string | null;
+	}[] = [];
 
-	const participation = participationResult.results;
+	if (eventIds.length > 0) {
+		const placeholders = eventIds.map(() => '?').join(',');
+		const participationResult = await db
+			.prepare(`SELECT * FROM participation WHERE event_id IN (${placeholders})`)
+			.bind(...eventIds)
+			.all<{
+				id: string;
+				member_id: string;
+				event_id: string;
+				planned_status: PlannedStatus | null;
+				actual_status: ActualStatus | null;
+				recorded_at: string | null;
+			}>();
+		participation = participationResult.results;
+	}
 
 	// Build RosterEvent objects with participation maps
 	// Pre-populate with null entries for all members to normalize "no record" vs "null value"

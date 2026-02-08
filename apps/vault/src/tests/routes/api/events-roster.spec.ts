@@ -43,32 +43,25 @@ function createMockDB() {
 					return null;
 				},
 				all: async () => {
-					// Mock events query - now uses explicit columns: id, title as name, starts_at as date, event_type as type
+				// Mock events query - now uses explicit columns: id, title as name, starts_at as date, event_type as type
 					if (sql.includes('FROM events')) {
-						const results = Array.from(mockState.events.values());
-						// Apply date filtering if params provided (uses starts_at column now)
-						// Convert to Date objects for proper comparison
-						if (params.length === 2 && params[0] && params[1]) {
-							return {
-								results: results.filter(
-									(e: any) => {
-										const eventDate = new Date(e.starts_at);
-										const startDate = new Date(params[0] as string);
-										const endDate = new Date(params[1] as string);
-										return eventDate >= startDate && eventDate <= endDate;
-									}
-								)
-							};
+						let results = Array.from(mockState.events.values());
+						// Handle org_id + date filtering
+						// When org_id is present, it's the first param
+						let dateParams = [...params];
+						if (sql.includes('org_id = ?')) {
+							// org_id filter - skip for mock (all events are same org)
+							dateParams = dateParams.slice(1);
 						}
-						if (params.length === 1 && sql.includes('starts_at >=')) {
-							return {
-								results: results.filter((e: any) => new Date(e.starts_at) >= new Date(params[0] as string))
-							};
-						}
-						if (params.length === 1 && sql.includes('starts_at <=')) {
-							return {
-								results: results.filter((e: any) => new Date(e.starts_at) <= new Date(params[0] as string))
-							};
+						if (dateParams.length >= 2 && sql.includes('starts_at >= ?') && sql.includes('starts_at <= ?')) {
+							results = results.filter((e: any) => {
+								const eventDate = new Date(e.starts_at);
+								return eventDate >= new Date(dateParams[0] as string) && eventDate <= new Date(dateParams[1] as string);
+							});
+						} else if (dateParams.length >= 1 && sql.includes('starts_at >=')) {
+							results = results.filter((e: any) => new Date(e.starts_at) >= new Date(dateParams[0] as string));
+						} else if (dateParams.length >= 1 && sql.includes('starts_at <=')) {
+							results = results.filter((e: any) => new Date(e.starts_at) <= new Date(dateParams[0] as string));
 						}
 						return { results };
 					}
@@ -77,9 +70,16 @@ function createMockDB() {
 					if (sql.includes('SELECT DISTINCT m.') && sql.includes('FROM members m')) {
 						let results = Array.from(mockState.members.values());
 						
-						// Apply section filtering if JOIN present
-						if (sql.includes('JOIN member_sections') && params.length === 1) {
-							const sectionId = params[0];
+						// Track param offset (org_id may consume the first param)
+						let paramOffset = 0;
+						if (sql.includes('member_organizations')) {
+							// org_id filtering via member_organizations JOIN - skip for mock
+							paramOffset = 1;
+						}
+						
+						// Apply section filtering if WHERE clause present
+						if (sql.includes('ms.section_id = ?') && params.length > paramOffset) {
+							const sectionId = params[paramOffset];
 							const memberIds = Array.from(mockState.member_sections.values())
 								.filter((ms: any) => ms.section_id === sectionId)
 								.map((ms: any) => ms.member_id);
@@ -130,9 +130,14 @@ function createMockDB() {
 						return { results: memberSections };
 					}
 
-					// Mock participation query
-					if (sql.includes('SELECT * FROM participation')) {
-						return { results: Array.from(mockState.participation.values()) };
+					// Mock participation query (now scoped by event IDs)
+					if (sql.includes('FROM participation')) {
+						const allParticipation = Array.from(mockState.participation.values());
+						// If filtering by event_id IN (...), filter by params
+						if (sql.includes('event_id IN') && params.length > 0) {
+							return { results: allParticipation.filter((p: any) => params.includes(p.event_id)) };
+						}
+						return { results: allParticipation };
 					}
 
 					return { results: [] };
@@ -158,6 +163,9 @@ return {
 url: new URL(url),
 cookies: {
 get: (name: string) => cookies[name] || 'mock-session-id'
+},
+locals: {
+org: { id: 'org_test_001' }
 },
 platform: {
 env: {

@@ -18,7 +18,7 @@ interface AuthContext {
 	ownerCount: number;
 }
 
-async function loadAuthContext(db: D1Database, cookies: unknown): Promise<AuthContext> {
+async function loadAuthContext(db: D1Database, cookies: unknown, orgId: string): Promise<AuthContext> {
 	try {
 		const currentUser = await getAuthenticatedMember(db, cookies as Parameters<typeof getAuthenticatedMember>[1]);
 		const isOwner = currentUser.roles.includes('owner');
@@ -26,7 +26,7 @@ async function loadAuthContext(db: D1Database, cookies: unknown): Promise<AuthCo
 		
 		let ownerCount = 0;
 		if (isOwner) {
-			const allMembers = await getAllMembers(db);
+			const allMembers = await getAllMembers(db, orgId);
 			ownerCount = allMembers.filter((m) => m.roles.includes('owner')).length;
 		}
 		return { currentUser, isOwner, isAdmin, ownerCount };
@@ -74,7 +74,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 	if (!db) throw new Error('Database not available');
 
 	const orgId = locals.org.id;
-	const authContext = await loadAuthContext(db, cookies);
+	const authContext = await loadAuthContext(db, cookies, orgId);
 	const member = await getMemberById(db, params.id);
 	if (!member) error(404, 'Member not found');
 

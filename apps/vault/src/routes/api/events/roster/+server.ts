@@ -44,6 +44,7 @@ export async function GET(event: RequestEvent) {
 
 	// Build filters for roster view
 	const filters = {
+		orgId: event.locals.org.id,
 		start,
 		end,
 		...(sectionId && { sectionId })
