@@ -100,7 +100,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals, 
 
 	const orgId = locals.org.id;
 	const authContext = await loadAuthContext(db, cookies, orgId);
-	const member = await getMemberById(db, params.id);
+	const member = await getMemberById(db, params.id, orgId);
 	if (!member) error(404, 'Member not found');
 
 	const isOwnProfile = authContext.currentUser?.id === params.id;

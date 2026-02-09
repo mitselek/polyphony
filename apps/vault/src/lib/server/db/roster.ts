@@ -277,7 +277,7 @@ export async function getRosterView(
 	// Note: Members are already sorted by s.display_order from the query
 	const rosterMembers: RosterMember[] = await Promise.all(
 		members.map(async (member) => {
-			const memberSections = await queryMemberSections(db, member.id);
+			const memberSections = await queryMemberSections(db, member.id, filters?.orgId);
 			
 			// Use primary section from the query result (preserves sort order)
 			// The query already joined with primary section and ordered by display_order

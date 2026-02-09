@@ -236,8 +236,9 @@ export async function upgradeToRegistered(
 
 /**
  * Find a member by email_id (OAuth identity) with their roles, voices, and sections
+ * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberByEmailId(db: D1Database, emailId: string): Promise<Member | null> {
+export async function getMemberByEmailId(db: D1Database, emailId: string, orgId?: string): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE email_id = ?')
 		.bind(emailId)
@@ -247,13 +248,14 @@ export async function getMemberByEmailId(db: D1Database, emailId: string): Promi
 		return null;
 	}
 
-	return await loadMemberRelations(db, memberRow);
+	return await loadMemberRelations(db, memberRow, orgId);
 }
 
 /**
  * Find a member by name (case-insensitive) with their roles, voices, and sections
+ * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberByName(db: D1Database, name: string): Promise<Member | null> {
+export async function getMemberByName(db: D1Database, name: string, orgId?: string): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE LOWER(name) = LOWER(?)')
 		.bind(name)
@@ -263,13 +265,14 @@ export async function getMemberByName(db: D1Database, name: string): Promise<Mem
 		return null;
 	}
 
-	return await loadMemberRelations(db, memberRow);
+	return await loadMemberRelations(db, memberRow, orgId);
 }
 
 /**
  * Find a member by ID with their roles, voices, and sections
+ * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberById(db: D1Database, id: string): Promise<Member | null> {
+export async function getMemberById(db: D1Database, id: string, orgId?: string): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
 		.bind(id)
@@ -279,7 +282,7 @@ export async function getMemberById(db: D1Database, id: string): Promise<Member 
 		return null;
 	}
 
-	return await loadMemberRelations(db, memberRow);
+	return await loadMemberRelations(db, memberRow, orgId);
 }
 
 /**
@@ -335,9 +338,9 @@ async function loadMemberRelations(
 			.all<{ role: Role }>();
 	const roles = rolesResult.results.map((r) => r.role);
 
-	// Get voices and sections using shared queries
+	// Get voices and sections using shared queries (sections scoped to org if provided)
 	const voices = await queryMemberVoices(db, memberRow.id);
-	const sections = await queryMemberSections(db, memberRow.id);
+	const sections = await queryMemberSections(db, memberRow.id, orgId);
 
 	return {
 		...memberRow,

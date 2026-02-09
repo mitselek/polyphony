@@ -36,21 +36,28 @@ interface VoiceRow {
 /**
  * Query all sections assigned to a member
  * Returns sections ordered by primary first, then display_order ASC
+ * When orgId is provided, only returns sections belonging to that organization
  */
 export async function queryMemberSections(
 	db: D1Database,
-	memberId: string
+	memberId: string,
+	orgId?: string
 ): Promise<Section[]> {
-	const { results } = await db
-		.prepare(
-			`SELECT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
+	const query = orgId
+		? `SELECT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
+			 FROM sections s
+			 JOIN member_sections ms ON s.id = ms.section_id
+			 WHERE ms.member_id = ? AND s.org_id = ?
+			 ORDER BY ms.is_primary DESC, s.display_order ASC`
+		: `SELECT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active, ms.is_primary
 			 FROM sections s
 			 JOIN member_sections ms ON s.id = ms.section_id
 			 WHERE ms.member_id = ?
-			 ORDER BY ms.is_primary DESC, s.display_order ASC`
-		)
-		.bind(memberId)
-		.all<SectionRow>();
+			 ORDER BY ms.is_primary DESC, s.display_order ASC`;
+
+	const { results } = orgId
+		? await db.prepare(query).bind(memberId, orgId).all<SectionRow>()
+		: await db.prepare(query).bind(memberId).all<SectionRow>();
 
 	return results.map((row) => ({
 		id: row.id,
