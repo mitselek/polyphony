@@ -1,4 +1,4 @@
-# Polyphony Vault: Administraatori teejuht
+# Administraatori teejuht
 
 _Ülevaade rollidest ja õigustest — kes mida teha saab_
 
@@ -16,13 +16,14 @@ Polyphony Vault on üles ehitatud rollidele. See tähendab, et igal kasutajal on
 
 ### Omanik (Owner)
 
-Keskkonna looja ja peavastutaja. Omab **kõiki õigusi**.
+Keskkonna looja ja juhtkonna liige. **Ei tegele ise nootide ega proovide haldamisega** — vajaduse korral määrab endale sobivad rollid.
 
 **Ülesanded:**
 
 - Määrab teistele liikmetele rolle (sh teisi omanikke)
 - Haldab rakenduse tehnilisi seadeid
 - Vastutab kogu keskkonna toimimise eest
+- Saab vajaduse korral ennast määrata administraatoriks, raamatukoguhoidjaks või dirigendiks
 
 **Kellele sobib:** Koori president, juhatuse esimees või IT-tugi.
 
@@ -42,7 +43,7 @@ Korraldab liikmete nimekirja. **Ei tegele nootide lisamisega** — see on eralda
 
 **Kellele sobib:** Koori sekretär, juhatuse liige või koorivanem.
 
-**Nipp:** Kui administraator peab tegelema ka nootidega, tuleb talle lihtsalt lisada ka raamatukoguhoidja roll.
+**Nipp:** Kui administraator peab tegelema ka nootidega, võib ta endale lihtsalt lisada ka raamatukoguhoidja roll.
 
 ---
 
@@ -93,11 +94,11 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 | Tegevus                             | Omanik | Admin | Raamatukoguhoidja | Dirigent | Häälerühma vanem | Tavaline laulja |
 | :---------------------------------- | :----: | :---: | :---------------: | :------: | :--------------: | :-------------: |
 | Nootide vaatamine ja allalaadimine  |   ✅   |  ✅   |        ✅         |    ✅    |        ✅        |       ✅        |
-| **Nootide lisamine ja muutmine**    |   ✅   |  ❌   |        ✅         |    ❌    |        ❌        |       ❌        |
+| **Nootide lisamine ja muutmine**    |   ❌   |  ❌   |        ✅         |    ❌    |        ❌        |       ❌        |
 | **Liikmete kutsumine ja haldamine** |   ✅   |  ✅   |        ❌         |    ❌    |        ❌        |       ❌        |
 | **Rollide muutmine**                |   ✅   |  ✅   |        ❌         |    ❌    |        ❌        |       ❌        |
-| **Proovide lisamine kalendrisse**   |   ✅   |  ❌   |        ❌         |    ✅    |        ❌        |       ❌        |
-| **Kohaloleku märkimine**            |   ✅   |  ❌   |        ❌         |    ✅    |        ✅        |       ❌        |
+| **Proovide lisamine kalendrisse**   |   ❌   |  ❌   |        ❌         |    ✅    |        ❌        |       ❌        |
+| **Kohaloleku märkimine**            |   ❌   |  ❌   |        ❌         |    ✅    |        ✅        |       ❌        |
 | Keskkonna kustutamine               |   ✅   |  ❌   |        ❌         |    ❌    |        ❌        |       ❌        |
 
 **Selgitus:**
@@ -105,6 +106,7 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 - ✅ = Lubatud
 - ❌ = Ei ole lubatud
 - **Tavaline laulja** = Iga sisse logitud liige, kellel pole ühtegi lisarolli.
+- **Omanik** saab endale lisada rolle (Raamatukoguhoidja, Dirigent jne) kui vajab nende õigusi.
 
 ---
 

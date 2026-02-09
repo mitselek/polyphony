@@ -73,7 +73,7 @@ function createMockEvent(
 			body: JSON.stringify(body)
 		}),
 		url: new URL('http://localhost/api/members/' + memberId + '/roles'),
-		locals: {},
+		locals: { org: { id: 'test-org-123', subdomain: 'test' } },
 		route: { id: '/api/members/[id]/roles' },
 		getClientAddress: () => '127.0.0.1',
 		fetch: vi.fn(),

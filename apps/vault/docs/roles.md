@@ -10,22 +10,30 @@ A member's effective permissions are the **union** of all their roles' permissio
 
 ### Owner
 
-The vault owner has ultimate authority over the vault instance. Superuser with all permissions.
+The vault owner manages governance and membership, but **not operational tasks** (scores, events). Owners can assign themselves operational roles as needed.
 
 **Responsibilities:**
 
 - Vault deployment and infrastructure decisions
 - Inter-vault trust relationships (federation)
-- Appointing admins, librarians, and other roles
-- Emergency access and override capability
+- Appointing admins, librarians, conductors and other roles
+- Member management and role assignments
 
-**Permissions:** All permissions
+**Permissions:**
+
+- `members:invite` - Send membership invitations
+- `members:manage` - Change member roles, remove members
+- `vault:delete` - Delete the entire vault
+- `federation:manage` - Manage inter-vault relationships
 
 **Constraints:**
 
 - ⚠️ **Protected role**: At least one active owner must exist at all times
 - Cannot remove your own owner role if you're the last owner
 - Ownership transfer requires explicit handover
+
+**To manage scores**: Assign yourself the `librarian` role  
+**To manage events**: Assign yourself the `conductor` role
 
 **Typical holder:** Choir board president, IT committee chair, or designated technical liaison
 
@@ -44,7 +52,7 @@ Administrators manage membership and vault operations. **Does not manage scores*
 **Permissions:**
 
 - `members:invite` - Send membership invitations
-- `members:manage` - Change member roles, remove members
+- `members:manage` - Change member roles, remove members (cannot assign/remove owner role)
 - `takedowns:process` - Handle copyright claims
 
 **Typical holder:** Choir conductor, board member, section leader
@@ -102,19 +110,20 @@ Public access without authentication. Limited to openly licensed content.
 
 ## Permission Matrix
 
-| Permission        | Owner | Admin | Librarian | Member | Guest |
-| ----------------- | :---: | :---: | :-------: | :----: | :---: |
-| scores:view       |  ✅   |  ✅   |    ✅     |   ✅   |  PD   |
-| scores:download   |  ✅   |  ✅   |    ✅     |   ✅   |  PD   |
-| scores:upload     |  ✅   |  ❌   |    ✅     |   ❌   |  ❌   |
-| scores:edit       |  ✅   |  ❌   |    ✅     |   ❌   |  ❌   |
-| scores:delete     |  ✅   |  ❌   |    ✅     |   ❌   |  ❌   |
-| members:invite    |  ✅   |  ✅   |    ❌     |   ❌   |  ❌   |
-| members:manage    |  ✅   |  ✅   |    ❌     |   ❌   |  ❌   |
-| takedowns:process |  ✅   |  ✅   |    ❌     |   ❌   |  ❌   |
-| vault:settings    |  ✅   |  ❌   |    ❌     |   ❌   |  ❌   |
-| vault:delete      |  ✅   |  ❌   |    ❌     |   ❌   |  ❌   |
-| federation:manage |  ✅   |  ❌   |    ❌     |   ❌   |  ❌   |
+| Permission        | Owner | Admin | Librarian | Conductor | Section Leader | Member | Guest |
+| ----------------- | :---: | :---: | :-------: | :-------: | :------------: | :----: | :---: |
+| scores:view       |  ✅   |  ✅   |    ✅     |    ✅     |       ✅       |   ✅   |  PD   |
+| scores:download   |  ✅   |  ✅   |    ✅     |    ✅     |       ✅       |   ✅   |  PD   |
+| scores:upload     |  ❌   |  ❌   |    ✅     |    ❌     |       ❌       |   ❌   |  ❌   |
+| scores:delete     |  ❌   |  ❌   |    ✅     |    ❌     |       ❌       |   ❌   |  ❌   |
+| members:invite    |  ✅   |  ✅   |    ❌     |    ❌     |       ❌       |   ❌   |  ❌   |
+| members:manage    |  ✅   |  ✅   |    ❌     |    ❌     |       ❌       |   ❌   |  ❌   |
+| vault:delete      |  ✅   |  ❌   |    ❌     |    ❌     |       ❌       |   ❌   |  ❌   |
+| federation:manage |  ✅   |  ❌   |    ❌     |    ❌     |       ❌       |   ❌   |  ❌   |
+| events:create     |  ❌   |  ❌   |    ❌     |    ✅     |       ❌       |   ❌   |  ❌   |
+| events:manage     |  ❌   |  ❌   |    ❌     |    ✅     |       ❌       |   ❌   |  ❌   |
+| events:delete     |  ❌   |  ❌   |    ❌     |    ✅     |       ❌       |   ❌   |  ❌   |
+| attendance:record |  ❌   |  ❌   |    ❌     |    ✅     |       ✅       |   ❌   |  ❌   |
 
 _PD = Public Domain scores only_  
 
@@ -142,8 +151,8 @@ When a vault is created, the first member automatically becomes **owner**.
 
 ### Invitations
 
-- Owner can assign any roles: owner, admin, librarian
-- Admin can assign: admin, librarian
+- Owner can assign any roles: owner, admin, librarian, conductor, section_leader
+- Admin can assign any roles except owner: admin, librarian, conductor, section_leader
 
 ### Role Changes
 
@@ -153,10 +162,14 @@ When a vault is created, the first member automatically becomes **owner**.
 
 ### Common Role Combinations
 
-| Combination       | Use Case                                     |
-| ----------------- | -------------------------------------------- |
-| admin + librarian | Small choir where one person does everything |
-| owner + admin     | Board chair who also manages members         |
+| Combination            | Use Case                                                     |
+| ---------------------- | ------------------------------------------------------------ |
+| owner                  | Board member focused on governance only                      |
+| owner + admin          | Board chair who also manages daily operations                |
+| owner + librarian      | Owner who also curates the score library                     |
+| admin + librarian      | Choir manager handling both members and scores               |
+| conductor + librarian  | Conductor who also maintains the music library               |
+| admin + conductor      | Choir director handling both membership and rehearsal events |
 
 ## Future Considerations
 

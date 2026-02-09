@@ -16,8 +16,8 @@ export type Permission =
 	| 'scores:delete'
 	| 'members:invite'
 	| 'members:manage'
-	| 'roles:manage'
 	| 'vault:delete'
+	| 'federation:manage'
 	| 'events:create'
 	| 'events:manage'
 	| 'events:delete'
@@ -34,10 +34,10 @@ export interface RequireRoleResult {
  */
 const PERMISSIONS: Record<Role, Permission[]> = {
 	librarian: ['scores:upload', 'scores:delete'],
-	admin: ['members:invite', 'roles:manage'],
+	admin: ['members:invite', 'members:manage'],
 	conductor: ['events:create', 'events:manage', 'events:delete', 'attendance:record'],
 	section_leader: ['attendance:record'],
-	owner: ['vault:delete'] // Owner gets all permissions
+	owner: ['members:invite', 'members:manage', 'vault:delete', 'federation:manage']
 };
 
 /**
@@ -77,11 +77,6 @@ export function hasPermission(
 
 	const roles = getMemberRoles(member, orgId);
 
-	// Owner has all permissions
-	if (roles.includes('owner')) {
-		return true;
-	}
-
 	// Check if any of member's roles grant the permission
 	return roles.some((role) => PERMISSIONS[role]?.includes(permission) ?? false);
 }
@@ -120,11 +115,6 @@ export function requireRole(
 
 	const roles = getMemberRoles(member, orgId);
 
-	// Owner has all permissions
-	if (roles.includes('owner')) {
-		return { success: true };
-	}
-
 	const rolesArray = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
 	const hasRequiredRole = rolesArray.some((role) => roles.includes(role));
 
@@ -149,8 +139,13 @@ export function canInviteMembers(member: Member | null | undefined): boolean {
 	return hasPermission(member, 'members:invite');
 }
 
+export function canManageMembers(member: Member | null | undefined): boolean {
+	return hasPermission(member, 'members:manage');
+}
+
+// Deprecated: Use canManageMembers instead
 export function canManageRoles(member: Member | null | undefined): boolean {
-	return hasPermission(member, 'roles:manage');
+	return canManageMembers(member);
 }
 
 export function canDeleteVault(member: Member | null | undefined): boolean {

@@ -5,11 +5,13 @@ import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$l
 import { parseBody, updateRolesSchema } from '$lib/server/validation/schemas';
 import { addMemberRole, removeMemberRole, countMembersWithRole } from '$lib/server/db/roles';
 
-export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
+
+	const orgId = locals.org.id;
 
 	// Auth: get member and check admin role
 	const currentMember = await getAuthenticatedMember(db, cookies);
@@ -28,7 +30,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 
 	// Prevent removing last owner
 	if (role === 'owner' && action === 'remove') {
-		const ownerCount = await countMembersWithRole(db, 'owner');
+		const ownerCount = await countMembersWithRole(db, 'owner', orgId);
 		if (ownerCount <= 1) {
 			throw error(400, 'Cannot remove the last owner');
 		}
@@ -36,9 +38,9 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies 
 
 	try {
 		if (action === 'add') {
-			await addMemberRole(db, targetMemberId, role, currentMember.id);
+			await addMemberRole(db, targetMemberId, role, currentMember.id, orgId);
 		} else {
-			await removeMemberRole(db, targetMemberId, role);
+			await removeMemberRole(db, targetMemberId, role, orgId);
 		}
 
 		return json({ success: true });
