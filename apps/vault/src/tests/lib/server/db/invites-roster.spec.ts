@@ -50,6 +50,7 @@ function createMockDb() {
 			's1',
 			{
 				id: 's1',
+				org_id: TEST_ORG_ID,
 				name: 'Soprano 1',
 				abbreviation: 'S1',
 				parent_section_id: null,
@@ -61,6 +62,7 @@ function createMockDb() {
 			'a1',
 			{
 				id: 'a1',
+				org_id: TEST_ORG_ID,
 				name: 'Alto 1',
 				abbreviation: 'A1',
 				parent_section_id: null,
@@ -267,6 +269,16 @@ function createMockDb() {
 					return null;
 				},
 				all: async () => {
+					// Handle SELECT sections WHERE id IN (...) for org validation
+					if (sql.includes('FROM sections WHERE id IN')) {
+						// params contains the list of section IDs
+						const sectionIds = params as string[];
+						const results = sectionIds
+							.map((id) => sections.get(id))
+							.filter((s) => s !== null);
+						return { results };
+					}
+
 					// Handle SELECT member_roles
 					if (sql.includes('FROM member_roles WHERE member_id = ?')) {
 						const [member_id] = params as any[];

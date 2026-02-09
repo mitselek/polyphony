@@ -7,6 +7,38 @@ import { addMemberRoles } from './roles';
 // Re-export Member from canonical types
 export type { Member };
 
+/**
+ * Validate that all sections belong to the specified organization
+ * @throws Error if any section doesn't belong to the org or doesn't exist
+ */
+async function validateSectionsOwnedByOrg(
+	db: D1Database,
+	sectionIds: string[],
+	orgId: string
+): Promise<void> {
+	if (sectionIds.length === 0) return;
+
+	// Check all sections in one query
+	const placeholders = sectionIds.map(() => '?').join(',');
+	const sections = await db
+		.prepare(`SELECT id, org_id FROM sections WHERE id IN (${placeholders})`)
+		.bind(...sectionIds)
+		.all<{ id: string; org_id: string }>();
+
+	// Verify we found all sections
+	if (sections.results.length !== sectionIds.length) {
+		throw new Error('One or more sections not found');
+	}
+
+	// Verify all sections belong to the organization
+	const invalidSections = sections.results.filter((s) => s.org_id !== orgId);
+	if (invalidSections.length > 0) {
+		throw new Error(
+			`Sections do not belong to organization: ${invalidSections.map((s) => s.id).join(', ')}`
+		);
+	}
+}
+
 export interface CreateMemberInput {
 	email: string; // For OAuth registration (becomes email_id)
 	name?: string;
@@ -152,8 +184,11 @@ export async function createRosterMember(
 		await db.batch(voiceStatements);
 	}
 
-	// Insert section assignments
+	// Insert section assignments (with org validation)
 	if (input.sectionIds && input.sectionIds.length > 0) {
+		// Validate all sections belong to the organization
+		await validateSectionsOwnedByOrg(db, input.sectionIds, input.orgId);
+		
 		const sectionStatements = input.sectionIds.map((sectionId, index) =>
 			db
 				.prepare(
@@ -372,14 +407,32 @@ export async function setPrimaryVoice(
 /**
  * Add a section to a member
  * Note: If this is the member's first section, it's automatically marked as primary
+ * Validates that the section belongs to the specified organization
  */
 export async function addMemberSection(
 	db: D1Database,
 	memberId: string,
 	sectionId: string,
 	isPrimary: boolean = false,
-	assignedBy: string | null = null
+	assignedBy: string | null = null,
+	orgId?: string
 ): Promise<void> {
+	// Validate section belongs to the organization (if orgId provided)
+	if (orgId) {
+		const section = await db
+			.prepare('SELECT org_id FROM sections WHERE id = ?')
+			.bind(sectionId)
+			.first<{ org_id: string }>();
+		
+		if (!section) {
+			throw new Error('Section not found');
+		}
+		
+		if (section.org_id !== orgId) {
+			throw new Error('Section does not belong to member\'s organization');
+		}
+	}
+	
 	// Enforce: first section must be primary (don't trust caller)
 	const existing = await db
 		.prepare('SELECT COUNT(*) as count FROM member_sections WHERE member_id = ?')

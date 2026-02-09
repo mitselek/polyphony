@@ -80,7 +80,9 @@ function createMockEvent(options: {
 		cookies: {
 			get: vi.fn(() => (isAuthenticated ? 'mock-token' : undefined))
 		},
-		locals: {}
+		locals: {
+			org: { id: 'test-org-id', subdomain: 'test', name: 'Test Org', created_at: '2024-01-01' }
+		}
 	} as any;
 }
 
@@ -140,7 +142,8 @@ describe('POST /api/members/[id]/sections', () => {
 			'member-id',
 			'soprano-1',
 			false,
-			'admin-id'
+			'admin-id',
+			'test-org-id'
 		);
 	});
 
@@ -162,7 +165,8 @@ describe('POST /api/members/[id]/sections', () => {
 			'member-id',
 			'alto-2',
 			true,
-			'admin-id'
+			'admin-id',
+			'test-org-id'
 		);
 	});
 
@@ -204,6 +208,25 @@ describe('POST /api/members/[id]/sections', () => {
 		});
 
 		await expect(POST(event)).rejects.toThrow();
+	});
+
+	it('should reject section from different organization', async () => {
+		const { addMemberSection } = await import('$lib/server/db/members');
+		
+		// Mock addMemberSection to throw org validation error
+		vi.mocked(addMemberSection).mockRejectedValueOnce(
+			new Error('Section does not belong to member\'s organization')
+		);
+
+		const event = createMockEvent({
+			memberId: 'member-id',
+			body: {
+				sectionId: 'other-org-section',
+				isPrimary: false
+			}
+		});
+
+		await expect(POST(event)).rejects.toThrow('Section does not belong to member\'s organization');
 	});
 });
 

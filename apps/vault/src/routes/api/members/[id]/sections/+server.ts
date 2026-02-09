@@ -23,7 +23,7 @@ const deleteSectionSchema = z.object({
 });
 
 export async function POST(event: RequestEvent) {
-	const { params, request, platform, cookies } = event;
+	const { params, request, platform, cookies, locals } = event;
 
 	// Check database availability
 	if (!platform?.env?.DB) {
@@ -32,6 +32,11 @@ export async function POST(event: RequestEvent) {
 
 	const db = platform.env.DB;
 	const memberId = params.id!;
+	const orgId = locals.org?.id;
+
+	if (!orgId) {
+		throw error(500, 'Organization context not available');
+	}
 
 	// Authentication & Authorization
 	const currentMember = await getAuthenticatedMember(db, cookies);
@@ -53,8 +58,8 @@ export async function POST(event: RequestEvent) {
 		throw error(404, 'Member not found');
 	}
 
-	// Add section to member
-	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id);
+	// Add section to member (with org validation)
+	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id, orgId);
 
 	return json({
 		message: 'Section added successfully',
