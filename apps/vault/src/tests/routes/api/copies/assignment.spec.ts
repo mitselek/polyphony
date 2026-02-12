@@ -3,6 +3,7 @@
 // Tests: /api/copies/[id]/assign, /api/copies/[id]/return
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // Mock modules
@@ -118,7 +119,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		request: new Request('http://localhost/api/copies/copy-1/assign', { method: 'POST' }),
 		cookies: { get: vi.fn(), set: vi.fn(), delete: vi.fn(), getAll: vi.fn(), serialize: vi.fn() },
 		platform: { env: { DB: mockDb } },
-		locals: {},
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		...overrides
 	} as unknown as RequestEvent;
 }

@@ -1,6 +1,7 @@
 // Edition file upload/download API tests
 // Tests for /api/editions/[id]/file endpoints
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // Mock the auth middleware
@@ -91,6 +92,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		},
 		request: new Request(requestUrl),
 		url: new URL(requestUrl),
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		...overrides
 	} as unknown as RequestEvent;
 }

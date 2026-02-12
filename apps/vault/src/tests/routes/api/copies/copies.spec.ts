@@ -1,6 +1,7 @@
 // Physical copies API tests
 // Tests for /api/editions/[id]/copies and /api/copies/[id] endpoints
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { PhysicalCopy, CopyStats } from '$lib/types';
 
@@ -125,6 +126,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		},
 		request: new Request('http://localhost/api/editions/edition-1/copies'),
 		url: new URL('http://localhost/api/editions/edition-1/copies'),
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		...overrides
 	} as unknown as RequestEvent;
 }

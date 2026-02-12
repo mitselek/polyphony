@@ -12,7 +12,7 @@ interface SeasonWithEvents extends Season {
 	events: Event[];
 }
 
-export const load: PageServerLoad = async ({ params, fetch, platform, cookies }) => {
+export const load: PageServerLoad = async ({ params, fetch, platform, cookies, locals }) => {
 	const seasonId = params.id;
 	if (!seasonId) {
 		throw error(400, 'Season ID is required');

@@ -1,5 +1,6 @@
 // Tests for /api/settings endpoint
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { GET, PATCH } from '$lib/../routes/api/settings/+server';
 import type { RequestEvent } from '@sveltejs/kit';
 
@@ -126,6 +127,7 @@ function createMockEvent(overrides?: Partial<RequestEvent>): RequestEvent {
 			}
 		},
 		cookies: createMockCookies('admin123'),
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		...overrides
 	} as RequestEvent;
 }

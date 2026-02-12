@@ -1,6 +1,7 @@
 // Sections API route tests
 // Tests for /api/sections CRUD + reorder endpoints
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Member } from '$lib/server/db/members';
 import type { Section } from '$lib/types';
@@ -75,7 +76,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		params: {},
 		request: new Request('http://localhost/api/sections'),
 		url: new URL('http://localhost/api/sections'),
-		locals: {},
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		route: { id: '/api/sections' },
 		getClientAddress: () => '127.0.0.1',
 		fetch: vi.fn(),
@@ -402,7 +403,7 @@ describe('POST /api/sections/reorder', () => {
 
 		expect(response.status).toBe(200);
 		expect(reorderSections).toHaveBeenCalledWith({}, ['section-2', 'section-1', 'section-3']);
-		expect(getAllSectionsWithCounts).toHaveBeenCalledWith({}, 'org_crede_001');
+		expect(getAllSectionsWithCounts).toHaveBeenCalledWith({}, 'test-org');
 	});
 
 	it('returns 400 if orgId is missing', async () => {

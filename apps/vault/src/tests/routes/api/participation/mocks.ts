@@ -1,5 +1,6 @@
 // Shared mocks for participation API tests
 import { vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 
 // Test data
@@ -166,7 +167,8 @@ export function createRequestEvent(
 		},
 		request: {
 			json: async () => body
-		}
+		},
+		locals: { org: { id: createOrgId('test-org') } } as any
 	} as unknown as RequestEvent;
 }
 

@@ -6,7 +6,7 @@ import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { getSeason, getSeasonEvents, updateSeason, deleteSeason } from '$lib/server/db/seasons';
 
-export async function GET({ params, url, platform, cookies }: RequestEvent) {
+export async function GET({ params, url, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');

@@ -1,5 +1,6 @@
 // Tests for /api/events/[id] endpoints
 import { describe, it, expect, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { GET, PATCH, DELETE } from '$lib/../routes/api/events/[id]/+server';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { EventType } from '$lib/types';
@@ -142,7 +143,8 @@ describe('GET /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('conductor-1'),
-			params: { id: 'event-1' }
+			params: { id: 'event-1' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		const response = await GET(event);
@@ -159,7 +161,8 @@ describe('GET /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies(null),
-			params: { id: 'event-1' }
+			params: { id: 'event-1' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		await expect(GET(event)).rejects.toThrow();
@@ -171,7 +174,8 @@ describe('GET /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('conductor-1'),
-			params: { id: 'nonexistent' }
+			params: { id: 'nonexistent' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		try {
@@ -198,7 +202,8 @@ describe('PATCH /api/events/[id]', () => {
 			params: { id: 'event-1' },
 			request: {
 				json: async () => requestBody
-			}
+			},
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		const response = await PATCH(event);
@@ -222,7 +227,8 @@ describe('PATCH /api/events/[id]', () => {
 			params: { id: 'event-1' },
 			request: {
 				json: async () => requestBody
-			}
+			},
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		await expect(PATCH(event)).rejects.toThrow();
@@ -241,7 +247,8 @@ describe('PATCH /api/events/[id]', () => {
 			params: { id: 'nonexistent' },
 			request: {
 				json: async () => requestBody
-			}
+			},
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		await expect(PATCH(event)).rejects.toThrow();
@@ -255,7 +262,8 @@ describe('DELETE /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('conductor-1'),
-			params: { id: 'event-1' }
+			params: { id: 'event-1' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		const response = await DELETE(event);
@@ -271,7 +279,8 @@ describe('DELETE /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('regular-member'),
-			params: { id: 'event-1' }
+			params: { id: 'event-1' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		await expect(DELETE(event)).rejects.toThrow();
@@ -283,7 +292,8 @@ describe('DELETE /api/events/[id]', () => {
 		const event: RequestEvent<any, any> = {
 			platform: { env: { DB: db } },
 			cookies: createMockCookies('conductor-1'),
-			params: { id: 'nonexistent' }
+			params: { id: 'nonexistent' },
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any;
 		
 		await expect(DELETE(event)).rejects.toThrow();

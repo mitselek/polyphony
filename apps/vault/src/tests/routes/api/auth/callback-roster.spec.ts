@@ -1,5 +1,6 @@
 // Tests for OAuth callback with roster member upgrade flow (Issue #97)
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 
 // Mock SvelteKit functions BEFORE importing the handler
 vi.mock('@sveltejs/kit', () => ({
@@ -125,7 +126,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: {} } },
 				cookies,
-				fetch: mockFetch
+				fetch: mockFetch,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			
 			expect.fail('Expected redirect to be thrown');
@@ -182,7 +184,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: {} } },
 				cookies,
-				fetch: mockFetch
+				fetch: mockFetch,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			
 			expect.fail('Expected redirect to be thrown');
@@ -232,7 +235,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 				url: createMockURL('valid-jwt-token'), // No invite parameter
 				platform: { env: { DB: mockDB } },
 				cookies,
-				fetch: mockFetch
+				fetch: mockFetch,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			
 			expect.fail('Expected redirect to be thrown');
@@ -243,7 +247,7 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 		}
 
 		// Verify getMemberByEmailId was called
-		expect(getMemberByEmailId).toHaveBeenCalledWith(mockDB, 'registered@example.com');
+		expect(getMemberByEmailId).toHaveBeenCalledWith(mockDB, 'registered@example.com', 'test-org');
 
 		// Verify acceptInvite was NOT called (no invite)
 		expect(acceptInvite).not.toHaveBeenCalled();
@@ -280,7 +284,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: {} } },
 				cookies,
-				fetch: mockFetch
+				fetch: mockFetch,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			
 			expect.fail('Expected redirect to be thrown');
@@ -332,7 +337,8 @@ describe('OAuth callback - Roster member upgrade flow', () => {
 				url: createMockURL('valid-jwt-token'),
 				platform: { env: { DB: mockDB } },
 				cookies,
-				fetch: mockFetch
+				fetch: mockFetch,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			
 			expect.fail('Expected redirect to be thrown');

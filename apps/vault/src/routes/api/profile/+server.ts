@@ -9,7 +9,7 @@ interface UpdateProfileRequest {
 	name: string;
 }
 
-export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
+export const PATCH: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -32,7 +32,7 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 
 	// Update name with uniqueness validation
 	try {
-		const updated = await updateMemberName(db, currentMember.id, trimmedName);
+		const updated = await updateMemberName(db, currentMember.id, trimmedName, locals.org.id);
 		return json(updated);
 	} catch (err) {
 		if (err instanceof Error && err.message.includes('already exists')) {

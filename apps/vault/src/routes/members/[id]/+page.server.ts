@@ -21,7 +21,7 @@ interface AuthContext {
 
 async function loadAuthContext(db: D1Database, cookies: unknown, orgId: OrgId): Promise<AuthContext> {
 	try {
-		const currentUser = await getAuthenticatedMember(db, cookies as Parameters<typeof getAuthenticatedMember>[1]);
+		const currentUser = await getAuthenticatedMember(db, cookies as Parameters<typeof getAuthenticatedMember>[1], orgId);
 		const isOwner = currentUser.roles.includes('owner');
 		const isAdmin = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
 		

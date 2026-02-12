@@ -4,7 +4,7 @@ import { renewInvite } from '$lib/server/db/invites';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ params, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 

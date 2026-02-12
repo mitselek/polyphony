@@ -1,5 +1,6 @@
 // Tests for PATCH /api/profile endpoint
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { PATCH } from '../../../routes/api/profile/+server';
 import type { RequestEvent } from '@sveltejs/kit';
 
@@ -61,7 +62,7 @@ function createMockEvent(body: any, isAuthenticated: boolean = true): RequestEve
 		cookies: {
 			get: vi.fn(() => (isAuthenticated ? 'mock-token' : undefined))
 		},
-		locals: {}
+		locals: { org: { id: createOrgId('test-org') } } as any
 	} as any;
 }
 
@@ -98,7 +99,7 @@ describe('PATCH /api/profile', () => {
 			id: 'member-id',
 			name: 'New Name'
 		});
-		expect(updateMemberName).toHaveBeenCalledWith(mockDb, 'member-id', 'New Name');
+		expect(updateMemberName).toHaveBeenCalledWith(mockDb, 'member-id', 'New Name', 'test-org');
 	});
 
 	it('trims whitespace from name', async () => {
@@ -109,7 +110,7 @@ describe('PATCH /api/profile', () => {
 		const event = createMockEvent({ name: '  New Name  ' });
 		await PATCH(event);
 
-		expect(updateMemberName).toHaveBeenCalledWith(mockDb, 'member-id', 'New Name');
+		expect(updateMemberName).toHaveBeenCalledWith(mockDb, 'member-id', 'New Name', 'test-org');
 	});
 
 	it('rejects empty name', async () => {

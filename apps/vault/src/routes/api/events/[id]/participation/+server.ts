@@ -81,7 +81,7 @@ export async function GET(event: RequestEvent) {
  * Body: { status: 'yes' | 'no' | 'maybe' | 'late', notes?: string }
  */
 export async function POST(event: RequestEvent) {
-	const { platform, cookies, params, request } = event;
+	const { platform, cookies, params, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 

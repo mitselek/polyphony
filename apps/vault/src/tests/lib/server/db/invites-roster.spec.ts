@@ -1,10 +1,11 @@
 // TDD: Roster-linked invite system tests (Issue #96)
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { createInvite, getInviteByToken, acceptInvite, type Invite } from '$lib/server/db/invites';
 import { createRosterMember, getMemberById, type Member } from '$lib/server/db/members';
 
 // Test org ID (matches DEFAULT_ORG_ID)
-const TEST_ORG_ID = 'org_crede_001';
+const TEST_ORG_ID = createOrgId('org_crede_001');
 
 // Mock D1 database for roster-linked invites
 function createMockDb() {
@@ -458,7 +459,7 @@ describe('acceptInvite (roster upgrade)', () => {
 		expect(result.memberId).toBe(rosterId);
 
 		// Verify member is upgraded
-		const member = await getMemberById(mockDb, rosterId);
+		const member = await getMemberById(mockDb, rosterId, TEST_ORG_ID);
 		expect(member).toBeDefined();
 		expect(member!.email_id).toBe('jane@oauth.com');
 		expect(member!.name).toBe('Jane Doe');
@@ -467,7 +468,7 @@ describe('acceptInvite (roster upgrade)', () => {
 	it('preserves voices and sections from roster member', async () => {
 		await acceptInvite(mockDb, inviteToken, 'jane@oauth.com');
 
-		const member = await getMemberById(mockDb, rosterId);
+		const member = await getMemberById(mockDb, rosterId, TEST_ORG_ID);
 		// Note: Voice/section preservation is tested in members.spec.ts
 		// Here we just verify the member was upgraded
 		expect(member).toBeDefined();

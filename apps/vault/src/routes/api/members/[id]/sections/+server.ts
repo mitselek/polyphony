@@ -59,7 +59,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Add section to member (with org validation)
-	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id, orgId, locals.org.id);
+	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id, locals.org.id);
 
 	return json({
 		message: 'Section added successfully',
@@ -70,7 +70,7 @@ export async function POST(event: RequestEvent) {
 }
 
 export async function DELETE(event: RequestEvent) {
-	const { params, request, platform, cookies } = event;
+	const { params, request, platform, cookies, locals } = event;
 
 	// Check database availability
 	if (!platform?.env?.DB) {

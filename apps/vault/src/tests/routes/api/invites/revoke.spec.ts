@@ -1,5 +1,6 @@
 // Tests for invite revoke API endpoint
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { DELETE } from '../../../../routes/api/invites/[id]/+server';
 
 // Mock SvelteKit error function
@@ -58,7 +59,8 @@ describe('DELETE /api/invites/[id]', () => {
 			params: { id: 'invite-123' },
 			platform: { env: { DB: {} } },
 			cookies: createMockCookies(),
-			request: createMockRequest()
+			request: createMockRequest(),
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any);
 
 		const json = (await response.json()) as { success: boolean };
@@ -77,7 +79,8 @@ describe('DELETE /api/invites/[id]', () => {
 				params: { id: 'nonexistent' },
 				platform: { env: { DB: {} } },
 				cookies: createMockCookies(),
-				request: createMockRequest()
+				request: createMockRequest(),
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any)
 		).rejects.toThrow('Invite not found or already accepted');
 	});
@@ -96,7 +99,8 @@ describe('DELETE /api/invites/[id]', () => {
 				params: { id: 'invite-123' },
 				platform: { env: { DB: {} } },
 				cookies: createMockCookies(),
-				request: createMockRequest()
+				request: createMockRequest(),
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any)
 		).rejects.toThrow('Admin or owner role required');
 	});
@@ -111,7 +115,8 @@ describe('DELETE /api/invites/[id]', () => {
 				params: { id: '' },
 				platform: { env: { DB: {} } },
 				cookies: createMockCookies(),
-				request: createMockRequest()
+				request: createMockRequest(),
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any)
 		).rejects.toThrow('Invite ID required');
 	});

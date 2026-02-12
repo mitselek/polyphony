@@ -1,6 +1,7 @@
 // TDD: Member database operations tests
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createMember,
 	createRosterMember,
@@ -19,6 +20,8 @@ import {
 	removeMemberSection,
 	setPrimarySection
 } from '../../../../lib/server/db/members.js';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock D1 database with multi-role and voices/sections support
 const createMockDb = () => {
@@ -56,8 +59,8 @@ const createMockDb = () => {
 		prepare: (sql: string) => {
 			const result = {
 				all: async () => {
-					// SELECT all members (no WHERE clause, no bind needed)
-					if (sql.includes('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members') && !sql.includes('WHERE')) {
+					// SELECT all members (old pattern, no WHERE clause, no bind needed)
+					if (sql.includes('FROM members') && !sql.includes('WHERE') && !sql.includes('JOIN')) {
 						return { results: Array.from(members.values()) };
 					}
 					return { results: [] };
@@ -200,14 +203,40 @@ const createMockDb = () => {
 							}
 							return null;
 						}
+						// SELECT org_id FROM sections WHERE id = ? (for addMemberSection validation)
+						if (sql.includes('FROM sections') && sql.includes('WHERE id =')) {
+							const sectionId = params[0] as string;
+							const section = sections.get(sectionId);
+							if (section) return { org_id: TEST_ORG_ID };
+							return null;
+						}
+						// SELECT COUNT(*) from member_sections (for addMemberSection)
+						if (sql.includes('COUNT(*)') && sql.includes('member_sections')) {
+							const memberId = params[0] as string;
+							const sectionList = memberSections.get(memberId) || [];
+							return { count: sectionList.length };
+						}
 						return null;
 					},
 					all: async () => {
+						// SELECT all members via member_organizations (getAllMembers with orgId)
+						if (sql.includes('FROM members') && sql.includes('member_organizations')) {
+							return { results: Array.from(members.values()) };
+						}
 						// SELECT roles for member
 						if (sql.includes('FROM member_roles')) {
 							const member_id = params[0] as string;
 							const roles = memberRoles.get(member_id) || [];
 							return { results: roles.map((role) => ({ role })) };
+						}
+						// SELECT id, org_id FROM sections WHERE id IN (...) (for validateSectionsOwnedByOrg)
+						if (sql.includes('FROM sections') && sql.includes('WHERE id IN')) {
+							const results = (params as string[]).map(id => {
+								const section = sections.get(id);
+								if (section) return { id: section.id, org_id: TEST_ORG_ID };
+								return null;
+							}).filter(Boolean);
+							return { results };
 						}
 						// SELECT voices for member (JOIN with voices table)
 						if (sql.includes('FROM voices') && sql.includes('JOIN member_voices')) {
@@ -259,7 +288,8 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Test Singer',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(member).toBeDefined();
@@ -275,7 +305,8 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'admin@choir.org',
 				name: 'Admin User',
-				roles: ['admin']
+				roles: ['admin'],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(member.roles).toContain('admin');
@@ -286,7 +317,8 @@ describe('Member database operations', () => {
 				email: 'singer@choir.org',
 				name: 'Singer',
 				roles: ['librarian'],
-				voiceIds: ['soprano', 'alto']
+				voiceIds: ['soprano', 'alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(member.voices).toHaveLength(2);
@@ -299,7 +331,8 @@ describe('Member database operations', () => {
 				email: 'singer@choir.org',
 				name: 'Singer',
 				roles: ['librarian'],
-				sectionIds: ['soprano', 'alto']
+				sectionIds: ['soprano', 'alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(member.sections).toHaveLength(2);
@@ -312,7 +345,8 @@ describe('Member database operations', () => {
 				email: 'newbie@choir.org',
 				name: 'New Member',
 				roles: ['librarian'],
-				invited_by: 'inviter-id-123'
+				invited_by: 'inviter-id-123',
+				orgId: TEST_ORG_ID
 			});
 
 			expect(member.invited_by).toBe('inviter-id-123');
@@ -326,10 +360,11 @@ describe('Member database operations', () => {
 				name: 'Findable',
 				roles: ['admin'],
 				voiceIds: ['tenor'],
-				sectionIds: ['tenor-1']
+				sectionIds: ['tenor-1'],
+				orgId: TEST_ORG_ID
 			});
 
-			const found = await getMemberByEmailId(db, 'find@choir.org');
+			const found = await getMemberByEmailId(db, 'find@choir.org', TEST_ORG_ID);
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
 			expect(found?.email_id).toBe('find@choir.org');
@@ -341,7 +376,7 @@ describe('Member database operations', () => {
 		});
 
 		it('should return null for unknown email', async () => {
-			const found = await getMemberByEmailId(db, 'unknown@choir.org');
+			const found = await getMemberByEmailId(db, 'unknown@choir.org', TEST_ORG_ID);
 			expect(found).toBeNull();
 		});
 	});
@@ -351,16 +386,17 @@ describe('Member database operations', () => {
 			const created = await createMember(db, {
 				email: 'test@choir.org',
 				name: 'Test',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
-			const found = await getMemberById(db, created.id);
+			const found = await getMemberById(db, created.id, TEST_ORG_ID);
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
 		});
 
 		it('should return null for unknown id', async () => {
-			const found = await getMemberById(db, 'unknown-id');
+			const found = await getMemberById(db, 'unknown-id', TEST_ORG_ID);
 			expect(found).toBeNull();
 		});
 	});
@@ -370,11 +406,12 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'test@choir.org',
 				name: 'Test',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
 			await addMemberVoice(db, member.id, 'soprano', false, null);
-			const updated = await getMemberById(db, member.id);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.voices).toHaveLength(1);
 			expect(updated?.voices[0].id).toBe('soprano');
 		});
@@ -386,13 +423,14 @@ describe('Member database operations', () => {
 				email: 'test@choir.org',
 				name: 'Test',
 				roles: ['librarian'],
-				voiceIds: ['soprano', 'alto']
+				voiceIds: ['soprano', 'alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			const result = await removeMemberVoice(db, member.id, 'soprano');
 			expect(result).toBe(true);
 
-			const updated = await getMemberById(db, member.id);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.voices).toHaveLength(1);
 			expect(updated?.voices[0].id).toBe('alto');
 		});
@@ -403,11 +441,12 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'test@choir.org',
 				name: 'Test',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
-			await addMemberSection(db, member.id, 'soprano', false, null);
-			const updated = await getMemberById(db, member.id);
+			await addMemberSection(db, member.id, 'soprano', false, null, TEST_ORG_ID);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.sections).toHaveLength(1);
 			expect(updated?.sections[0].id).toBe('soprano');
 		});
@@ -419,13 +458,14 @@ describe('Member database operations', () => {
 				email: 'test@choir.org',
 				name: 'Test',
 				roles: ['librarian'],
-				sectionIds: ['soprano', 'alto']
+				sectionIds: ['soprano', 'alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			const result = await removeMemberSection(db, member.id, 'soprano');
 			expect(result).toBe(true);
 
-			const updated = await getMemberById(db, member.id);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.sections).toHaveLength(1);
 			expect(updated?.sections[0].id).toBe('alto');
 		});
@@ -437,12 +477,13 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Singer',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
 			// Add soprano as primary
 			await addMemberVoice(db, member.id, 'soprano', true);
-			let updated = await getMemberById(db, member.id);
+			let updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.voices).toHaveLength(1);
 			expect(updated?.voices[0].id).toBe('soprano');
 		});
@@ -454,7 +495,8 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Singer',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
 			// Add multiple voices (none primary)
@@ -465,7 +507,7 @@ describe('Member database operations', () => {
 			// Set alto as primary
 			await setPrimaryVoice(db, member.id, 'alto');
 			
-			const updated = await getMemberById(db, member.id);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.voices).toHaveLength(3);
 			
 			// Verify function executes without error
@@ -482,17 +524,18 @@ describe('Member database operations', () => {
 			const member = await createMember(db, {
 				email: 'singer@choir.org',
 				name: 'Singer',
-				roles: ['librarian']
+				roles: ['librarian'],
+				orgId: TEST_ORG_ID
 			});
 
 			// Add multiple sections (none primary)
-			await addMemberSection(db, member.id, 'soprano', false);
-			await addMemberSection(db, member.id, 'alto', false);
+			await addMemberSection(db, member.id, 'soprano', false, null, TEST_ORG_ID);
+			await addMemberSection(db, member.id, 'alto', false, null, TEST_ORG_ID);
 
 			// Set alto as primary
 			await setPrimarySection(db, member.id, 'alto');
 			
-			const updated = await getMemberById(db, member.id);
+			const updated = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(updated?.sections).toHaveLength(2);
 			
 			// Verify function executes without error
@@ -511,7 +554,8 @@ describe('Member database operations', () => {
 				name: 'Soprano Singer',
 				roles: ['librarian'],
 				voiceIds: ['soprano'],
-				sectionIds: ['soprano']
+				sectionIds: ['soprano'],
+				orgId: TEST_ORG_ID
 			});
 
 			const member2 = await createMember(db, {
@@ -519,7 +563,8 @@ describe('Member database operations', () => {
 				name: 'Alto Singer',
 				roles: ['admin'],
 				voiceIds: ['alto'],
-				sectionIds: ['alto']
+				sectionIds: ['alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			const member3 = await createMember(db, {
@@ -527,10 +572,11 @@ describe('Member database operations', () => {
 				name: 'Tenor Singer',
 				roles: ['librarian'],
 				voiceIds: ['tenor'],
-				sectionIds: ['tenor-1']
+				sectionIds: ['tenor-1'],
+				orgId: TEST_ORG_ID
 			});
 
-			const allMembers = await getAllMembers(db);
+			const allMembers = await getAllMembers(db, TEST_ORG_ID);
 			
 			expect(allMembers).toHaveLength(3);
 			
@@ -560,11 +606,12 @@ describe('Member database operations', () => {
 				name: 'To Delete',
 				roles: ['librarian'],
 				voiceIds: ['soprano', 'alto'],
-				sectionIds: ['soprano', 'alto']
+				sectionIds: ['soprano', 'alto'],
+				orgId: TEST_ORG_ID
 			});
 
 			// Verify member exists with voices and sections
-			let found = await getMemberById(db, member.id);
+			let found = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(found).toBeDefined();
 			expect(found?.voices).toHaveLength(2);
 			expect(found?.sections).toHaveLength(2);
@@ -573,7 +620,7 @@ describe('Member database operations', () => {
 			await db.prepare('DELETE FROM members WHERE id = ?').bind(member.id).run();
 
 			// Verify member is deleted
-			found = await getMemberById(db, member.id);
+			found = await getMemberById(db, member.id, TEST_ORG_ID);
 			expect(found).toBeNull();
 			
 			// Mock DB simulates CASCADE by also deleting from memberVoices/memberSections

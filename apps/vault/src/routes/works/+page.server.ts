@@ -12,7 +12,7 @@ interface WorksResponse {
 	createdAt: string;
 }
 
-export const load: PageServerLoad = async ({ fetch, platform, cookies }) => {
+export const load: PageServerLoad = async ({ fetch, platform, cookies, locals }) => {
 	const response = await fetch('/api/works');
 	const works = (await response.json()) as WorksResponse[];
 

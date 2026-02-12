@@ -1,5 +1,6 @@
 // Tests for /api/profile/preferences endpoint (Issue #186)
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { MemberPreferences } from '$lib/types';
 
@@ -80,7 +81,7 @@ function createMockEvent(
 			set: vi.fn(),
 			delete: vi.fn()
 		},
-		locals: {}
+		locals: { org: { id: createOrgId('test-org') } } as any
 	} as any;
 }
 

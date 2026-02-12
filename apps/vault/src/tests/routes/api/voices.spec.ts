@@ -1,6 +1,7 @@
 // Voices API route tests
 // Tests for /api/voices CRUD + reorder endpoints
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Member } from '$lib/server/db/members';
 import type { Voice } from '$lib/types';
@@ -75,7 +76,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 		params: {},
 		request: new Request('http://localhost/api/voices'),
 		url: new URL('http://localhost/api/voices'),
-		locals: {},
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		route: { id: '/api/voices' },
 		getClientAddress: () => '127.0.0.1',
 		fetch: vi.fn(),

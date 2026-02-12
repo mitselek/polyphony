@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { revokeInvite } from '$lib/server/db/invites';
 
-export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
+export const DELETE: RequestHandler = async ({ params, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');

@@ -21,7 +21,7 @@ const deleteVoiceSchema = z.object({
  * Add a voice to a member
  */
 export async function POST(event: RequestEvent) {
-	const { params, request, platform, cookies } = event;
+	const { params, request, platform, cookies, locals } = event;
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -67,7 +67,7 @@ export async function POST(event: RequestEvent) {
  * Remove a voice from a member
  */
 export async function DELETE(event: RequestEvent) {
-	const { params, request, platform, cookies } = event;
+	const { params, request, platform, cookies, locals } = event;
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');

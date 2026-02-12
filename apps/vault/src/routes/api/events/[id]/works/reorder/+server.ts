@@ -7,7 +7,7 @@ import { reorderEventWorks } from '$lib/server/db/event-repertoire';
 import { getEventById } from '$lib/server/db/events';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 
-export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;

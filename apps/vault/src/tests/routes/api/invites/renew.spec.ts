@@ -1,5 +1,6 @@
 // Tests for POST /api/invites/[id]/renew endpoint
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { POST } from '../../../../routes/api/invites/[id]/renew/+server';
 import type { Member } from '$lib/server/auth/permissions';
 
@@ -153,7 +154,8 @@ describe('POST /api/invites/[id]/renew', () => {
 		const response = await POST({
 			params: { id: 'invite-1' },
 			platform: { env: { DB: mockDb as unknown as D1Database } },
-			cookies: {} as any
+			cookies: {} as any,
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any);
 
 		expect(response.status).toBe(200);
@@ -174,7 +176,8 @@ describe('POST /api/invites/[id]/renew', () => {
 			await POST({
 				params: { id: 'invite-1' },
 				platform: { env: { DB: mockDb as unknown as D1Database } },
-				cookies: {} as any
+				cookies: {} as any,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			expect.fail('Should have thrown');
 		} catch (err: any) {
@@ -190,7 +193,8 @@ describe('POST /api/invites/[id]/renew', () => {
 			await POST({
 				params: { id: 'non-existent' },
 				platform: { env: { DB: mockDb as unknown as D1Database } },
-				cookies: {} as any
+				cookies: {} as any,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			expect.fail('Should have thrown');
 		} catch (err: any) {
@@ -206,7 +210,8 @@ describe('POST /api/invites/[id]/renew', () => {
 			await POST({
 				params: { id: 'invite-2' },
 				platform: { env: { DB: mockDb as unknown as D1Database } },
-				cookies: {} as any
+				cookies: {} as any,
+				locals: { org: { id: createOrgId('test-org') } }
 			} as any);
 			expect.fail('Should have thrown');
 		} catch (err: any) {
@@ -226,7 +231,8 @@ describe('POST /api/invites/[id]/renew', () => {
 		const response = await POST({
 			params: { id: 'invite-1' },
 			platform: { env: { DB: mockDb as unknown as D1Database } },
-			cookies: {} as any
+			cookies: {} as any,
+			locals: { org: { id: createOrgId('test-org') } }
 		} as any);
 
 		expect(response.status).toBe(200);

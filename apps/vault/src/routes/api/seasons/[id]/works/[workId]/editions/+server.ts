@@ -21,7 +21,7 @@ async function parseAndValidateBody(request: Request): Promise<{ editionId: stri
 	return { editionId: body.editionId, isPrimary: body.isPrimary as boolean | undefined, notes: body.notes as string | undefined };
 }
 
-export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;

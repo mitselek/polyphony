@@ -29,7 +29,7 @@ export async function GET(event: RequestEvent) {
  * Update vault settings (admin only)
  */
 export async function PATCH(event: RequestEvent) {
-	const { request, platform, cookies } = event;
+	const { request, platform, cookies, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 

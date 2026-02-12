@@ -18,7 +18,7 @@ interface SectionRow {
 }
 
 interface RosterFilters {
-	orgId?: string;
+	orgId?: OrgId;
 	start?: string;
 	end?: string;
 	sectionId?: string;

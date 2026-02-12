@@ -31,7 +31,7 @@ interface MemberForAssignment {
 async function loadCopiesWithAssignments(
 	db: D1Database,
 	editionId: string,
-	orgId?: string
+	orgId: OrgId
 ): Promise<CopyWithAssignment[]> {
 	const copies = await getPhysicalCopiesByEdition(db, editionId);
 	const members = await getAllMembers(db, orgId);

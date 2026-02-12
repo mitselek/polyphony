@@ -89,7 +89,7 @@ async function applyUpdate(
  * POST /api/participation - Update RSVP or attendance for a member/event
  */
 export async function POST(event: RequestEvent) {
-	const { platform, cookies, request } = event;
+	const { platform, cookies, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 
 	const db = platform.env.DB;

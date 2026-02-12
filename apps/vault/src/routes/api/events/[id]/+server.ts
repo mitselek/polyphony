@@ -39,7 +39,7 @@ export async function GET(event: RequestEvent) {
  * Requires: Conductor role (manage events permission)
  */
 export async function PATCH(event: RequestEvent) {
-	const { platform, cookies, params, request } = event;
+	const { platform, cookies, params, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 

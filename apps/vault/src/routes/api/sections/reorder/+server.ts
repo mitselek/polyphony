@@ -31,7 +31,7 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 
 	try {
 		await reorderSections(db, body.sectionIds!);
-		const sections = await getAllSectionsWithCounts(db, body.orgId!);
+		const sections = await getAllSectionsWithCounts(db, locals.org.id);
 		return json(sections);
 	} catch (err) {
 		console.error('Failed to reorder sections:', err);
