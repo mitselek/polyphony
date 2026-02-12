@@ -1,5 +1,31 @@
 // Shared TypeScript types for Polyphony
 
+// =============================================================================
+// Branded Types (compile-time safety for IDs)
+// =============================================================================
+
+/**
+ * Branded type for organization IDs.
+ * Prevents accidentally passing member IDs, session tokens, etc.
+ * where an org ID is expected.
+ * 
+ * Usage: createOrgId(locals.org.id) at the boundary (middleware/route handler),
+ * then pass the branded value through DB functions.
+ */
+export type OrgId = string & { readonly __brand: 'OrgId' };
+
+/**
+ * Create a branded OrgId from a plain string.
+ * Use at trust boundaries (middleware, route handlers) — NOT in DB functions.
+ */
+export function createOrgId(id: string): OrgId {
+	return id as OrgId;
+}
+
+// =============================================================================
+// Auth & Token Types
+// =============================================================================
+
 /**
  * Auth token issued by Registry, verified by Vaults
  */
