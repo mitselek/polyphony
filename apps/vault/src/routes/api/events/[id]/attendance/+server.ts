@@ -15,12 +15,12 @@ import type { ActualStatus } from '$lib/types';
  * Body: { memberId: string, status: 'present' | 'absent' | 'late' }
  */
 export async function POST(event: RequestEvent) {
-	const { platform, cookies, params, request } = event;
+	const { platform, cookies, params, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require conductor permission
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canRecordAttendance(member)) {
 		throw error(403, 'Only conductors and section leaders can record attendance');
 	}
@@ -92,12 +92,12 @@ export async function POST(event: RequestEvent) {
  * Body: { updates: Array<{ memberId: string, status: 'present' | 'absent' | 'late' }> }
  */
 export async function PUT(event: RequestEvent) {
-	const { platform, cookies, params, request } = event;
+	const { platform, cookies, params, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require conductor permission
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canRecordAttendance(member)) {
 		throw error(403, 'Only conductors and section leaders can record attendance');
 	}

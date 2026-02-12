@@ -40,9 +40,9 @@ function buildPdfResponse(data: ArrayBuffer, size: number, fileName: string, dow
 	});
 }
 
-export async function GET({ params, platform, cookies, url }: RequestEvent) {
+export async function GET({ params, platform, cookies, url, locals }: RequestEvent) {
 	const db = getDb(platform);
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 	const edition = await getValidatedEdition(db, params.id);
 
 	if (!edition.fileKey) throw error(404, 'No file attached to this edition');
@@ -57,9 +57,9 @@ export async function GET({ params, platform, cookies, url }: RequestEvent) {
 	return buildPdfResponse(file.data, file.size, edition.fileName ?? 'score.pdf', download);
 }
 
-export async function POST({ params, request, platform, cookies }: RequestEvent) {
+export async function POST({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = getDb(platform);
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const edition = await getValidatedEdition(db, params.id);
@@ -94,9 +94,9 @@ async function extractAndValidateFile(request: Request): Promise<File> {
 	return file;
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = getDb(platform);
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const edition = await getValidatedEdition(db, params.id);

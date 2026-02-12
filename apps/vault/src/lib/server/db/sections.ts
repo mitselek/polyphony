@@ -1,4 +1,5 @@
 // Sections database operations
+import type { OrgId } from '@polyphony/shared';
 import type { Section, CreateSectionInput } from '$lib/types';
 
 interface SectionRow {
@@ -48,7 +49,7 @@ function rowToSectionWithCount(row: SectionWithCountRow): SectionWithCount {
 /**
  * Get all active sections for an organization, ordered by display_order
  */
-export async function getActiveSections(db: D1Database, orgId: string): Promise<Section[]> {
+export async function getActiveSections(db: D1Database, orgId: OrgId): Promise<Section[]> {
 	const { results } = await db
 		.prepare('SELECT * FROM sections WHERE org_id = ? AND is_active = 1 ORDER BY display_order ASC')
 		.bind(orgId)
@@ -60,7 +61,7 @@ export async function getActiveSections(db: D1Database, orgId: string): Promise<
 /**
  * Get all sections for an organization (including inactive), ordered by display_order
  */
-export async function getAllSections(db: D1Database, orgId: string): Promise<Section[]> {
+export async function getAllSections(db: D1Database, orgId: OrgId): Promise<Section[]> {
 	const { results } = await db
 		.prepare('SELECT * FROM sections WHERE org_id = ? ORDER BY display_order ASC')
 		.bind(orgId)
@@ -135,7 +136,7 @@ export async function toggleSectionActive(
 /**
  * Get all sections for an organization with assignment counts (member + invite assignments)
  */
-export async function getAllSectionsWithCounts(db: D1Database, orgId: string): Promise<SectionWithCount[]> {
+export async function getAllSectionsWithCounts(db: D1Database, orgId: OrgId): Promise<SectionWithCount[]> {
 	const { results } = await db
 		.prepare(`
 			SELECT s.*, 

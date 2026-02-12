@@ -1,10 +1,11 @@
 import type { PageServerLoad } from './$types';
+import type { OrgId } from '@polyphony/shared';
 import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
 
 interface WorksResponse {
 	id: string;
-	orgId: string;
+	orgId: OrgId;
 	title: string;
 	composer: string | null;
 	lyricist: string | null;
@@ -22,7 +23,7 @@ export const load: PageServerLoad = async ({ fetch, platform, cookies }) => {
 	const memberId = cookies.get('member_id');
 
 	if (db && memberId) {
-		const member = await getMemberById(db, memberId);
+		const member = await getMemberById(db, memberId, locals.org.id);
 		if (member) {
 			// Librarians, admins, and owners can manage works
 			canManage = canUploadScores(member);

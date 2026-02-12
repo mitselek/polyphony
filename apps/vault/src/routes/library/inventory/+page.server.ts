@@ -6,7 +6,7 @@ import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
 import { getEditionInventorySummaries } from '$lib/server/db/physical-copies';
 
-export const load: PageServerLoad = async ({ platform, cookies }) => {
+export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	if (!platform?.env?.DB) {
 		throw error(500, 'Database unavailable');
 	}
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ platform, cookies }) => {
 	}
 
 	// Get member and check permissions
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw redirect(303, '/welcome');
 	}

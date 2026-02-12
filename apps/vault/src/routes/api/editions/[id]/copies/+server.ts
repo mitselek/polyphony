@@ -74,12 +74,12 @@ function validateCreateInput(body: CreateInput): string | null {
 	return typeError ?? validateCommonFields(body);
 }
 
-export async function GET({ params, platform, cookies, url }: RequestEvent) {
+export async function GET({ params, platform, cookies, url, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
 	// Auth: any authenticated member can view copies
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const editionId = params.id;
 	if (!editionId) throw error(400, 'Edition ID is required');
@@ -124,11 +124,11 @@ async function handleSingleCreate(db: D1Database, editionId: string, body: Creat
 	return json(copy, { status: 201 });
 }
 
-export async function POST({ params, request, platform, cookies }: RequestEvent) {
+export async function POST({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const editionId = params.id;

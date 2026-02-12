@@ -28,11 +28,11 @@ function buildCreateInput(workId: string, body: Partial<CreateEditionInput>): Cr
 	};
 }
 
-export async function GET({ params, platform, cookies }: RequestEvent) {
+export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw serverError();
 
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const workId = params.id;
 	if (!workId) throw error(400, 'Work ID is required');
@@ -46,11 +46,11 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	});
 }
 
-export async function POST({ params, request, platform, cookies }: RequestEvent) {
+export async function POST({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw serverError();
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const workId = params.id;

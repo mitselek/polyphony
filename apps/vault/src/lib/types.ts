@@ -1,6 +1,8 @@
 // Shared types for the vault application
 // These types are used across both server and client code
 
+import type { OrgId } from '@polyphony/shared';
+
 // All assignable roles - single source of truth
 // Database CHECK constraint must be kept in sync manually (migrations)
 export const ASSIGNABLE_ROLES = ['owner', 'admin', 'librarian', 'conductor', 'section_leader'] as const;
@@ -23,7 +25,7 @@ export type OrganizationType = 'umbrella' | 'collective';
  * - umbrella: Organization that contains other organizations
  */
 export interface Organization {
-	id: string;
+	id: OrgId;
 	name: string;
 	subdomain: string;
 	type: OrganizationType;
@@ -403,7 +405,7 @@ export interface SectionSummaryStats {
  * Filters for roster view query
  */
 export interface RosterViewFilters {
-	orgId?: string; // Filter by organization
+	orgId?: OrgId; // Filter by organization
 	start?: string; // ISO datetime
 	end?: string; // ISO datetime
 	sectionId?: string; // Filter members by section

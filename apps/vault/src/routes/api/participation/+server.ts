@@ -94,7 +94,7 @@ export async function POST(event: RequestEvent) {
 
 	const db = platform.env.DB;
 	const [currentMember, body] = await Promise.all([
-		getAuthenticatedMember(db, cookies),
+		getAuthenticatedMember(db, cookies, locals.org.id),
 		request.json() as Promise<UpdateBody>
 	]);
 

@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 	const workEditionsMap: Record<string, Edition[]> = {};
 	
 	if (db && memberId) {
-		const member = await getMemberById(db, memberId);
+		const member = await getMemberById(db, memberId, locals.org.id);
 		if (member) {
 			canManage = canManageEvents(member);
 			canManageLibrary = canUploadScores(member);

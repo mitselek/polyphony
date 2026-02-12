@@ -23,7 +23,7 @@ export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	await requireEventWork(db, params.id, params.workId);
@@ -37,7 +37,7 @@ export const PATCH: RequestHandler = async ({ params, request, platform, cookies
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	await requireEventWork(db, params.id, params.workId);

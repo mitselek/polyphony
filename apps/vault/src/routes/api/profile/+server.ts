@@ -16,7 +16,7 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 	}
 
 	// Authenticate
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	// Parse and validate request body
 	const body = (await request.json()) as UpdateProfileRequest;

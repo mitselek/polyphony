@@ -9,7 +9,7 @@ export const POST: RequestHandler = async ({ params, platform, cookies }) => {
 	if (!db) throw error(500, 'Database not available');
 
 	// Auth: get member and check admin role
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentMember);
 
 	const invite = await renewInvite(db, params.id);

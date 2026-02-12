@@ -22,11 +22,11 @@ async function validateAssignment(db: D1Database, copyId: string, assignmentId: 
 	return null;
 }
 
-export async function POST({ params, request, platform, cookies }: RequestEvent) {
+export async function POST({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const currentUser = await getAuthenticatedMember(db, cookies);
+	const currentUser = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(currentUser);
 
 	const copyId = params.id;

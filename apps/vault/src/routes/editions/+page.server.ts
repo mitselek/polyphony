@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	const memberId = cookies.get('member_id');
 
 	if (memberId) {
-		const member = await getMemberById(db, memberId);
+		const member = await getMemberById(db, memberId, locals.org.id);
 		if (member) {
 			canManage = canUploadScores(member);
 		}

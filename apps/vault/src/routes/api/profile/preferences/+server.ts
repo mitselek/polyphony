@@ -27,7 +27,7 @@ export const GET: RequestHandler = async ({ platform, cookies }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const prefs = await getMemberPreferences(db, member.id);
 	
 	return json(prefs);
@@ -37,7 +37,7 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const body = (await request.json()) as UpdatePreferencesBody;
 	const updated = await setMemberPreferences(db, member.id, parseUpdateInput(body));
 	

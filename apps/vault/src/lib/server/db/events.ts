@@ -1,10 +1,11 @@
 // Events database operations
+import { createOrgId, type OrgId } from '@polyphony/shared';
 import type { EventType } from '$lib/types';
 import { nanoid } from 'nanoid';
 
 export interface Event {
 	id: string;
-	orgId: string;
+	orgId: OrgId;
 	title: string;
 	description: string | null;
 	location: string | null;
@@ -38,7 +39,7 @@ export interface UpdateEventInput {
  */
 export async function createEvents(
 	db: D1Database,
-	orgId: string,
+	orgId: OrgId,
 	events: CreateEventInput[],
 	createdBy: string
 ): Promise<Event[]> {
@@ -88,7 +89,7 @@ export async function createEvents(
  * Get upcoming events (starts_at >= now) ordered by start time
  * Filtered by organization
  */
-export async function getUpcomingEvents(db: D1Database, orgId: string): Promise<Event[]> {
+export async function getUpcomingEvents(db: D1Database, orgId: OrgId): Promise<Event[]> {
 	const { results } = await db
 		.prepare(
 			`SELECT id, org_id, title, description, location, starts_at, ends_at, event_type, created_by, created_at 
@@ -101,7 +102,7 @@ export async function getUpcomingEvents(db: D1Database, orgId: string): Promise<
 
 	return results.map(row => ({
 		id: row.id,
-		orgId: row.org_id,
+		orgId: createOrgId(row.org_id),
 		title: row.title,
 		description: row.description,
 		location: row.location,
@@ -128,7 +129,7 @@ export async function getEventById(db: D1Database, id: string): Promise<Event | 
 	
 	return {
 		id: row.id,
-		orgId: row.org_id,
+		orgId: createOrgId(row.org_id),
 		title: row.title,
 		description: row.description,
 		location: row.location,

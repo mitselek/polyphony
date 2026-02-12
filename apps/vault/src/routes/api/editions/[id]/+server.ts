@@ -32,11 +32,11 @@ function buildUpdateInput(body: Partial<UpdateEditionInput>): UpdateEditionInput
 	return input;
 }
 
-export async function GET({ params, platform, cookies }: RequestEvent) {
+export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw serverError();
 
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const editionId = params.id;
 	if (!editionId) throw error(400, 'Edition ID is required');
@@ -49,11 +49,11 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	});
 }
 
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw serverError();
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const editionId = params.id;
@@ -71,11 +71,11 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	});
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw serverError();
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const editionId = params.id;

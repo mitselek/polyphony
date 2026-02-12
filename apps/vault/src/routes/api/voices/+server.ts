@@ -5,14 +5,14 @@ import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware
 import { createVoice } from '$lib/server/db/voices';
 import type { CreateVoiceInput } from '$lib/types';
 
-export async function POST({ request, platform, cookies }: RequestEvent) {
+export async function POST({ request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	// Parse request body

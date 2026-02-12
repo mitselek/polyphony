@@ -1,5 +1,6 @@
 // Seasons database layer tests
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createSeason,
 	getSeason,
@@ -11,7 +12,7 @@ import {
 } from './seasons';
 
 // Test org ID (matches DEFAULT_ORG_ID)
-const TEST_ORG_ID = 'org_crede_001';
+const TEST_ORG_ID = createOrgId('org_crede_001');
 
 // Mock D1Database
 function createMockDb() {

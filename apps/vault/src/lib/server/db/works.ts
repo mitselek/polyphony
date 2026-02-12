@@ -1,4 +1,5 @@
 // Works database operations
+import type { OrgId } from '@polyphony/shared';
 import type { Work, CreateWorkInput, UpdateWorkInput } from '$lib/types';
 import { generateId } from '$lib/server/utils/id';
 
@@ -64,7 +65,7 @@ export async function getWorkById(db: D1Database, id: string): Promise<Work | nu
 /**
  * Get all works for an organization, ordered by title
  */
-export async function getAllWorks(db: D1Database, orgId: string): Promise<Work[]> {
+export async function getAllWorks(db: D1Database, orgId: OrgId): Promise<Work[]> {
 	const { results } = await db
 		.prepare('SELECT id, org_id, title, composer, lyricist, created_at FROM works WHERE org_id = ? ORDER BY title ASC')
 		.bind(orgId)
@@ -149,7 +150,7 @@ export async function deleteWork(db: D1Database, id: string): Promise<boolean> {
 /**
  * Search works by title or composer (case-insensitive) within an organization
  */
-export async function searchWorks(db: D1Database, orgId: string, query: string): Promise<Work[]> {
+export async function searchWorks(db: D1Database, orgId: OrgId, query: string): Promise<Work[]> {
 	const pattern = `%${query}%`;
 
 	const { results } = await db

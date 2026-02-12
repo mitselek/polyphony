@@ -59,7 +59,8 @@ async function handleInviteAcceptance(
 	db: D1Database,
 	inviteToken: string,
 	email: string,
-	cookies: Cookies
+	cookies: Cookies,
+	orgId: import('@polyphony/shared').OrgId
 ): Promise<never> {
 	const inviteResult = await acceptInvite(db, inviteToken, email);
 
@@ -84,9 +85,10 @@ async function handleLogin(
 	db: D1Database,
 	email: string,
 	name: string | undefined,
-	cookies: Cookies
+	cookies: Cookies,
+	orgId: import('@polyphony/shared').OrgId
 ): Promise<never> {
-	let member = await getMemberByEmailId(db, email);
+	let member = await getMemberByEmailId(db, email, orgId);
 
 	if (!member) {
 		throw redirect(302, '/login?error=not_registered');
@@ -129,16 +131,17 @@ async function routeToHandler(
 	db: D1Database,
 	cookies: Cookies,
 	email: string,
-	name: string | undefined
+	name: string | undefined,
+	orgId: import('@polyphony/shared').OrgId
 ): Promise<never> {
 	// Check for pending invite token in cookie (set by /api/auth/login)
 	const inviteToken = cookies.get('pending_invite');
 	if (inviteToken) {
 		// Clear the cookie
 		cookies.delete('pending_invite', { path: '/' });
-		return await handleInviteAcceptance(db, inviteToken, email, cookies);
+		return await handleInviteAcceptance(db, inviteToken, email, cookies, orgId);
 	}
-	return await handleLogin(db, email, name, cookies);
+	return await handleLogin(db, email, name, cookies, orgId);
 }
 
 async function processAuthCallback(
@@ -146,13 +149,14 @@ async function processAuthCallback(
 	url: URL,
 	cookies: Cookies,
 	fetchFn: typeof fetch,
-	vaultId: string
+	vaultId: string,
+	orgId: import('@polyphony/shared').OrgId
 ): Promise<never> {
 	const token = validateTokenParam(url);
 	const payload = await verifyJWT(token, fetchFn, vaultId);
 	const email = validateEmail(payload);
 	const name = payload.name as string | undefined;
-	return await routeToHandler(db, cookies, email, name);
+	return await routeToHandler(db, cookies, email, name, orgId);
 }
 
 function handleAuthError(err: unknown): never {
@@ -167,7 +171,7 @@ function handleAuthError(err: unknown): never {
 	throw error(401, 'Invalid or expired token');
 }
 
-export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelteKitFetch }) => {
+export const GET: RequestHandler = async ({ url, platform, cookies, locals, fetch: svelteKitFetch }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -175,7 +179,7 @@ export const GET: RequestHandler = async ({ url, platform, cookies, fetch: svelt
 
 	try {
 		const vaultId = platform?.env?.VAULT_ID ?? 'localhost-dev-vault';
-		return await processAuthCallback(db, url, cookies, svelteKitFetch, vaultId);
+		return await processAuthCallback(db, url, cookies, svelteKitFetch, vaultId, locals.org.id);
 	} catch (err) {
 		return handleAuthError(err);
 	}

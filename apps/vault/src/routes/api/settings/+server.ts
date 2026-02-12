@@ -12,12 +12,12 @@ import { parseBody, updateSettingsSchema } from '$lib/server/validation/schemas'
  * Retrieve all vault settings (admin only)
  */
 export async function GET(event: RequestEvent) {
-	const { platform, cookies } = event;
+	const { platform, cookies, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const settings = await getAllSettings(db);
@@ -34,7 +34,7 @@ export async function PATCH(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	// Validate request body

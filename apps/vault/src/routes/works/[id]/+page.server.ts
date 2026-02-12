@@ -8,7 +8,7 @@ import { getAllSections } from '$lib/server/db/sections';
 
 async function checkCanManage(db: D1Database, memberId: string | undefined): Promise<boolean> {
 	if (!memberId) return false;
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	return member ? canUploadScores(member) : false;
 }
 

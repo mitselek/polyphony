@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
+import { createOrgId } from '@polyphony/shared';
 import {
 	queryMemberSections,
 	queryMemberVoices,
@@ -7,6 +8,8 @@ import {
 	queryInviteVoices
 } from './members';
 import type { Section, Voice } from '$lib/types';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock D1Database
 function createMockDB() {
@@ -105,7 +108,7 @@ describe('Member Query Utilities', () => {
 
 	describe('queryMemberSections', () => {
 		it('should return empty array when member has no sections', async () => {
-			const result = await queryMemberSections(mockDb, 'mem_1');
+			const result = await queryMemberSections(mockDb, 'mem_1', TEST_ORG_ID);
 
 			expect(result).toEqual([]);
 		});
@@ -125,7 +128,7 @@ describe('Member Query Utilities', () => {
 				{ section_id: 'sec_1', is_primary: 1 }
 			]);
 
-			const result = await queryMemberSections(mockDb, 'mem_1');
+			const result = await queryMemberSections(mockDb, 'mem_1', TEST_ORG_ID);
 
 			expect(result).toHaveLength(1);
 			expect(result[0]).toEqual({
@@ -172,7 +175,7 @@ describe('Member Query Utilities', () => {
 				{ section_id: 'sec_3', is_primary: 0 }  // Tenor
 			]);
 
-			const result = await queryMemberSections(mockDb, 'mem_1');
+			const result = await queryMemberSections(mockDb, 'mem_1', TEST_ORG_ID);
 
 			expect(result).toHaveLength(3);
 			// Primary first
@@ -197,7 +200,7 @@ describe('Member Query Utilities', () => {
 				{ section_id: 'sec_1', is_primary: 1 }
 			]);
 
-			const result = await queryMemberSections(mockDb, 'mem_1');
+			const result = await queryMemberSections(mockDb, 'mem_1', TEST_ORG_ID);
 
 			expect(result[0].isActive).toBe(false);
 		});

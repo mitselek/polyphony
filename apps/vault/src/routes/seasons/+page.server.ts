@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ fetch, platform, cookies }) => {
 	const memberId = cookies.get('member_id');
 
 	if (db && memberId) {
-		const member = await getMemberById(db, memberId);
+		const member = await getMemberById(db, memberId, locals.org.id);
 		if (member) {
 			// Admins and owners can manage seasons
 			canManage = canManageEvents(member);

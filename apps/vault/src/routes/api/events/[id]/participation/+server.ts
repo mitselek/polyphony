@@ -19,12 +19,12 @@ import type { PlannedStatus } from '$lib/types';
  * Requires: Authentication
  */
 export async function GET(event: RequestEvent) {
-	const { platform, cookies, params } = event;
+	const { platform, cookies, params, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require authentication
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const eventId = params.id;
 	if (!eventId) {
@@ -86,7 +86,7 @@ export async function POST(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require authentication
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const eventId = params.id;
 	if (!eventId) {

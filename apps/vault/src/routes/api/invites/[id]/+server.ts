@@ -11,7 +11,7 @@ export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 	}
 
 	// Auth: get member and check admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const inviteId = params.id;

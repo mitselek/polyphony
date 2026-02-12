@@ -33,7 +33,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Auth: require admin role
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentMember);
 
 	// Validate request body
@@ -46,7 +46,7 @@ export async function POST(event: RequestEvent) {
 	const { voiceId, isPrimary } = parsed.data;
 
 	// Verify member exists
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw error(404, 'Member not found');
 	}
@@ -79,7 +79,7 @@ export async function DELETE(event: RequestEvent) {
 	}
 
 	// Auth: require admin role
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentMember);
 
 	// Validate request body
@@ -92,7 +92,7 @@ export async function DELETE(event: RequestEvent) {
 	const { voiceId } = parsed.data;
 
 	// Verify member exists
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw error(404, 'Member not found');
 	}

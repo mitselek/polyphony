@@ -1,5 +1,6 @@
 // member-organizations.ts TDD test suite
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	addMemberToOrganization,
 	getMemberOrganizations,
@@ -93,7 +94,7 @@ describe('Member Organizations Database Operations', () => {
 		it('adds a member to an organization', async () => {
 			const input: AddMemberToOrgInput = {
 				memberId: 'member_001',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			};
 
 			const result = await addMemberToOrganization(db, input);
@@ -109,7 +110,7 @@ describe('Member Organizations Database Operations', () => {
 		it('adds a member with nickname and invitedBy', async () => {
 			const input: AddMemberToOrgInput = {
 				memberId: 'member_002',
-				orgId: 'org_crede_001',
+				orgId: createOrgId('org_crede_001'),
 				nickname: 'Tom',
 				invitedBy: 'member_001'
 			};
@@ -126,11 +127,11 @@ describe('Member Organizations Database Operations', () => {
 			// Add member to two orgs
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			});
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_eca_001'
+				orgId: createOrgId('org_eca_001')
 			});
 
 			const orgs = await getMemberOrganizations(db, 'member_001');
@@ -149,15 +150,15 @@ describe('Member Organizations Database Operations', () => {
 		it('returns all members in an organization', async () => {
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			});
 			await addMemberToOrganization(db, {
 				memberId: 'member_002',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			});
 			await addMemberToOrganization(db, {
 				memberId: 'member_003',
-				orgId: 'org_other_001' // Different org
+				orgId: createOrgId('org_other_001') // Different org
 			});
 
 			const members = await getMembersByOrganization(db, 'org_crede_001');
@@ -178,7 +179,7 @@ describe('Member Organizations Database Operations', () => {
 		it('removes a member from an organization', async () => {
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			});
 
 			const removed = await removeMemberFromOrganization(db, 'member_001', 'org_crede_001');
@@ -200,7 +201,7 @@ describe('Member Organizations Database Operations', () => {
 		it('updates nickname for a member in an organization', async () => {
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_crede_001'
+				orgId: createOrgId('org_crede_001')
 			});
 
 			const updated = await updateMemberOrgNickname(db, 'member_001', 'org_crede_001', 'Tommy');
@@ -218,7 +219,7 @@ describe('Member Organizations Database Operations', () => {
 		it('clears nickname when set to null', async () => {
 			await addMemberToOrganization(db, {
 				memberId: 'member_001',
-				orgId: 'org_crede_001',
+				orgId: createOrgId('org_crede_001'),
 				nickname: 'Tom'
 			});
 

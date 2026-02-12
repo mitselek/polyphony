@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies,
 	const orgId = locals.org.id;
 
 	// Auth: get member and check admin role
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentMember);
 	const isOwner = checkIsOwner(currentMember);
 

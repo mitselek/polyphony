@@ -1,5 +1,6 @@
 // sections.ts TDD test suite (Schema V2 with org_id)
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	getActiveSections,
 	getAllSections,
@@ -9,8 +10,8 @@ import {
 } from './sections';
 import type { CreateSectionInput, Section } from '$lib/types';
 
-const CREDE_ORG_ID = 'org_crede_001';
-const OTHER_ORG_ID = 'org_other_001';
+const CREDE_ORG_ID = createOrgId('org_crede_001');
+const OTHER_ORG_ID = createOrgId('org_other_001');
 
 // Mock D1Database for testing with org_id support
 function createMockDB(): D1Database {

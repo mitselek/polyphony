@@ -13,7 +13,7 @@ export async function GET({ params, url, platform, cookies }: RequestEvent) {
 	}
 
 	// Auth: any authenticated member can view seasons
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const seasonId = params.id;
 	if (!seasonId) {
@@ -36,14 +36,14 @@ export async function GET({ params, url, platform, cookies }: RequestEvent) {
 	return json(season);
 }
 
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin role to update seasons
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const seasonId = params.id;
@@ -90,14 +90,14 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	}
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin role to delete seasons
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const seasonId = params.id;
