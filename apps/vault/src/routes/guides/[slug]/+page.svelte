@@ -18,7 +18,7 @@
 <div class="container mx-auto max-w-3xl px-4 py-8">
 	<div class="mb-6">
 		<a href="/guides" class="text-sm text-blue-600 hover:text-blue-800">
-			{m["guides.back_to_guides"]()}
+			{m.guides_back_to_guides()}
 		</a>
 	</div>
 
@@ -28,7 +28,7 @@
 
 	<div class="mt-6">
 		<a href="/guides" class="text-sm text-blue-600 hover:text-blue-800">
-			{m["guides.back_to_guides"]()}
+			{m.guides_back_to_guides()}
 		</a>
 	</div>
 </div>

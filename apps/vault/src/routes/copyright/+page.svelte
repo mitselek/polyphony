@@ -44,22 +44,22 @@
 </script>
 
 <svelte:head>
-	<title>{m["copyright.title"]()} - Polyphony</title>
+	<title>{m.copyright_title()} - Polyphony</title>
 </svelte:head>
 
 <main class="mx-auto max-w-2xl px-4 py-8">
-	<h1 class="mb-6 text-3xl font-bold">{m["copyright.title"]()}</h1>
+	<h1 class="mb-6 text-3xl font-bold">{m.copyright_title()}</h1>
 
 	{#if submitted}
 		<div class="rounded-lg bg-green-100 p-6 text-green-800">
-			<h2 class="mb-2 text-xl font-semibold">{m["copyright.submitted_title"]()}</h2>
+			<h2 class="mb-2 text-xl font-semibold">{m.copyright_submitted_title()}</h2>
 			<p>
-				{m["copyright.submitted_message"]()}
+				{m.copyright_submitted_message()}
 			</p>
 		</div>
 	{:else}
 		<p class="mb-6 text-gray-600">
-			{m["copyright.intro"]()}
+			{m.copyright_intro()}
 		</p>
 
 		{#if error}
@@ -71,20 +71,20 @@
 		<form onsubmit={handleSubmit} class="space-y-6">
 			<div>
 				<label for="score_id" class="mb-1 block text-sm font-medium text-gray-700">
-					{m["copyright.score_id_label"]()}
+					{m.copyright_score_id_label()}
 				</label>
 				<input
 					type="text"
 					id="score_id"
 					name="score_id"
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder={m["copyright.score_id_placeholder"]()}
+					placeholder={m.copyright_score_id_placeholder()}
 				/>
 			</div>
 
 			<div>
 				<label for="claimant_email" class="mb-1 block text-sm font-medium text-gray-700">
-					{m["copyright.email_label"]()} *
+					{m.copyright_email_label()} *
 				</label>
 				<input
 					type="email"
@@ -92,13 +92,13 @@
 					name="claimant_email"
 					required
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder={m["copyright.email_placeholder"]()}
+					placeholder={m.copyright_email_placeholder()}
 				/>
 			</div>
 
 			<div>
 				<label for="claim_type" class="mb-1 block text-sm font-medium text-gray-700">
-					{m["copyright.claim_type_label"]()} *
+					{m.copyright_claim_type_label()} *
 				</label>
 				<select
 					id="claim_type"
@@ -106,15 +106,15 @@
 					required
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
 				>
-					<option value="copyright">{m["copyright.claim_type_copyright"]()}</option>
-					<option value="trademark">{m["copyright.claim_type_trademark"]()}</option>
-					<option value="other">{m["copyright.claim_type_other"]()}</option>
+					<option value="copyright">{m.copyright_claim_type_copyright()}</option>
+					<option value="trademark">{m.copyright_claim_type_trademark()}</option>
+					<option value="other">{m.copyright_claim_type_other()}</option>
 				</select>
 			</div>
 
 			<div>
 				<label for="description" class="mb-1 block text-sm font-medium text-gray-700">
-					{m["copyright.description_label"]()} *
+					{m.copyright_description_label()} *
 				</label>
 				<textarea
 					id="description"
@@ -122,7 +122,7 @@
 					required
 					rows="5"
 					class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-					placeholder={m["copyright.description_placeholder"]()}
+					placeholder={m.copyright_description_placeholder()}
 				></textarea>
 			</div>
 
@@ -135,7 +135,7 @@
 					class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 				/>
 				<label for="attestation" class="text-sm text-gray-700">
-					{m["copyright.attestation"]()}
+					{m.copyright_attestation()}
 				</label>
 			</div>
 
@@ -144,7 +144,7 @@
 				disabled={submitting}
 				class="w-full rounded-md bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
 			>
-				{submitting ? m["copyright.submitting"]() : m["copyright.submit"]()}
+				{submitting ? m.copyright_submitting() : m.copyright_submit()}
 			</button>
 		</form>
 	{/if}

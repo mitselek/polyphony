@@ -7,11 +7,11 @@
 
 	// Translated role display names
 	const roleMsgKeys: Record<string, () => string> = {
-		owner: () => m["roles.owner"](),
-		admin: () => m["roles.admin"](),
-		librarian: () => m["roles.librarian"](),
-		conductor: () => m["roles.conductor"](),
-		section_leader: () => m["roles.section_leader"]()
+		owner: () => m.roles_owner(),
+		admin: () => m.roles_admin(),
+		librarian: () => m.roles_librarian(),
+		conductor: () => m.roles_conductor(),
+		section_leader: () => m.roles_section_leader()
 	};
 
 	function localizedText(texts: Record<string, string>): string {
@@ -21,13 +21,13 @@
 </script>
 
 <svelte:head>
-	<title>{m["guides.title"]()} | Polyphony</title>
+	<title>{m.guides_title()} | Polyphony</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8">
-		<h1 class="text-3xl font-bold text-gray-900">{m["guides.title"]()}</h1>
-		<p class="mt-2 text-gray-600">{m["guides.subtitle"]()}</p>
+		<h1 class="text-3xl font-bold text-gray-900">{m.guides_title()}</h1>
+		<p class="mt-2 text-gray-600">{m.guides_subtitle()}</p>
 	</div>
 
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -46,7 +46,7 @@
 				<div class="mt-3">
 					{#if guide.roles.length === 0}
 						<span class="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-							{m["guides.for_everyone"]()}
+							{m.guides_for_everyone()}
 						</span>
 					{:else}
 						{#each guide.roles as role}

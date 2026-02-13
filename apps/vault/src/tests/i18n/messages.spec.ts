@@ -171,20 +171,19 @@ describe('i18n message consistency', () => {
 			expect(invalidKeys).toHaveLength(0);
 		});
 
-		it('all keys use dots for nesting, not underscores in category names', () => {
+		it('all keys use underscore-separated flat format', () => {
 			const messages = loadMessages(BASE_LOCALE);
 			const keys = Object.keys(flattenMessages(messages));
-			// Only check category prefix (before first dot)
-			const categories = [...new Set(keys.map((k) => k.split('.')[0]))];
-			const invalidCategories = categories.filter((c) => c.includes('_'));
+			// Keys should be flat (no nesting) with underscores: e.g., nav_guides, roles_owner
+			const invalidKeys = keys.filter((k) => k.includes('.'));
 
-			if (invalidCategories.length > 0) {
+			if (invalidKeys.length > 0) {
 				throw new Error(
-					`Category names should not contain underscores:\n  - ${invalidCategories.join('\n  - ')}`
+					`Keys should be flat (underscore-separated), not nested with dots:\n  - ${invalidKeys.join('\n  - ')}`
 				);
 			}
 
-			expect(invalidCategories).toHaveLength(0);
+			expect(invalidKeys).toHaveLength(0);
 		});
 	});
 });
