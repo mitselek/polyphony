@@ -134,22 +134,6 @@ describe('POST /api/participation - Trust Individual Responsibility (Issue #240)
 			await expect(POST(event)).rejects.toThrow('Cannot update RSVP');
 		});
 
-		it('should allow admin to edit any member records', async () => {
-			const db = createTrustMockDb({
-				members: [adminMember, regularMember],
-				events: [pastEvent],
-				trustSetting: true
-			});
-			const event = createRequestEvent(db, adminMember.id, {
-				eventId: pastEvent.id,
-				memberId: regularMember.id,
-				actualStatus: 'present'
-			});
-			// Admin has no attendance:record permission by default, but canManage should still work
-			// Actually admin doesn't have attendance:record - this tests that conductor/section_leader still works
-			// Let's test with conductor instead
-		});
-
 		it('should allow conductor to edit any member records with trust enabled', async () => {
 			const db = createTrustMockDb({
 				members: [conductorMember, regularMember],

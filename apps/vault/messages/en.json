@@ -183,5 +183,7 @@
   "copyright_description_placeholder": "Please describe the copyrighted work and explain why you believe the uploaded content infringes your rights.",
   "copyright_attestation": "I declare under penalty of perjury that I am the copyright owner or authorized to act on their behalf, and that I have a good faith belief that use of the copyrighted material is not authorized.",
   "copyright_submit": "Submit Takedown Request",
-  "copyright_submitting": "Submitting..."
+  "copyright_submitting": "Submitting...",
+  "settings_trust_label": "Trust Individual Responsibility",
+  "settings_trust_description": "Allow members to manage their own RSVP and attendance records for past and future events. When disabled, only administrators and conductors can modify attendance."
 }

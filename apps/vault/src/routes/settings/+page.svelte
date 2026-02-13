@@ -6,6 +6,7 @@
   import SettingsEntityCard from "$lib/components/settings/SettingsEntityCard.svelte";
   import { DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
   import { toast } from "$lib/stores/toast";
+  import * as m from "$lib/paraglide/messages.js";
 
   let { data }: { data: PageData } = $props();
 
@@ -138,11 +139,10 @@
       <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4">
         <div>
           <label for="trust-individual-responsibility" class="block text-sm font-medium text-gray-700">
-            Trust Individual Responsibility
+            {m.settings_trust_label()}
           </label>
           <p class="mt-1 text-sm text-gray-500">
-            Allow members to manage their own RSVP and attendance records for past and future events.
-            When disabled, only administrators and conductors can modify attendance.
+            {m.settings_trust_description()}
           </p>
         </div>
         <button

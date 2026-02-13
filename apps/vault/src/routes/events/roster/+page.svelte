@@ -8,6 +8,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import { SectionBadge } from '$lib/components/badges';
 	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
+	import { canEditCell } from '$lib/utils/participation-permissions';
 
 	let { data }: { data: PageData } = $props();
 
@@ -115,20 +116,16 @@
 		return stats;
 	});
 
-	// Helper: Check if user can edit this cell
-	function canEditCell(memberId: string, eventDate: string, type: 'rsvp' | 'attendance'): boolean {
-		const eventIsPast = isPast(eventDate);
-		const isOwnRecord = memberId === data.currentMemberId;
-
-		if (type === 'attendance') {
-			// Only past events, only conductors/section leaders
-			return eventIsPast && data.canManageParticipation;
-		}
-
-		// RSVP
-		if (isOwnRecord && !eventIsPast) return true; // Own future RSVP
-		if (data.canManageParticipation) return true; // Managers can edit anyone's RSVP
-		return false;
+	// Helper: Check if user can edit this cell (delegates to extracted pure function)
+	function canEditCellFor(memberId: string, eventDate: string, type: 'rsvp' | 'attendance'): boolean {
+		return canEditCell({
+			memberId,
+			eventDate,
+			type,
+			currentMemberId: data.currentMemberId,
+			canManageParticipation: data.canManageParticipation,
+			trustIndividualResponsibility: data.trustIndividualResponsibility
+		});
 	}
 
 	// Open popup for editing
@@ -424,8 +421,8 @@
 								{@const participationMap = event.participation}
 								{@const status = participationMap.get(member.id)}
 								{@const eventIsPast = isPast(event.date)}
-								{@const canEditRsvp = canEditCell(member.id, event.date, 'rsvp')}
-								{@const canEditAtt = canEditCell(member.id, event.date, 'attendance')}
+								{@const canEditRsvp = canEditCellFor(member.id, event.date, 'rsvp')}
+								{@const canEditAtt = canEditCellFor(member.id, event.date, 'attendance')}
 								
 								<td
 									class="border-r border-gray-200 p-0 text-center text-sm"

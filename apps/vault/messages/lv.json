@@ -183,5 +183,7 @@
   "copyright_description_placeholder": "Lūdzu, aprakstiet ar autortiesībām aizsargāto darbu un paskaidrojiet, kāpēc uzskatāt, ka augšupielādētais saturs pārkāpj jūsu tiesības.",
   "copyright_attestation": "Es ar zvērestu apliecinu, ka esmu autortiesību īpašnieks vai pilnvarots rīkoties viņa vārdā, un ka man ir pamatots iemesls uzskatīt, ka ar autortiesībām aizsargātā materiāla izmantošana nav atļauta.",
   "copyright_submit": "Iesniegt noņemšanas pieprasījumu",
-  "copyright_submitting": "Iesniedz..."
+  "copyright_submitting": "Iesniedz...",
+  "settings_trust_label": "Uzticēties individuālai atbildībai",
+  "settings_trust_description": "Ļaut dalībniekiem pārvaldīt savus RSVP un apmeklējuma ierakstus pagātnes un nākotnes pasākumiem. Ja atspējots, apmeklējumu var mainīt tikai administratori un diriģenti."
 }

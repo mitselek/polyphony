@@ -183,5 +183,7 @@
   "copyright_description_placeholder": "Palun kirjelda autoriõigusega kaitstud teost ja selgita, miks arvad, et üleslaaditud sisu rikub sinu õigusi.",
   "copyright_attestation": "Kinnitan vande all, et olen autoriõiguse omanik või volitatud tema nimel tegutsema ning usun heauskselt, et autoriõigusega kaitstud materjali kasutamine ei ole lubatud.",
   "copyright_submit": "Esita eemaldamistaotlus",
-  "copyright_submitting": "Esitan..."
+  "copyright_submitting": "Esitan...",
+  "settings_trust_label": "Usalda individuaalset vastutust",
+  "settings_trust_description": "Luba liikmetel hallata oma RSVP ja kohalolu andmeid mineviku ja tuleviku sündmuste jaoks. Keelatud olekus saavad kohalolu muuta ainult administraatorid ja dirigendid."
 }
