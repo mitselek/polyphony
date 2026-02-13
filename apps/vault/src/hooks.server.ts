@@ -5,6 +5,8 @@
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { getOrganizationBySubdomain } from '$lib/server/db/organizations';
+import { resolvePreferences } from '$lib/server/i18n/preferences';
+import { locales } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 
 // Development fallback subdomain (for localhost:5173 without subdomain)
@@ -81,6 +83,47 @@ const orgHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+// Locale resolution handle - syncs DB language preference with Paraglide cookie
+// Runs after orgHandle (org is resolved) and before paraglideHandle
+const localeHandle: Handle = async ({ event, resolve }) => {
+	const db = event.platform?.env?.DB;
+	const org = event.locals.org;
+	if (!db || !org) {
+		return resolve(event);
+	}
+
+	// Check if user already has a PARAGLIDE_LOCALE cookie set
+	const existingCookie = event.cookies.get('PARAGLIDE_LOCALE');
+	if (existingCookie && (locales as readonly string[]).includes(existingCookie)) {
+		return resolve(event);
+	}
+
+	// Resolve effective language from member prefs → org settings → system default
+	const memberId = event.cookies.get('member_id') ?? null;
+	const prefs = await resolvePreferences(db, memberId, org.id);
+
+	// Only inject if language is a valid Paraglide locale
+	if (prefs.language && (locales as readonly string[]).includes(prefs.language)) {
+		// Set the cookie for Paraglide to pick up (and for future requests)
+		event.cookies.set('PARAGLIDE_LOCALE', prefs.language, {
+			path: '/',
+			maxAge: 60 * 60 * 24 * 400,
+			httpOnly: false,
+			sameSite: 'lax'
+		});
+
+		// Also inject into the request headers so paraglideMiddleware sees it
+		// on this same request (cookie.set only affects the response)
+		const cookieHeader = event.request.headers.get('cookie') ?? '';
+		const updatedCookies = cookieHeader
+			? `${cookieHeader}; PARAGLIDE_LOCALE=${prefs.language}`
+			: `PARAGLIDE_LOCALE=${prefs.language}`;
+		event.request.headers.set('cookie', updatedCookies);
+	}
+
+	return resolve(event);
+};
+
 // Paraglide i18n handle - transforms page with locale
 const paraglideHandle: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
@@ -90,5 +133,5 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		});
 	});
 
-// Chain handles: org routing first, then paraglide i18n
-export const handle: Handle = sequence(orgHandle, paraglideHandle);
+// Chain handles: org routing → locale resolution → paraglide i18n
+export const handle: Handle = sequence(orgHandle, localeHandle, paraglideHandle);

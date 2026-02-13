@@ -69,5 +69,19 @@ export async function PATCH(event: RequestEvent) {
 		throw error(404, 'Organization not found');
 	}
 
+	// Sync Paraglide locale cookie when org language changes
+	if ('language' in body) {
+		if (updated.language) {
+			cookies.set('PARAGLIDE_LOCALE', updated.language, {
+				path: '/',
+				maxAge: 60 * 60 * 24 * 400,
+				httpOnly: false,
+				sameSite: 'lax'
+			});
+		} else {
+			cookies.delete('PARAGLIDE_LOCALE', { path: '/' });
+		}
+	}
+
 	return json(updated);
 }
