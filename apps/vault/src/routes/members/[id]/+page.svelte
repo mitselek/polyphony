@@ -661,14 +661,8 @@
 						<option value="">Use organization default ({resolvedPrefs.language})</option>
 						<option value="en">English</option>
 						<option value="et">Estonian</option>
-						<option value="de">German</option>
-						<option value="fi">Finnish</option>
-						<option value="sv">Swedish</option>
 						<option value="lv">Latvian</option>
-						<option value="lt">Lithuanian</option>
 						<option value="uk">Ukrainian</option>
-						<option value="fr">French</option>
-						<option value="nl">Dutch</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
 						Effective: {resolvedPrefs.language} {getEffectiveLabel(resolvedPrefs.source.language)}
@@ -686,17 +680,11 @@
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
 						<option value="">Use organization default ({resolvedPrefs.locale})</option>
-						<option value="et-EE">Estonian (et-EE)</option>
 						<option value="en-US">English US (en-US)</option>
 						<option value="en-GB">English UK (en-GB)</option>
-						<option value="de-DE">German (de-DE)</option>
-						<option value="fi-FI">Finnish (fi-FI)</option>
-						<option value="sv-SE">Swedish (sv-SE)</option>
+						<option value="et-EE">Estonian (et-EE)</option>
 						<option value="lv-LV">Latvian (lv-LV)</option>
-						<option value="lt-LT">Lithuanian (lt-LT)</option>
 						<option value="uk-UA">Ukrainian (uk-UA)</option>
-						<option value="fr-FR">French (fr-FR)</option>
-						<option value="nl-NL">Dutch (nl-NL)</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
 						Effective: {resolvedPrefs.locale} {getEffectiveLabel(resolvedPrefs.source.locale)}
