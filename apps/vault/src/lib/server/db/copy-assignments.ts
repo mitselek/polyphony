@@ -219,6 +219,11 @@ export interface AssignedCopyWithDetails {
 		title: string;
 		composer: string | null;
 	};
+	org: {
+		id: string;
+		name: string;
+		subdomain: string;
+	};
 }
 
 interface AssignedCopyRow {
@@ -236,6 +241,9 @@ interface AssignedCopyRow {
 	work_id: string;
 	work_title: string;
 	composer: string | null;
+	org_id: string;
+	org_name: string;
+	org_subdomain: string;
 }
 
 function rowToAssignedCopyWithDetails(row: AssignedCopyRow): AssignedCopyWithDetails {
@@ -257,6 +265,11 @@ function rowToAssignedCopyWithDetails(row: AssignedCopyRow): AssignedCopyWithDet
 			id: row.work_id,
 			title: row.work_title,
 			composer: row.composer
+		},
+		org: {
+			id: row.org_id,
+			name: row.org_name,
+			subdomain: row.org_subdomain
 		}
 	};
 }
@@ -284,11 +297,15 @@ export async function getMemberAssignedCopies(
 			e.external_url,
 			w.id as work_id,
 			w.title as work_title,
-			w.composer
+			w.composer,
+			o.id as org_id,
+			o.name as org_name,
+			o.subdomain as org_subdomain
 		FROM copy_assignments ca
 		JOIN physical_copies pc ON ca.copy_id = pc.id
 		JOIN editions e ON pc.edition_id = e.id
 		JOIN works w ON e.work_id = w.id
+		JOIN organizations o ON w.org_id = o.id
 		WHERE ca.member_id = ? AND ca.returned_at IS NULL
 		ORDER BY ca.assigned_at DESC
 	`;

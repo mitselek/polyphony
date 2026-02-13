@@ -22,7 +22,7 @@ describe('getMemberAssignedCopies', () => {
 		db = createMockDb();
 	});
 
-	it('returns assigned copies with work and edition info', async () => {
+	it('returns assigned copies with work, edition, and org info', async () => {
 		db.all.mockResolvedValueOnce({
 			results: [
 				{
@@ -39,7 +39,10 @@ describe('getMemberAssignedCopies', () => {
 					external_url: null,
 					work_id: 'work-1',
 					work_title: 'Messiah',
-					composer: 'Handel'
+					composer: 'Handel',
+					org_id: 'org-1',
+					org_name: 'Crede',
+					org_subdomain: 'crede'
 				},
 				{
 					assignment_id: 'assign-2',
@@ -55,7 +58,10 @@ describe('getMemberAssignedCopies', () => {
 					external_url: 'https://imslp.org/example',
 					work_id: 'work-2',
 					work_title: 'Requiem',
-					composer: 'Mozart'
+					composer: 'Mozart',
+					org_id: 'org-2',
+					org_name: 'Kamari',
+					org_subdomain: 'kamari'
 				}
 			]
 		});
@@ -81,9 +87,15 @@ describe('getMemberAssignedCopies', () => {
 				id: 'work-1',
 				title: 'Messiah',
 				composer: 'Handel'
+			},
+			org: {
+				id: 'org-1',
+				name: 'Crede',
+				subdomain: 'crede'
 			}
 		});
 		expect(result[1].work.title).toBe('Requiem');
+		expect(result[1].org.name).toBe('Kamari');
 	});
 
 	it('returns empty array when no assigned copies', async () => {
@@ -111,7 +123,10 @@ describe('getMemberAssignedCopies', () => {
 					external_url: null,
 					work_id: 'work-1',
 					work_title: 'Traditional Song',
-					composer: null
+					composer: null,
+					org_id: 'org-1',
+					org_name: 'Crede',
+					org_subdomain: 'crede'
 				}
 			]
 		});
@@ -119,5 +134,6 @@ describe('getMemberAssignedCopies', () => {
 		const result = await getMemberAssignedCopies(db as unknown as D1Database, 'member-1');
 
 		expect(result[0].work.composer).toBeNull();
+		expect(result[0].org.id).toBe('org-1');
 	});
 });

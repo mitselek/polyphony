@@ -764,7 +764,8 @@
 										{copy.edition.name} · Copy #{copy.copyNumber}
 									</p>
 									<p class="mt-1 text-xs text-gray-400">
-										Assigned {new Date(copy.assignedAt).toLocaleDateString()}
+										Assigned {new Date(copy.assignedAt).toLocaleDateString()}{#if data.org && copy.org.subdomain !== data.org.subdomain}
+											{' '}by {copy.org.name}{/if}
 									</p>
 								</div>
 								
