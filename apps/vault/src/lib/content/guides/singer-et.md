@@ -73,26 +73,32 @@ On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 ## Rollid ja õigused
 
 ### Tavalaulja
+
 - Vaatab noote ja laeb alla
 - Teatab oma osalemisest sündmustest
 - Näeb koosseisu ja sündmuste kalendrit
 
 ### Raamatukoguhoidja (Librarian)
+
 - Laeb üles uusi noote
 - Haldab noodikogu
 
-### Dirigent (Conductor)  
+### Dirigent (Conductor)
+
 - Loob uusi sündmusi
 - Märgib kohalolekut proovidel
 
 ### Häälrühma juht (Section Leader)
+
 - Märgib oma häälrühma kohalolekut
 
 ### Administraator (Admin)
+
 - Kutsub uusi liikmeid
 - Haldab liikmete andmeid
 
 ### Omanik (Owner)
+
 - Täielik juurdepääs kõikidele funktsioonidele
 
 ---
@@ -101,6 +107,7 @@ On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 
 **Miks ma ei näe ühtegi nooti?**
 Võimalik, et:
+
 - Administraator pole sind veel organisatsiooni lisanud
 - Raamatukoguhoidja pole noote veel üles laadinud
 - Oled valinud vale organisatsiooni (vaata ülemist paremat nuppu)
