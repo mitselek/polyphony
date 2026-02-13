@@ -113,12 +113,21 @@ const localeHandle: Handle = async ({ event, resolve }) => {
 		});
 
 		// Also inject into the request headers so paraglideMiddleware sees it
-		// on this same request (cookie.set only affects the response)
+		// on this same request (cookie.set only affects the response).
+		// Cloudflare Workers have immutable request headers, so we must
+		// create a new Request object with the updated cookie header.
 		const cookieHeader = event.request.headers.get('cookie') ?? '';
 		const updatedCookies = cookieHeader
 			? `${cookieHeader}; PARAGLIDE_LOCALE=${prefs.language}`
 			: `PARAGLIDE_LOCALE=${prefs.language}`;
-		event.request.headers.set('cookie', updatedCookies);
+		const newHeaders = new Headers(event.request.headers);
+		newHeaders.set('cookie', updatedCookies);
+		event.request = new Request(event.request.url, {
+			method: event.request.method,
+			headers: newHeaders,
+			body: event.request.body,
+			redirect: event.request.redirect
+		});
 	}
 
 	return resolve(event);
