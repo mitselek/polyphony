@@ -8,6 +8,8 @@ _Juhend koorilauljale igapäevaseks kasutamiseks_
 
 Tere tulemast Polyphonysse! See on sinu koori digitaalne kodu, kust leiad noodid ja prooviinfo. See juhend aitab sul keskkonnas orienteeruda.
 
+**Märkus:** Kui kuulud mitmesse koorilisse organisatsiooni, saad ülemisest paremast menüüst valida, millise organisatsiooni andmeid näha.
+
 ---
 
 ## Mida sa teha saad?
@@ -18,6 +20,8 @@ Iga sisseloginud kooriliige saab:
 - **Alla laadida:** Salvestada PDF-noote oma arvutisse või tahvlisse.
 - **Vaadata kalendrit:** Näha tulevasi proove ja kontserte.
 - **Vastata kutsetele (RSVP):** Anda teada, kas saad proovis osaleda.
+- **Vaadata koosseisu:** Näha, kes veel koori kuulub.
+- **Hallata oma profiili:** Muuta oma andmeid ja eelistusi.
 
 ---
 
@@ -25,43 +29,94 @@ Iga sisseloginud kooriliige saab:
 
 ### …leida noote?
 
-1. Vali menüüst **"Library"**.
+1. Vali menüüst **"Library"** (raamatukogu).
 2. Avanenud nimekirjast otsi vajalik teos (kasuta otsingukasti üleval).
-3. Kliki teose nimel, et näha detaile.
-4. Failide all näed nuppu **"Download"** või **"View"**.
-   - Kui laulad tahvlist, saad PDF-i otse siit avada.
+3. Kliki teose nimel, et näha kõiki selle teose väljaandeid.
+4. Iga väljaande juures näed nuppe:
+   - **"View"** - PDF avamine brauseris
+   - **"Download"** - PDF allalaadimine arvutisse
+5. Mõnel teosel võib olla ka välislinke (nt YouTube'i videod).
+
+**Näpunäide:** Väljaanded võivad olla erinevat tüüpi (kooripartituur, pianosaade, häälepartituur jne).
 
 ### …teatada proovi tulekust (RSVP)?
 
 On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 
-1. Vali menüüst **"Events"**.
+1. Vali menüüst **"Events"** (sündmused).
 2. Näed nimekirja tulevastest sündmustest.
 3. Iga sündmuse juures on nupud:
-   - **Going (Tulen):** Kinnitad osalemise.
-   - **Not Going (Ei tule):** Annad teada puudumisest.
-   - **Maybe (Võib-olla):** Kui pole veel kindel (püüa seda vältida!).
-4. Soovi korral saad lisada kommentaari (nt "Jään 10 minutit hiljaks").
+   - **"Going" (Tulen):** Kinnitad osalemise.
+   - **"Not Going" (Ei tule):** Annad teada puudumisest.
+   - **"Maybe" (Võib-olla):** Kui pole veel kindel.
+   - **"Late" (Jään hiljaks):** Tuled, aga hilinemisega.
+4. Kliki sobival nupul - sinu valik salvestatakse automaatselt.
+
+### …vaadata koosseisu?
+
+1. Vali menüüst **"Roster"** (koosseis).
+2. Näed kõiki koori liikmeid ja nende osavõttu sündmustest.
+3. Saad filtreerida liikmeid häälerühmade kaupa.
 
 ### …muuta oma andmeid?
 
-1. Kliki üleval paremal oma nimel või profiilipildil.
-2. Vali **"Profile"**.
-3. Siin näed oma häälerühma ja kontaktandmeid.
+1. Kliki üleval paremal oma nimel.
+2. Vali **"Profile"** (profiil).
+3. Siin näed oma:
+   - Häälerühma (nt sopran, alt)
+   - Kontaktandmeid
+   - Keeleeelistusi
+   - Organisatsiooni kuuluvust
+
+---
+
+## Rollid ja õigused
+
+### Tavalaulja
+- Vaatab noote ja laeb alla
+- Teatab oma osalemisest sündmustest
+- Näeb koosseisu ja sündmuste kalendrit
+
+### Raamatukoguhoidja (Librarian)
+- Laeb üles uusi noote
+- Haldab noodikogu
+
+### Dirigent (Conductor)  
+- Loob uusi sündmusi
+- Märgib kohalolekut proovidel
+
+### Häälrühma juht (Section Leader)
+- Märgib oma häälrühma kohalolekut
+
+### Administraator (Admin)
+- Kutsub uusi liikmeid
+- Haldab liikmete andmeid
+
+### Omanik (Owner)
+- Täielik juurdepääs kõikidele funktsioonidele
 
 ---
 
 ## KKK
 
 **Miks ma ei näe ühtegi nooti?**
-Võimalik, et administraator pole sind veel õigesse organisatsiooni lisanud või pole noodikogu veel täidetud. Võta ühendust oma koorivanemaga.
+Võimalik, et:
+- Administraator pole sind veel organisatsiooni lisanud
+- Raamatukoguhoidja pole noote veel üles laadinud
+- Oled valinud vale organisatsiooni (vaata ülemist paremat nuppu)
 
 **Kas ma saan ise noote üles laadida?**
-Ei, nootide lisamise õigus on ainult raamatukoguhoidjal (Librarian). Kui sul on digitaalne noot, mida tahad jagada, saada see talle.
+Ei, nootide lisamise õigus on ainult raamatukoguhoidjal. Kui sul on digitaalne noot, saada see talle.
 
 **Mul on vale häälerühm.**
-Häälerühma saab muuta ainult koori administraator. Palu tal see ära parandada.
+Häälerühma saab muuta ainult administraator. Palu tal see parandada.
+
+**Kuidas ma saan teada, millised noodid on uued?**
+Raamatukogus on teosed ja väljaanded kronoloogilises järjestuses. Vaata ka sündmusi - seal on tihti mainitud, milliseid noote vaja läheb.
+
+**Kas ma saan teada, kes veel proovist puudub?**
+Jah, vaata "Roster" lehte - seal näed kõigi liikmete RSVP staatust.
 
 ---
 
-_Juhend uuendatud: 09.02.2026_
+_Juhend uuendatud: 13.02.2026_
