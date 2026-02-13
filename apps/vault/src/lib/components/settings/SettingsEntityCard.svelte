@@ -291,7 +291,7 @@
 <svelte:window onclick={handleClickOutside} />
 
 <Card padding="lg" class="mt-8">
-  <div class="mb-4 flex items-center justify-between">
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
     <h2 class="text-xl font-semibold">{config.title}</h2>
     {#if !rearranging}
       <button
@@ -358,7 +358,8 @@
   {:else}
     <!-- Normal Mode -->
     <p class="mb-4 text-sm text-gray-600">
-      {config.description} Click left side to toggle active status, right side to delete or reassign.
+      {config.description}
+      <span class="hidden sm:inline">Click left side to toggle active status, right side to delete or reassign.</span>
     </p>
 
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -457,38 +458,42 @@
   <!-- Create new item form -->
   <form onsubmit={createItem} class="mt-4 border-t pt-4">
     <h3 class="mb-2 text-sm font-medium text-gray-700">{config.addTitle}</h3>
-    <div class="flex gap-2">
-      <input
-        type="text"
-        bind:value={newName}
-        placeholder={config.placeholder}
-        class="flex-1 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
-        required
-      />
-      <input
-        type="text"
-        bind:value={newAbbr}
-        placeholder={config.abbrPlaceholder}
-        class="w-24 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
-        maxlength="5"
-        required
-      />
-      {#if config.hasCategory}
-        <select
-          bind:value={newCategory}
-          class="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
+    <div class="flex flex-col gap-2 sm:flex-row">
+      <div class="flex min-w-0 flex-1 gap-2">
+        <input
+          type="text"
+          bind:value={newName}
+          placeholder={config.placeholder}
+          class="min-w-0 flex-1 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
+          required
+        />
+        <input
+          type="text"
+          bind:value={newAbbr}
+          placeholder={config.abbrPlaceholder}
+          class="w-24 shrink-0 rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
+          maxlength="5"
+          required
+        />
+      </div>
+      <div class="flex gap-2">
+        {#if config.hasCategory}
+          <select
+            bind:value={newCategory}
+            class="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm {config.color.focusBorder} focus:outline-none focus:ring-1 {config.color.focusRing}"
+          >
+            <option value="vocal">Vocal</option>
+            <option value="instrumental">Instrumental</option>
+          </select>
+        {/if}
+        <button
+          type="submit"
+          disabled={creating || !newName.trim() || !newAbbr.trim()}
+          class="rounded-md {config.color.bg} px-4 py-2 text-sm text-white transition {config.color.bgHover} disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <option value="vocal">Vocal</option>
-          <option value="instrumental">Instrumental</option>
-        </select>
-      {/if}
-      <button
-        type="submit"
-        disabled={creating || !newName.trim() || !newAbbr.trim()}
-        class="rounded-md {config.color.bg} px-4 py-2 text-sm text-white transition {config.color.bgHover} disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {creating ? "..." : "Add"}
-      </button>
+          {creating ? "..." : "Add"}
+        </button>
+      </div>
     </div>
   </form>
 </Card>
