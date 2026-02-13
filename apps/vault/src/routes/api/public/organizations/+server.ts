@@ -73,19 +73,19 @@ async function performOrganizationCreation(db: D1Database, orgInput: CreateOrgan
 	CF_ACCOUNT_ID?: string;
 	CF_API_TOKEN?: string;
 	CF_PAGES_PROJECT?: string;
-}, waitUntil?: (promise: Promise<unknown>) => void) {
+}) {
 	const organization = await createOrganization(db, orgInput);
 
-	const domainPromise = registerSubdomain(orgInput.subdomain, {
+	const domainResult = await registerSubdomain(orgInput.subdomain, {
 		CF_ACCOUNT_ID: env.CF_ACCOUNT_ID,
 		CF_API_TOKEN: env.CF_API_TOKEN,
 		CF_PAGES_PROJECT: env.CF_PAGES_PROJECT
 	});
 
-	if (waitUntil) {
-		waitUntil(domainPromise);
+	if (!domainResult.success) {
+		console.error('[Org Creation] Domain registration failed:', domainResult.error);
 	} else {
-		await domainPromise;
+		console.log('[Org Creation] Domain registered:', domainResult.domain, domainResult.status);
 	}
 
 	return organization;
@@ -118,15 +118,15 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 				CF_ACCOUNT_ID: platform.env.CF_ACCOUNT_ID,
 				CF_API_TOKEN: platform.env.CF_API_TOKEN,
 				CF_PAGES_PROJECT: platform.env.CF_PAGES_PROJECT
-			},
-			platform.context?.waitUntil
+			}
 		);
 
 		return json({ organization }, { status: 201 });
 	} catch (err) {
+		console.error('[Org Creation] Error:', err);
 		if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
 			throw error(409, 'Organization with this subdomain already exists');
 		}
-		throw err;
+		throw error(500, err instanceof Error ? err.message : 'Failed to create organization');
 	}
 };
