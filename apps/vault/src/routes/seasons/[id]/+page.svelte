@@ -5,6 +5,7 @@
 	import SeasonEventsCard from '$lib/components/SeasonEventsCard.svelte';
 	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 	import type { SeasonRepertoire, Work } from '$lib/types';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -44,7 +45,7 @@
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold">{data.season.name}</h1>
 		<p class="mt-1 text-gray-600">
-			Starts {new Date(data.season.start_date + 'T00:00:00').toLocaleDateString('en-US', {
+			{m.season_starts()}: {new Date(data.season.start_date + 'T00:00:00').toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric'

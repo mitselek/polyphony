@@ -7,6 +7,7 @@
   import WhatToBringCard from "$lib/components/events/WhatToBringCard.svelte";
   import EventRepertoireCard from "$lib/components/events/EventRepertoireCard.svelte";
   import type { EventRepertoire, Work } from "$lib/types";
+  import * as m from "$lib/paraglide/messages.js";
 
   let { data }: { data: PageData } = $props();
 
@@ -43,7 +44,7 @@
           d="M15 19l-7-7 7-7"
         />
       </svg>
-      Back to Events
+      {m.actions_back()} to {m.events_title()}
     </a>
   </div>
 

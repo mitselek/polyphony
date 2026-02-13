@@ -8,6 +8,7 @@
 	import type { DisplayMember } from '$lib/components/MemberListCard.svelte';
 	import type { Role } from '$lib/types';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -45,7 +46,7 @@
 	// ============================================================================
 
 	async function revokeInvite(inviteId: string, name: string) {
-		const confirmed = confirm(`Revoke invitation for ${name}?`);
+		const confirmed = confirm(m.members_revoke_confirm({ name }));
 		if (!confirmed) return;
 
 		revokingInvite = inviteId;
@@ -133,7 +134,7 @@
 		if (role === 'owner' && hasRole) {
 			const ownerCount = members.filter((m) => m.roles.includes('owner')).length;
 			if (ownerCount <= 1) {
-				toast.error('Cannot remove the last owner');
+				toast.error(m.members_cannot_remove_last_owner());
 				return;
 			}
 		}
@@ -284,9 +285,7 @@
 	}
 
 	async function removeMember(memberId: string, memberName: string) {
-		const confirmed = confirm(
-			`Are you sure you want to remove ${memberName}?\n\nThis action cannot be undone.`
-		);
+		const confirmed = confirm(m.members_confirm_remove({ memberName }));
 
 		if (!confirmed) return;
 
@@ -310,27 +309,27 @@
 </script>
 
 <svelte:head>
-	<title>Manage Members | Polyphony Vault</title>
+	<title>{m.members_manage_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Manage Members</h1>
-			<p class="mt-2 text-gray-600">View and manage choir member roles and permissions</p>
+			<h1 class="text-3xl font-bold">{m.members_manage_title()}</h1>
+			<p class="mt-2 text-gray-600">{m.members_description()}</p>
 		</div>
 		<div class="flex gap-3">
 			<a
 				href="/members/add-roster"
 				class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 transition hover:bg-blue-50"
 			>
-				+ Add Roster Member
+				{m.members_add_roster_btn()}
 			</a>
 			<a
 				href="/invite"
 				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
 			>
-				Invite Member
+				{m.members_invite_btn()}
 			</a>
 		</div>
 	</div>
@@ -350,9 +349,9 @@
 		<input
 			type="text"
 			bind:value={searchQuery}
-			placeholder="Search by email or name..."
+			placeholder={m.members_search_placeholder()}
 			class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-			aria-label="Search members by email or name"
+			aria-label={m.members_search_placeholder()}
 		/>
 	</div>
 

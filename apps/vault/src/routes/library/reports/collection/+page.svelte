@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -100,29 +101,29 @@
 </script>
 
 <svelte:head>
-	<title>Collection Reminders | Polyphony Vault</title>
+	<title>{m.library_collection_reminders_btn()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
 	<!-- Header -->
 	<div class="mb-8">
 		<nav class="mb-4 text-sm text-gray-500">
-			<a href="/library" class="hover:text-blue-600">Library</a>
+			<a href="/library" class="hover:text-blue-600">{m.library_breadcrumb()}</a>
 			<span class="mx-2">›</span>
-			<a href="/library/inventory" class="hover:text-blue-600">Inventory</a>
+			<a href="/library/inventory" class="hover:text-blue-600">{m.library_inventory_title()}</a>
 			<span class="mx-2">›</span>
-			<span>Collection Reminders</span>
+			<span>{m.library_collection_reminders_btn()}</span>
 		</nav>
 
-		<h1 class="text-3xl font-bold">Collection Reminders</h1>
+		<h1 class="text-3xl font-bold">{m.library_collection_reminders_btn()}</h1>
 		<p class="mt-2 text-gray-600">
-			Outstanding copies that need to be collected after a season ends
+			{m.collection_description()}
 		</p>
 	</div>
 
 	<!-- Season Selector -->
 	<div class="mb-6">
-		<label for="season" class="block text-sm font-medium text-gray-700">Season</label>
+		<label for="season" class="block text-sm font-medium text-gray-700">{m.seasons_title()}</label>
 		<select
 			id="season"
 			class="mt-1 w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2"
@@ -130,7 +131,7 @@
 			onchange={handleSeasonChange}
 		>
 			{#if data.seasons.length === 0}
-				<option value="">No seasons defined</option>
+				<option value="">{m.seasons_empty()}</option>
 			{:else}
 				{#each data.seasons as season}
 					<option value={season.id}>{season.name}</option>
@@ -150,7 +151,7 @@
 					{data.memberCount === 1 ? 'member' : 'members'}
 				</p>
 			{:else}
-				<p class="text-lg text-green-700">✓ All copies have been collected for this season</p>
+				<p class="text-lg text-green-700">✓ {m.collection_all_collected()}</p>
 			{/if}
 		</div>
 	{/if}
@@ -163,7 +164,7 @@
 				onclick={selectAll}
 				class="text-sm text-blue-600 hover:underline"
 			>
-				Select all
+				{m.collection_select_all_btn()}
 			</button>
 			{#if hasSelection}
 				<button
@@ -171,7 +172,7 @@
 					onclick={deselectAll}
 					class="text-sm text-gray-600 hover:underline"
 				>
-					Deselect all
+					{m.collection_deselect_all_btn()}
 				</button>
 				<button
 					type="button"
@@ -180,9 +181,9 @@
 					class="ml-auto rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
 				>
 					{#if isReturning}
-						Marking as returned...
+						{m.collection_marking_returned()}
 					{:else}
-						Mark {selectedIds.size} as returned
+						{m.collection_mark_returned_btn({ count: selectedIds.size })}
 					{/if}
 				</button>
 			{/if}

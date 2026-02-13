@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { getEditionFileUrl, getEditionDownloadUrl } from '$lib/utils/urls';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -20,9 +21,9 @@
 			<a
 				href="/editions/{data.edition.id}"
 				class="rounded px-3 py-1.5 text-sm hover:bg-gray-700"
-				title="Back to edition"
+				title={m.actions_back()}
 			>
-				← Back
+				← {m.actions_back()}
 			</a>
 			<div class="border-l border-gray-600 pl-4">
 				<h1 class="text-lg font-medium">{data.edition.name}</h1>
@@ -41,7 +42,7 @@
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
 				</svg>
-				Download
+				{m.edition_view_download_btn()}
 			</a>
 		</div>
 	</header>

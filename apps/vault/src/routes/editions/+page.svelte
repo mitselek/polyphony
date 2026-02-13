@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import type { EditionType, LicenseType, Section } from '$lib/types';
 	import type { EditionWithWork } from '$lib/server/db/editions';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -106,15 +107,15 @@
 </script>
 
 <svelte:head>
-	<title>Editions | Polyphony Vault</title>
+	<title>{m.editions_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
 	<!-- Header -->
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Editions</h1>
-			<p class="mt-2 text-gray-600">Browse all editions across works</p>
+			<h1 class="text-3xl font-bold">{m.editions_title()}</h1>
+			<p class="mt-2 text-gray-600">{m.editions_description()}</p>
 		</div>
 	</div>
 
@@ -123,25 +124,25 @@
 		<div class="flex flex-wrap gap-4">
 			<!-- Search -->
 			<div class="flex-1 min-w-50">
-				<label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+				<label for="search" class="block text-sm font-medium text-gray-700 mb-1">{m.editions_search_label()}</label>
 				<input
 					id="search"
 					type="text"
 					bind:value={searchQuery}
-					placeholder="Edition name, work, composer..."
+					placeholder={m.editions_search_placeholder()}
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				/>
 			</div>
 
 			<!-- Type Filter -->
 			<div class="w-48">
-				<label for="type-filter" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+				<label for="type-filter" class="block text-sm font-medium text-gray-700 mb-1">{m.editions_type_filter_label()}</label>
 				<select
 					id="type-filter"
 					bind:value={filterType}
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				>
-					<option value="">All Types</option>
+					<option value="">{m.editions_type_filter_all()}</option>
 					{#each editionTypes as type}
 						<option value={type.value}>{type.label}</option>
 					{/each}
@@ -150,13 +151,13 @@
 
 			<!-- License Filter -->
 			<div class="w-48">
-				<label for="license-filter" class="block text-sm font-medium text-gray-700 mb-1">License</label>
+				<label for="license-filter" class="block text-sm font-medium text-gray-700 mb-1">{m.editions_license_filter_label()}</label>
 				<select
 					id="license-filter"
 					bind:value={filterLicense}
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				>
-					<option value="">All Licenses</option>
+					<option value="">{m.editions_license_filter_all()}</option>
 					{#each licenseTypes as license}
 						<option value={license.value}>{license.label}</option>
 					{/each}
@@ -171,7 +172,7 @@
 						onclick={clearFilters}
 						class="rounded-lg border border-gray-300 px-3 py-2 text-gray-600 hover:bg-gray-50"
 					>
-						Clear
+						{m.editions_clear_filters_btn()}
 					</button>
 				</div>
 			{/if}
@@ -187,18 +188,18 @@
 	{#if filteredEditions.length === 0}
 		<div class="rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm">
 			{#if editions.length === 0}
-				<p class="text-gray-500">No editions yet.</p>
+				<p class="text-gray-500">{m.editions_empty()}</p>
 				<p class="mt-2 text-sm text-gray-400">
-					Create editions from the <a href="/works" class="text-blue-600 hover:underline">Works</a> page.
+					{m.editions_empty_help()}
 				</p>
 			{:else}
-				<p class="text-gray-500">No editions match your search.</p>
+				<p class="text-gray-500">{m.editions_no_match()}</p>
 				<button
 					type="button"
 					onclick={clearFilters}
 					class="mt-2 text-blue-600 hover:underline"
 				>
-					Clear filters
+					{m.editions_clear_filters_link()}
 				</button>
 			{/if}
 		</div>

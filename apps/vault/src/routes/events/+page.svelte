@@ -7,6 +7,7 @@
 	import { getEventTypeBadgeClass } from '$lib/utils/badges';
 	import Card from '$lib/components/Card.svelte';
 	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -89,18 +90,18 @@
 </script>
 
 <svelte:head>
-	<title>Events | Polyphony Vault</title>
+	<title>{m.events_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Events</h1>
+			<h1 class="text-3xl font-bold">{m.events_title()}</h1>
 			<p class="mt-2 text-gray-600">
 				{#if data.season}
 					{data.season.name}
 				{:else}
-					No season configured
+					{m.events_no_season()}
 				{/if}
 			</p>
 		</div>
@@ -109,14 +110,14 @@
 				href="/events/roster"
 				class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 			>
-				View Roster
+				{m.events_view_roster_btn()}
 			</a>
 			{#if data.canCreate}
 				<a
 					href="/events/new"
 					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
 				>
-					Create Event
+					{m.events_create_btn()}
 				</a>
 			{/if}
 		</div>
@@ -140,7 +141,7 @@
 				? 'border-blue-500 bg-blue-50 text-blue-700'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
-			All Events
+			{m.events_filter_all()}
 		</button>
 		<button
 			onclick={() => (selectedFilter = 'rehearsal')}
@@ -148,7 +149,7 @@
 				? 'border-blue-500 bg-blue-50 text-blue-700'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
-			Rehearsals
+			{m.events_filter_rehearsals()}
 		</button>
 		<button
 			onclick={() => (selectedFilter = 'concert')}
@@ -156,7 +157,7 @@
 				? 'border-purple-500 bg-purple-50 text-purple-700'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
-			Concerts
+			{m.events_filter_concerts()}
 		</button>
 		<button
 			onclick={() => (selectedFilter = 'retreat')}
@@ -164,7 +165,7 @@
 				? 'border-green-500 bg-green-50 text-green-700'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
-			Retreats
+			{m.events_filter_retreats()}
 		</button>
 		<button
 			onclick={() => (selectedFilter = 'festival')}
@@ -172,7 +173,7 @@
 				? 'border-orange-500 bg-orange-50 text-orange-700'
 				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 		>
-			Festivals
+			{m.events_filter_festivals()}
 		</button>
 	</div>
 
@@ -186,14 +187,14 @@
 			</div>
 			<p class="text-gray-500">
 				{#if selectedFilter === 'all'}
-					No upcoming events scheduled.
+					{m.events_empty()}
 				{:else}
-					No {selectedFilter}s scheduled.
+					{m.events_filter_empty({ type: selectedFilter })}
 				{/if}
 			</p>
 			{#if data.canCreate}
 				<a href="/events/new" class="mt-4 inline-block text-blue-600 hover:underline">
-					Create your first event
+					{m.events_create_first()}
 				</a>
 			{/if}
 		</div>
@@ -256,37 +257,37 @@
 					>
 						{#if !event.rsvpLocked}
 							<div class="border-t border-gray-200 pt-4">
-								<p class="text-xs text-gray-500 mb-2">Your RSVP:</p>
+								<p class="text-xs text-gray-500 mb-2">{m.events_rsvp_label()}</p>
 								<div class="grid grid-cols-4 gap-2">
 									<button
 										onclick={updateRsvp(event.id, 'yes')}
 										disabled={updatingRsvp[event.id]}
 										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'yes')} disabled:opacity-50"
-										title="I'll be there"
+										title={m.roster_rsvp_yes_title()}
 									>
-										Yes
+										{m.common_yes()}
 									</button>
 									<button
 										onclick={updateRsvp(event.id, 'no')}
 										disabled={updatingRsvp[event.id]}
 										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'no')} disabled:opacity-50"
-										title="Can't make it"
+										title={m.roster_rsvp_no_title()}
 									>
-										No
+										{m.common_no()}
 									</button>
 									<button
 										onclick={updateRsvp(event.id, 'maybe')}
 										disabled={updatingRsvp[event.id]}
 										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'maybe')} disabled:opacity-50"
-										title="Not sure yet"
+										title={m.roster_rsvp_maybe_title()}
 									>
-										Maybe
+										{m.roster_rsvp_maybe_title()}
 									</button>
 									<button
 										onclick={updateRsvp(event.id, 'late')}
 										disabled={updatingRsvp[event.id]}
 										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
-										title="I'll be late"
+										title={m.roster_rsvp_late_title()}
 									>
 										Late
 									</button>
@@ -296,9 +297,9 @@
 							<div class="border-t border-gray-200 pt-4">
 								<p class="text-xs text-gray-500 text-center">
 									{#if event.myRsvp}
-										Your RSVP: <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
+										{m.events_rsvp_label()} <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
 									{:else}
-										RSVP locked (event started)
+										{m.events_rsvp_locked()}
 									{/if}
 								</p>
 							</div>

@@ -6,6 +6,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import { formatDateLong } from '$lib/utils/formatters';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -173,21 +174,21 @@
 </script>
 
 <svelte:head>
-	<title>Seasons | Polyphony Vault</title>
+	<title>{m.seasons_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Seasons</h1>
-			<p class="mt-1 text-gray-600">Date-based groupings for your events</p>
+			<h1 class="text-3xl font-bold">{m.seasons_title()}</h1>
+			<p class="mt-1 text-gray-600">{m.seasons_description()}</p>
 		</div>
 		{#if data.canManage}
 			<button
 				onclick={openCreateForm}
 				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
 			>
-				+ Add Season
+				{m.seasons_add_btn()}
 			</button>
 		{/if}
 	</div>
@@ -202,13 +203,13 @@
 	<!-- Create/Edit Form Modal -->
 	<Modal
 		open={showCreateForm}
-		title={editingSeason ? 'Edit Season' : 'Add New Season'}
+		title={editingSeason ? m.seasons_modal_title_edit() : m.seasons_modal_title_add()}
 		onclose={closeForm}
 	>
 		<form onsubmit={handleSubmit}>
 			<div class="mb-4">
 				<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-					Name <span class="text-red-500">*</span>
+					{m.seasons_name_label()}
 				</label>
 				<input
 					id="name"
@@ -221,7 +222,7 @@
 			</div>
 			<div class="mb-4">
 				<label for="start_date" class="mb-1 block text-sm font-medium text-gray-700">
-					Start Date <span class="text-red-500">*</span>
+					{m.seasons_start_date_label()}
 				</label>
 				<input
 					id="start_date"
@@ -231,7 +232,7 @@
 					required
 				/>
 				<p class="mt-1 text-xs text-gray-500">
-					The season ends the day before the next season starts.
+					{m.seasons_start_date_help()}
 				</p>
 			</div>
 
@@ -241,14 +242,14 @@
 					onclick={closeForm}
 					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 				>
-					Cancel
+					{m.actions_cancel()}
 				</button>
 				<button
 					type="submit"
 					disabled={saving}
 					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 				>
-					{saving ? 'Saving...' : editingSeason ? 'Update' : 'Create'}
+					{saving ? m.seasons_submit_btn_save() : editingSeason ? m.seasons_submit_btn_update() : m.seasons_submit_btn_create()}
 				</button>
 			</div>
 		</form>
@@ -258,11 +259,11 @@
 	{#if seasons.length === 0}
 		<Card padding="lg">
 			<div class="py-8 text-center text-gray-500">
-				<p>No seasons defined yet.</p>
+				<p>{m.seasons_empty()}</p>
 				{#if data.canManage}
 					<p class="mt-2">
 						<button onclick={openCreateForm} class="text-blue-600 hover:underline">
-							Add your first season
+							{m.seasons_add_first()}
 						</button>
 					</p>
 				{/if}
@@ -282,7 +283,7 @@
 								</h3>
 								{#if isCurrent}
 									<span class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-										Current
+										{m.seasons_current_badge()}
 									</span>
 								{/if}
 							</div>
@@ -301,14 +302,14 @@
 										onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(season); }}
 										class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
 									>
-										Edit
+										{m.actions_edit()}
 									</button>
 									<button
 										onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteSeason(season); }}
 										disabled={deletingId === season.id}
 										class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
 									>
-										{deletingId === season.id ? 'Deleting...' : 'Delete'}
+										{deletingId === season.id ? 'Deleting...' : m.actions_delete()}
 									</button>
 								</div>
 							{/snippet}

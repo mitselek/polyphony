@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Inventory Reports | Polyphony Vault</title>
+	<title>{m.library_inventory_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-6xl px-4 py-8">
@@ -22,25 +23,25 @@
 	<div class="mb-8 flex items-start justify-between">
 		<div>
 			<nav class="mb-4 text-sm text-gray-500">
-				<a href="/works" class="hover:text-blue-600">Library</a>
+				<a href="/works" class="hover:text-blue-600">{m.library_breadcrumb()}</a>
 				<span class="mx-2">›</span>
 				<span>Inventory</span>
 			</nav>
-			<h1 class="text-3xl font-bold">Inventory Reports</h1>
-			<p class="mt-2 text-gray-600">Physical copy inventory summary per edition</p>
+			<h1 class="text-3xl font-bold">{m.library_inventory_title()}</h1>
+			<p class="mt-2 text-gray-600">{m.library_inventory_description()}</p>
 		</div>
 		<div class="flex gap-3">
 			<a
 				href="/library/reports/collection"
 				class="rounded-lg border border-amber-600 px-4 py-2 text-amber-600 transition hover:bg-amber-50"
 			>
-				Collection Reminders
+				{m.library_collection_reminders_btn()}
 			</a>
 			<a
 				href="/library/reports/missing-copies"
 				class="rounded-lg bg-amber-600 px-4 py-2 text-white transition hover:bg-amber-700"
 			>
-				Missing Copies Report
+				{m.library_missing_copies_btn()}
 			</a>
 		</div>
 	</div>
@@ -50,25 +51,25 @@
 		<Card>
 			<div class="text-center">
 				<div class="text-3xl font-bold text-gray-900">{totals.copies}</div>
-				<div class="text-sm text-gray-500">Total Copies</div>
+				<div class="text-sm text-gray-500">{m.library_stats_total()}</div>
 			</div>
 		</Card>
 		<Card>
 			<div class="text-center">
 				<div class="text-3xl font-bold text-green-600">{totals.available}</div>
-				<div class="text-sm text-gray-500">Available</div>
+				<div class="text-sm text-gray-500">{m.library_stats_available()}</div>
 			</div>
 		</Card>
 		<Card>
 			<div class="text-center">
 				<div class="text-3xl font-bold text-blue-600">{totals.assigned}</div>
-				<div class="text-sm text-gray-500">Assigned</div>
+				<div class="text-sm text-gray-500">{m.library_stats_assigned()}</div>
 			</div>
 		</Card>
 		<Card>
 			<div class="text-center">
 				<div class="text-3xl font-bold text-red-600">{totals.lost}</div>
-				<div class="text-sm text-gray-500">Lost</div>
+				<div class="text-sm text-gray-500">{m.library_stats_lost()}</div>
 			</div>
 		</Card>
 	</div>
@@ -77,10 +78,9 @@
 	<Card>
 		{#if data.summaries.length === 0}
 			<div class="py-12 text-center text-gray-500">
-				<p>No physical copies in inventory.</p>
+				<p>{m.library_empty()}</p>
 				<p class="mt-2 text-sm">
-					Add physical copies to editions from the
-					<a href="/works" class="text-blue-600 hover:underline">works library</a>.
+					{m.library_empty_help()}
 				</p>
 			</div>
 		{:else}
@@ -88,12 +88,12 @@
 				<table class="w-full">
 					<thead>
 						<tr class="border-b text-left text-sm font-medium text-gray-500">
-							<th class="pb-3 pr-4">Work</th>
-							<th class="pb-3 pr-4">Edition</th>
-							<th class="pb-3 pr-4 text-right">Total</th>
-							<th class="pb-3 pr-4 text-right">Available</th>
-							<th class="pb-3 pr-4 text-right">Assigned</th>
-							<th class="pb-3 text-right">Lost</th>
+							<th class="pb-3 pr-4">{m.library_table_work()}</th>
+							<th class="pb-3 pr-4">{m.library_table_edition()}</th>
+							<th class="pb-3 pr-4 text-right">{m.library_table_total()}</th>
+							<th class="pb-3 pr-4 text-right">{m.library_stats_available()}</th>
+							<th class="pb-3 pr-4 text-right">{m.library_stats_assigned()}</th>
+							<th class="pb-3 text-right">{m.library_stats_lost()}</th>
 						</tr>
 					</thead>
 					<tbody>

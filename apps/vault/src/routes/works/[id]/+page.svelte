@@ -7,6 +7,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import { getLicenseBadgeClass } from '$lib/utils/badges';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -258,31 +259,31 @@
 			<p class="mt-1 text-xl text-gray-600">{data.work.composer}</p>
 		{/if}
 		{#if data.work.lyricist}
-			<p class="text-gray-500">text: {data.work.lyricist}</p>
+			<p class="text-gray-500">{m.works_lyricist_label()}: {data.work.lyricist}</p>
 		{/if}
 	</div>
 
 	<!-- Editions Section -->
 	<div class="mb-8">
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="text-xl font-semibold">Editions</h2>
+			<h2 class="text-xl font-semibold">{m.editions_title()}</h2>
 			{#if data.canManage}
 				<button
 					onclick={openCreateForm}
 					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
 				>
-					+ Add Edition
+					{m.editions_add_btn()}
 				</button>
 			{/if}
 		</div>
 
 		{#if editions.length === 0}
 			<div class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center text-gray-500">
-				<p>No editions yet.</p>
+				<p>{m.edition_empty()}</p>
 				{#if data.canManage}
 					<p class="mt-2">
 						<button onclick={openCreateForm} class="text-blue-600 hover:underline">
-							Add the first edition
+							{m.edition_add_first()}
 						</button>
 					</p>
 				{/if}
@@ -325,7 +326,7 @@
 											tabindex="0"
 											class="cursor-pointer text-sm text-blue-600 hover:underline"
 										>
-											External link ↗
+											{m.edition_external_link_label()} ↗
 										</span>
 									</p>
 								{/if}
@@ -350,14 +351,14 @@
 										onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(edition); }}
 										class="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-200"
 									>
-										Edit
+										{m.actions_edit()}
 									</button>
 									<button
 										onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteEdition(edition); }}
 										disabled={deletingId === edition.id}
 										class="rounded bg-red-100 px-3 py-1 text-sm text-red-700 transition hover:bg-red-200 disabled:opacity-50"
 									>
-										{deletingId === edition.id ? '...' : 'Delete'}
+										{deletingId === edition.id ? '...' : m.actions_delete()}
 									</button>
 								</div>
 							{/if}
@@ -369,20 +370,20 @@
 	</div>
 
 	<!-- Edition Form Modal -->
-	<Modal open={showEditionForm} title={editingEdition ? 'Edit Edition' : 'Add New Edition'} onclose={closeForm} maxWidth="lg">
+	<Modal open={showEditionForm} title={editingEdition ? m.edition_modal_title_edit() : m.edition_modal_title_add()} onclose={closeForm} maxWidth="lg">
 		<form onsubmit={handleSubmit}>
 			<div class="space-y-4">
 				<!-- Name -->
 				<div>
 							<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-								Name <span class="text-red-500">*</span>
+								{m.edition_name_label()} <span class="text-red-500">*</span>
 							</label>
 							<input
 								id="name"
 								type="text"
 								bind:value={formName}
 								class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-								placeholder="e.g., Novello Vocal Score"
+								placeholder={m.edition_name_placeholder()}
 								required
 							/>
 						</div>
@@ -390,7 +391,7 @@
 						<!-- Edition Type -->
 						<div>
 							<label for="editionType" class="mb-1 block text-sm font-medium text-gray-700">
-								Type
+								{m.edition_type_label()}
 							</label>
 							<select
 								id="editionType"
@@ -406,7 +407,7 @@
 						<!-- License Type -->
 						<div>
 							<label for="licenseType" class="mb-1 block text-sm font-medium text-gray-700">
-								License
+								{m.edition_license_label()}
 							</label>
 							<select
 								id="licenseType"
@@ -422,7 +423,7 @@
 						<!-- Arranger -->
 						<div>
 							<label for="arranger" class="mb-1 block text-sm font-medium text-gray-700">
-								Arranger
+								{m.edition_arranger_label()}
 							</label>
 							<input
 								id="arranger"
@@ -435,7 +436,7 @@
 						<!-- Publisher -->
 						<div>
 							<label for="publisher" class="mb-1 block text-sm font-medium text-gray-700">
-								Publisher
+								{m.edition_publisher_label()}
 							</label>
 							<input
 								id="publisher"
@@ -448,21 +449,21 @@
 						<!-- Voicing -->
 						<div>
 							<label for="voicing" class="mb-1 block text-sm font-medium text-gray-700">
-								Voicing
+								{m.edition_voicing_label()}
 							</label>
 							<input
 								id="voicing"
 								type="text"
 								bind:value={formVoicing}
 								class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-								placeholder="e.g., SATB div."
+								placeholder={m.edition_voicing_placeholder()}
 							/>
 						</div>
 
 						<!-- External URL -->
 						<div>
 							<label for="externalUrl" class="mb-1 block text-sm font-medium text-gray-700">
-								External Link
+								{m.edition_external_link_label()}
 							</label>
 							<input
 								id="externalUrl"
@@ -476,7 +477,7 @@
 						<!-- PDF File Upload -->
 						<div>
 							<label for="pdfFile" class="mb-1 block text-sm font-medium text-gray-700">
-								PDF File
+								{m.edition_pdf_label()}
 							</label>
 							{#if editingEdition?.fileName}
 								<div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
@@ -486,7 +487,7 @@
 									</span>
 								</div>
 								<p class="mb-1 text-xs text-gray-500">
-									Upload a new file to replace the current one
+									{m.edition_pdf_replace_help()}
 								</p>
 							{/if}
 							<input
@@ -499,17 +500,17 @@
 								}}
 								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 							/>
-							<p class="mt-1 text-xs text-gray-500">Max 9.5 MB. PDF files only.</p>
+							<p class="mt-1 text-xs text-gray-500">{m.edition_pdf_max_size_help()}</p>
 						</div>
 
 						<!-- Sections (for part assignments) -->
 						{#if data.sections.length > 0}
 							<fieldset>
 								<legend class="mb-1 block text-sm font-medium text-gray-700">
-									Sections (for parts)
+									{m.edition_sections_label()}
 								</legend>
 								<p class="mb-2 text-xs text-gray-500">
-									Leave empty for universal editions (full scores, audio)
+									{m.edition_sections_help()}
 								</p>
 								<div class="flex flex-wrap gap-2" role="group" aria-label="Section assignments">
 									{#each data.sections as section}
@@ -532,7 +533,7 @@
 						<!-- Notes -->
 						<div>
 							<label for="notes" class="mb-1 block text-sm font-medium text-gray-700">
-								Notes
+								{m.edition_notes_label()}
 							</label>
 							<textarea
 								id="notes"
@@ -549,7 +550,7 @@
 							onclick={closeForm}
 							class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 						>
-							Cancel
+							{m.actions_cancel()}
 						</button>
 						<button
 							type="submit"
@@ -557,11 +558,11 @@
 							class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 						>
 							{#if uploadingFile}
-								Uploading...
+								{m.editions_uploading()}
 							{:else if saving}
-								Saving...
+								{m.actions_saving()}
 							{:else}
-								{editingEdition ? 'Update' : 'Create'}
+								{editingEdition ? m.actions_update() : m.actions_create()}
 							{/if}
 						</button>
 			</div>

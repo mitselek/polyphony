@@ -9,6 +9,7 @@
 	import { SectionBadge } from '$lib/components/badges';
 	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 	import { canEditCell } from '$lib/utils/participation-permissions';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -280,13 +281,13 @@
 }} />
 
 <svelte:head>
-	<title>Roster | Polyphony Vault</title>
+	<title>{m.roster_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-full px-4 py-8">
 	<div class="mb-6">
-		<h1 class="text-3xl font-bold">Roster</h1>
-		<p class="mt-2 text-gray-600">Member participation across events</p>
+		<h1 class="text-3xl font-bold">{m.roster_title()}</h1>
+		<p class="mt-2 text-gray-600">{m.roster_description()}</p>
 	</div>
 
 	<!-- Season Navigation -->
@@ -300,7 +301,7 @@
 		/>
 	{:else}
 		<Card class="mb-6">
-			<p class="text-gray-500">No active season</p>
+			<p class="text-gray-500">{m.no_active_season()}</p>
 		</Card>
 	{/if}
 
@@ -310,7 +311,7 @@
 			<!-- Section Filter (Epic #73 requirement: section-based, not voice) -->
 			<div class="flex-1 min-w-50">
 				<label for="section-filter" class="block text-sm font-medium text-gray-700 mb-1">
-					Section
+					{m.roster_section_filter_label()}
 				</label>
 				<select
 					id="section-filter"
@@ -318,7 +319,7 @@
 					onchange={applyFilters}
 					class="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 				>
-					<option value="">All Sections</option>
+					<option value="">{m.roster_section_filter_all()}</option>
 					{#each sections as section}
 						<option value={section.id}>{section.name}</option>
 					{/each}
@@ -332,7 +333,7 @@
 					class="inline-block rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 					download="roster.csv"
 				>
-					Export CSV
+					{m.roster_export_csv_btn()}
 				</a>
 			</div>
 		</div>
@@ -341,11 +342,11 @@
 	<!-- Roster Table -->
 	{#if roster.events.length === 0}
 		<Card padding="lg" class="text-center">
-			<p class="text-gray-500">No events in this season</p>
+			<p class="text-gray-500">{m.roster_no_events()}</p>
 		</Card>
 	{:else if roster.members.length === 0}
 		<Card padding="lg" class="text-center">
-			<p class="text-gray-500">No members match filters</p>
+			<p class="text-gray-500">{m.roster_no_members()}</p>
 		</Card>
 	{:else}
 		<!-- Table Container with Horizontal Scroll -->
@@ -362,7 +363,7 @@
 							class="sticky left-0 top-0 z-30 border-r-2 border-gray-300 bg-white px-4 py-3 text-center text-sm font-semibold text-gray-700"
 							style="min-width: 150px;"
 						>
-							Name
+							{m.roster_table_name_header()}
 						</th>
 
 						<!-- Event Column Headers (scrollable) -->
@@ -436,7 +437,7 @@
 												class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
 												disabled={!canEditRsvp}
-												title="RSVP: {status?.plannedStatus ?? 'none'}"
+												title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
 											>
 												{getRsvpText(status?.plannedStatus ?? null)}
 											</button>
@@ -446,7 +447,7 @@
 												class="participation-cell flex-1 px-2 py-1 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 												onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
 												disabled={!canEditAtt}
-												title="Attendance: {status?.actualStatus ?? 'not recorded'}"
+												title="{m.roster_attendance_label()}: {status?.actualStatus ?? 'not recorded'}"
 											>
 												{getAttendanceText(status?.actualStatus ?? null)}
 											</button>
@@ -458,7 +459,7 @@
 												class="participation-cell w-full rounded-full px-3 py-1 border border-gray-300 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}"
 												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
 												disabled={!canEditRsvp}
-												title="RSVP: {status?.plannedStatus ?? 'none'}"
+												title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
 											>
 												{getRsvpText(status?.plannedStatus ?? null)}
 											</button>
@@ -478,15 +479,15 @@
 			<Card>
 				<div class="flex gap-6 text-sm text-gray-600">
 					<div>
-						<span class="font-medium">Events:</span>
+						<span class="font-medium">{m.roster_stats_events()}</span>
 						{roster.summary.totalEvents}
 					</div>
 					<div>
-						<span class="font-medium">Members:</span>
+						<span class="font-medium">{m.roster_stats_members()}</span>
 						{roster.summary.totalMembers}
 					</div>
 					<div>
-						<span class="font-medium">Avg Attendance:</span>
+						<span class="font-medium">{m.roster_stats_attendance()}</span>
 						{roster.summary.averageAttendance.toFixed(1)}%
 					</div>
 				</div>
@@ -495,7 +496,7 @@
 			<!-- Section Summary (Epic #73) - Reactive -->
 			{#if Object.keys(sectionStats).length > 0}
 				<Card>
-					<h3 class="text-sm font-semibold text-gray-700 mb-3">Section Breakdown</h3>
+					<h3 class="text-sm font-semibold text-gray-700 mb-3">{m.roster_section_breakdown_title()}</h3>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 						{#each Object.entries(sectionStats).sort((a, b) => a[1].displayOrder - b[1].displayOrder) as [sectionId, stats]}
 							{@const rsvpOpportunities = stats.memberCount * stats.eventCount}
@@ -503,13 +504,13 @@
 							<div class="rounded border border-gray-200 bg-gray-50 p-3">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium text-gray-700">{stats.sectionName}</span>
-									<span class="text-xs text-gray-500">{stats.memberCount} singers</span>
+									<span class="text-xs text-gray-500">{m.roster_section_singers_count({ count: stats.memberCount })}</span>
 								</div>
 								<div class="space-y-2 text-xs">
 									<!-- RSVP stacked bar -->
 									<div>
 										<div class="flex justify-between text-gray-600 mb-1">
-											<span>RSVP</span>
+											<span>{m.roster_rsvp_label()}</span>
 											<span class="font-medium">
 												{rsvpOpportunities > 0 ? ((stats.rsvpResponded / rsvpOpportunities) * 100).toFixed(0) : 0}%
 											</span>
@@ -528,7 +529,7 @@
 									{#if stats.pastEventCount > 0}
 										<div>
 											<div class="flex justify-between text-gray-600 mb-1">
-												<span>Attendance</span>
+												<span>{m.roster_attendance_label()}</span>
 												<span class="font-medium">
 													{attOpportunities > 0 ? ((stats.attRecorded / attOpportunities) * 100).toFixed(0) : 0}%
 												</span>
@@ -560,13 +561,13 @@
 			{#if activePopup.type === 'rsvp'}
 				<!-- RSVP Popup: 2x2 grid [yes,no],[late,?] -->
 				<div class="p-2">
-					<div class="text-xs text-gray-500 text-center mb-2 font-medium">RSVP</div>
+					<div class="text-xs text-gray-500 text-center mb-2 font-medium">{m.roster_rsvp_label()}</div>
 					<div class="grid grid-cols-2 gap-1">
 						<button
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-green-100'} bg-green-50 text-green-700"
 							onclick={() => updateStatus('yes')}
 							disabled={updating}
-							title="Yes, I'll be there"
+							title={m.roster_rsvp_yes_title()}
 						>
 							✓
 						</button>
@@ -574,7 +575,7 @@
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-red-100'} bg-red-50 text-red-700"
 							onclick={() => updateStatus('no')}
 							disabled={updating}
-							title="No, I can't attend"
+							title={m.roster_rsvp_no_title()}
 						>
 							✗
 						</button>
@@ -582,7 +583,7 @@
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-orange-100'} bg-orange-50 text-orange-700"
 							onclick={() => updateStatus('late')}
 							disabled={updating}
-							title="I'll be late"
+							title={m.roster_rsvp_late_title()}
 						>
 							⏰
 						</button>
@@ -590,7 +591,7 @@
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-yellow-100'} bg-yellow-50 text-yellow-700"
 							onclick={() => updateStatus('maybe')}
 							disabled={updating}
-							title="Maybe"
+							title={m.roster_rsvp_maybe_title()}
 						>
 							?
 						</button>
@@ -600,19 +601,19 @@
 						onclick={() => updateStatus(null)}
 						disabled={updating}
 					>
-						Clear
+						{m.roster_rsvp_clear()}
 					</button>
 				</div>
 			{:else}
 				<!-- Attendance Popup: 2x2 grid [present,absent],[late,empty] -->
 				<div class="p-2">
-					<div class="text-xs text-gray-500 text-center mb-2 font-medium">Attendance</div>
+					<div class="text-xs text-gray-500 text-center mb-2 font-medium">{m.roster_attendance_label()}</div>
 					<div class="grid grid-cols-2 gap-1">
 						<button
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-green-100'} bg-green-50 text-green-700"
 							onclick={() => updateStatus('present')}
 							disabled={updating}
-							title="Present"
+							title={m.roster_attendance_present_title()}
 						>
 							✓
 						</button>
@@ -620,7 +621,7 @@
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-red-100'} bg-red-50 text-red-700"
 							onclick={() => updateStatus('absent')}
 							disabled={updating}
-							title="Absent"
+							title={m.roster_attendance_absent_title()}
 						>
 							✗
 						</button>
@@ -628,7 +629,7 @@
 							class="flex items-center justify-center w-10 h-10 rounded text-lg transition {updating ? 'opacity-50' : 'hover:bg-orange-100'} bg-orange-50 text-orange-700"
 							onclick={() => updateStatus('late')}
 							disabled={updating}
-							title="Late"
+							title={m.roster_attendance_late_title()}
 						>
 							⏰
 						</button>
@@ -639,7 +640,7 @@
 						onclick={() => updateStatus(null)}
 						disabled={updating}
 					>
-						Clear
+						{m.roster_attendance_clear()}
 					</button>
 				</div>
 			{/if}

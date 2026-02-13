@@ -87,13 +87,13 @@
 </script>
 
 <svelte:head>
-  <title>Vault Settings | Polyphony Vault</title>
+  <title>{m.settings_page_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
   <div class="mb-8">
-    <h1 class="text-3xl font-bold">Vault Settings</h1>
-    <p class="mt-2 text-gray-600">Configure default settings for your choir</p>
+    <h1 class="text-3xl font-bold">{m.settings_page_title()}</h1>
+    <p class="mt-2 text-gray-600">{m.settings_page_description()}</p>
   </div>
 
   <Card padding="lg">
@@ -101,7 +101,7 @@
       <!-- Default Event Duration -->
       <div>
         <label for="default_event_duration" class="block text-sm font-medium text-gray-700">
-          Default Event Duration (minutes)
+          {m.settings_event_duration_label()}
         </label>
         <input
           type="number"
@@ -112,7 +112,7 @@
           step="15"
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
-        <p class="mt-1 text-sm text-gray-500">Default duration for new events (15-480 minutes)</p>
+        <p class="mt-1 text-sm text-gray-500">{m.settings_event_duration_help()}</p>
       </div>
 
       <!-- Submit Button -->
@@ -122,7 +122,7 @@
           disabled={saving}
           class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save Settings"}
+          {saving ? m.settings_saving_btn() : m.settings_save_btn()}
         </button>
       </div>
     </form>
@@ -130,9 +130,9 @@
 
   <!-- Organization Settings -->
   <Card padding="lg" class="mt-6">
-    <h2 class="mb-4 text-lg font-semibold">Organization Settings</h2>
+    <h2 class="mb-4 text-lg font-semibold">{m.settings_org_section_title()}</h2>
     <p class="mb-6 text-sm text-gray-600">
-      Default language, locale, and timezone for all members. Members can override these in their personal settings.
+      {m.settings_org_section_description()}
     </p>
     <form onsubmit={handleOrgSubmit} class="space-y-6">
       <!-- Trust Individual Responsibility (Issue #240) -->
@@ -163,35 +163,35 @@
       <!-- Language Setting -->
       <div>
         <label for="org-language" class="block text-sm font-medium text-gray-700">
-          Language
+          {m.settings_language()}
         </label>
         <select
           id="org-language"
           bind:value={organization.language}
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="">System default (English)</option>
+          <option value="">{m.settings_language_default()}</option>
           <option value="en">English</option>
           <option value="et">Estonian</option>
           <option value="lv">Latvian</option>
           <option value="uk">Ukrainian</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
-          UI language for the organization (ISO 639-1)
+          {m.settings_language_help()}
         </p>
       </div>
 
       <!-- Locale Setting -->
       <div>
         <label for="org-locale" class="block text-sm font-medium text-gray-700">
-          Date & Number Format
+          {m.settings_locale()}
         </label>
         <select
           id="org-locale"
           bind:value={organization.locale}
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="">System default (en-US)</option>
+          <option value="">{m.settings_locale_default()}</option>
           <option value="en-US">English US (en-US)</option>
           <option value="en-GB">English UK (en-GB)</option>
           <option value="et-EE">Estonian (et-EE)</option>
@@ -199,21 +199,21 @@
           <option value="uk-UA">Ukrainian (uk-UA)</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
-          Format for dates, times, and numbers (BCP 47)
+          {m.settings_locale_help()}
         </p>
       </div>
 
       <!-- Timezone Setting -->
       <div>
         <label for="org-timezone" class="block text-sm font-medium text-gray-700">
-          Timezone
+          {m.settings_timezone()}
         </label>
         <select
           id="org-timezone"
           bind:value={organization.timezone}
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="">System default (UTC)</option>
+          <option value="">{m.settings_timezone_default()}</option>
           <option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
           <option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
           <option value="Europe/Riga">Riga (EET/EEST)</option>
@@ -223,14 +223,14 @@
           <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
           <option value="Europe/Paris">Paris (CET/CEST)</option>
           <option value="Europe/London">London (GMT/BST)</option>
-          <option value="Europe/Moscow">Moscow (MSK)</option>
+          <option value="Europe/Kyiv">Kyiv (EET/EEST)</option>
           <option value="America/New_York">New York (EST/EDT)</option>
           <option value="America/Chicago">Chicago (CST/CDT)</option>
           <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
           <option value="UTC">UTC</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
-          Timezone for events and schedules (IANA)
+          {m.settings_timezone_help()}
         </p>
       </div>
 
@@ -241,7 +241,7 @@
           disabled={savingOrg}
           class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {savingOrg ? "Saving..." : "Save Organization Settings"}
+          {savingOrg ? m.settings_saving_btn() : m.settings_org_save_btn()}
         </button>
       </div>
     </form>

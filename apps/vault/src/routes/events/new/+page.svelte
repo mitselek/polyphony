@@ -5,6 +5,7 @@
 	import { EVENT_TYPES, getEventTypeLabel } from '$lib/utils/badges';
 	import { getLocale } from '$lib/utils/locale';
 	import Card from '$lib/components/Card.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -179,13 +180,13 @@
 </script>
 
 <svelte:head>
-	<title>Create Event | Polyphony Vault</title>
+	<title>{m.event_create_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8">
-		<h1 class="text-3xl font-bold">Create Event</h1>
-		<p class="mt-2 text-gray-600">Schedule rehearsals, concerts, retreats, or festivals</p>
+		<h1 class="text-3xl font-bold">{m.event_create_title()}</h1>
+		<p class="mt-2 text-gray-600">{m.event_create_description()}</p>
 	</div>
 
 	{#if error}
@@ -197,13 +198,13 @@
 	<form onsubmit={handleSubmit} class="space-y-8">
 		<!-- Basic Info Section -->
 		<Card padding="lg">
-			<h2 class="mb-4 text-xl font-semibold">Event Details</h2>
-			
+			<h2 class="mb-4 text-xl font-semibold">{m.event_details_section()}</h2>
+
 			<div class="space-y-4">
 				<!-- Title -->
 				<div>
 					<label for="title" class="block text-sm font-medium text-gray-700">
-						Title <span class="text-red-500">*</span>
+						{m.event_title_label()}
 					</label>
 					<input
 						type="text"
@@ -211,14 +212,14 @@
 						bind:value={title}
 						required
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-						placeholder="Weekly Rehearsal"
+						placeholder={m.event_title_placeholder()}
 					/>
 				</div>
 
 				<!-- Event Type -->
 				<div>
 					<label for="event-type" class="block text-sm font-medium text-gray-700">
-						Event Type <span class="text-red-500">*</span>
+						{m.event_type_label()}
 					</label>
 					<select
 						id="event-type"
@@ -234,28 +235,28 @@
 				<!-- Location -->
 				<div>
 					<label for="location" class="block text-sm font-medium text-gray-700">
-						Location
+						{m.event_location_label()}
 					</label>
 					<input
 						type="text"
 						id="location"
 						bind:value={location}
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-						placeholder="Main Hall"
+						placeholder={m.event_location_placeholder()}
 					/>
 				</div>
 
 				<!-- Description -->
 				<div>
 					<label for="description" class="block text-sm font-medium text-gray-700">
-						Description
+						{m.event_description_label()}
 					</label>
 					<textarea
 						id="description"
 						bind:value={description}
 						rows="3"
 						class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-						placeholder="Optional notes about this event"
+						placeholder={m.event_description_placeholder()}
 					></textarea>
 				</div>
 			</div>
@@ -263,13 +264,13 @@
 
 		<!-- Date & Time Section -->
 		<Card padding="lg">
-			<h2 class="mb-4 text-xl font-semibold">Date & Time</h2>
-			
+			<h2 class="mb-4 text-xl font-semibold">{m.event_datetime_section()}</h2>
+
 			<div class="grid gap-4 md:grid-cols-2">
 				<!-- Start Date -->
 				<div>
 					<label for="start-date" class="block text-sm font-medium text-gray-700">
-						Start Date <span class="text-red-500">*</span>
+						{m.event_start_date_label()}
 					</label>
 					<input
 						type="date"
@@ -283,7 +284,7 @@
 				<!-- Start Time -->
 				<div>
 					<label for="start-time" class="block text-sm font-medium text-gray-700">
-						Start Time <span class="text-red-500">*</span>
+						{m.event_start_time_label()}
 					</label>
 					<input
 						type="time"
@@ -298,7 +299,7 @@
 				<!-- Duration -->
 				<fieldset class="col-span-2">
 					<legend class="block text-sm font-medium text-gray-700">
-						Duration
+						{m.event_duration_label()}
 					</legend>
 					<div class="mt-1 flex items-center gap-3">
 						<div class="flex items-center gap-1">
@@ -310,7 +311,7 @@
 								max="30"
 								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 							/>
-							<span class="text-sm text-gray-600">days</span>
+							<span class="text-sm text-gray-600">{m.event_duration_days()}</span>
 						</div>
 						<div class="flex items-center gap-1">
 							<input
@@ -321,7 +322,7 @@
 								max="23"
 								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 							/>
-							<span class="text-sm text-gray-600">hours</span>
+							<span class="text-sm text-gray-600">{m.event_duration_hours()}</span>
 						</div>
 						<div class="flex items-center gap-1">
 							<input
@@ -333,7 +334,7 @@
 								step="5"
 								class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 							/>
-							<span class="text-sm text-gray-600">min</span>
+							<span class="text-sm text-gray-600">{m.event_duration_minutes()}</span>
 						</div>
 					</div>
 				</fieldset>
@@ -341,13 +342,13 @@
 				<!-- Calculated End Date/Time (read-only display) -->
 				<div class="col-span-2">
 					<span id="ends-at-label" class="block text-sm font-medium text-gray-700">
-						Ends at
+						{m.event_end_time_label()}
 					</span>
 					<div aria-labelledby="ends-at-label" class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700">
 						<span class="font-medium">{endDateTimeDisplay}</span>
 					</div>
 					<p class="mt-1 text-sm text-gray-500">
-						Auto-calculated from start time + duration
+						{m.event_end_time_help()}
 					</p>
 				</div>
 			</div>
@@ -355,12 +356,12 @@
 
 		<!-- Repeat Picker Section -->
 		<Card padding="lg">
-			<h2 class="mb-4 text-xl font-semibold">Repeat Pattern</h2>
-			
+			<h2 class="mb-4 text-xl font-semibold">{m.event_repeat_section()}</h2>
+
 			<div class="space-y-4">
 				<!-- Frequency -->
 				<div>
-				<div class="block text-sm font-medium text-gray-700 mb-2">Frequency</div>
+				<div class="block text-sm font-medium text-gray-700 mb-2">{m.event_repeat_frequency_label()}</div>
 				<div class="flex gap-2">
 						<button
 							type="button"
@@ -369,7 +370,7 @@
 								? 'border-blue-500 bg-blue-50 text-blue-700'
 								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 						>
-							Once
+							{m.event_repeat_once()}
 						</button>
 						<button
 							type="button"
@@ -378,7 +379,7 @@
 								? 'border-blue-500 bg-blue-50 text-blue-700'
 								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 						>
-							Weekly
+							{m.event_repeat_weekly()}
 						</button>
 						<button
 							type="button"
@@ -387,7 +388,7 @@
 								? 'border-blue-500 bg-blue-50 text-blue-700'
 								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 						>
-							Bi-weekly
+							{m.event_repeat_biweekly()}
 						</button>
 					</div>
 				</div>
@@ -396,7 +397,7 @@
 				{#if repeatFrequency !== 'once'}
 					<div>
 						<label for="repeat-count" class="block text-sm font-medium text-gray-700">
-							Number of Events
+							{m.event_repeat_count_label()}
 						</label>
 						<input
 							type="number"
@@ -407,7 +408,7 @@
 							class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 						/>
 						<p class="mt-1 text-sm text-gray-500">
-							Create up to 52 {repeatFrequency} events
+							{m.event_repeat_count_help({ type: repeatFrequency })}
 						</p>
 					</div>
 				{/if}
@@ -418,27 +419,27 @@
 		{#if generatedEvents.length > 0}
 			<Card padding="lg">
 				<div class="mb-4 flex items-center justify-between">
-					<h2 class="text-xl font-semibold">Preview & Select</h2>
+					<h2 class="text-xl font-semibold">{m.event_preview_section()}</h2>
 					<div class="flex gap-2">
 						<button
 							type="button"
 							onclick={selectAll}
 							class="text-sm text-blue-600 hover:underline"
 						>
-							Select All
+							{m.event_preview_select_all()}
 						</button>
 						<button
 							type="button"
 							onclick={deselectAll}
 							class="text-sm text-blue-600 hover:underline"
 						>
-							Deselect All
+							{m.event_preview_deselect_all()}
 						</button>
 					</div>
 				</div>
 
 				<p class="mb-4 text-sm text-gray-600">
-					Uncheck dates to skip (e.g., holidays or conflicts). Only checked events will be created.
+					{m.event_preview_help()}
 				</p>
 
 				<div class="space-y-2">
@@ -466,7 +467,7 @@
 				</div>
 
 				<p class="mt-4 text-sm text-gray-500">
-					{generatedEvents.filter(e => e.checked).length} of {generatedEvents.length} events selected
+					{m.event_preview_count({ checked: generatedEvents.filter(e => e.checked).length, total: generatedEvents.length })}
 				</p>
 			</Card>
 		{/if}
@@ -477,14 +478,14 @@
 				href="/events"
 				class="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition hover:bg-gray-50"
 			>
-				Cancel
+				{m.actions_cancel()}
 			</a>
 			<button
 				type="submit"
 				disabled={submitting || generatedEvents.filter(e => e.checked).length === 0}
 				class="rounded-lg bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				{submitting ? 'Creating...' : `Create ${generatedEvents.filter(e => e.checked).length} Event${generatedEvents.filter(e => e.checked).length !== 1 ? 's' : ''}`}
+				{m.event_submit_btn({ count: generatedEvents.filter(e => e.checked).length })}
 			</button>
 		</div>
 	</form>

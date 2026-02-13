@@ -7,6 +7,7 @@
 	import { SectionBadge } from '$lib/components/badges';
 	import { toast } from '$lib/stores/toast';
 	import { getEditionViewUrl, getEditionDownloadUrl } from '$lib/utils/urls';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -307,7 +308,7 @@
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<!-- Breadcrumb -->
 	<nav class="mb-6 text-sm text-gray-500">
-		<a href="/editions" class="hover:text-blue-600 hover:underline">Editions</a>
+		<a href="/editions" class="hover:text-blue-600 hover:underline">{m.editions_title()}</a>
 		<span class="mx-2">›</span>
 		<span class="text-gray-700">{data.edition.name}</span>
 	</nav>
@@ -330,7 +331,7 @@
 					href="/works/{data.work.id}"
 					class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
 				>
-					Edit Edition
+					{m.edition_edit_link()}
 				</a>
 			{/if}
 		</div>
@@ -349,33 +350,33 @@
 	<div class="space-y-6">
 		<!-- Metadata Card -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold">Details</h2>
+			<h2 class="mb-4 text-lg font-semibold">{m.edition_details_section()}</h2>
 			
 			<dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				{#if data.edition.publisher}
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Publisher</dt>
+						<dt class="text-sm font-medium text-gray-500">{m.edition_publisher_label()}</dt>
 						<dd class="mt-1 text-gray-900">{data.edition.publisher}</dd>
 					</div>
 				{/if}
 
 				{#if data.edition.arranger}
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Arranger</dt>
+						<dt class="text-sm font-medium text-gray-500">{m.edition_arranger_label()}</dt>
 						<dd class="mt-1 text-gray-900">{data.edition.arranger}</dd>
 					</div>
 				{/if}
 
 				{#if data.edition.voicing}
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Voicing</dt>
+						<dt class="text-sm font-medium text-gray-500">{m.edition_voicing_label()}</dt>
 						<dd class="mt-1 text-gray-900">{data.edition.voicing}</dd>
 					</div>
 				{/if}
 
 				{#if linkedSections.length > 0}
 					<div>
-						<dt class="text-sm font-medium text-gray-500">Sections</dt>
+						<dt class="text-sm font-medium text-gray-500">{m.edition_sections_label()}</dt>
 						<dd class="mt-1 flex flex-wrap gap-1">
 							{#each linkedSections as section}
 								<SectionBadge {section} />
@@ -387,7 +388,7 @@
 
 			{#if data.edition.notes}
 				<div class="mt-4 border-t border-gray-100 pt-4">
-					<dt class="text-sm font-medium text-gray-500">Notes</dt>
+					<dt class="text-sm font-medium text-gray-500">{m.edition_notes_label()}</dt>
 					<dd class="mt-1 whitespace-pre-wrap text-gray-900">{data.edition.notes}</dd>
 				</div>
 			{/if}
@@ -395,10 +396,10 @@
 
 		<!-- Digital Assets Card -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold">Digital Assets</h2>
+			<h2 class="mb-4 text-lg font-semibold">{m.editions_digital_assets_title()}</h2>
 
 			{#if !data.edition.fileKey && !data.edition.externalUrl}
-				<p class="text-gray-500">No digital assets attached to this edition.</p>
+				<p class="text-gray-500">{m.editions_no_digital_assets()}</p>
 			{:else}
 				<div class="space-y-4">
 					<!-- File download -->
@@ -425,13 +426,13 @@
 									href={getEditionViewUrl(data.edition.id)}
 									class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
 								>
-									View
+									{m.edition_view_btn()}
 								</a>
 								<a
 									href={getEditionDownloadUrl(data.edition.id)}
 									class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
 								>
-									Download
+									{m.edition_view_download_btn()}
 								</a>
 							</div>
 						</div>

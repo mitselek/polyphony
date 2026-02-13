@@ -11,6 +11,7 @@
 	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { getRoleBadgeClass } from '$lib/utils/badges';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -153,7 +154,7 @@
 
 		// Prevent removing last owner
 		if (role === 'owner' && hasRole && data.ownerCount <= 1) {
-			toast.error('Cannot remove the last owner');
+			toast.error(m.members_cannot_remove_last_owner());
 			return;
 		}
 
@@ -303,9 +304,7 @@
 	}
 
 	async function removeMember() {
-		const confirmed = confirm(
-			`Are you sure you want to remove ${member.name}?\n\nThis action cannot be undone.`
-		);
+		const confirmed = confirm(m.members_confirm_remove({ memberName: member.name }));
 
 		if (!confirmed) return;
 
@@ -333,9 +332,9 @@
 	function getEffectiveLabel(source: PreferenceSource | undefined): string {
 		if (!source) return '';
 		switch (source) {
-			case 'member': return '(your preference)';
-			case 'organization': return '(organization default)';
-			case 'system': return '(system default)';
+			case 'member': return m.member_preference_source_own();
+			case 'organization': return m.member_preference_source_org();
+			case 'system': return m.member_preference_source_system();
 		}
 	}
 
@@ -368,7 +367,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.isOwnProfile ? 'My Profile' : member.name} | Polyphony Vault</title>
+	<title>{data.isOwnProfile ? m.member_profile_title() : member.name} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-3xl px-4 py-8">
@@ -377,7 +376,7 @@
 		href="/members"
 		class="mb-6 inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline"
 	>
-		← Back to Members
+		{m.member_back_link()}
 	</a>
 
 	<div class="mb-8 flex items-center justify-between">
@@ -393,11 +392,11 @@
 				autofocus
 			/>
 		{:else if canEditProfile}
-			<button 
+			<button
 				type="button"
 				onclick={startEditingName}
 				class="text-3xl font-bold cursor-pointer hover:text-blue-600 text-left"
-				title="Click to edit name"
+				title={m.member_edit_name_tooltip()}
 			>{member.name}</button>
 		{:else}
 			<h1 class="text-3xl font-bold">{member.name}</h1>
@@ -410,7 +409,7 @@
 				disabled={updating}
 				class="rounded-lg border border-red-600 px-4 py-2 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
 			>
-				Remove Member
+				{m.members_remove_member()}
 			</button>
 		{/if}
 	</div>
@@ -419,7 +418,7 @@
 	<div class="mb-6 -mt-4">
 		{#if isEditingNickname}
 			<div class="flex items-center gap-2">
-				<span class="text-sm text-gray-500">Nickname:</span>
+				<span class="text-sm text-gray-500">{m.member_nickname_label()}</span>
 				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					type="text"
@@ -427,26 +426,26 @@
 					onblur={saveNickname}
 					onkeydown={handleNicknameKeydown}
 					disabled={updating}
-					placeholder="Enter nickname..."
+					placeholder={m.member_nickname_placeholder()}
 					class="text-lg border-b-2 border-blue-500 bg-transparent outline-none px-1 py-0.5"
 					autofocus
 				/>
 			</div>
 		{:else if canEditProfile}
-			<button 
+			<button
 				type="button"
 				onclick={startEditingNickname}
 				class="text-gray-500 hover:text-blue-600 cursor-pointer text-sm"
-				title="Click to edit nickname"
+				title={m.member_edit_name_tooltip()}
 			>
 				{#if member.nickname}
-					<span class="text-gray-500">Nickname:</span> <span class="text-gray-700">{member.nickname}</span>
+					<span class="text-gray-500">{m.member_nickname_label()}</span> <span class="text-gray-700">{member.nickname}</span>
 				{:else}
-					<span class="italic">+ Add nickname</span>
+					<span class="italic">{m.member_add_nickname()}</span>
 				{/if}
 			</button>
 		{:else if member.nickname}
-			<p class="text-sm text-gray-500">Nickname: <span class="text-gray-700">{member.nickname}</span></p>
+			<p class="text-sm text-gray-500">{m.member_nickname_label()} <span class="text-gray-700">{member.nickname}</span></p>
 		{/if}
 	</div>
 
@@ -466,9 +465,9 @@
 					<div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
 						<div class="flex items-center justify-between">
 							<div>
-								<span class="font-medium text-amber-800">Roster-only member</span>
+								<span class="font-medium text-amber-800">{m.member_roster_only_status()}</span>
 								<p class="mt-1 text-sm text-amber-700">
-									This member has not yet completed OAuth registration.
+									{m.member_roster_only_desc()}
 								</p>
 							</div>
 							{#if data.isAdmin}
@@ -476,7 +475,7 @@
 									href="/invite?rosterId={member.id}"
 									class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
 								>
-									Send Invitation
+									{m.member_send_invite_btn()}
 								</a>
 							{/if}
 						</div>
@@ -487,12 +486,12 @@
 
 		<!-- Roles -->
 		<div class="mb-6">
-			<h2 class="mb-2 text-sm font-medium text-gray-700">Roles</h2>
+			<h2 class="mb-2 text-sm font-medium text-gray-700">{m.member_roles_section()}</h2>
 			{#if data.isAdmin && member.email_id}
 				<!-- Editable roles for admins (only for registered members) -->
 				<div class="flex flex-wrap gap-2">
 					{#each ASSIGNABLE_ROLES as role}
-						{@const isDisabled = updating || 
+						{@const isDisabled = updating ||
 							(member.id === data.currentUserId && role === 'owner') ||
 							(!data.isOwner && role === 'owner')}
 						{@const hasRole = member.roles.includes(role)}
@@ -503,12 +502,12 @@
 								? getRoleBadgeClass(role)
 								: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 							title={isDisabled && member.id === data.currentUserId && role === 'owner'
-								? 'Cannot remove your own owner role'
+								? m.member_roles_help_self()
 								: isDisabled && !data.isOwner && role === 'owner'
-									? 'Only owners can manage owner role'
-									: hasRole 
-										? `Remove ${role} role`
-										: `Add ${role} role`}
+									? m.member_roles_help_admin()
+									: hasRole
+										? m.member_remove_role({ role })
+										: m.member_add_role({ role })}
 						>
 							{#if hasRole}
 								✓ {role}
@@ -528,13 +527,13 @@
 					{/each}
 				</div>
 			{:else}
-				<span class="text-gray-500">No roles assigned</span>
+				<span class="text-gray-500">{m.member_no_roles()}</span>
 			{/if}
 		</div>
 
 		<!-- Voices -->
 		<div class="mb-6">
-			<h2 class="mb-2 text-sm font-medium text-gray-700">Voices</h2>
+			<h2 class="mb-2 text-sm font-medium text-gray-700">{m.member_voice_section()}</h2>
 			<div class="flex flex-wrap items-center gap-2">
 				{#if member.voices.length > 0}
 					{#each member.voices as voice, index}
@@ -549,16 +548,16 @@
 						/>
 					{/each}
 				{:else}
-					<span class="text-gray-500">No voices assigned</span>
+					<span class="text-gray-500">{m.member_no_voices()}</span>
 				{/if}
-				
+
 				{#if data.isAdmin && !updating}
 					<div class="relative">
 						<button
 							onclick={() => showingVoiceDropdown = !showingVoiceDropdown}
 							class="text-purple-600 hover:text-purple-800 text-sm px-2 py-1 rounded hover:bg-purple-50"
 						>
-							+ Add Voice
+							{m.member_add_voice()}
 						</button>
 						{#if showingVoiceDropdown}
 							<div class="absolute z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
@@ -572,7 +571,7 @@
 										</button>
 									{/each}
 									{#if member.voices.length === data.availableVoices.length}
-										<div class="px-4 py-2 text-sm text-gray-500">All voices assigned</div>
+										<div class="px-4 py-2 text-sm text-gray-500">{m.member_all_voices_assigned()}</div>
 									{/if}
 								</div>
 							</div>
@@ -584,7 +583,7 @@
 
 		<!-- Sections -->
 		<div class="mb-6">
-			<h2 class="mb-2 text-sm font-medium text-gray-700">Sections</h2>
+			<h2 class="mb-2 text-sm font-medium text-gray-700">{m.member_sections_section()}</h2>
 			<div class="flex flex-wrap items-center gap-2">
 				{#if member.sections.length > 0}
 					{#each member.sections as section, index}
@@ -599,16 +598,16 @@
 						/>
 					{/each}
 				{:else}
-					<span class="text-gray-500">No sections assigned</span>
+					<span class="text-gray-500">{m.member_no_sections()}</span>
 				{/if}
-				
+
 				{#if data.isAdmin && !updating}
 					<div class="relative">
 						<button
 							onclick={() => showingSectionDropdown = !showingSectionDropdown}
 							class="text-teal-600 hover:text-teal-800 text-sm px-2 py-1 rounded hover:bg-teal-50"
 						>
-							+ Add Section
+							{m.member_add_section()}
 						</button>
 						{#if showingSectionDropdown}
 							<div class="absolute z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
@@ -622,7 +621,7 @@
 										</button>
 									{/each}
 									{#if member.sections.length === data.availableSections.length}
-										<div class="px-4 py-2 text-sm text-gray-500">All sections assigned</div>
+										<div class="px-4 py-2 text-sm text-gray-500">{m.member_all_sections_assigned()}</div>
 									{/if}
 								</div>
 							</div>
@@ -634,7 +633,7 @@
 
 		<!-- Member Since -->
 		<div>
-			<h2 class="mb-2 text-sm font-medium text-gray-700">Member Since</h2>
+			<h2 class="mb-2 text-sm font-medium text-gray-700">{m.member_since_label()}</h2>
 			<span class="text-gray-900">{new Date(member.joined_at).toLocaleDateString()}</span>
 		</div>
 	</Card>
@@ -642,44 +641,44 @@
 	<!-- Language & Regional Preferences - Only for own profile -->
 	{#if data.isOwnProfile && resolvedPrefs}
 		<Card padding="lg" class="mt-6">
-			<h2 class="mb-4 text-lg font-semibold">Language & Regional Preferences</h2>
+			<h2 class="mb-4 text-lg font-semibold">{m.member_preferences_title()}</h2>
 			<p class="mb-6 text-sm text-gray-600">
-				Override organization defaults for your personal experience.
+				{m.member_preferences_desc()}
 			</p>
 
 			<form onsubmit={(e) => { e.preventDefault(); savePreferences(); }} class="space-y-6">
 				<!-- Language -->
 				<div>
 					<label for="pref-language" class="block text-sm font-medium text-gray-700">
-						Language
+						{m.member_language_label()}
 					</label>
 					<select
 						id="pref-language"
 						bind:value={prefLanguage}
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
-						<option value="">Use organization default ({resolvedPrefs.language})</option>
+						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.language })}</option>
 						<option value="en">English</option>
 						<option value="et">Estonian</option>
 						<option value="lv">Latvian</option>
 						<option value="uk">Ukrainian</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
-						Effective: {resolvedPrefs.language} {getEffectiveLabel(resolvedPrefs.source.language)}
+						{m.member_preference_effective()} {resolvedPrefs.language} {getEffectiveLabel(resolvedPrefs.source.language)}
 					</p>
 				</div>
 
 				<!-- Locale -->
 				<div>
 					<label for="pref-locale" class="block text-sm font-medium text-gray-700">
-						Date & Number Format
+						{m.member_locale_label()}
 					</label>
 					<select
 						id="pref-locale"
 						bind:value={prefLocale}
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
-						<option value="">Use organization default ({resolvedPrefs.locale})</option>
+						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.locale })}</option>
 						<option value="en-US">English US (en-US)</option>
 						<option value="en-GB">English UK (en-GB)</option>
 						<option value="et-EE">Estonian (et-EE)</option>
@@ -687,21 +686,21 @@
 						<option value="uk-UA">Ukrainian (uk-UA)</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
-						Effective: {resolvedPrefs.locale} {getEffectiveLabel(resolvedPrefs.source.locale)}
+						{m.member_preference_effective()} {resolvedPrefs.locale} {getEffectiveLabel(resolvedPrefs.source.locale)}
 					</p>
 				</div>
 
 				<!-- Timezone -->
 				<div>
 					<label for="pref-timezone" class="block text-sm font-medium text-gray-700">
-						Timezone
+						{m.member_timezone_label()}
 					</label>
 					<select
 						id="pref-timezone"
 						bind:value={prefTimezone}
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
-						<option value="">Use organization default ({resolvedPrefs.timezone})</option>
+						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.timezone })}</option>
 						<option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
 						<option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
 						<option value="Europe/Riga">Riga (EET/EEST)</option>
@@ -718,7 +717,7 @@
 						<option value="UTC">UTC</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
-						Effective: {resolvedPrefs.timezone} {getEffectiveLabel(resolvedPrefs.source.timezone)}
+						{m.member_preference_effective()} {resolvedPrefs.timezone} {getEffectiveLabel(resolvedPrefs.source.timezone)}
 					</p>
 				</div>
 
@@ -728,7 +727,7 @@
 						disabled={savingPrefs}
 						class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						{savingPrefs ? 'Saving...' : 'Save Preferences'}
+						{savingPrefs ? m.settings_saving_btn() : m.member_preferences_save()}
 					</button>
 				</div>
 			</form>
@@ -739,14 +738,14 @@
 	{#if data.assignedCopies}
 		<Card padding="lg" class="mt-8">
 			<h2 class="mb-4 text-xl font-semibold text-gray-900">
-				{data.isOwnProfile ? 'My Scores' : 'Assigned Scores'}
+				{data.isOwnProfile ? m.member_scores_title_own() : m.member_scores_title_other()}
 			</h2>
-			
+
 			{#if data.assignedCopies.length === 0}
 				<p class="text-gray-500">
-					{data.isOwnProfile 
-						? 'You have no physical copies assigned to you yet.' 
-						: 'No physical copies assigned to this member.'}
+					{data.isOwnProfile
+						? m.member_no_scores_own()
+						: m.member_no_scores_other()}
 				</p>
 			{:else}
 				<div class="divide-y divide-gray-100">
@@ -764,7 +763,7 @@
 										{copy.edition.name} · Copy #{copy.copyNumber}
 									</p>
 									<p class="mt-1 text-xs text-gray-400">
-										Assigned {new Date(copy.assignedAt).toLocaleDateString()}{#if data.org && copy.org.subdomain !== data.org.subdomain}
+										{m.member_score_assigned_date({ date: new Date(copy.assignedAt).toLocaleDateString() })}{#if data.org && copy.org.subdomain !== data.org.subdomain}
 											{' '}by {copy.org.name}{/if}
 									</p>
 								</div>

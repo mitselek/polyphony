@@ -5,6 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -147,14 +148,14 @@
 </script>
 
 <svelte:head>
-	<title>Works Catalog | Polyphony Vault</title>
+	<title>{m.works_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
 	<div class="mb-8 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Works Catalog</h1>
-			<p class="mt-1 text-gray-600">Musical compositions in your library</p>
+			<h1 class="text-3xl font-bold">{m.works_title()}</h1>
+			<p class="mt-1 text-gray-600">{m.works_description()}</p>
 		</div>
 		<div class="flex gap-3">
 			{#if data.canManage}
@@ -162,13 +163,13 @@
 					href="/library/inventory"
 					class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 				>
-					Inventory
+					{m.works_inventory_btn()}
 				</a>
 				<button
 					onclick={openCreateForm}
 					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
 				>
-					+ Add Work
+					{m.works_add_btn()}
 				</button>
 			{/if}
 		</div>
@@ -182,43 +183,43 @@
 	{/if}
 
 	<!-- Create/Edit Form Modal -->
-	<Modal open={showCreateForm} title={editingWork ? 'Edit Work' : 'Add New Work'} onclose={closeForm}>
+	<Modal open={showCreateForm} title={editingWork ? m.works_modal_title_edit() : m.works_modal_title_add()} onclose={closeForm}>
 		<form onsubmit={handleSubmit}>
 					<div class="mb-4">
 						<label for="title" class="mb-1 block text-sm font-medium text-gray-700">
-							Title <span class="text-red-500">*</span>
+							{m.works_title_label()}
 						</label>
 						<input
 							id="title"
 							type="text"
 							bind:value={formTitle}
 							class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-							placeholder="e.g., Messiah"
+							placeholder={m.works_title_placeholder()}
 							required
 						/>
 					</div>
 					<div class="mb-4">
 						<label for="composer" class="mb-1 block text-sm font-medium text-gray-700">
-							Composer
+							{m.works_composer_label()}
 						</label>
 						<input
 							id="composer"
 							type="text"
 							bind:value={formComposer}
 							class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-							placeholder="e.g., G.F. Handel"
+							placeholder={m.works_composer_placeholder()}
 						/>
 					</div>
 					<div class="mb-6">
 						<label for="lyricist" class="mb-1 block text-sm font-medium text-gray-700">
-							Lyricist / Librettist
+							{m.works_lyricist_label()}
 						</label>
 						<input
 							id="lyricist"
 							type="text"
 							bind:value={formLyricist}
 							class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-							placeholder="e.g., Charles Jennens"
+							placeholder={m.works_lyricist_placeholder()}
 						/>
 					</div>
 					<div class="flex justify-end gap-3">
@@ -227,14 +228,14 @@
 							onclick={closeForm}
 							class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition hover:bg-gray-50"
 						>
-							Cancel
+							{m.actions_cancel()}
 						</button>
 						<button
 							type="submit"
 							disabled={saving}
 							class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 						>
-							{saving ? 'Saving...' : editingWork ? 'Update' : 'Create'}
+							{saving ? m.actions_save() : editingWork ? m.actions_save() : m.actions_add()}
 						</button>
 					</div>
 		</form>
@@ -245,7 +246,7 @@
 		<input
 			type="text"
 			bind:value={searchQuery}
-			placeholder="Search by title, composer, or lyricist..."
+			placeholder={m.works_search_placeholder()}
 			class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 		/>
 	</div>
@@ -254,16 +255,16 @@
 	{#if filteredWorks.length === 0}
 		<div class="py-12 text-center text-gray-500">
 			{#if works.length === 0}
-				<p class="text-lg">No works in your catalog yet.</p>
+				<p class="text-lg">{m.works_empty_message()}</p>
 				{#if data.canManage}
 					<p class="mt-2">
 						<button onclick={openCreateForm} class="text-blue-600 hover:underline">
-							Add your first work
+							{m.works_add_first()}
 						</button>
 					</p>
 				{/if}
 			{:else}
-				<p>No works match your search.</p>
+				<p>{m.works_no_match()}</p>
 			{/if}
 		</div>
 	{:else}
@@ -289,14 +290,14 @@
 								onclick={(e) => { e.preventDefault(); e.stopPropagation(); openEditForm(work); }}
 								class="rounded-lg bg-gray-100 px-3 py-2 text-gray-700 transition hover:bg-gray-200"
 							>
-								Edit
+								{m.actions_edit()}
 							</button>
 							<button
 								onclick={(e) => { e.preventDefault(); e.stopPropagation(); deleteWork(work); }}
 								disabled={deletingId === work.id}
 								class="rounded-lg bg-red-100 px-3 py-2 text-red-700 transition hover:bg-red-200 disabled:opacity-50"
 							>
-								{deletingId === work.id ? '...' : 'Delete'}
+								{deletingId === work.id ? '...' : m.actions_delete()}
 							</button>
 						</div>
 					{/if}

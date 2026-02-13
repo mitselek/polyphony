@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -72,17 +73,17 @@
 </script>
 
 <svelte:head>
-	<title>Add Roster Member | Polyphony Vault</title>
+	<title>{m.add_roster_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-xl px-4 py-8">
 	<div class="mb-8">
-		<a href="/members" class="text-blue-600 hover:underline">← Back to Members</a>
+		<a href="/members" class="text-blue-600 hover:underline">{m.member_back_link()}</a>
 	</div>
 
-	<h1 class="mb-2 text-3xl font-bold">Add Roster Member</h1>
+	<h1 class="mb-2 text-3xl font-bold">{m.add_roster_title()}</h1>
 	<p class="mb-6 text-gray-600">
-		Add a member to the choir roster without granting system access. They can register later via invitation.
+		{m.add_roster_description()}
 	</p>
 
 	<div class="rounded-lg bg-white p-6 shadow-md">
@@ -95,7 +96,7 @@
 		<form onsubmit={handleSubmit} class="space-y-4">
 			<div>
 				<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-					Full Name *
+					{m.add_roster_name_label()}
 				</label>
 				<input
 					type="text"
@@ -104,16 +105,16 @@
 					required
 					disabled={isSubmitting}
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
-					placeholder="John Doe"
+					placeholder={m.add_roster_name_placeholder()}
 				/>
 				<p class="mt-1 text-xs text-gray-500">
-					Must be unique. Used to identify the member in the roster.
+					{m.add_roster_name_help()}
 				</p>
 			</div>
 
 			<div>
 				<label for="emailContact" class="mb-1 block text-sm font-medium text-gray-700">
-					Contact Email (optional)
+					{m.add_roster_email_label()}
 				</label>
 				<input
 					type="email"
@@ -121,17 +122,17 @@
 					bind:value={emailContact}
 					disabled={isSubmitting}
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
-					placeholder="john@example.com"
+					placeholder={m.add_roster_email_placeholder()}
 				/>
 				<p class="mt-1 text-xs text-gray-500">
-					For notifications. Not used for authentication (roster members cannot log in until invited).
+					{m.add_roster_email_help()}
 				</p>
 			</div>
 
 			<fieldset>
 				<legend class="mb-2 block text-sm font-medium text-gray-700">
-					Vocal Range / Instrument
-					<span class="ml-1 text-xs font-normal text-gray-500" title="What the member CAN sing or play">ⓘ</span>
+					{m.add_roster_voices_label()}
+					<span class="ml-1 text-xs font-normal text-gray-500" title={m.add_roster_voices_tooltip()}>ⓘ</span>
 				</legend>
 				<div class="space-y-2">
 					{#each data.availableVoices as voice}
@@ -151,14 +152,14 @@
 					{/each}
 				</div>
 				<p class="mt-2 text-sm text-gray-500">
-					Select all ranges this member can comfortably sing. First selected becomes primary.
+					{m.add_roster_voices_help()}
 				</p>
 			</fieldset>
 
 			<fieldset>
 				<legend class="mb-2 block text-sm font-medium text-gray-700">
-					Assigned Section (optional)
-					<span class="ml-1 text-xs font-normal text-gray-500" title="Where the member DOES sing currently - their performance assignment">ⓘ</span>
+					{m.add_roster_sections_label()}
+					<span class="ml-1 text-xs font-normal text-gray-500" title={m.add_roster_sections_tooltip()}>ⓘ</span>
 				</legend>
 				<div class="space-y-2">
 					{#each data.availableSections as section}
@@ -178,7 +179,7 @@
 					{/each}
 				</div>
 				<p class="mt-2 text-sm text-gray-500">
-					Assign to one or more sections for performances. First selected becomes primary.
+					{m.add_roster_sections_help()}
 				</p>
 			</fieldset>
 
@@ -188,19 +189,16 @@
 				class="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:bg-blue-300"
 			>
 				{#if isSubmitting}
-					Adding...
+					{m.add_roster_submitting()}
 				{:else}
-					Add Roster Member
+					{m.add_roster_submit_btn()}
 				{/if}
 			</button>
 		</form>
 
 		<div class="mt-6 border-t pt-4 text-sm text-gray-500">
-			<p class="mb-2">
-				<strong>Roster members</strong> are listed in the choir roster but <strong>cannot log in</strong> until invited.
-			</p>
 			<p>
-				After adding a member, you can send them an invitation from the members list to grant system access.
+				{m.add_roster_help_text()}
 			</p>
 		</div>
 	</div>
