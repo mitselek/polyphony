@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	}
 
 	// Get member and check permissions
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw redirect(303, '/welcome');
 	}

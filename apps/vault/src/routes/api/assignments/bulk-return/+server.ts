@@ -38,7 +38,7 @@ async function parseAndValidateBody(
 	return { assignmentIds };
 }
 
-export const POST: RequestHandler = async ({ request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		return json({ error: 'Database unavailable' }, { status: 500 });
@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 	}
 
 	// Permission check - must be librarian/admin/owner
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!canUploadScores(member)) {
 		return json({ error: 'Permission denied' }, { status: 403 });
 	}

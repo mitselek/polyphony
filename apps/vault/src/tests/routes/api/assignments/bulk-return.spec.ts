@@ -1,6 +1,7 @@
 // Bulk return API tests
 // Issue #126 - Collection Reminders
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { POST } from '../../../../routes/api/assignments/bulk-return/+server';
 
 // Mock modules
@@ -67,7 +68,7 @@ function createMockEvent(
 			serialize: vi.fn()
 		},
 		platform: { env: { DB: mockDb } },
-		locals: {},
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		fetch: vi.fn(),
 		getClientAddress: vi.fn().mockReturnValue('127.0.0.1'),
 		route: { id: '/api/assignments/bulk-return' as const },

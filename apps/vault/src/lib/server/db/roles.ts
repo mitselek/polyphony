@@ -1,8 +1,8 @@
 // Role database operations
 // Centralized functions for managing member roles
 
+import type { OrgId } from '@polyphony/shared';
 import type { Role } from '$lib/types';
-import { DEFAULT_ORG_ID } from '$lib/config';
 
 /**
  * Add a role to a member
@@ -13,7 +13,7 @@ export async function addMemberRole(
 	memberId: string,
 	role: Role,
 	grantedBy: string | null = null,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<boolean> {
 	// Check if role already exists
 	const existing = await db
@@ -46,7 +46,7 @@ export async function removeMemberRole(
 	db: D1Database,
 	memberId: string,
 	role: Role,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<boolean> {
 	const result = await db
 		.prepare(`DELETE FROM member_roles WHERE member_id = ? AND org_id = ? AND role = ?`)
@@ -62,7 +62,7 @@ export async function removeMemberRole(
 export async function getMemberRoles(
 	db: D1Database,
 	memberId: string,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<Role[]> {
 	const { results } = await db
 		.prepare(`SELECT role FROM member_roles WHERE member_id = ? AND org_id = ?`)
@@ -79,7 +79,7 @@ export async function memberHasRole(
 	db: D1Database,
 	memberId: string,
 	role: Role,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<boolean> {
 	const existing = await db
 		.prepare(
@@ -98,7 +98,7 @@ export async function memberHasRole(
 export async function countMembersWithRole(
 	db: D1Database,
 	role: Role,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<number> {
 	const result = await db
 		.prepare(`SELECT COUNT(*) as count FROM member_roles WHERE role = ? AND org_id = ?`)
@@ -116,7 +116,7 @@ export async function addMemberRoles(
 	memberId: string,
 	roles: Role[],
 	grantedBy: string | null = null,
-	orgId: string = DEFAULT_ORG_ID
+	orgId: OrgId
 ): Promise<void> {
 	if (roles.length === 0) return;
 

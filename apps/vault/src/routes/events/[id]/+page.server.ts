@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ platform, cookies, params, locals }
 	const db = platform.env.DB;
 
 	// Require authentication
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const orgId = locals.org.id;
 

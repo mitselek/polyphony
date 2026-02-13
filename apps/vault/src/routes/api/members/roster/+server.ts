@@ -1,6 +1,7 @@
 // API endpoint for creating roster-only members
 // POST /api/members/roster
 import { error, json } from '@sveltejs/kit';
+import type { OrgId } from '@polyphony/shared';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { createRosterMember } from '$lib/server/db/members';
@@ -24,7 +25,7 @@ function validateEmail(emailContact?: string): string | null {
 	return null;
 }
 
-async function checkNameUniqueness(db: D1Database, name: string, orgId: string): Promise<boolean> {
+async function checkNameUniqueness(db: D1Database, name: string, orgId: OrgId): Promise<boolean> {
 	const existingMember = await db
 		.prepare(
 			`SELECT m.id FROM members m
@@ -39,7 +40,7 @@ async function checkNameUniqueness(db: D1Database, name: string, orgId: string):
 async function createRosterMemberWithValidation(
 	db: D1Database,
 	body: CreateRosterMemberRequest,
-	orgId: string,
+	orgId: OrgId,
 	currentUserId: string
 ) {
 	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
@@ -77,7 +78,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies, locals 
 	}
 
 	const orgId = locals.org.id;
-	const currentUser = await getAuthenticatedMember(db, cookies);
+	const currentUser = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentUser);
 
 	const body = (await request.json()) as CreateRosterMemberRequest;

@@ -1,5 +1,6 @@
 // Server load for members page - list all members with roles
 import { error, redirect } from '@sveltejs/kit';
+import type { OrgId } from '@polyphony/shared';
 import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { getPendingInvites } from '$lib/server/db/invites';
@@ -50,7 +51,7 @@ function createInviteLinkMap(pendingInvites: Awaited<ReturnType<typeof getPendin
 	return pendingInviteLinks;
 }
 
-async function loadMemberPageData(db: D1Database, orgId: string, url: URL) {
+async function loadMemberPageData(db: D1Database, orgId: OrgId, url: URL) {
 	const allMembers = await getAllMembers(db, orgId);
 	const members = formatMembers(allMembers);
 
@@ -75,7 +76,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 
 	let currentUser;
 	try {
-		currentUser = await getAuthenticatedMember(db, cookies);
+		currentUser = await getAuthenticatedMember(db, cookies, locals.org.id);
 	} catch (err) {
 		redirect(302, '/login');
 	}

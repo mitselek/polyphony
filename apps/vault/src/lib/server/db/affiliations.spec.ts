@@ -1,5 +1,6 @@
 // Affiliations database layer tests
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createAffiliation,
 	endAffiliation,
@@ -12,9 +13,9 @@ import {
 import type { Affiliation } from '$lib/types';
 
 // Test IDs
-const COLLECTIVE_ID = 'org_crede_001';
-const UMBRELLA_ID = 'org_umbrella_001';
-const OTHER_COLLECTIVE_ID = 'org_other_002';
+const COLLECTIVE_ID = createOrgId('org_crede_001');
+const UMBRELLA_ID = createOrgId('org_umbrella_001');
+const OTHER_COLLECTIVE_ID = createOrgId('org_other_002');
 
 // Mock D1Database
 function createMockDb() {
@@ -367,7 +368,7 @@ describe('Affiliations database layer', () => {
 
 	describe('getCollectiveUmbrellas', () => {
 		it('returns all active umbrellas for collective', async () => {
-			const UMBRELLA_2_ID = 'org_umbrella_002';
+			const UMBRELLA_2_ID = createOrgId('org_umbrella_002');
 
 			await createAffiliation(db, {
 				collectiveId: COLLECTIVE_ID,

@@ -2,6 +2,7 @@
 // Tests for /api/events/:id/works and nested routes
 // Issue #121
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 
 // Mock SvelteKit error/json functions to make error() actually throw
 vi.mock('@sveltejs/kit', async () => {
@@ -153,7 +154,7 @@ function createMockEventBase(overrides: {
 		params: overrides.params ?? { id: 'event-1' },
 		request: overrides.request ?? new Request('http://localhost/api/events/event-1/works'),
 		url: overrides.url ?? new URL('http://localhost/api/events/event-1/works'),
-		locals: {},
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		route: { id: '/api/events/[id]/works' },
 		getClientAddress: () => '127.0.0.1',
 		fetch: vi.fn(),

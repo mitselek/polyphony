@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	if (!memberId) throw redirect(302, '/');
 
 	// Permission check
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!canUploadScores(member)) throw redirect(302, '/');
 
 	const orgId = locals.org.id;

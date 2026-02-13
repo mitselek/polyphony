@@ -1,4 +1,5 @@
 // Member database operations
+import type { OrgId } from '@polyphony/shared';
 import type { Role, Voice, Section, Member } from '$lib/types';
 import { generateId } from '$lib/server/utils/id';
 import { queryMemberSections, queryMemberVoices } from './queries/members';
@@ -14,7 +15,7 @@ export type { Member };
 async function validateSectionsOwnedByOrg(
 	db: D1Database,
 	sectionIds: string[],
-	orgId: string
+	orgId: OrgId
 ): Promise<void> {
 	if (sectionIds.length === 0) return;
 
@@ -46,6 +47,7 @@ export interface CreateMemberInput {
 	voiceIds?: string[]; // Voice IDs to assign
 	sectionIds?: string[]; // Section IDs to assign
 	invited_by?: string;
+	orgId: OrgId; // Organization to add member to
 }
 
 export interface CreateRosterMemberInput {
@@ -54,7 +56,7 @@ export interface CreateRosterMemberInput {
 	voiceIds?: string[];
 	sectionIds?: string[];
 	addedBy: string; // Admin who added them
-	orgId: string; // Organization to add member to
+	orgId: OrgId; // Organization to add member to
 }
 
 // Helper functions
@@ -95,9 +97,18 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 		.bind(id, name, input.email, invited_by)
 		.run();
 
+	// Link member to organization
+	await db
+		.prepare(
+			`INSERT INTO member_organizations (member_id, org_id, invited_by, joined_at)
+			 VALUES (?, ?, ?, datetime('now'))`
+		)
+		.bind(id, input.orgId, invited_by)
+		.run();
+
 	// Insert role records using centralized function
 	if (input.roles.length > 0) {
-		await addMemberRoles(db, id, input.roles, invited_by);
+		await addMemberRoles(db, id, input.roles, invited_by, input.orgId);
 	}
 
 	// Insert voice assignments
@@ -112,8 +123,11 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 		await db.batch(voiceStatements);
 	}
 
-	// Insert section assignments
+	// Insert section assignments (with org validation)
 	if (input.sectionIds && input.sectionIds.length > 0) {
+		// Validate all sections belong to the organization
+		await validateSectionsOwnedByOrg(db, input.sectionIds, input.orgId);
+		
 		const sectionStatements = input.sectionIds.map((sectionId, index) =>
 			db
 				.prepare(
@@ -125,7 +139,7 @@ export async function createMember(db: D1Database, input: CreateMemberInput): Pr
 	}
 
 	// Return the created member
-	const member = await getMemberById(db, id);
+	const member = await getMemberById(db, id, input.orgId);
 	if (!member) {
 		throw new Error('Failed to create member');
 	}
@@ -200,7 +214,7 @@ export async function createRosterMember(
 	}
 
 	// Return the created member
-	const member = await getMemberById(db, id);
+	const member = await getMemberById(db, id, input.orgId);
 	if (!member) {
 		throw new Error('Failed to create roster member');
 	}
@@ -213,10 +227,11 @@ export async function createRosterMember(
 export async function upgradeToRegistered(
 	db: D1Database,
 	rosterMemberId: string,
-	verifiedEmailId: string
+	verifiedEmailId: string,
+	orgId: OrgId
 ): Promise<Member> {
 	// Verify no other member has this email_id
-	const existingEmail = await getMemberByEmailId(db, verifiedEmailId);
+	const existingEmail = await getMemberByEmailId(db, verifiedEmailId, orgId);
 	if (existingEmail && existingEmail.id !== rosterMemberId) {
 		throw new Error('Email already registered to another member');
 	}
@@ -227,7 +242,7 @@ export async function upgradeToRegistered(
 		.bind(verifiedEmailId, rosterMemberId)
 		.run();
 
-	const member = await getMemberById(db, rosterMemberId);
+	const member = await getMemberById(db, rosterMemberId, orgId);
 	if (!member) {
 		throw new Error('Failed to upgrade roster member');
 	}
@@ -238,7 +253,7 @@ export async function upgradeToRegistered(
  * Find a member by email_id (OAuth identity) with their roles, voices, and sections
  * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberByEmailId(db: D1Database, emailId: string, orgId?: string): Promise<Member | null> {
+export async function getMemberByEmailId(db: D1Database, emailId: string, orgId: OrgId): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE email_id = ?')
 		.bind(emailId)
@@ -255,7 +270,7 @@ export async function getMemberByEmailId(db: D1Database, emailId: string, orgId?
  * Find a member by name (case-insensitive) with their roles, voices, and sections
  * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberByName(db: D1Database, name: string, orgId?: string): Promise<Member | null> {
+export async function getMemberByName(db: D1Database, name: string, orgId: OrgId): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE LOWER(name) = LOWER(?)')
 		.bind(name)
@@ -272,7 +287,7 @@ export async function getMemberByName(db: D1Database, name: string, orgId?: stri
  * Find a member by ID with their roles, voices, and sections
  * When orgId is provided, only returns roles and sections for that organization
  */
-export async function getMemberById(db: D1Database, id: string, orgId?: string): Promise<Member | null> {
+export async function getMemberById(db: D1Database, id: string, orgId: OrgId): Promise<Member | null> {
 	const memberRow = await db
 		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
 		.bind(id)
@@ -289,29 +304,20 @@ export async function getMemberById(db: D1Database, id: string, orgId?: string):
  * Get all members with their roles, voices, and sections
  * When orgId is provided, only returns members belonging to that organization
  */
-export async function getAllMembers(db: D1Database, orgId?: string): Promise<Member[]> {
-	let memberRows;
-	if (orgId) {
-		const result = await db
-			.prepare(
-				`SELECT m.id, m.name, m.nickname, m.email_id, m.email_contact, m.invited_by, m.joined_at
-				 FROM members m
-				 JOIN member_organizations mo ON m.id = mo.member_id
-				 WHERE mo.org_id = ?`
-			)
-			.bind(orgId)
-			.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
-		memberRows = result.results;
-	} else {
-		const result = await db
-			.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members')
-			.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
-		memberRows = result.results;
-	}
+export async function getAllMembers(db: D1Database, orgId: OrgId): Promise<Member[]> {
+	const result = await db
+		.prepare(
+			`SELECT m.id, m.name, m.nickname, m.email_id, m.email_contact, m.invited_by, m.joined_at
+			 FROM members m
+			 JOIN member_organizations mo ON m.id = mo.member_id
+			 WHERE mo.org_id = ?`
+		)
+		.bind(orgId)
+		.all<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
 	// Load relations for all members
 	const membersWithRelations = await Promise.all(
-		memberRows.map((memberRow) => loadMemberRelations(db, memberRow, orgId))
+		result.results.map((memberRow) => loadMemberRelations(db, memberRow, orgId))
 	);
 
 	return membersWithRelations;
@@ -324,18 +330,13 @@ export async function getAllMembers(db: D1Database, orgId?: string): Promise<Mem
 async function loadMemberRelations(
 	db: D1Database,
 	memberRow: Omit<Member, 'roles' | 'voices' | 'sections'>,
-	orgId?: string
+	orgId: OrgId
 ): Promise<Member> {
-	// Get roles (scoped to org if provided)
-	const rolesResult = orgId
-		? await db
-			.prepare('SELECT role FROM member_roles WHERE member_id = ? AND org_id = ?')
-			.bind(memberRow.id, orgId)
-			.all<{ role: Role }>()
-		: await db
-			.prepare('SELECT role FROM member_roles WHERE member_id = ?')
-			.bind(memberRow.id)
-			.all<{ role: Role }>();
+	// Get roles (scoped to organization)
+	const rolesResult = await db
+		.prepare('SELECT role FROM member_roles WHERE member_id = ? AND org_id = ?')
+		.bind(memberRow.id, orgId)
+		.all<{ role: Role }>();
 	const roles = rolesResult.results.map((r) => r.role);
 
 	// Get voices and sections using shared queries (sections scoped to org if provided)
@@ -418,22 +419,20 @@ export async function addMemberSection(
 	sectionId: string,
 	isPrimary: boolean = false,
 	assignedBy: string | null = null,
-	orgId?: string
+	orgId: OrgId
 ): Promise<void> {
-	// Validate section belongs to the organization (if orgId provided)
-	if (orgId) {
-		const section = await db
-			.prepare('SELECT org_id FROM sections WHERE id = ?')
-			.bind(sectionId)
-			.first<{ org_id: string }>();
-		
-		if (!section) {
-			throw new Error('Section not found');
-		}
-		
-		if (section.org_id !== orgId) {
-			throw new Error('Section does not belong to member\'s organization');
-		}
+	// Validate section belongs to the organization
+	const section = await db
+		.prepare('SELECT org_id FROM sections WHERE id = ?')
+		.bind(sectionId)
+		.first<{ org_id: string }>();
+	
+	if (!section) {
+		throw new Error('Section not found');
+	}
+	
+	if (section.org_id !== orgId) {
+		throw new Error('Section does not belong to member\'s organization');
 	}
 	
 	// Enforce: first section must be primary (don't trust caller)
@@ -488,7 +487,8 @@ export async function setPrimarySection(
 export async function updateMemberName(
 	db: D1Database,
 	memberId: string,
-	newName: string
+	newName: string,
+	orgId: OrgId
 ): Promise<Member> {
 	// Check uniqueness (case-insensitive, excluding current member)
 	const existing = await db
@@ -507,7 +507,7 @@ export async function updateMemberName(
 		.run();
 
 	// Return updated member with all relations
-	const updated = await getMemberById(db, memberId);
+	const updated = await getMemberById(db, memberId, orgId);
 	if (!updated) {
 		throw new Error('Failed to retrieve updated member');
 	}
@@ -521,7 +521,8 @@ export async function updateMemberName(
 export async function updateMemberNickname(
 	db: D1Database,
 	memberId: string,
-	newNickname: string | null
+	newNickname: string | null,
+	orgId: OrgId
 ): Promise<Member> {
 	// Update nickname (null clears it)
 	await db
@@ -530,7 +531,7 @@ export async function updateMemberNickname(
 		.run();
 
 	// Return updated member with all relations
-	const updated = await getMemberById(db, memberId);
+	const updated = await getMemberById(db, memberId, orgId);
 	if (!updated) {
 		throw new Error('Failed to retrieve updated member');
 	}

@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	}
 
 	// Authenticate and authorize
-	const currentUser = await getAuthenticatedMember(db, cookies);
+	const currentUser = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentUser);
 
 	const orgId = locals.org.id;

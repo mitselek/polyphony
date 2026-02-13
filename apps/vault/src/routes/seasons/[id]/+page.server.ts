@@ -12,7 +12,7 @@ interface SeasonWithEvents extends Season {
 	events: Event[];
 }
 
-export const load: PageServerLoad = async ({ params, fetch, platform, cookies }) => {
+export const load: PageServerLoad = async ({ params, fetch, platform, cookies, locals }) => {
 	const seasonId = params.id;
 	if (!seasonId) {
 		throw error(400, 'Season ID is required');
@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies })
 	const workEditionsMap: Record<string, Edition[]> = {};
 	
 	if (db && memberId) {
-		const member = await getMemberById(db, memberId);
+		const member = await getMemberById(db, memberId, locals.org.id);
 		if (member) {
 			canManage = canManageEvents(member);
 			canManageLibrary = canUploadScores(member);

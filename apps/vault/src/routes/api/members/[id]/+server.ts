@@ -11,14 +11,14 @@ interface UpdateMemberRequest {
 }
 
 // PATCH - Update member details (admin or own profile)
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: get current member
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const targetMemberId = params.id;
 	const isOwnProfile = currentMember.id === targetMemberId;
 	const isAdmin = currentMember.roles.some((r) => ['admin', 'owner'].includes(r));
@@ -47,7 +47,7 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 		}
 
 		try {
-			const updated = await updateMemberName(db, targetMemberId, trimmedName);
+			const updated = await updateMemberName(db, targetMemberId, trimmedName, locals.org.id);
 			return json(updated);
 		} catch (err) {
 			if (err instanceof Error && err.message.includes('already exists')) {
@@ -72,7 +72,7 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 		const trimmedNickname = body.nickname === null ? null : body.nickname.trim() || null;
 
 		try {
-			const updated = await updateMemberNickname(db, targetMemberId, trimmedNickname);
+			const updated = await updateMemberNickname(db, targetMemberId, trimmedNickname, locals.org.id);
 			return json(updated);
 		} catch (err) {
 			console.error('Failed to update member nickname:', err);
@@ -87,14 +87,14 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 }
 
 // DELETE - Remove member from vault
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: get member and check admin role
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(currentMember);
 	const isOwner = checkIsOwner(currentMember);
 

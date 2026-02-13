@@ -36,11 +36,11 @@ function parseQueryParams(url: URL) {
 }
 
 export async function GET(event: RequestEvent) {
-	const { platform, cookies, url } = event;
+	const { platform, cookies, url, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const { start, end, sectionId } = parseQueryParams(url);
 
@@ -51,7 +51,7 @@ export async function GET(event: RequestEvent) {
 		...(sectionId && { sectionId })
 	};
 
-	const roster = await getRosterView(db, filters);
+	const roster = await getRosterView(db, locals.org.id, filters);
 
 	return json(roster);
 }

@@ -23,21 +23,21 @@ function parseUpdateInput(body: UpdatePreferencesBody): UpdateMemberPreferencesI
 	return input;
 }
 
-export const GET: RequestHandler = async ({ platform, cookies }) => {
+export const GET: RequestHandler = async ({ platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const prefs = await getMemberPreferences(db, member.id);
 	
 	return json(prefs);
 };
 
-export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
+export const PATCH: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const body = (await request.json()) as UpdatePreferencesBody;
 	const updated = await setMemberPreferences(db, member.id, parseUpdateInput(body));
 	

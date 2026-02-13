@@ -1,5 +1,6 @@
 // Tests for role database operations
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	addMemberRole,
 	removeMemberRole,
@@ -11,7 +12,7 @@ import {
 
 // Mock the config module
 vi.mock('$lib/config', () => ({
-	DEFAULT_ORG_ID: 'test-org-001'
+	DEFAULT_ORG_ID: createOrgId('test-org-001')
 }));
 
 describe('Role database operations', () => {
@@ -98,9 +99,11 @@ describe('Role database operations', () => {
 	});
 
 	describe('addMemberRole', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should add a role to a member', async () => {
 			const db = createMockDb();
-			const result = await addMemberRole(db, 'member-1', 'admin', 'owner-1');
+			const result = await addMemberRole(db, 'member-1', 'admin', 'owner-1', testOrgId);
 			
 			expect(result).toBe(true);
 			expect(memberRoles.get('member-1')?.has('admin')).toBe(true);
@@ -110,14 +113,14 @@ describe('Role database operations', () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['admin']));
 			
-			const result = await addMemberRole(db, 'member-1', 'admin', 'owner-1');
+			const result = await addMemberRole(db, 'member-1', 'admin', 'owner-1', testOrgId);
 			
 			expect(result).toBe(false);
 		});
 
-		it('should use DEFAULT_ORG_ID when orgId not provided', async () => {
+		it('should require orgId parameter', async () => {
 			const db = createMockDb();
-			await addMemberRole(db, 'member-1', 'admin');
+			await addMemberRole(db, 'member-1', 'admin', null, testOrgId);
 			
 			// Verify prepare was called with correct SQL
 			expect(db.prepare).toHaveBeenCalledWith(
@@ -127,11 +130,13 @@ describe('Role database operations', () => {
 	});
 
 	describe('removeMemberRole', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should remove a role from a member', async () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['admin', 'librarian']));
 			
-			const result = await removeMemberRole(db, 'member-1', 'admin');
+			const result = await removeMemberRole(db, 'member-1', 'admin', testOrgId);
 			
 			expect(result).toBe(true);
 			expect(memberRoles.get('member-1')?.has('admin')).toBe(false);
@@ -142,18 +147,20 @@ describe('Role database operations', () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['librarian']));
 			
-			const result = await removeMemberRole(db, 'member-1', 'admin');
+			const result = await removeMemberRole(db, 'member-1', 'admin', testOrgId);
 			
 			expect(result).toBe(false);
 		});
 	});
 
 	describe('getMemberRoles', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should return all roles for a member', async () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['admin', 'librarian']));
 			
-			const roles = await getMemberRoles(db, 'member-1');
+			const roles = await getMemberRoles(db, 'member-1', testOrgId);
 			
 			expect(roles).toContain('admin');
 			expect(roles).toContain('librarian');
@@ -163,18 +170,20 @@ describe('Role database operations', () => {
 		it('should return empty array for member with no roles', async () => {
 			const db = createMockDb();
 			
-			const roles = await getMemberRoles(db, 'member-1');
+			const roles = await getMemberRoles(db, 'member-1', testOrgId);
 			
 			expect(roles).toEqual([]);
 		});
 	});
 
 	describe('memberHasRole', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should return true if member has the role', async () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['admin']));
 			
-			const result = await memberHasRole(db, 'member-1', 'admin');
+			const result = await memberHasRole(db, 'member-1', 'admin', testOrgId);
 			
 			expect(result).toBe(true);
 		});
@@ -183,20 +192,22 @@ describe('Role database operations', () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['librarian']));
 			
-			const result = await memberHasRole(db, 'member-1', 'admin');
+			const result = await memberHasRole(db, 'member-1', 'admin', testOrgId);
 			
 			expect(result).toBe(false);
 		});
 	});
 
 	describe('countMembersWithRole', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should count members with a specific role', async () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['owner']));
 			memberRoles.set('member-2', new Set(['owner', 'admin']));
 			memberRoles.set('member-3', new Set(['admin']));
 			
-			const count = await countMembersWithRole(db, 'owner');
+			const count = await countMembersWithRole(db, 'owner', testOrgId);
 			
 			expect(count).toBe(2);
 		});
@@ -205,17 +216,19 @@ describe('Role database operations', () => {
 			const db = createMockDb();
 			memberRoles.set('member-1', new Set(['admin']));
 			
-			const count = await countMembersWithRole(db, 'owner');
+			const count = await countMembersWithRole(db, 'owner', testOrgId);
 			
 			expect(count).toBe(0);
 		});
 	});
 
 	describe('addMemberRoles (batch)', () => {
+		const testOrgId = createOrgId('test-org-001');
+		
 		it('should add multiple roles at once', async () => {
 			const db = createMockDb();
 			
-			await addMemberRoles(db, 'member-1', ['admin', 'librarian'], 'owner-1');
+			await addMemberRoles(db, 'member-1', ['admin', 'librarian'], 'owner-1', testOrgId);
 			
 			expect(memberRoles.get('member-1')?.has('admin')).toBe(true);
 			expect(memberRoles.get('member-1')?.has('librarian')).toBe(true);
@@ -224,7 +237,7 @@ describe('Role database operations', () => {
 		it('should handle empty roles array gracefully', async () => {
 			const db = createMockDb();
 			
-			await addMemberRoles(db, 'member-1', [], 'owner-1');
+			await addMemberRoles(db, 'member-1', [], 'owner-1', testOrgId);
 			
 			expect(db.batch).not.toHaveBeenCalled();
 		});

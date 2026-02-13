@@ -6,11 +6,11 @@ import { reorderSeasonWorks } from '$lib/server/db/season-repertoire';
 import { getSeason } from '$lib/server/db/seasons';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 
-export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const season = await getSeason(db, params.id);

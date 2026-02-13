@@ -1,6 +1,7 @@
 // TDD: Two-tier member system tests (roster + registered)
 /// <reference types="@cloudflare/workers-types" />
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createMember,
 	createRosterMember,
@@ -12,6 +13,8 @@ import {
 	getContactEmail,
 	type Member
 } from '../../../../lib/server/db/members.js';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Simplified mock D1 database for roster tests
 const createMockDb = () => {
@@ -169,7 +172,8 @@ describe('Two-tier member system', () => {
 			const member = await createMember(db, {
 				email: 'registered@choir.org',
 				name: 'Registered User',
-				roles: []
+				roles: [],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(isRegistered(member)).toBe(true);
@@ -177,7 +181,7 @@ describe('Two-tier member system', () => {
 
 		it('isRegistered should return false for roster-only members', async () => {
 			const member = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Roster Only',
 				addedBy: 'admin-id'
 			});
@@ -189,7 +193,8 @@ describe('Two-tier member system', () => {
 			const member = await createMember(db, {
 				email: 'auth@choir.org',
 				name: 'Auth User',
-				roles: []
+				roles: [],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(getAuthEmail(member)).toBe('auth@choir.org');
@@ -197,7 +202,7 @@ describe('Two-tier member system', () => {
 
 		it('getAuthEmail should return null for roster-only members', async () => {
 			const member = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Roster Member',
 				addedBy: 'admin-id'
 			});
@@ -207,14 +212,14 @@ describe('Two-tier member system', () => {
 
 		it('getContactEmail should prefer email_contact over email_id', async () => {
 			const member = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Contact Test',
 				email_contact: 'contact@example.com',
 				addedBy: 'admin-id'
 			});
 
 			// After upgrade with different OAuth email
-			const upgraded = await upgradeToRegistered(db, member.id, 'oauth@provider.com');
+			const upgraded = await upgradeToRegistered(db, member.id, 'oauth@provider.com', TEST_ORG_ID);
 
 			expect(getContactEmail(upgraded)).toBe('contact@example.com');
 		});
@@ -223,7 +228,8 @@ describe('Two-tier member system', () => {
 			const member = await createMember(db, {
 				email: 'fallback@choir.org',
 				name: 'Fallback User',
-				roles: []
+				roles: [],
+				orgId: TEST_ORG_ID
 			});
 
 			expect(getContactEmail(member)).toBe('fallback@choir.org');
@@ -233,7 +239,7 @@ describe('Two-tier member system', () => {
 	describe('createRosterMember', () => {
 		it('should create a roster-only member without OAuth', async () => {
 			const member = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Jane Doe',
 				addedBy: 'admin-123'
 			});
@@ -248,7 +254,7 @@ describe('Two-tier member system', () => {
 
 		it('should create roster member with contact email', async () => {
 			const member = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Contact Member',
 				email_contact: 'contact@personal.com',
 				addedBy: 'admin-123'
@@ -260,14 +266,14 @@ describe('Two-tier member system', () => {
 
 		it('should enforce case-insensitive name uniqueness', async () => {
 			await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Unique Name',
 				addedBy: 'admin-123'
 			});
 
 			await expect(
 				createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 					name: 'UNIQUE NAME', // Different case
 					addedBy: 'admin-123'
 				})
@@ -278,14 +284,14 @@ describe('Two-tier member system', () => {
 	describe('upgradeToRegistered', () => {
 		it('should add email_id to roster-only member', async () => {
 			const rosterMember = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Upgrader',
 				addedBy: 'admin-123'
 			});
 
 			expect(rosterMember.email_id).toBeNull();
 
-			const upgraded = await upgradeToRegistered(db, rosterMember.id, 'verified@oauth.com');
+			const upgraded = await upgradeToRegistered(db, rosterMember.id, 'verified@oauth.com', TEST_ORG_ID);
 
 			expect(upgraded.email_id).toBe('verified@oauth.com');
 			expect(upgraded.name).toBe('Upgrader'); // Name unchanged
@@ -297,31 +303,32 @@ describe('Two-tier member system', () => {
 			const existing = await createMember(db, {
 				email: 'taken@choir.org',
 				name: 'Existing',
-				roles: []
+				roles: [],
+				orgId: TEST_ORG_ID
 			});
 
 			// Create roster member
 			const roster = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Roster',
 				addedBy: 'admin-123'
 			});
 
 			// Try to upgrade with existing email
 			await expect(
-				upgradeToRegistered(db, roster.id, 'taken@choir.org')
+				upgradeToRegistered(db, roster.id, 'taken@choir.org', TEST_ORG_ID)
 			).rejects.toThrow('Email already registered to another member');
 		});
 
 		it('should allow upgrading with same email (idempotent)', async () => {
 			const roster = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Idempotent',
 				addedBy: 'admin-123'
 			});
 
-			const upgraded1 = await upgradeToRegistered(db, roster.id, 'email@example.com');
-			const upgraded2 = await upgradeToRegistered(db, roster.id, 'email@example.com');
+			const upgraded1 = await upgradeToRegistered(db, roster.id, 'email@example.com', TEST_ORG_ID);
+			const upgraded2 = await upgradeToRegistered(db, roster.id, 'email@example.com', TEST_ORG_ID);
 
 			expect(upgraded2.email_id).toBe('email@example.com');
 		});
@@ -332,10 +339,11 @@ describe('Two-tier member system', () => {
 			const created = await createMember(db, {
 				email: 'find@choir.org',
 				name: 'Findable',
-				roles: []
+				roles: [],
+				orgId: TEST_ORG_ID
 			});
 
-			const found = await getMemberByEmailId(db, 'find@choir.org');
+			const found = await getMemberByEmailId(db, 'find@choir.org', TEST_ORG_ID);
 
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
@@ -344,19 +352,19 @@ describe('Two-tier member system', () => {
 
 		it('should not find roster-only members by email_id', async () => {
 			await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Roster Only',
 				email_contact: 'contact@example.com',
 				addedBy: 'admin-123'
 			});
 
-			const found = await getMemberByEmailId(db, 'contact@example.com');
+			const found = await getMemberByEmailId(db, 'contact@example.com', TEST_ORG_ID);
 
 			expect(found).toBeNull(); // Contact email is NOT email_id
 		});
 
 		it('should return null for unknown email_id', async () => {
-			const found = await getMemberByEmailId(db, 'nonexistent@choir.org');
+			const found = await getMemberByEmailId(db, 'nonexistent@choir.org', TEST_ORG_ID);
 			expect(found).toBeNull();
 		});
 	});
@@ -364,12 +372,12 @@ describe('Two-tier member system', () => {
 	describe('getMemberByName', () => {
 		it('should find member by exact name', async () => {
 			const created = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Exact Match',
 				addedBy: 'admin-123'
 			});
 
-			const found = await getMemberByName(db, 'Exact Match');
+			const found = await getMemberByName(db, 'Exact Match', TEST_ORG_ID);
 
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
@@ -377,19 +385,19 @@ describe('Two-tier member system', () => {
 
 		it('should find member by case-insensitive name', async () => {
 			const created = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'Case Insensitive',
 				addedBy: 'admin-123'
 			});
 
-			const found = await getMemberByName(db, 'CASE INSENSITIVE');
+			const found = await getMemberByName(db, 'CASE INSENSITIVE', TEST_ORG_ID);
 
 			expect(found).toBeDefined();
 			expect(found?.id).toBe(created.id);
 		});
 
 		it('should return null for unknown name', async () => {
-			const found = await getMemberByName(db, 'Nonexistent');
+			const found = await getMemberByName(db, 'Nonexistent', TEST_ORG_ID);
 			expect(found).toBeNull();
 		});
 	});
@@ -398,7 +406,7 @@ describe('Two-tier member system', () => {
 		it('should support complete workflow: roster → upgrade → roles', async () => {
 			// 1. Add to roster (before OAuth)
 			const roster = await createRosterMember(db, {
-				orgId: 'org_test_001',
+				orgId: TEST_ORG_ID,
 				name: 'New Singer',
 				email_contact: 'personal@email.com',
 				addedBy: 'conductor-id'
@@ -408,7 +416,7 @@ describe('Two-tier member system', () => {
 			expect(isRegistered(roster)).toBe(false);
 
 			// 2. Member accepts invite and does OAuth
-			const registered = await upgradeToRegistered(db, roster.id, 'oauth@google.com');
+			const registered = await upgradeToRegistered(db, roster.id, 'oauth@google.com', TEST_ORG_ID);
 
 			expect(registered.email_id).toBe('oauth@google.com');
 			expect(registered.email_contact).toBe('personal@email.com');

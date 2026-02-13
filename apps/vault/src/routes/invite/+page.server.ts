@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	}
 
 	// Auth: get member and check admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const orgId = locals.org.id;
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	let pendingInviteLink: string | null = null;
 
 	if (rosterId) {
-		rosterMember = await getMemberById(db, rosterId);
+		rosterMember = await getMemberById(db, rosterId, locals.org.id);
 		if (!rosterMember) {
 			throw error(404, 'Roster member not found');
 		}

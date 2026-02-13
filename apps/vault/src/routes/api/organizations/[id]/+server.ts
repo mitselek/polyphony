@@ -29,7 +29,7 @@ export async function GET(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	// Security: verify params.id matches current org
@@ -51,7 +51,7 @@ export async function PATCH(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	// Security: verify params.id matches current org

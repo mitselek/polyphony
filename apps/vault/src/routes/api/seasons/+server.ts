@@ -12,7 +12,7 @@ export async function GET({ url, platform, cookies, locals }: RequestEvent) {
 	}
 
 	// Auth: any authenticated member can view seasons
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const orgId = locals.org.id;
 
@@ -36,7 +36,7 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 	}
 
 	// Auth: require admin role to create seasons
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const orgId = locals.org.id;

@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	const db = platform.env.DB;
 
 	// Require admin role
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const orgId = locals.org.id;

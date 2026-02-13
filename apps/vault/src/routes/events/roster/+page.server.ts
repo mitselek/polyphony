@@ -1,5 +1,6 @@
 // Server-side loader for roster table page
 import { error } from '@sveltejs/kit';
+import type { OrgId } from '@polyphony/shared';
 import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { getRosterView } from '$lib/server/db/roster';
@@ -17,7 +18,7 @@ interface SectionRow {
 }
 
 interface RosterFilters {
-	orgId?: string;
+	orgId?: OrgId;
 	start?: string;
 	end?: string;
 	sectionId?: string;
@@ -26,7 +27,7 @@ interface RosterFilters {
 /**
  * Get unique primary sections that have singers assigned
  */
-async function getActiveSections(db: D1Database, orgId: string): Promise<Section[]> {
+async function getActiveSections(db: D1Database, orgId: OrgId): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
 			`SELECT DISTINCT s.id, s.org_id, s.name, s.abbreviation, s.parent_section_id, s.display_order, s.is_active
@@ -49,7 +50,7 @@ async function getActiveSections(db: D1Database, orgId: string): Promise<Section
 	}));
 }
 
-async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId: string): Promise<Season | null> {
+async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId: OrgId): Promise<Season | null> {
 	if (seasonIdParam) {
 		return await getSeason(db, seasonIdParam);
 	}
@@ -58,7 +59,7 @@ async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId
 	return await getSeasonByDate(db, orgId, today);
 }
 
-function buildRosterFilters(dateRange: { start?: string; end?: string | null }, orgId: string, sectionIdParam: string | null): RosterFilters {
+function buildRosterFilters(dateRange: { start?: string; end?: string | null }, orgId: OrgId, sectionIdParam: string | null): RosterFilters {
 	return {
 		orgId,
 		start: dateRange.start,
@@ -71,7 +72,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	if (!platform) throw error(500, 'Platform not available');
 	const db = platform.env.DB;
 
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	const orgId = locals.org.id;
 
 	const seasonIdParam = url.searchParams.get('seasonId');
@@ -82,7 +83,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	const filters = buildRosterFilters(dateRange, orgId, sectionIdParam);
 
 	const [roster, sections, seasonNav] = await Promise.all([
-		getRosterView(db, filters),
+		getRosterView(db, locals.org.id, filters),
 		getActiveSections(db, orgId),
 		season ? getSeasonNavigation(db, orgId, season.id) : Promise.resolve({ prev: null, next: null })
 	]);

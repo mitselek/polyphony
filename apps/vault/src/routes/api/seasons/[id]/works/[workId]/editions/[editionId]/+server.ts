@@ -18,11 +18,11 @@ async function requireSeasonWork(db: D1Database, seasonId: string, seasonWorkId:
 	return seasonWork;
 }
 
-export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
+export const DELETE: RequestHandler = async ({ params, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	await requireSeasonWork(db, params.id, params.workId);
@@ -32,11 +32,11 @@ export const DELETE: RequestHandler = async ({ params, platform, cookies }) => {
 	return new Response(null, { status: 204 });
 };
 
-export const PATCH: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const PATCH: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 
 	const db = platform.env.DB;
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	await requireSeasonWork(db, params.id, params.workId);

@@ -1,4 +1,5 @@
 // Auth middleware for route protection
+import type { OrgId } from '@polyphony/shared';
 import { getMemberById, type Member } from '$lib/server/db/members';
 import { requireRole, type Role } from './permissions';
 
@@ -12,6 +13,7 @@ export interface AuthMiddlewareResult {
 export interface AuthMiddlewareParams {
 	db: D1Database;
 	memberId: string | null | undefined;
+	orgId: OrgId;
 }
 
 /**
@@ -19,12 +21,13 @@ export interface AuthMiddlewareParams {
  */
 export async function getMemberFromCookie(
 	db: D1Database,
-	memberId: string | null | undefined
+	memberId: string | null | undefined,
+	orgId: OrgId
 ): Promise<Member | null> {
 	if (!memberId) {
 		return null;
 	}
-	return await getMemberById(db, memberId);
+	return await getMemberById(db, memberId, orgId);
 }
 
 /**
@@ -32,9 +35,9 @@ export async function getMemberFromCookie(
  */
 export function createAuthMiddleware(minRole: Role) {
 	return async (params: AuthMiddlewareParams): Promise<AuthMiddlewareResult> => {
-		const { db, memberId } = params;
+		const { db, memberId, orgId } = params;
 
-		const member = await getMemberFromCookie(db, memberId);
+		const member = await getMemberFromCookie(db, memberId, orgId);
 
 		if (!member) {
 			return {
@@ -77,18 +80,19 @@ import type { Cookies } from '@sveltejs/kit';
 
 /**
  * Get authenticated member or throw 401
- * Use in routes: const member = await getAuthenticatedMember(db, cookies);
+ * Use in routes: const member = await getAuthenticatedMember(db, cookies, orgId);
  */
 export async function getAuthenticatedMember(
 	db: D1Database,
-	cookies: Cookies
+	cookies: Cookies,
+	orgId: OrgId
 ): Promise<Member> {
 	const memberId = cookies.get('member_id');
 	if (!memberId) {
 		throw error(401, 'Authentication required');
 	}
 	
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, orgId);
 	if (!member) {
 		throw error(401, 'Invalid session');
 	}

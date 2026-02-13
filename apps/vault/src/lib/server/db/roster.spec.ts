@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { D1Database } from '@cloudflare/workers-types';
+import { createOrgId } from '@polyphony/shared';
 import { getRosterView } from './roster';
 import type { RosterViewFilters } from '$lib/types';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock D1Database for testing
 function createMockDB(): D1Database & { __mockState: any } {
@@ -23,21 +26,24 @@ function createMockDB(): D1Database & { __mockState: any } {
 					first: async () => null,
 					all: async () => {
 						// Events query - now uses explicit columns with aliases
-						// SELECT id, title as name, starts_at as date, event_type as type FROM events
+						// SELECT id, title as name, starts_at as date, event_type as type FROM events WHERE org_id = ? [AND ...]
+						// First param is always orgId now
 						if (sql.includes('FROM events')) {
 							let results = Array.from(mockState.events.values());
 
+							// params[0] is always orgId; date filters start at params[1]
 							// Apply date filters (uses starts_at column)
 							if (sql.includes('starts_at >= ?') && sql.includes('starts_at <= ?')) {
-								const [start, end] = params;
+								const start = params[1];
+								const end = params[2];
 								results = results.filter(
 									(e) => new Date(e.starts_at) >= new Date(start) && new Date(e.starts_at) <= new Date(end)
 								);
 							} else if (sql.includes('starts_at >= ?')) {
-								const [start] = params;
+								const start = params[1];
 								results = results.filter((e) => new Date(e.starts_at) >= new Date(start));
 							} else if (sql.includes('starts_at <= ?')) {
-								const [end] = params;
+								const end = params[1];
 								results = results.filter((e) => new Date(e.starts_at) <= new Date(end));
 							}
 
@@ -56,12 +62,13 @@ function createMockDB(): D1Database & { __mockState: any } {
 						}
 
 // Members query (with section filtering and section columns)
+// params[0] is always orgId (for member_organizations join)
 					if (sql.includes('SELECT DISTINCT m.') || sql.includes('SELECT * FROM members')) {
 						let results = Array.from(mockState.members.values());
 
-						// Apply section filter via join
-						if (sql.includes('JOIN member_sections') && params.length > 0) {
-							const [sectionId] = params;
+						// Apply section filter via WHERE clause; sectionId is params[1] (after orgId)
+						if (sql.includes('section_id = ?') && params.length > 1) {
+							const sectionId = params[1];
 							const membersInSection = Array.from(mockState.memberSections.entries())
 								.filter(([_, secs]) => secs.some((s) => s.section_id === sectionId))
 								.map(([memberId]) => memberId);
@@ -120,7 +127,28 @@ function createMockDB(): D1Database & { __mockState: any } {
 							return { results: Array.from(mockState.voices.values()) };
 						}
 
-						// Member sections query
+						// Member sections query (queryMemberSections joins sections + member_sections)
+						if (sql.includes('FROM sections') && sql.includes('member_sections') && sql.includes('member_id = ?')) {
+							const [memberId] = params;
+							const memberSecs = mockState.memberSections.get(memberId) || [];
+							// Join with section data to return full section objects
+							const results = memberSecs.map((ms: any) => {
+								const section = mockState.sections.get(ms.section_id);
+								return {
+									id: ms.section_id,
+									org_id: TEST_ORG_ID,
+									name: section?.name ?? '',
+									abbreviation: section?.abbreviation ?? '',
+									parent_section_id: null,
+									display_order: section?.display_order ?? 0,
+									is_active: section?.is_active ?? 1,
+									is_primary: ms.is_primary ?? 0
+								};
+							});
+							return { results };
+						}
+
+						// Legacy member sections query
 						if (sql.includes('FROM member_sections WHERE member_id = ?')) {
 							const [memberId] = params;
 							const memberSecs = mockState.memberSections.get(memberId) || [];
@@ -128,7 +156,7 @@ function createMockDB(): D1Database & { __mockState: any } {
 						}
 
 						// Member voices query
-						if (sql.includes('FROM member_voices WHERE member_id = ?')) {
+						if (sql.includes('FROM member_voices WHERE member_id = ?') || (sql.includes('FROM voices') && sql.includes('member_voices') && sql.includes('member_id = ?'))) {
 							const [memberId] = params;
 							const memberVcs = mockState.memberVoices.get(memberId) || [];
 							return { results: memberVcs };
@@ -208,7 +236,7 @@ describe('Roster View Database Functions', () => {
 
 	describe('getRosterView', () => {
 		it('should return empty arrays and zero summary with no data', async () => {
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.events).toEqual([]);
 			expect(result.members).toEqual([]);
@@ -222,7 +250,7 @@ describe('Roster View Database Functions', () => {
 				events: [{ id: 'evt_1', name: 'Rehearsal 1', starts_at: '2026-02-01', type: 'rehearsal' }]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.events.length).toBe(1);
 			expect(result.events[0].name).toBe('Rehearsal 1');
@@ -234,7 +262,7 @@ describe('Roster View Database Functions', () => {
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.members.length).toBe(1);
 			expect(result.members[0].name).toBe('Test User');
@@ -247,7 +275,7 @@ describe('Roster View Database Functions', () => {
 				members: [{ id: 'mem_1', email: 'test@example.com', name: 'Test User' }]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.events.length).toBe(1);
 			expect(result.members.length).toBe(1);
@@ -275,7 +303,7 @@ describe('Roster View Database Functions', () => {
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			const status = result.events[0].participation.get('mem_1');
 			expect(status?.plannedStatus).toBe('yes');
@@ -298,7 +326,7 @@ describe('Roster View Database Functions', () => {
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			const status = result.events[0].participation.get('mem_1');
 			expect(status?.plannedStatus).toBe('yes');
@@ -315,7 +343,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 			]
 		});
 
-		const result = await getRosterView(mockDb);
+		const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 		expect(result.events[0].date).toBe('2026-01-15');
 		expect(result.events[1].date).toBe('2026-01-30');
@@ -331,7 +359,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.members[0].name).toBe('Alice');
 			expect(result.members[1].name).toBe('Bob');
@@ -348,7 +376,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 			});
 
 			const filters: RosterViewFilters = { start: '2026-02-01' };
-			const result = await getRosterView(mockDb, filters);
+			const result = await getRosterView(mockDb, TEST_ORG_ID, filters);
 
 			expect(result.events.length).toBe(2);
 			expect(result.events.every((e) => e.date >= '2026-02-01')).toBe(true);
@@ -364,7 +392,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 			});
 
 			const filters: RosterViewFilters = { end: '2026-02-28' };
-			const result = await getRosterView(mockDb, filters);
+			const result = await getRosterView(mockDb, TEST_ORG_ID, filters);
 
 			expect(result.events.length).toBe(2);
 			expect(result.events.every((e) => e.date <= '2026-02-28')).toBe(true);
@@ -383,7 +411,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 				start: '2026-02-01',
 				end: '2026-02-28'
 			};
-			const result = await getRosterView(mockDb, filters);
+			const result = await getRosterView(mockDb, TEST_ORG_ID, filters);
 
 			expect(result.events.length).toBe(1);
 			expect(result.events[0].date).toBe('2026-02-20');
@@ -412,7 +440,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 			});
 
 			const filters: RosterViewFilters = { sectionId: 'sec_soprano' };
-			const result = await getRosterView(mockDb, filters);
+			const result = await getRosterView(mockDb, TEST_ORG_ID, filters);
 
 			expect(result.members.length).toBe(2);
 			expect(result.members.map((m) => m.name)).toContain('Alice');
@@ -466,7 +494,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			expect(result.summary.totalEvents).toBe(2);
 			expect(result.summary.totalMembers).toBe(2);
@@ -495,7 +523,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			// Check section summary exists
 			expect(result.summary.sectionStats).toBeDefined();
@@ -542,7 +570,7 @@ it('should sort multiple events by date ASC (chronological, oldest first)', asyn
 				]
 			});
 
-			const result = await getRosterView(mockDb);
+			const result = await getRosterView(mockDb, TEST_ORG_ID);
 
 			// Only active section should appear
 			expect(Object.keys(result.summary.sectionStats)).toHaveLength(1);

@@ -3,7 +3,7 @@ import { getMemberById } from '$lib/server/db/members';
 import { getSetting } from '$lib/server/db/settings';
 import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ platform, cookies }) => {
+export const load: LayoutServerLoad = async ({ platform, cookies, locals }) => {
 	const memberId = cookies.get('member_id');
 
 	if (!memberId || !platform?.env?.DB) {
@@ -12,7 +12,7 @@ export const load: LayoutServerLoad = async ({ platform, cookies }) => {
 
 	try {
 		const [member, localeSetting] = await Promise.all([
-			getMemberById(platform.env.DB, memberId),
+			getMemberById(platform.env.DB, memberId, locals.org.id),
 			getSetting(platform.env.DB, 'locale')
 		]);
 

@@ -4,14 +4,14 @@ import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { reassignVoice, getVoiceById } from '$lib/server/db/voices';
 
-export async function POST({ params, request, platform, cookies }: RequestEvent) {
+export async function POST({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const sourceVoiceId = params.id;

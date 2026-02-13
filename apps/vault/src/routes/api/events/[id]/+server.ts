@@ -13,12 +13,12 @@ import { getAuthenticatedMember } from '$lib/server/auth/middleware';
  * Requires: Authentication
  */
 export async function GET(event: RequestEvent) {
-	const { platform, cookies, params } = event;
+	const { platform, cookies, params, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require authentication
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const eventId = params.id;
 	if (!eventId) {
@@ -39,12 +39,12 @@ export async function GET(event: RequestEvent) {
  * Requires: Conductor role (manage events permission)
  */
 export async function PATCH(event: RequestEvent) {
-	const { platform, cookies, params, request } = event;
+	const { platform, cookies, params, request, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require manage events permission
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canManageEvents(member)) {
 		throw error(403, 'Only conductors and admins can manage events');
 	}
@@ -72,12 +72,12 @@ export async function PATCH(event: RequestEvent) {
  * Requires: Conductor role (delete events permission)
  */
 export async function DELETE(event: RequestEvent) {
-	const { platform, cookies, params } = event;
+	const { platform, cookies, params, locals } = event;
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
 	// Require delete events permission
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canDeleteEvents(member)) {
 		throw error(403, 'Only conductors and admins can delete events');
 	}

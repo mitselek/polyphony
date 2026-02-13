@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import type { OrgId } from '@polyphony/shared';
 import { error } from '@sveltejs/kit';
 import { getMemberById, getAllMembers, type Member } from '$lib/server/db/members';
 import { getEditionById } from '$lib/server/db/editions';
@@ -30,7 +31,7 @@ interface MemberForAssignment {
 async function loadCopiesWithAssignments(
 	db: D1Database,
 	editionId: string,
-	orgId?: string
+	orgId: OrgId
 ): Promise<CopyWithAssignment[]> {
 	const copies = await getPhysicalCopiesByEdition(db, editionId);
 	const members = await getAllMembers(db, orgId);
@@ -60,13 +61,13 @@ async function loadCopiesWithAssignments(
 	return copiesWithAssignments;
 }
 
-async function checkCanManage(db: D1Database, memberId: string | undefined): Promise<boolean> {
+async function checkCanManage(db: D1Database, memberId: string | undefined, orgId: OrgId): Promise<boolean> {
 	if (!memberId) return false;
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, orgId);
 	return member ? canUploadScores(member) : false;
 }
 
-async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean, orgId: string) {
+async function loadLibrarianData(db: D1Database, editionId: string, canManage: boolean, orgId: OrgId) {
 	if (!canManage) {
 		return { 
 			copies: [] as CopyWithAssignment[], 
@@ -105,9 +106,8 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 	const work = await getWorkById(db, edition.workId);
 	if (!work) throw error(404, 'Work not found');
 
-	const canManage = await checkCanManage(db, cookies.get('member_id'));
-
 	const orgId = locals.org.id;
+	const canManage = await checkCanManage(db, cookies.get('member_id'), orgId);
 
 	const [sections, librarianData] = await Promise.all([
 		getAllSections(db, orgId),

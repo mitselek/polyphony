@@ -1,5 +1,6 @@
 // Tests for /api/members/[id]/voices endpoint
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { POST, DELETE } from '../../../../routes/api/members/[id]/voices/+server';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Role } from '$lib/types';
@@ -80,7 +81,7 @@ function createMockEvent(options: {
 		cookies: {
 			get: vi.fn(() => (isAuthenticated ? 'mock-token' : undefined))
 		},
-		locals: {}
+		locals: { org: { id: createOrgId('test-org') } } as any
 	} as any;
 }
 

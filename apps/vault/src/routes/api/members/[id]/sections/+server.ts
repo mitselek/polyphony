@@ -39,7 +39,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Authentication & Authorization
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	await assertAdmin(currentMember);
 
 	// Parse and validate request body
@@ -53,13 +53,13 @@ export async function POST(event: RequestEvent) {
 	const { sectionId, isPrimary } = validation.data;
 
 	// Check if member exists
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw error(404, 'Member not found');
 	}
 
 	// Add section to member (with org validation)
-	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id, orgId);
+	await addMemberSection(db, memberId, sectionId, isPrimary, currentMember.id, locals.org.id);
 
 	return json({
 		message: 'Section added successfully',
@@ -70,7 +70,7 @@ export async function POST(event: RequestEvent) {
 }
 
 export async function DELETE(event: RequestEvent) {
-	const { params, request, platform, cookies } = event;
+	const { params, request, platform, cookies, locals } = event;
 
 	// Check database availability
 	if (!platform?.env?.DB) {
@@ -81,7 +81,7 @@ export async function DELETE(event: RequestEvent) {
 	const memberId = params.id!;
 
 	// Authentication & Authorization
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 	await assertAdmin(currentMember);
 
 	// Parse and validate request body
@@ -95,7 +95,7 @@ export async function DELETE(event: RequestEvent) {
 	const { sectionId } = validation.data;
 
 	// Check if member exists
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, locals.org.id);
 	if (!member) {
 		throw error(404, 'Member not found');
 	}

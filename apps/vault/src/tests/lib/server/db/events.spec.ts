@@ -1,5 +1,6 @@
 // Tests for events database operations
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createEvents,
 	getUpcomingEvents,
@@ -10,7 +11,7 @@ import {
 import type { EventType } from '$lib/types';
 
 // Test org ID (matches DEFAULT_ORG_ID)
-const TEST_ORG_ID = 'org_crede_001';
+const TEST_ORG_ID = createOrgId('org_crede_001');
 
 // Mock D1 database
 interface MockRow {

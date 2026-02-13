@@ -18,7 +18,7 @@ export async function GET(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require authentication
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const orgId = locals.org.id;
 
@@ -38,7 +38,7 @@ export async function POST(event: RequestEvent) {
 	const db = platform.env.DB;
 
 	// Require conductor permission
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canCreateEvents(member)) {
 		throw error(403, 'Only conductors and admins can create events');
 	}

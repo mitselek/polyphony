@@ -1,12 +1,13 @@
 // Invite database operations for member invitation system
 
+import { createOrgId, type OrgId } from '@polyphony/shared';
 import type { Role, Voice, Section } from '$lib/types';
 import { generateId } from '$lib/server/utils/id';
 import { addMemberRoles } from './roles';
 
 export interface Invite {
 	id: string;
-	orgId: string;
+	orgId: OrgId;
 	roster_member_id: string; // Links to roster member
 	roster_member_name: string; // For display (from JOIN)
 	token: string;
@@ -19,7 +20,7 @@ export interface Invite {
 }
 
 export interface CreateInviteInput {
-	orgId: string; // Required: which organization
+	orgId: OrgId; // Required: which organization
 	rosterMemberId: string; // Required: which roster member to invite
 	roles: Role[]; // Roles to grant upon acceptance
 	invited_by: string;
@@ -52,10 +53,11 @@ function generateToken(): string {
  */
 async function validateRosterMemberForInvite(
 	db: D1Database,
-	rosterMemberId: string
+	rosterMemberId: string,
+	orgId: OrgId
 ): Promise<{ name: string }> {
 	const { getMemberById } = await import('./members');
-	const rosterMember = await getMemberById(db, rosterMemberId);
+	const rosterMember = await getMemberById(db, rosterMemberId, orgId);
 	
 	if (!rosterMember) {
 		throw new Error('Roster member not found');
@@ -86,7 +88,7 @@ export async function createInvite(
 	input: CreateInviteInput
 ): Promise<Invite> {
 	// Validate roster member and get their name
-	const { name } = await validateRosterMemberForInvite(db, input.rosterMemberId);
+	const { name } = await validateRosterMemberForInvite(db, input.rosterMemberId, input.orgId);
 
 	// Create invite linked to roster member
 	const id = generateId();
@@ -133,7 +135,7 @@ async function loadInviteRelations(
 
 	// Get roster member to load name, voices, and sections
 	const { getMemberById } = await import('./members');
-	const rosterMember = await getMemberById(db, inviteRow.roster_member_id);
+	const rosterMember = await getMemberById(db, inviteRow.roster_member_id, inviteRow.orgId);
 	
 	// Handle missing roster member
 	const memberName = rosterMember?.name ?? 'Unknown Member';
@@ -156,17 +158,20 @@ export async function getInviteByToken(
 	db: D1Database,
 	token: string
 ): Promise<Invite | null> {
-	const result = await db
+	const row = await db
 		.prepare(
-			`SELECT id, org_id as orgId, roster_member_id, token, invited_by, expires_at, created_at
+			`SELECT id, org_id, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE token = ?`
 		)
 		.bind(token)
-		.first<Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.first<{ id: string; org_id: string; roster_member_id: string; token: string; invited_by: string; expires_at: string; created_at: string }>();
 
-	if (!result) return null;
+	if (!row) return null;
 
-	return await loadInviteRelations(db, result);
+	return await loadInviteRelations(db, {
+		...row,
+		orgId: createOrgId(row.org_id)
+	});
 }
 
 /**
@@ -176,17 +181,20 @@ export async function getInviteById(
 	db: D1Database,
 	inviteId: string
 ): Promise<Invite | null> {
-	const result = await db
+	const row = await db
 		.prepare(
-			`SELECT id, org_id as orgId, roster_member_id, token, invited_by, expires_at, created_at
+			`SELECT id, org_id, roster_member_id, token, invited_by, expires_at, created_at
 			 FROM invites WHERE id = ?`
 		)
 		.bind(inviteId)
-		.first<Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.first<{ id: string; org_id: string; roster_member_id: string; token: string; invited_by: string; expires_at: string; created_at: string }>();
 
-	if (!result) return null;
+	if (!row) return null;
 
-	return await loadInviteRelations(db, result);
+	return await loadInviteRelations(db, {
+		...row,
+		orgId: createOrgId(row.org_id)
+	});
 }
 
 /**
@@ -214,12 +222,13 @@ export async function acceptInvite(
 	const member = await upgradeToRegistered(
 		db,
 		invite.roster_member_id,
-		email
+		email,
+		invite.orgId
 	);
 
 	// Transfer roles from invite to member
 	if (invite.roles.length > 0) {
-		await addMemberRoles(db, member.id, invite.roles, invite.invited_by);
+		await addMemberRoles(db, member.id, invite.roles, invite.invited_by, invite.orgId);
 	}
 
 	// Delete invite after successful acceptance (cleanup)
@@ -236,11 +245,11 @@ export async function acceptInvite(
  */
 export async function getPendingInvites(
 	db: D1Database,
-	orgId: string
+	orgId: OrgId
 ): Promise<(Invite & { inviter_name: string | null; inviter_email: string | null })[]> {
 	const result = await db
 		.prepare(
-			`SELECT i.id, i.org_id as orgId, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.created_at,
+			`SELECT i.id, i.org_id, i.roster_member_id, i.token, i.invited_by, i.expires_at, i.created_at,
 			        inviter.name as inviter_name, inviter.email_id as inviter_email
 			 FROM invites i
 			 JOIN members inviter ON i.invited_by = inviter.id
@@ -248,12 +257,20 @@ export async function getPendingInvites(
 			 ORDER BY i.created_at DESC`
 		)
 		.bind(orgId)
-		.all<{ inviter_name: string | null; inviter_email: string | null } & Omit<Invite, 'roles' | 'voices' | 'sections' | 'roster_member_name'>>();
+		.all<{ id: string; org_id: string; roster_member_id: string; token: string; invited_by: string; expires_at: string; created_at: string; inviter_name: string | null; inviter_email: string | null }>();
 
 	// Load relations for each invite
 	const invitesWithRelations = await Promise.all(
 		result.results.map(async (row) => {
-			const invite = await loadInviteRelations(db, row);
+			const invite = await loadInviteRelations(db, {
+				id: row.id,
+				orgId: createOrgId(row.org_id),
+				roster_member_id: row.roster_member_id,
+				token: row.token,
+				invited_by: row.invited_by,
+				expires_at: row.expires_at,
+				created_at: row.created_at
+			});
 			return {
 				...invite,
 				inviter_name: row.inviter_name,

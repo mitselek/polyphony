@@ -13,7 +13,7 @@ export async function GET({ url, platform, cookies, locals }: RequestEvent) {
 	}
 
 	// Auth: any authenticated member can view works
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const orgId = locals.org.id;
 
@@ -36,7 +36,7 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 	}
 
 	// Auth: require librarian role to create works
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const orgId = locals.org.id;

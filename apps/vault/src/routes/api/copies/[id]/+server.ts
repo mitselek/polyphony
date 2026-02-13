@@ -30,12 +30,12 @@ function validateUpdateInput(body: UpdateInput): string | null {
 	return null;
 }
 
-export async function GET({ params, platform, cookies }: RequestEvent) {
+export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
 	// Auth: any authenticated member can view
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const copyId = params.id;
 	if (!copyId) throw error(400, 'Copy ID is required');
@@ -46,12 +46,12 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	return json(copy);
 }
 
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
 	// Auth: librarian role required
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const copyId = params.id;
@@ -76,12 +76,12 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	return json(copy);
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
 	// Auth: librarian role required
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const copyId = params.id;

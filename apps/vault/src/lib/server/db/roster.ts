@@ -171,15 +171,20 @@ function calculateAttendanceSummary(
 /**
  * Get comprehensive roster view with events, members, and participation
  * @param db - D1 Database instance
+ * @param orgId - Required organization ID for scoping sections
  * @param filters - Optional filters for date range and section
  * @returns Complete roster view with events, members, and summary statistics
  */
 export async function getRosterView(
 	db: D1Database,
+	orgId: import('@polyphony/shared').OrgId,
 	filters?: RosterViewFilters
 ): Promise<RosterView> {
+	// Merge orgId into filters for consistent handling
+	const effectiveFilters: RosterViewFilters = { ...filters, orgId };
+
 	// Fetch events with date filtering
-	const eventsQuery = buildEventsQuery(filters);
+	const eventsQuery = buildEventsQuery(effectiveFilters);
 	const eventsResult = await db
 		.prepare(eventsQuery.sql)
 		.bind(...eventsQuery.params)
@@ -193,7 +198,7 @@ export async function getRosterView(
 	const events = eventsResult.results;
 
 	// Fetch members with optional section filtering
-	const membersQuery = buildMembersQuery(filters);
+	const membersQuery = buildMembersQuery(effectiveFilters);
 	const membersResult = await db
 		.prepare(membersQuery.sql)
 		.bind(...membersQuery.params)
@@ -277,7 +282,7 @@ export async function getRosterView(
 	// Note: Members are already sorted by s.display_order from the query
 	const rosterMembers: RosterMember[] = await Promise.all(
 		members.map(async (member) => {
-			const memberSections = await queryMemberSections(db, member.id, filters?.orgId);
+			const memberSections = await queryMemberSections(db, member.id, orgId);
 			
 			// Use primary section from the query result (preserves sort order)
 			// The query already joined with primary section and ordered by display_order

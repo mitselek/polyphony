@@ -1,6 +1,9 @@
 // Tests for authentication middleware with registration checks (Issue #97)
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock SvelteKit error function
 vi.mock('@sveltejs/kit', () => ({
@@ -55,7 +58,7 @@ describe('Authentication middleware - Registration checks', () => {
 		const cookies = createMockCookies('roster-123');
 
 		try {
-			await getAuthenticatedMember(mockDB, cookies);
+			await getAuthenticatedMember(mockDB, cookies, TEST_ORG_ID);
 			expect.fail('Expected error to be thrown');
 		} catch (err: any) {
 			expect(err.status).toBe(401);
@@ -81,7 +84,7 @@ describe('Authentication middleware - Registration checks', () => {
 		const mockDB = {} as D1Database;
 		const cookies = createMockCookies('member-456');
 
-		const member = await getAuthenticatedMember(mockDB, cookies);
+		const member = await getAuthenticatedMember(mockDB, cookies, TEST_ORG_ID);
 
 		expect(member).not.toBeNull();
 		expect(member.id).toBe('member-456');
@@ -93,7 +96,7 @@ describe('Authentication middleware - Registration checks', () => {
 		const cookies = createMockCookies(); // No member_id
 
 		try {
-			await getAuthenticatedMember(mockDB, cookies);
+			await getAuthenticatedMember(mockDB, cookies, TEST_ORG_ID);
 			expect.fail('Expected error to be thrown');
 		} catch (err: any) {
 			expect(err.status).toBe(401);
@@ -110,7 +113,7 @@ describe('Authentication middleware - Registration checks', () => {
 		const cookies = createMockCookies('invalid-id');
 
 		try {
-			await getAuthenticatedMember(mockDB, cookies);
+			await getAuthenticatedMember(mockDB, cookies, TEST_ORG_ID);
 			expect.fail('Expected error to be thrown');
 		} catch (err: any) {
 			expect(err.status).toBe(401);

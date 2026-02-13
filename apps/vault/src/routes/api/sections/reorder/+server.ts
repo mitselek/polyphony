@@ -18,11 +18,11 @@ function validateReorderRequest(body: { orgId?: string; sectionIds?: string[] })
 	return null;
 }
 
-export async function POST({ request, platform, cookies }: RequestEvent) {
+export async function POST({ request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const body = (await request.json()) as { orgId?: string; sectionIds?: string[] };
@@ -31,7 +31,7 @@ export async function POST({ request, platform, cookies }: RequestEvent) {
 
 	try {
 		await reorderSections(db, body.sectionIds!);
-		const sections = await getAllSectionsWithCounts(db, body.orgId!);
+		const sections = await getAllSectionsWithCounts(db, locals.org.id);
 		return json(sections);
 	} catch (err) {
 		console.error('Failed to reorder sections:', err);

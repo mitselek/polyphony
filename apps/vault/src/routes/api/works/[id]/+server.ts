@@ -7,14 +7,14 @@ import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middle
 import { getWorkById, updateWork, deleteWork } from '$lib/server/db/works';
 import type { UpdateWorkInput } from '$lib/types';
 
-export async function GET({ params, platform, cookies }: RequestEvent) {
+export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: any authenticated member can view works
-	await getAuthenticatedMember(db, cookies);
+	await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	const workId = params.id;
 	if (!workId) {
@@ -29,14 +29,14 @@ export async function GET({ params, platform, cookies }: RequestEvent) {
 	return json(work);
 }
 
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require librarian role to update works
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const workId = params.id;
@@ -83,14 +83,14 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	return json(work);
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require librarian role to delete works
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
 	const workId = params.id;

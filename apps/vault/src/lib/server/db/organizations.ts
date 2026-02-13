@@ -1,6 +1,7 @@
 // Organization database operations
 // Part of Schema V2 multi-organization support
 
+import { createOrgId } from '@polyphony/shared';
 import type { Organization, CreateOrganizationInput, UpdateOrganizationInput } from '$lib/types';
 import { generateId } from '$lib/server/utils/id';
 
@@ -22,7 +23,7 @@ export async function createOrganization(
 		.run();
 
 	return {
-		id,
+		id: createOrgId(id),
 		name: input.name,
 		subdomain: input.subdomain.toLowerCase(),
 		type: input.type,
@@ -154,7 +155,7 @@ interface OrganizationRow {
 
 function mapRowToOrganization(row: OrganizationRow): Organization {
 	return {
-		id: row.id,
+		id: createOrgId(row.id),
 		name: row.name,
 		subdomain: row.subdomain,
 		type: row.type,

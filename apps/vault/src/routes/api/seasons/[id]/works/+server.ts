@@ -22,11 +22,11 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 	return json(repertoire);
 };
 
-export const POST: RequestHandler = async ({ params, request, platform, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, platform, cookies, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 	const db = platform.env.DB;
 
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 	await requireSeason(db, params.id);
 

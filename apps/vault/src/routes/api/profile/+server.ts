@@ -9,14 +9,14 @@ interface UpdateProfileRequest {
 	name: string;
 }
 
-export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
+export const PATCH: RequestHandler = async ({ request, platform, cookies, locals }) => {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Authenticate
-	const currentMember = await getAuthenticatedMember(db, cookies);
+	const currentMember = await getAuthenticatedMember(db, cookies, locals.org.id);
 
 	// Parse and validate request body
 	const body = (await request.json()) as UpdateProfileRequest;
@@ -32,7 +32,7 @@ export const PATCH: RequestHandler = async ({ request, platform, cookies }) => {
 
 	// Update name with uniqueness validation
 	try {
-		const updated = await updateMemberName(db, currentMember.id, trimmedName);
+		const updated = await updateMemberName(db, currentMember.id, trimmedName, locals.org.id);
 		return json(updated);
 	} catch (err) {
 		if (err instanceof Error && err.message.includes('already exists')) {

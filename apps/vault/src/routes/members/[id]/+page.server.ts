@@ -1,5 +1,6 @@
 // Member profile page server load - fetch member by ID
 import { error, redirect } from '@sveltejs/kit';
+import type { OrgId } from '@polyphony/shared';
 import type { PageServerLoad } from './$types';
 import { getMemberById, getAllMembers, type Member } from '$lib/server/db/members';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
@@ -18,9 +19,9 @@ interface AuthContext {
 	ownerCount: number;
 }
 
-async function loadAuthContext(db: D1Database, cookies: unknown, orgId: string): Promise<AuthContext> {
+async function loadAuthContext(db: D1Database, cookies: unknown, orgId: OrgId): Promise<AuthContext> {
 	try {
-		const currentUser = await getAuthenticatedMember(db, cookies as Parameters<typeof getAuthenticatedMember>[1]);
+		const currentUser = await getAuthenticatedMember(db, cookies as Parameters<typeof getAuthenticatedMember>[1], orgId);
 		const isOwner = currentUser.roles.includes('owner');
 		const isAdmin = currentUser.roles.some((r) => ['admin', 'owner'].includes(r));
 		
@@ -35,7 +36,7 @@ async function loadAuthContext(db: D1Database, cookies: unknown, orgId: string):
 	}
 }
 
-async function loadAdminData(db: D1Database, isAdmin: boolean, orgId: string) {
+async function loadAdminData(db: D1Database, isAdmin: boolean, orgId: OrgId) {
 	if (!isAdmin) return { availableVoices: [], availableSections: [] };
 	const [availableVoices, availableSections] = await Promise.all([
 		getActiveVoices(db),
@@ -69,7 +70,7 @@ function formatMemberData(member: Member) {
 	};
 }
 
-async function loadI18nPreferences(db: D1Database, memberId: string, orgId: string, isOwnProfile: boolean) {
+async function loadI18nPreferences(db: D1Database, memberId: string, orgId: OrgId, isOwnProfile: boolean) {
 	if (!isOwnProfile) return { resolvedPrefs: null, memberPrefs: null };
 	
 	const [resolvedPrefs, memberPrefs] = await Promise.all([

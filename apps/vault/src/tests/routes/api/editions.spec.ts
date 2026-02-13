@@ -1,6 +1,7 @@
 // Editions API route tests
 // Tests GET/POST /api/works/[id]/editions and GET/PATCH/DELETE /api/editions/[id]
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Edition } from '$lib/types';
 
@@ -87,6 +88,7 @@ function createMockEvent(overrides: Partial<RequestEvent> = {}): RequestEvent {
 			serialize: vi.fn()
 		},
 		request: new Request('http://localhost/api/editions/edition-1'),
+		locals: { org: { id: createOrgId('test-org') } } as any,
 		...overrides
 	} as unknown as RequestEvent;
 }

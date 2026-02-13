@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import type { OrgId } from '@polyphony/shared';
 import { error } from '@sveltejs/kit';
 import { getMemberById } from '$lib/server/db/members';
 import { canUploadScores } from '$lib/server/auth/permissions';
@@ -6,9 +7,9 @@ import { getWorkById } from '$lib/server/db/works';
 import { getEditionsByWorkId } from '$lib/server/db/editions';
 import { getAllSections } from '$lib/server/db/sections';
 
-async function checkCanManage(db: D1Database, memberId: string | undefined): Promise<boolean> {
+async function checkCanManage(db: D1Database, memberId: string | undefined, orgId: OrgId): Promise<boolean> {
 	if (!memberId) return false;
-	const member = await getMemberById(db, memberId);
+	const member = await getMemberById(db, memberId, orgId);
 	return member ? canUploadScores(member) : false;
 }
 
@@ -27,7 +28,7 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 	const [editions, sections, canManage] = await Promise.all([
 		getEditionsByWorkId(db, workId),
 		getAllSections(db, orgId),
-		checkCanManage(db, cookies.get('member_id'))
+		checkCanManage(db, cookies.get('member_id'), orgId)
 	]);
 
 	return { work, editions, sections, canManage };

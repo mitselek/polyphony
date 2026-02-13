@@ -2,12 +2,13 @@
 // Seasons define date-based groupings for events
 // Events belong to seasons by date, not explicit FK
 
+import { createOrgId, type OrgId } from '@polyphony/shared';
 import { nanoid } from 'nanoid';
 import type { Event } from './events';
 
 export interface Season {
 	id: string;
-	orgId: string;
+	orgId: OrgId;
 	name: string;
 	start_date: string; // YYYY-MM-DD
 	created_at: string;
@@ -29,7 +30,7 @@ interface SeasonRow {
 function rowToSeason(row: SeasonRow): Season {
 	return {
 		id: row.id,
-		orgId: row.org_id,
+		orgId: createOrgId(row.org_id),
 		name: row.name,
 		start_date: row.start_date,
 		created_at: row.created_at,
@@ -38,7 +39,7 @@ function rowToSeason(row: SeasonRow): Season {
 }
 
 export interface CreateSeasonInput {
-	orgId: string;
+	orgId: OrgId;
 	name: string;
 	start_date: string; // YYYY-MM-DD
 }
@@ -102,7 +103,7 @@ export async function getSeason(
 /**
  * Get all seasons for an organization ordered by start_date DESC (most recent first)
  */
-export async function getAllSeasons(db: D1Database, orgId: string): Promise<Season[]> {
+export async function getAllSeasons(db: D1Database, orgId: OrgId): Promise<Season[]> {
 	const result = await db
 		.prepare('SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE org_id = ? ORDER BY start_date DESC')
 		.bind(orgId)
@@ -117,7 +118,7 @@ export async function getAllSeasons(db: D1Database, orgId: string): Promise<Seas
  */
 export async function getSeasonByDate(
 	db: D1Database,
-	orgId: string,
+	orgId: OrgId,
 	date: string // YYYY-MM-DD
 ): Promise<Season | null> {
 	const row = await db
@@ -309,7 +310,7 @@ export interface SeasonNav {
  */
 export async function getSeasonNavigation(
 	db: D1Database,
-	orgId: string,
+	orgId: OrgId,
 	currentSeasonId: string
 ): Promise<SeasonNav> {
 	const seasons = await getAllSeasons(db, orgId); // Ordered by start_date DESC

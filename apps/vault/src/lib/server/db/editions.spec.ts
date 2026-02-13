@@ -1,5 +1,6 @@
 // Tests for editions database layer
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createEdition,
 	getEditionById,
@@ -9,6 +10,8 @@ import {
 	deleteEdition
 } from './editions';
 import type { CreateEditionInput, UpdateEditionInput } from '$lib/types';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock D1Database
 function createMockDb() {
@@ -175,7 +178,7 @@ describe('Editions database layer', () => {
 			];
 			mockDb._setAllResults(editionsWithWork);
 
-			const result = await getAllEditions(mockDb);
+			const result = await getAllEditions(mockDb, TEST_ORG_ID);
 
 			expect(result).toHaveLength(2);
 			expect(result[0].name).toBe('Full Score');
@@ -187,7 +190,7 @@ describe('Editions database layer', () => {
 
 		it('returns empty array when no editions', async () => {
 			mockDb._setAllResults([]);
-			const result = await getAllEditions(mockDb);
+			const result = await getAllEditions(mockDb, TEST_ORG_ID);
 			expect(result).toEqual([]);
 		});
 
@@ -197,7 +200,7 @@ describe('Editions database layer', () => {
 			];
 			mockDb._setAllResults(editionsWithWork);
 
-			const result = await getAllEditions(mockDb);
+			const result = await getAllEditions(mockDb, TEST_ORG_ID);
 
 			expect(result[0].workTitle).toBe('Anonymous Hymn');
 			expect(result[0].workComposer).toBeNull();

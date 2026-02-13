@@ -5,14 +5,14 @@ import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { toggleVoiceActive, getVoiceById, deleteVoice } from '$lib/server/db/voices';
 
-export async function PATCH({ params, request, platform, cookies }: RequestEvent) {
+export async function PATCH({ params, request, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const voiceId = params.id;
@@ -39,14 +39,14 @@ export async function PATCH({ params, request, platform, cookies }: RequestEvent
 	return json(voice);
 }
 
-export async function DELETE({ params, platform, cookies }: RequestEvent) {
+export async function DELETE({ params, platform, cookies, locals }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
 	}
 
 	// Auth: require admin
-	const member = await getAuthenticatedMember(db, cookies);
+	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
 	const voiceId = params.id;
