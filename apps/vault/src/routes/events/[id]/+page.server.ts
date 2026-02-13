@@ -8,6 +8,7 @@ import { getEditionsByWorkId } from '$lib/server/db/editions';
 import { getParticipation } from '$lib/server/db/participation';
 import { getEventRepertoire } from '$lib/server/db/event-repertoire';
 import { getEventMaterialsForMember } from '$lib/server/db/event-materials';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import { getAllWorks } from '$lib/server/db/works';
 import type { Edition } from '$lib/types';
 
@@ -45,6 +46,10 @@ export const load: PageServerLoad = async ({ platform, cookies, params, locals }
 
 	// Check if member can record attendance
 	const canRecordAttendanceFlag = canRecordAttendance(member);
+
+	// Issue #240: Trust Individual Responsibility setting
+	const org = await getOrganizationById(db, orgId);
+	const trustIndividualResponsibility = org?.trustIndividualResponsibility ?? false;
 
 	// ============================================================================
 	// EVENT REPERTOIRE (Issue #121)
@@ -94,6 +99,7 @@ export const load: PageServerLoad = async ({ platform, cookies, params, locals }
 		myParticipation,
 		hasStarted,
 		canRecordAttendance: canRecordAttendanceFlag,
+		trustIndividualResponsibility,
 		currentMemberId: member.id,
 		// Event repertoire (Issue #121)
 		repertoire,

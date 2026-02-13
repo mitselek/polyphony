@@ -3,6 +3,7 @@ import { error } from '@sveltejs/kit';
 import type { OrgId } from '@polyphony/shared';
 import type { PageServerLoad } from './$types';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import { getRosterView } from '$lib/server/db/roster';
 import { getSeasonByDate, getSeason, getSeasonNavigation, getSeasonDateRange, type Season } from '$lib/server/db/seasons';
 import type { Section } from '$lib/types';
@@ -92,12 +93,17 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		['conductor', 'section_leader', 'owner'].includes(r)
 	);
 
+	// Issue #240: Trust Individual Responsibility
+	const org = await getOrganizationById(db, orgId);
+	const trustIndividualResponsibility = org?.trustIndividualResponsibility ?? false;
+
 	return { 
 		roster, 
 		sections, 
 		filters,
 		currentMemberId: currentMember.id,
 		canManageParticipation,
+		trustIndividualResponsibility,
 		season: season ? { id: season.id, name: season.name } : null,
 		seasonNav
 	};

@@ -6,6 +6,7 @@ import { getParticipation, updateParticipation } from '$lib/server/db/participat
 import { getEventById } from '$lib/server/db/events';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canRecordAttendance } from '$lib/server/auth/permissions';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import type { ActualStatus } from '$lib/types';
 
 /**
@@ -19,11 +20,7 @@ export async function POST(event: RequestEvent) {
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
-	// Require conductor permission
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
-	if (!canRecordAttendance(member)) {
-		throw error(403, 'Only conductors and section leaders can record attendance');
-	}
 
 	const eventId = params.id;
 	if (!eventId) {
@@ -56,6 +53,22 @@ export async function POST(event: RequestEvent) {
 	const validStatuses: ActualStatus[] = ['present', 'absent', 'late'];
 	if (!validStatuses.includes(status)) {
 		throw error(400, 'Invalid status. Must be one of: present, absent, late');
+	}
+
+	// Permission check: conductor/section_leader OR (trust setting + own record)
+	const canManage = canRecordAttendance(member);
+	if (!canManage) {
+		// Issue #240: Check if trust setting allows self-service
+		const isOwn = member.id === memberId;
+		if (isOwn) {
+			const org = await getOrganizationById(db, locals.org.id);
+			const trustSetting = org?.trustIndividualResponsibility ?? false;
+			if (!trustSetting) {
+				throw error(403, 'Only conductors and section leaders can record attendance');
+			}
+		} else {
+			throw error(403, 'Only conductors and section leaders can record attendance');
+		}
 	}
 
 	// Check if participation record exists
@@ -96,10 +109,10 @@ export async function PUT(event: RequestEvent) {
 	if (!platform) throw new Error('Platform not available');
 	const db = platform.env.DB;
 
-	// Require conductor permission
+	// Require conductor/section_leader permission for bulk updates
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	if (!canRecordAttendance(member)) {
-		throw error(403, 'Only conductors and section leaders can record attendance');
+		throw error(403, 'Only conductors and section leaders can bulk-record attendance');
 	}
 
 	const eventId = params.id;

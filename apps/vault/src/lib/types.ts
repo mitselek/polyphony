@@ -35,6 +35,7 @@ export interface Organization {
 	language: string | null;  // ISO 639-1: 'et', 'en'
 	locale: string | null;    // BCP 47: 'et-EE', 'en-US'
 	timezone: string | null;  // IANA: 'Europe/Tallinn'
+	trustIndividualResponsibility: boolean; // Issue #240: delegate RSVP/attendance to members
 }
 
 /**
@@ -57,6 +58,8 @@ export interface UpdateOrganizationInput {
 	language?: string | null;
 	locale?: string | null;
 	timezone?: string | null;
+	// Issue #240: Trust Individual Responsibility
+	trustIndividualResponsibility?: boolean;
 }
 
 // ============================================================================

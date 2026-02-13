@@ -27,6 +27,8 @@
     eventId: string;
     hasStarted: boolean;
     canRecordAttendance: boolean;
+    trustIndividualResponsibility?: boolean;
+    currentMemberId?: string;
     myParticipation?: MyParticipation | null;
   }
 
@@ -34,8 +36,15 @@
     eventId,
     hasStarted,
     canRecordAttendance,
+    trustIndividualResponsibility = false,
+    currentMemberId = '',
     myParticipation = $bindable(null),
   }: Props = $props();
+
+  // Issue #240: Can current user edit their own RSVP (even for past events)?
+  let canEditOwnRsvp = $derived(!hasStarted || trustIndividualResponsibility);
+  // Issue #240: Can current user edit their own attendance?
+  let canEditOwnAttendance = $derived(hasStarted && trustIndividualResponsibility);
 
   // State
   let participationData = $state<ParticipationMember[]>([]);
@@ -44,6 +53,7 @@
   let showParticipationDetails = $state(false);
   let recordingAttendance = $state<Record<string, boolean>>({});
   let bulkUpdatingAttendance = $state(false);
+  let updatingOwnAttendance = $state(false);
 
   // Load participation on mount
   onMount(() => {
@@ -95,6 +105,36 @@
       toast.error(err instanceof Error ? err.message : "Failed to update RSVP");
     } finally {
       updatingRsvp = false;
+    }
+  }
+
+  async function updateOwnAttendance(status: ActualStatus) {
+    updatingOwnAttendance = true;
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: currentMemberId, status }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { message?: string };
+        throw new Error(errorData.message || "Failed to update attendance");
+      }
+
+      // Update local state
+      if (myParticipation) {
+        myParticipation = { ...myParticipation, actualStatus: status };
+      } else {
+        myParticipation = { plannedStatus: null, actualStatus: status };
+      }
+
+      await loadParticipation();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update attendance");
+    } finally {
+      updatingOwnAttendance = false;
     }
   }
 
@@ -207,7 +247,7 @@
   <h2 class="mb-4 text-2xl font-semibold">Participation</h2>
 
   <!-- My RSVP -->
-  {#if !hasStarted}
+  {#if canEditOwnRsvp}
     <div class="mb-6 rounded-lg bg-blue-50 p-4">
       <h3 class="mb-2 font-semibold text-blue-900">Your RSVP</h3>
       <div class="flex gap-2">
@@ -263,6 +303,50 @@
           RSVP is locked (event has started)
         {/if}
       </p>
+    </div>
+  {/if}
+
+  <!-- My Attendance (Issue #240: self-service when trust setting is enabled) -->
+  {#if canEditOwnAttendance && !canRecordAttendance}
+    <div class="mb-6 rounded-lg bg-purple-50 p-4">
+      <h3 class="mb-2 font-semibold text-purple-900">Your Attendance</h3>
+      <div class="flex gap-2">
+        <button
+          onclick={() => updateOwnAttendance("present")}
+          disabled={updatingOwnAttendance}
+          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
+          'present'
+            ? 'bg-green-600 text-white border-green-700'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
+        >
+          Present
+        </button>
+        <button
+          onclick={() => updateOwnAttendance("absent")}
+          disabled={updatingOwnAttendance}
+          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
+          'absent'
+            ? 'bg-red-600 text-white border-red-700'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
+        >
+          Absent
+        </button>
+        <button
+          onclick={() => updateOwnAttendance("late")}
+          disabled={updatingOwnAttendance}
+          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
+          'late'
+            ? 'bg-orange-600 text-white border-orange-700'
+            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
+        >
+          Late
+        </button>
+      </div>
+      {#if myParticipation?.actualStatus}
+        <p class="mt-2 text-sm text-purple-700">
+          Current status: <span class="font-medium capitalize">{myParticipation.actualStatus}</span>
+        </p>
+      {/if}
     </div>
   {/if}
 

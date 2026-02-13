@@ -167,3 +167,26 @@ export function canDeleteEvents(member: Member | null | undefined): boolean {
 export function canRecordAttendance(member: Member | null | undefined): boolean {
 	return hasPermission(member, 'attendance:record');
 }
+
+/**
+ * Check if a member can edit participation (RSVP/attendance) for a target member
+ * Issue #240: Trust Individual Responsibility
+ * 
+ * @param currentMember - The member making the edit
+ * @param targetMemberId - The member whose record is being edited
+ * @param trustIndividualResponsibility - Organization setting
+ * @param isAdmin - Whether currentMember has admin/owner role
+ * @returns true if the edit is allowed
+ */
+export function canEditParticipation(
+	currentMember: Member | null | undefined,
+	targetMemberId: string,
+	trustIndividualResponsibility: boolean,
+	isAdmin: boolean
+): boolean {
+	if (!currentMember) return false;
+	if (isAdmin) return true;
+	if (canRecordAttendance(currentMember)) return true;
+	if (trustIndividualResponsibility && currentMember.id === targetMemberId) return true;
+	return false;
+}

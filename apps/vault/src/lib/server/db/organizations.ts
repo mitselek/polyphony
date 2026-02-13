@@ -17,7 +17,7 @@ export async function createOrganization(
 
 	await db
 		.prepare(
-			'INSERT INTO organizations (id, name, subdomain, type, contact_email, created_at, language, locale, timezone) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL)'
+			'INSERT INTO organizations (id, name, subdomain, type, contact_email, created_at, language, locale, timezone, trust_individual_responsibility) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 0)'
 		)
 		.bind(id, input.name, input.subdomain.toLowerCase(), input.type, input.contactEmail, now)
 		.run();
@@ -31,7 +31,8 @@ export async function createOrganization(
 		createdAt: now,
 		language: null,
 		locale: null,
-		timezone: null
+		timezone: null,
+		trustIndividualResponsibility: false
 	};
 }
 
@@ -43,7 +44,7 @@ export async function getOrganizationById(
 	id: string
 ): Promise<Organization | null> {
 	const row = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations WHERE id = ?')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone, trust_individual_responsibility FROM organizations WHERE id = ?')
 		.bind(id)
 		.first<OrganizationRow>();
 
@@ -62,7 +63,7 @@ export async function getOrganizationBySubdomain(
 	subdomain: string
 ): Promise<Organization | null> {
 	const row = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations WHERE subdomain = ?')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone, trust_individual_responsibility FROM organizations WHERE subdomain = ?')
 		.bind(subdomain.toLowerCase())
 		.first<OrganizationRow>();
 
@@ -78,7 +79,7 @@ export async function getOrganizationBySubdomain(
  */
 export async function getAllOrganizations(db: D1Database): Promise<Organization[]> {
 	const { results } = await db
-		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone FROM organizations ORDER BY name')
+		.prepare('SELECT id, name, subdomain, type, contact_email, created_at, language, locale, timezone, trust_individual_responsibility FROM organizations ORDER BY name')
 		.all<OrganizationRow>();
 
 	return results.map(mapRowToOrganization);
@@ -110,6 +111,10 @@ function buildOrgUpdateSet(input: UpdateOrganizationInput): { updates: string[];
 	if (input.timezone !== undefined) {
 		updates.push('timezone = ?');
 		params.push(input.timezone);
+	}
+	if (input.trustIndividualResponsibility !== undefined) {
+		updates.push('trust_individual_responsibility = ?');
+		params.push(input.trustIndividualResponsibility ? '1' : '0');
 	}
 
 	return { updates, params };
@@ -151,6 +156,8 @@ interface OrganizationRow {
 	language: string | null;
 	locale: string | null;
 	timezone: string | null;
+	// Issue #240
+	trust_individual_responsibility: number;
 }
 
 function mapRowToOrganization(row: OrganizationRow): Organization {
@@ -164,6 +171,8 @@ function mapRowToOrganization(row: OrganizationRow): Organization {
 		// i18n preferences (Epic #183)
 		language: row.language,
 		locale: row.locale,
-		timezone: row.timezone
+		timezone: row.timezone,
+		// Issue #240
+		trustIndividualResponsibility: row.trust_individual_responsibility === 1
 	};
 }
