@@ -289,8 +289,13 @@ export async function getMemberByName(db: D1Database, name: string, orgId: OrgId
  */
 export async function getMemberById(db: D1Database, id: string, orgId: OrgId): Promise<Member | null> {
 	const memberRow = await db
-		.prepare('SELECT id, name, nickname, email_id, email_contact, invited_by, joined_at FROM members WHERE id = ?')
-		.bind(id)
+		.prepare(
+			`SELECT m.id, m.name, m.nickname, m.email_id, m.email_contact, m.invited_by, m.joined_at
+			 FROM members m
+			 JOIN member_organizations mo ON m.id = mo.member_id
+			 WHERE m.id = ? AND mo.org_id = ?`
+		)
+		.bind(id, orgId)
 		.first<Omit<Member, 'roles' | 'voices' | 'sections'>>();
 
 	if (!memberRow) {

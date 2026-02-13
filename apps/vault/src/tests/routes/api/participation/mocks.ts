@@ -80,7 +80,7 @@ function createFirstHandler(
 	options: MockDbOptions,
 	records: Map<string, MockParticipation>
 ) {
-	if (query.includes('FROM members WHERE id')) {
+	if (query.includes('FROM members') && query.includes('member_organizations') && query.includes('WHERE m.id')) {
 		return handleMemberLookup(options.members, params[0] as string);
 	}
 	if (query.includes('FROM events WHERE id')) {

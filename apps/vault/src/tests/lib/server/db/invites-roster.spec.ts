@@ -237,8 +237,8 @@ function createMockDb() {
 						return null;
 					}
 
-					// Handle SELECT from members by id
-					if (sql.includes('FROM members WHERE id = ?')) {
+					// Handle SELECT from members by id (with JOIN member_organizations)
+					if (sql.includes('FROM members') && sql.includes('member_organizations') && sql.includes('WHERE m.id')) {
 						const [id] = params as any[];
 						const member = members.get(id);
 						return member ?? null;

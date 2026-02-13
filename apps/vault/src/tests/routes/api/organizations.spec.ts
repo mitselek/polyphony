@@ -33,8 +33,8 @@ function createMockDb(config: {
 					return statement;
 				},
 				first: async () => {
-					// Member lookup
-					if (query.includes('FROM members WHERE id')) {
+					// Member lookup (with JOIN member_organizations)
+					if (query.includes('FROM members') && query.includes('member_organizations') && query.includes('WHERE m.id')) {
 						const id = statement._params?.[0] as string;
 						const memberData = members.get(id);
 						if (!memberData) return null;

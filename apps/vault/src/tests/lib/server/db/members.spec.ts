@@ -188,8 +188,8 @@ const createMockDb = () => {
 							}
 							return null;
 						}
-						// SELECT member by id
-						if (sql.includes('FROM members') && sql.includes('WHERE id =')) {
+						// SELECT member by id (with JOIN member_organizations)
+						if (sql.includes('FROM members') && sql.includes('member_organizations') && sql.includes('WHERE m.id')) {
 							const id = params[0] as string;
 							return members.get(id) || null;
 						}

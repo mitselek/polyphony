@@ -32,7 +32,7 @@ function createMockDb() {
 		prepare: (sql: string) => ({
 			bind: (...params: unknown[]) => ({
 				first: async <T>(): Promise<T | null> => {
-					if (sql.includes('FROM members WHERE id')) {
+					if (sql.includes('FROM members') && sql.includes('member_organizations') && sql.includes('WHERE m.id')) {
 						const id = params[0] as string;
 						return (members.get(id) as T) ?? null;
 					}
