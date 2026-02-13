@@ -6,7 +6,9 @@ _Juhend proovide ja kontsertide haldamiseks_
 
 ## Sissejuhatus
 
-Dirigendi (või koormeistri) roll Polyphony Vaultis on seotud ajaplaneerimise ja kohalkäimisega. Sinu tööriistaks on kalender ja osavõtulehed.
+Dirigendi (või koormeistri) roll Polyphony Vaultis on seotud sündmuste planeerimise ja kohaloleku haldamisega. Sinu peamised tööriistad on sündmuste loomine, kava koostamine ja kohaloleku märkimine.
+
+**Märkus:** Kui kuulud mitmesse organisatsiooni, saad ülemisest paremast menüüst valida, millise organisatsiooni andmeid hallata.
 
 ---
 
@@ -14,56 +16,122 @@ Dirigendi (või koormeistri) roll Polyphony Vaultis on seotud ajaplaneerimise ja
 
 Dirigendina on sul järgmised erivõimekused:
 
-- **Sündmuste loomine:** Saad lisada kalendrisse proove, kontserte ja laagreid.
-- **Info muutmine:** Saad muuta proovide aegu, asukohti ja kavasid.
-- **Kohaloleku märkimine:** Saad märkida, kes lauljatest olid proovis ja kes puudusid.
-- **Kõik laulja õigused:** Saad vaadata noote ja märkida enda osalemist.
+- **Sündmuste loomine:** Saad lisada kalendrisse proove, kontserte, laagreid ja festivale.
+- **Sündmuste haldamine:** Saad muuta sündmuste aegu, asukohti, kirjeldusi ja kavu.
+- **Sündmuste kustutamine:** Saad eemaldada sündmusi kalendrist.
+- **Kohaloleku märkimine:** Saad märkida, kes lauljatest olid kohal ja kes puudusid.
+- **Kava koostamine:** Saad siduda sündmusi noodikogus olevate teostega.
+- **Kõik laulja õigused:** Saad vaadata noote, alla laadida ja märkida enda osalemist.
 
 ⚠️ **Mida sa teha ei saa:**
 
-- Sa ei saa lisada noote kogusse (see on Raamatukoguhoidja töö).
-- Sa ei saa hallata liikmete nimekirja (see on Admini töö).
+- Sa ei saa lisada noote kogusse (see on raamatukoguhoidja töö).
+- Sa ei saa hallata liikmete nimekirja (see on administraatori töö).
+- Sa ei saa muuta liikmete õigusi või rolle.
 
 ---
 
 ## Kuidas…
 
-### …lisada uut proovi?
+### …lisada uut sündmust?
 
-1. Vali menüüst **"Events"**.
-2. Kliki nupule **"Create Event"**.
+1. Vali menüüst **"Events"** (sündmused).
+2. Kliki nupule **"Create Event"** (loo sündmus).
 3. Täida vajalikud väljad:
-   - **Tüüp:** Proov (Rehearsal), Kontsert (Concert) või muu.
-   - **Aeg:** Algus- ja lõpukellaaeg.
-   - **Asukoht:** Proovisaali nimi või aadress.
-   - **Kirjeldus:** Mis kavas on (soovi korral).
+   - **Title** (pealkiri): Sündmuse nimi
+   - **Type** (tüüp): Vali sobiv:
+     - **Rehearsal** (proov) - tavalised harjutused
+     - **Concert** (kontsert) - etendused publiku ees
+     - **Retreat** (laager) - pikemad kogunemised
+     - **Festival** (festival) - võistlused ja festivalid
+   - **Date & Time** (kuupäev ja kellaaeg): Algusaeg
+   - **Duration** (kestus): Päevad, tunnid ja minutid
+   - **Location** (asukoht): Proovisaal, kontserdisaal vms
+   - **Description** (kirjeldus): Lisainfo (valikuline)
 
-### …koostada proovi kava?
+**Näpunäide:** Saad luua korduvaid sündmusi (nädalas kord või kahe nädala tagant) ja valida, millised kuupäevad jätta ära.
 
-Saad siduda proovi konkreetsete teostega noodikogust, et lauljad teaksid, millised noodid kaasa võtta.
+### …koostada sündmuse kava?
 
-1. Ava sündmuse vaade.
-2. Otsi sektsioonist **"Repertoire"** või **"Program"**.
-3. Kirjuta teose nimi ja vali see nimekirjast.
-4. Lauljad näevad nüüd kalendris, mida õpitakse, ja saavad otse lingilt noodi avada.
+Saad siduda sündmuse konkreetsete teostega, et lauljad teaksid, millised noodid kaasa võtta.
 
-### …märkida kohalolekut (Attendance)?
+1. Ava loodud sündmus (kliki selle nimel kalendris).
+2. Leia sektsioon **"Event Repertoire"** (sündmuse kava).
+3. Kliki **"Add Work"** (lisa teos).
+4. Vali teos nimekirjast või kasuta otsingut.
+5. Vali sobivad väljaanded (noodid) selle teose jaoks.
 
-Pärast proovi (või proovi ajal):
+**Tulemus:** Lauljad näevad sündmuse juures, milliseid noote vaja on, ja saavad need otse avada/alla laadida.
 
-1. Ava kalendrist vastav sündmus.
-2. Vali vaheleht **"Attendance"** (Osavõtt).
-3. Näed nimekirja lauljatest. Märgi linnukesega kohalolijad.
-   - Vaikimisi võib süsteem pakkuda staatust vastavalt lauljate RSVP vastustele ("Tulija", "Ei tule").
-   - Sinu märgitud staatus on lõplik tõde (nt kui keegi märkis, et tuleb, aga tegelikult ei tulnud).
+### …vaadata ja hallata osavõttu?
+
+Sündmuse lehel näed kogu osavõtu ülevaadet:
+
+1. **"My Participation"** - sinu enda staatus
+2. **"Participation Overview"** - kõigi liikmete RSVP vastused
+   - **Going** (tuleb) - kinnitanud osalemise
+   - **Not Going** (ei tule) - teatanud puudumisest  
+   - **Maybe** (võib-olla) - pole veel kindel
+   - **Late** (jääb hiljaks) - tuleb, aga hilinemisega
+   - **No Response** - pole veel vastanud
+
+### …märkida kohalolekut?
+
+Pärast sündmust (või selle ajal):
+
+1. Ava sündmus kalendrist.
+2. Sektsioonist **"Participation Overview"** kliki **"Record Attendance"**.
+3. Näed kõigi liikmete nimekirja:
+   - **Present** (kohal) - märgi roheline linnuke
+   - **Absent** (puudus) - jäta märkimata või eemalda linnuke
+4. Saad teha ka hulgimuudatusi (kõik kohalolijad korraga).
+5. Kliki **"Save"** muudatuste salvestamiseks.
+
+**Märkus:** Sinu märgitud andmed on lõplik tõde (ümber lükkavad automaatsed RSVP prognoosid).
+
+### …muuta või kustutada sündmust?
+
+Sündmuse lehel (kui sul on õigused):
+
+1. **Muutmine:** Kliki **"Edit Event"** ja muuda vajalikke välju.
+2. **Kustutamine:** Kliki **"Delete Event"** - rakendus küsib kinnitust.
 
 ---
 
-## Hea tava
+## Kasulikud näpunäited
 
-- **RSVP tähtaeg:** julgusta lauljaid märkima oma tulekut/mittetulekut enne proovi algust. See annab sulle parema ülevaate koosseisust.
-- **Kava:** Lisa proovi kava võimalikult vara, et lauljad saaksid nootidega tutvuda.
+### Planeerimise jaoks
+- **RSVP tähtaeg:** Julgusta lauljaid märkima oma tulekut enne sündmust. See annab parema ülevaate koosseisust.
+- **Kava varakult:** Lisa sündmuse kava võimalikult vara, et lauljad saaksid nootidega tutvuda.
+- **Korduvad proovid:** Kasuta korduvate sündmuste funktsiooni regulaarsete proovidele.
+
+### Kohaloleku jaoks
+- **Reaalajas:** Saad kohalolekut märkida ka proovi ajal (mitte ainult pärast).
+- **Sektsiooni kaupa:** Liikmete nimekiri on grupeeritud häälrühmade kaupa.
+- **Kiirmärkimine:** Kasuta hulgimuudatusi, kui enamik oli kohal.
+
+### Repertuaari jaoks
+- **Mitme väljaande töö:** Sündmusele võid lisada mitu väljaannet samast teosest (nt kooripartituur ja klaviersaade).
+- **Sektsioonipõhine:** Saad valida, millised väljaanded on milliste häälrühmade jaoks.
 
 ---
 
-_Juhend uuendatud: 09.02.2026_
+## KKK
+
+**Kas ma saan muuta teiste liikmete RSVP vastuseid?**
+Ei, aga saad märkida tegeliku kohaloleku. RSVP on liikmete endi vastutus.
+
+**Miks ma ei näe "Create Event" nuppu?**
+Võimalik põhjused:
+- Sul pole dirigendi rolli
+- Oled valinud vale organisatsiooni (vaata ülemist paremat nuppu)
+
+**Kas ma saan sündmust teisaldada?**
+Jah, ava sündmus ja kliki "Edit Event". Saad muuta kuupäeva, kellaaega ja kestust.
+
+**Kuidas ma saan teada, kes pole veel RSVP-d andnud?**
+Sündmuse lehel näitab "Participation Overview" kõiki liikmeid. "No Response" märgib neid, kes pole veel vastanud.
+
+---
+
+_Juhend uuendatud: 13.02.2026_
