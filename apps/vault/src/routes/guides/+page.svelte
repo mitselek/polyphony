@@ -1,17 +1,23 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
 
 	let { data }: { data: PageData } = $props();
 
-	// Role display names for badges
-	const roleNames: Record<string, string> = {
-		owner: 'Owner',
-		admin: 'Admin',
-		librarian: 'Librarian',
-		conductor: 'Conductor',
-		section_leader: 'Section Leader'
+	// Translated role display names
+	const roleMsgKeys: Record<string, () => string> = {
+		owner: () => m["roles.owner"](),
+		admin: () => m["roles.admin"](),
+		librarian: () => m["roles.librarian"](),
+		conductor: () => m["roles.conductor"](),
+		section_leader: () => m["roles.section_leader"]()
 	};
+
+	function localizedText(texts: Record<string, string>): string {
+		const lang = getLocale();
+		return texts[lang] ?? texts['en'] ?? Object.values(texts)[0] ?? '';
+	}
 </script>
 
 <svelte:head>
@@ -32,10 +38,10 @@
 			>
 				<div class="mb-3 text-3xl">{guide.icon}</div>
 				<h2 class="text-lg font-semibold text-gray-900 group-hover:text-blue-600">
-					{guide.titles['et'] ?? guide.titles['en'] ?? guide.slug}
+					{localizedText(guide.titles)}
 				</h2>
 				<p class="mt-1 text-sm text-gray-500">
-					{guide.descriptions['et'] ?? guide.descriptions['en'] ?? ''}
+					{localizedText(guide.descriptions)}
 				</p>
 				<div class="mt-3">
 					{#if guide.roles.length === 0}
@@ -45,7 +51,7 @@
 					{:else}
 						{#each guide.roles as role}
 							<span class="mr-1 inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-								{roleNames[role] ?? role}
+							{roleMsgKeys[role]?.() ?? role}
 							</span>
 						{/each}
 					{/if}

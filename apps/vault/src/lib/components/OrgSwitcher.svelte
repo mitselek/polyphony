@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import type { OrgSummary } from '$lib/types';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		currentSubdomain: string;
@@ -58,7 +59,7 @@
 
 			<div class="absolute left-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
 				<div class="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
-					Switch to
+					{m["nav.switch_to"]()}
 				</div>
 				{#each otherOrgs as org}
 					<a

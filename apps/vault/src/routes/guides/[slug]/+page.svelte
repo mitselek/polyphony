@@ -1,12 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
 
 	let { data }: { data: PageData } = $props();
+
+	function localizedText(texts: Record<string, string>): string {
+		const lang = getLocale();
+		return texts[lang] ?? texts['en'] ?? Object.values(texts)[0] ?? '';
+	}
 </script>
 
 <svelte:head>
-	<title>{data.guide.titles['et'] ?? data.guide.titles['en']} | Polyphony</title>
+	<title>{localizedText(data.guide.titles)} | Polyphony</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-3xl px-4 py-8">

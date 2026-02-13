@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getGuideBySlug } from '$lib/content/guides';
 import { marked } from 'marked';
+import { getLocale } from '$lib/paraglide/runtime.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const guide = getGuideBySlug(params.slug);
@@ -10,8 +11,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Guide not found');
 	}
 
-	// Get content in Estonian (primary), fall back to English
-	const markdown = guide.content['et'] ?? guide.content['en'];
+	// Get content in user's locale, fall back to Estonian, then English
+	const locale = getLocale();
+	const markdown = guide.content[locale] ?? guide.content['et'] ?? guide.content['en'];
 	if (!markdown) {
 		throw error(404, 'Guide content not available');
 	}

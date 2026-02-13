@@ -11,8 +11,16 @@
     "seasons": "Сезони",
     "editions": "Видання",
     "guides": "Посібники",
+    "switch_to": "Перейти до",
     "logout": "Вийти",
     "sign_in": "Увійти"
+  },
+  "roles": {
+    "owner": "Власник",
+    "admin": "Адміністратор",
+    "librarian": "Бібліотекар",
+    "conductor": "Диригент",
+    "section_leader": "Керівник партії"
   },
   "actions": {
     "save": "Зберегти",

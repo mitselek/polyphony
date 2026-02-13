@@ -11,8 +11,16 @@
     "seasons": "Seasons",
     "editions": "Editions",
     "guides": "Guides",
+    "switch_to": "Switch to",
     "logout": "Logout",
     "sign_in": "Sign In"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "librarian": "Librarian",
+    "conductor": "Conductor",
+    "section_leader": "Section Leader"
   },
   "actions": {
     "save": "Save",

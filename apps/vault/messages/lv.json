@@ -11,8 +11,16 @@
     "seasons": "Sezonas",
     "editions": "Izdevumi",
     "guides": "Ceļveži",
+    "switch_to": "Pārslēgties uz",
     "logout": "Iziet",
     "sign_in": "Pieteikties"
+  },
+  "roles": {
+    "owner": "Īpašnieks",
+    "admin": "Administrators",
+    "librarian": "Bibliotekārs",
+    "conductor": "Diriģents",
+    "section_leader": "Balsu grupas vadītājs"
   },
   "actions": {
     "save": "Saglabāt",

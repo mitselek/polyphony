@@ -11,8 +11,16 @@
     "seasons": "Hooajad",
     "editions": "Väljaanded",
     "guides": "Juhendid",
+    "switch_to": "Lülitu",
     "logout": "Logi välja",
     "sign_in": "Logi sisse"
+  },
+  "roles": {
+    "owner": "Omanik",
+    "admin": "Administraator",
+    "librarian": "Raamatukoguhoidja",
+    "conductor": "Dirigent",
+    "section_leader": "Häälerühma vanem"
   },
   "actions": {
     "save": "Salvesta",

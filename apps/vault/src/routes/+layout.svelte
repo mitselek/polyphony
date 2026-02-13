@@ -87,7 +87,7 @@
 						<a href="/profile" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{data.user.name ?? data.user.email}</a>
 						{#if data.memberOrgs && data.memberOrgs.length > 1}
 							<hr class="border-gray-200" />
-							<span class="text-xs font-medium uppercase tracking-wider text-gray-400">Switch to</span>
+							<span class="text-xs font-medium uppercase tracking-wider text-gray-400">{m["nav.switch_to"]()}</span>
 							{#each data.memberOrgs.filter((o) => o.subdomain !== data.org?.subdomain) as org}
 								<a
 									href="https://{org.subdomain}.polyphony.uk"
