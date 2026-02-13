@@ -28,6 +28,7 @@
 					<a href="/events" class="text-gray-600 hover:text-gray-900">{m["nav.events"]()}</a>
 					<a href="/events/roster" class="text-gray-600 hover:text-gray-900">{m["nav.roster"]()}</a>
 					<a href="/seasons" class="text-gray-600 hover:text-gray-900">{m["nav.seasons"]()}</a>
+					<a href="/guides" class="text-gray-600 hover:text-gray-900">{m["nav.guides"]()}</a>
 					{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
 						<a href="/editions" class="text-gray-600 hover:text-gray-900">{m["nav.editions"]()}</a>
 					{/if}
@@ -74,6 +75,7 @@
 						<a href="/events" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{m["nav.events"]()}</a>
 						<a href="/events/roster" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{m["nav.roster"]()}</a>
 						<a href="/seasons" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{m["nav.seasons"]()}</a>
+						<a href="/guides" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{m["nav.guides"]()}</a>
 						{#if data.user.roles?.some((r) => ['librarian', 'admin', 'owner'].includes(r))}
 							<a href="/editions" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{m["nav.editions"]()}</a>
 						{/if}

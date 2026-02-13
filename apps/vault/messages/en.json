@@ -10,6 +10,7 @@
     "roster": "Roster",
     "seasons": "Seasons",
     "editions": "Editions",
+    "guides": "Guides",
     "logout": "Logout",
     "sign_in": "Sign In"
   },
@@ -177,6 +178,16 @@
       "next_step_3": "You can then start uploading scores and inviting members",
       "back_home": "Back to Home"
     }
+  },
+  "guides": {
+    "title": "User Guides",
+    "subtitle": "Learn how to use Polyphony based on your role",
+    "all_guides": "All Guides",
+    "your_guides": "Your Guides",
+    "back_to_guides": "← Back to Guides",
+    "not_found": "Guide not found",
+    "for_role": "For: {role}",
+    "for_everyone": "For all members"
   },
   "copyright": {
     "title": "Copyright Takedown Request",

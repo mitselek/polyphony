@@ -10,6 +10,7 @@
     "roster": "Saraksts",
     "seasons": "Sezonas",
     "editions": "Izdevumi",
+    "guides": "Ceļveži",
     "logout": "Iziet",
     "sign_in": "Pieteikties"
   },
@@ -177,6 +178,16 @@
       "next_step_3": "Pēc tam varēsiet sākt augšupielādēt notis un uzaicināt dalībniekus",
       "back_home": "Atpakaļ uz sākumu"
     }
+  },
+  "guides": {
+    "title": "Lietošanas pamācības",
+    "subtitle": "Uzziniet, kā lietot Polyphony atbilstoši savai lomai",
+    "all_guides": "Visas pamācības",
+    "your_guides": "Tavas pamācības",
+    "back_to_guides": "← Atpakaļ pie pamācībām",
+    "not_found": "Pamācība nav atrasta",
+    "for_role": "Lomai: {role}",
+    "for_everyone": "Visiem dalībniekiem"
   },
   "copyright": {
     "title": "Autortiesību pārkāpuma ziņojums",

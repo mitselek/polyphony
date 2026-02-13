@@ -10,6 +10,7 @@
     "roster": "Nimekiri",
     "seasons": "Hooajad",
     "editions": "Väljaanded",
+    "guides": "Juhendid",
     "logout": "Logi välja",
     "sign_in": "Logi sisse"
   },
@@ -177,6 +178,16 @@
       "next_step_3": "Seejärel saate hakata noote üles laadima ja liikmeid kutsuma",
       "back_home": "Tagasi avalehele"
     }
+  },
+  "guides": {
+    "title": "Kasutusjuhendid",
+    "subtitle": "Õpi Polyphonyt kasutama vastavalt oma rollile",
+    "all_guides": "Kõik juhendid",
+    "your_guides": "Sinu juhendid",
+    "back_to_guides": "← Tagasi juhendite juurde",
+    "not_found": "Juhendit ei leitud",
+    "for_role": "Rollile: {role}",
+    "for_everyone": "Kõigile liikmetele"
   },
   "copyright": {
     "title": "Autoriõiguse rikkumise teade",
