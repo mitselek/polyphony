@@ -6,6 +6,7 @@
 <script lang="ts">
 	import type { OrgSummary } from '$lib/types';
 	import * as m from '$lib/paraglide/messages.js';
+	import { buildOrgUrl } from '$lib/nav';
 
 	interface Props {
 		currentSubdomain: string;
@@ -19,14 +20,12 @@
 	// Other orgs (exclude current)
 	let otherOrgs = $derived(orgs.filter((o) => o.subdomain !== currentSubdomain));
 
-	function buildOrgUrl(subdomain: string): string {
+	function getOrgUrl(subdomain: string): string {
 		if (typeof window !== 'undefined') {
 			const { protocol, host } = window.location;
-			// Replace current subdomain with target subdomain
-			const newHost = host.replace(currentSubdomain, subdomain);
-			return `${protocol}//${newHost}`;
+			return buildOrgUrl(subdomain, currentSubdomain, protocol, host);
 		}
-		return `https://${subdomain}.polyphony.uk`;
+		return buildOrgUrl(subdomain, currentSubdomain);
 	}
 
 	function toggle() {
@@ -63,7 +62,7 @@
 				</div>
 				{#each otherOrgs as org}
 					<a
-						href={buildOrgUrl(org.subdomain)}
+						href={getOrgUrl(org.subdomain)}
 						class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 						onclick={close}
 					>
