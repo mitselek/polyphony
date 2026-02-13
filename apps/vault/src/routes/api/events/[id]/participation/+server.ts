@@ -10,6 +10,7 @@ import {
 } from '$lib/server/db/participation';
 import { getEventById } from '$lib/server/db/events';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import { getAllMembers } from '$lib/server/db/members';
 import type { PlannedStatus } from '$lib/types';
 
@@ -104,11 +105,16 @@ export async function POST(event: RequestEvent) {
 		throw error(404, 'Event not found');
 	}
 
-	// Check if event has started (RSVP locked after start)
+	// Check if event has started (RSVP locked after start, unless trust setting is enabled)
 	const now = new Date();
 	const eventStart = new Date(eventData.starts_at);
 	if (now >= eventStart) {
-		throw error(403, 'Cannot RSVP after event has started');
+		// Issue #240: When trust setting is enabled, members can still update own RSVP for past events
+		const org = await getOrganizationById(db, locals.org.id);
+		const trustSetting = org?.trustIndividualResponsibility ?? false;
+		if (!trustSetting) {
+			throw error(403, 'Cannot RSVP after event has started');
+		}
 	}
 
 	// Validate status

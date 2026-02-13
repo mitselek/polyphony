@@ -55,6 +55,8 @@
     eventId={data.event.id}
     hasStarted={data.hasStarted}
     canRecordAttendance={data.canRecordAttendance}
+    trustIndividualResponsibility={data.trustIndividualResponsibility}
+    currentMemberId={data.currentMemberId}
     bind:myParticipation
   />
 

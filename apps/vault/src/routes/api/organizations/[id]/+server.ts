@@ -12,6 +12,7 @@ interface OrgUpdateBody {
 	language?: string | null;
 	locale?: string | null;
 	timezone?: string | null;
+	trustIndividualResponsibility?: boolean;
 }
 
 /** Build UpdateOrganizationInput from request body */
@@ -20,6 +21,7 @@ function buildOrgUpdateInput(body: OrgUpdateBody): UpdateOrganizationInput {
 	if ('language' in body) input.language = body.language;
 	if ('locale' in body) input.locale = body.locale;
 	if ('timezone' in body) input.timezone = body.timezone;
+	if ('trustIndividualResponsibility' in body) input.trustIndividualResponsibility = body.trustIndividualResponsibility;
 	return input;
 }
 

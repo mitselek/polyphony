@@ -9,6 +9,7 @@ import {
 	updateParticipation
 } from '$lib/server/db/participation';
 import { getEventById } from '$lib/server/db/events';
+import { getOrganizationById } from '$lib/server/db/organizations';
 import { getAuthenticatedMember } from '$lib/server/auth/middleware';
 import { canRecordAttendance, type Member } from '$lib/server/auth/permissions';
 import type { PlannedStatus, ActualStatus, UpdateParticipationInput } from '$lib/types';
@@ -27,27 +28,33 @@ function validateRsvp(
 	status: PlannedStatus | null | undefined,
 	isOwn: boolean,
 	isPast: boolean,
-	canManage: boolean
+	canManage: boolean,
+	trustIndividualResponsibility: boolean
 ): void {
 	if (status === undefined) return;
 	if (status !== null && !VALID_PLANNED.includes(status)) {
 		throw error(400, 'Invalid planned status');
 	}
-	const canEdit = (isOwn && !isPast) || canManage;
+	// Issue #240: When trust setting is enabled, members can edit their own RSVP even for past events
+	const canEdit = canManage || (isOwn && !isPast) || (isOwn && trustIndividualResponsibility);
 	if (!canEdit) throw error(403, 'Cannot update RSVP for this member/event');
 }
 
 function validateAttendance(
 	status: ActualStatus | null | undefined,
 	isPast: boolean,
-	canManage: boolean
+	canManage: boolean,
+	isOwn: boolean,
+	trustIndividualResponsibility: boolean
 ): void {
 	if (status === undefined) return;
 	if (status !== null && !VALID_ACTUAL.includes(status)) {
 		throw error(400, 'Invalid actual status');
 	}
 	if (!isPast) throw error(400, 'Cannot record attendance for future events');
-	if (!canManage) throw error(403, 'Only conductors/section leaders can record attendance');
+	// Issue #240: When trust setting is enabled, members can update their own attendance
+	const canEdit = canManage || (isOwn && trustIndividualResponsibility);
+	if (!canEdit) throw error(403, 'Only conductors/section leaders can record attendance');
 }
 
 async function applyUpdate(
@@ -103,11 +110,16 @@ export async function POST(event: RequestEvent) {
 	const eventData = await getEventById(db, body.eventId);
 	if (!eventData) throw error(404, 'Event not found');
 
+	// Issue #240: Check organization trust setting
+	const org = await getOrganizationById(db, locals.org.id);
+	const trustSetting = org?.trustIndividualResponsibility ?? false;
+
 	const isPast = new Date() >= new Date(eventData.starts_at);
 	const canManage = canRecordAttendance(currentMember);
+	const isOwn = currentMember.id === body.memberId;
 
-	validateRsvp(body.plannedStatus, currentMember.id === body.memberId, isPast, canManage);
-	validateAttendance(body.actualStatus, isPast, canManage);
+	validateRsvp(body.plannedStatus, isOwn, isPast, canManage, trustSetting);
+	validateAttendance(body.actualStatus, isPast, canManage, isOwn, trustSetting);
 
 	return json(await applyUpdate(db, body, currentMember.id));
 }
