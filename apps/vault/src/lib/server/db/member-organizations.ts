@@ -1,7 +1,7 @@
 // Member-Organization junction table operations
 // Part of Schema V2 multi-organization support
 
-import type { MemberOrganization, AddMemberToOrgInput } from '$lib/types';
+import type { MemberOrganization, AddMemberToOrgInput, OrgSummary } from '$lib/types';
 
 /**
  * Add a member to an organization
@@ -127,6 +127,32 @@ export async function updateMemberOrgNickname(
 	}
 
 	return getMemberOrganization(db, memberId, orgId);
+}
+
+/**
+ * Get lightweight org summaries (name + subdomain) for a member.
+ * Used by the org switcher in the nav — JOINs to organizations table.
+ */
+export async function getMemberOrgSummaries(
+	db: D1Database,
+	memberId: string
+): Promise<OrgSummary[]> {
+	const { results } = await db
+		.prepare(
+			`SELECT o.id, o.name, o.subdomain
+			 FROM member_organizations mo
+			 JOIN organizations o ON o.id = mo.org_id
+			 WHERE mo.member_id = ?
+			 ORDER BY o.name`
+		)
+		.bind(memberId)
+		.all<{ id: string; name: string; subdomain: string }>();
+
+	return results.map((row) => ({
+		id: row.id,
+		name: row.name,
+		subdomain: row.subdomain
+	}));
 }
 
 // =============================================================================

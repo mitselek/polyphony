@@ -100,6 +100,16 @@ export interface MemberOrganization {
 }
 
 /**
+ * Lightweight org summary for org switcher UI
+ * Only the fields needed to render a link to another org
+ */
+export interface OrgSummary {
+	id: string;
+	name: string;
+	subdomain: string;
+}
+
+/**
  * Input for adding a member to an organization
  */
 export interface AddMemberToOrgInput {

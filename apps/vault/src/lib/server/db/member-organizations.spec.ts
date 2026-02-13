@@ -4,15 +4,22 @@ import { createOrgId } from '@polyphony/shared';
 import {
 	addMemberToOrganization,
 	getMemberOrganizations,
+	getMemberOrgSummaries,
 	getMembersByOrganization,
 	removeMemberFromOrganization,
 	updateMemberOrgNickname
 } from './member-organizations';
-import type { MemberOrganization, AddMemberToOrgInput } from '$lib/types';
+import type { MemberOrganization, AddMemberToOrgInput, OrgSummary } from '$lib/types';
 
 // Mock D1Database for testing
 function createMockDB(): D1Database {
 	const memberOrgs = new Map<string, any>(); // key: `${memberId}:${orgId}`
+	const organizations = new Map<string, { id: string; name: string; subdomain: string }>(); // key: orgId
+
+	// Seed org data for JOIN tests
+	organizations.set('org_crede_001', { id: 'org_crede_001', name: 'Kammerkoor Crede', subdomain: 'crede' });
+	organizations.set('org_eca_001', { id: 'org_eca_001', name: 'ECA', subdomain: 'eca' });
+	organizations.set('org_hannijoggi_001', { id: 'org_hannijoggi_001', name: 'Hannijöggi', subdomain: 'hannijoggi' });
 
 	return {
 		prepare: (sql: string) => {
@@ -26,6 +33,18 @@ function createMockDB(): D1Database {
 						return null;
 					},
 					all: async () => {
+						if (sql.includes('JOIN organizations') && sql.includes('WHERE mo.member_id = ?')) {
+							// getMemberOrgSummaries JOIN query
+							const memberId = params[0];
+							const results = Array.from(memberOrgs.values())
+								.filter((mo) => mo.member_id === memberId)
+								.map((mo) => {
+									const org = organizations.get(mo.org_id);
+									return org ? { id: org.id, name: org.name, subdomain: org.subdomain } : null;
+								})
+								.filter(Boolean);
+							return { results };
+						}
 						if (sql.includes('WHERE member_id = ?')) {
 							const memberId = params[0];
 							const results = Array.from(memberOrgs.values()).filter(
@@ -227,6 +246,48 @@ describe('Member Organizations Database Operations', () => {
 
 			expect(updated).toBeDefined();
 			expect(updated?.nickname).toBeNull();
+		});
+	});
+
+	describe('getMemberOrgSummaries', () => {
+		it('returns org summaries with name and subdomain for a member', async () => {
+			await addMemberToOrganization(db, {
+				memberId: 'member_001',
+				orgId: createOrgId('org_crede_001')
+			});
+			await addMemberToOrganization(db, {
+				memberId: 'member_001',
+				orgId: createOrgId('org_hannijoggi_001')
+			});
+
+			const summaries = await getMemberOrgSummaries(db, 'member_001');
+
+			expect(summaries).toHaveLength(2);
+			expect(summaries).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ name: 'Kammerkoor Crede', subdomain: 'crede' }),
+					expect.objectContaining({ name: 'Hannijöggi', subdomain: 'hannijoggi' })
+				])
+			);
+		});
+
+		it('returns empty array for member with no organizations', async () => {
+			const summaries = await getMemberOrgSummaries(db, 'nonexistent');
+
+			expect(summaries).toEqual([]);
+		});
+
+		it('returns single org for member in one organization', async () => {
+			await addMemberToOrganization(db, {
+				memberId: 'member_solo',
+				orgId: createOrgId('org_eca_001')
+			});
+
+			const summaries = await getMemberOrgSummaries(db, 'member_solo');
+
+			expect(summaries).toHaveLength(1);
+			expect(summaries[0].name).toBe('ECA');
+			expect(summaries[0].subdomain).toBe('eca');
 		});
 	});
 });

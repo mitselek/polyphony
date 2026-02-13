@@ -2,6 +2,7 @@
 	import '../app.css';
 	import type { LayoutData } from './$types';
 	import Toast from '$lib/components/Toast.svelte';
+	import OrgSwitcher from '$lib/components/OrgSwitcher.svelte';
 	import * as m from '$lib/paraglide/messages.js';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
@@ -13,7 +14,12 @@
 	<!-- Header -->
 	<header class="border-b bg-white shadow-sm">
 		<nav class="container mx-auto flex items-center justify-between px-4 py-3">
-			<a href="/" class="text-xl font-bold text-gray-900">Polyphony Vault</a>
+			<div class="flex items-center gap-2">
+				<a href="/" class="text-xl font-bold text-gray-900">{data.org?.name ?? 'Polyphony'}</a>
+				{#if data.user && data.memberOrgs?.length > 1}
+					<OrgSwitcher currentSubdomain={data.org?.subdomain ?? ''} orgs={data.memberOrgs} />
+				{/if}
+			</div>
 
 			<!-- Desktop Navigation -->
 			<div class="hidden items-center gap-4 md:flex">
@@ -77,6 +83,19 @@
 						{/if}
 						<hr class="border-gray-200" />
 						<a href="/profile" class="text-gray-600 hover:text-gray-900" onclick={() => mobileMenuOpen = false}>{data.user.name ?? data.user.email}</a>
+						{#if data.memberOrgs && data.memberOrgs.length > 1}
+							<hr class="border-gray-200" />
+							<span class="text-xs font-medium uppercase tracking-wider text-gray-400">Switch to</span>
+							{#each data.memberOrgs.filter((o) => o.subdomain !== data.org?.subdomain) as org}
+								<a
+									href="https://{org.subdomain}.polyphony.uk"
+									class="text-gray-600 hover:text-gray-900"
+									onclick={() => mobileMenuOpen = false}
+								>
+									{org.name}
+								</a>
+							{/each}
+						{/if}
 						<a
 							href="/api/auth/logout"
 							class="text-gray-600 hover:text-gray-900"

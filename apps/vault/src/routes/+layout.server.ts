@@ -1,13 +1,19 @@
-// Server load for root layout - provides auth state to all pages
+// Server load for root layout - provides auth state and org data to all pages
 import { getMemberById } from '$lib/server/db/members';
+import { getMemberOrgSummaries } from '$lib/server/db/member-organizations';
 import { getSetting } from '$lib/server/db/settings';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ platform, cookies, locals }) => {
+	// Always pass current org info to the client
+	const org = locals.org
+		? { name: locals.org.name, subdomain: locals.org.subdomain }
+		: null;
+
 	const memberId = cookies.get('member_id');
 
 	if (!memberId || !platform?.env?.DB) {
-		return { user: null, locale: 'system' };
+		return { user: null, locale: 'system', org, memberOrgs: [] };
 	}
 
 	try {
@@ -21,8 +27,11 @@ export const load: LayoutServerLoad = async ({ platform, cookies, locals }) => {
 		if (!member) {
 			// Invalid session - clear cookie
 			cookies.delete('member_id', { path: '/' });
-			return { user: null, locale };
+			return { user: null, locale, org, memberOrgs: [] };
 		}
+
+		// Fetch the member's other organizations for the org switcher
+		const memberOrgs = await getMemberOrgSummaries(platform.env.DB, memberId);
 
 		return {
 			user: {
@@ -33,9 +42,11 @@ export const load: LayoutServerLoad = async ({ platform, cookies, locals }) => {
 				voices: member.voices,
 				sections: member.sections
 			},
-			locale
+			locale,
+			org,
+			memberOrgs
 		};
 	} catch {
-		return { user: null, locale: 'system' };
+		return { user: null, locale: 'system', org, memberOrgs: [] };
 	}
 };
