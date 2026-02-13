@@ -29,7 +29,7 @@ Iga sisseloginud kooriliige saab:
 
 ### …leida noote?
 
-1. Vali menüüst **"Library"** (raamatukogu).
+1. Vali menüüst **"Works"** (noodid/teosed).
 2. Avanenud nimekirjast otsi vajalik teos (kasuta otsingukasti üleval).
 3. Kliki teose nimel, et näha kõiki selle teose väljaandeid.
 4. Iga väljaande juures näed nuppe:
@@ -54,7 +54,7 @@ On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 
 ### …vaadata koosseisu?
 
-1. Vali menüüst **"Roster"** (koosseis).
+1. Kliki üleval vasakul oma **koori nimel** — see viib sind avalehele.
 2. Näed kõiki koori liikmeid ja nende osavõttu sündmustest.
 3. Saad filtreerida liikmeid häälerühmade kaupa.
 
@@ -65,7 +65,7 @@ On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 3. Siin näed oma:
    - Häälerühma (nt sopran, alt)
    - Kontaktandmeid
-   - Keeleeelistusi
+   - Keele-eelistusi
    - Organisatsiooni kuuluvust
 
 ---
@@ -115,7 +115,7 @@ Häälerühma saab muuta ainult administraator. Palu tal see parandada.
 Raamatukogus on teosed ja väljaanded kronoloogilises järjestuses. Vaata ka sündmusi - seal on tihti mainitud, milliseid noote vaja läheb.
 
 **Kas ma saan teada, kes veel proovist puudub?**
-Jah, vaata "Roster" lehte - seal näed kõigi liikmete RSVP staatust.
+Jah, kliki oma koori nimel — avaleht näitab kõigi liikmete RSVP staatust.
 
 ---
 
