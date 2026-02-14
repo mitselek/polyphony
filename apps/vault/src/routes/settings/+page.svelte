@@ -16,7 +16,6 @@
   let sections = $state(untrack(() => data.sections));
   let organization = $state(untrack(() => data.organization as Organization));
   let saving = $state(false);
-  let savingOrg = $state(false);
 
   // Watch for data changes (e.g., on navigation)
   $effect(() => {
@@ -31,57 +30,49 @@
     saving = true;
 
     try {
-      const response = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          default_event_duration: parseInt(settings.default_event_duration) || DEFAULT_EVENT_DURATION_MINUTES,
+      // Save both settings and organization in parallel
+      const [settingsResponse, orgResponse] = await Promise.all([
+        fetch("/api/settings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            default_event_duration: parseInt(settings.default_event_duration) || DEFAULT_EVENT_DURATION_MINUTES,
+          }),
         }),
-      });
+        fetch(`/api/organizations/${organization.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            language: organization.language || null,
+            locale: organization.locale || null,
+            timezone: organization.timezone || null,
+            trustIndividualResponsibility: organization.trustIndividualResponsibility,
+          }),
+        }),
+      ]);
 
-      if (!response.ok) {
-        const data = (await response.json()) as { message?: string };
+      if (!settingsResponse.ok) {
+        const data = (await settingsResponse.json()) as { message?: string };
         throw new Error(data.message ?? "Failed to save settings");
       }
 
-      const updated = (await response.json()) as Record<string, string>;
-      settings = updated;
-      toast.success("Settings saved successfully");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save settings");
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function handleOrgSubmit(e: Event) {
-    e.preventDefault();
-    savingOrg = true;
-
-    try {
-      const response = await fetch(`/api/organizations/${organization.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: organization.language || null,
-          locale: organization.locale || null,
-          timezone: organization.timezone || null,
-          trustIndividualResponsibility: organization.trustIndividualResponsibility,
-        }),
-      });
-
-      if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
+      if (!orgResponse.ok) {
+        const result = (await orgResponse.json()) as { message?: string };
         throw new Error(result.message ?? "Failed to save organization settings");
       }
 
-      const updated = (await response.json()) as Organization;
-      organization = updated;
-      toast.success("Organization settings saved successfully");
+      const [updatedSettings, updatedOrg] = await Promise.all([
+        settingsResponse.json() as Promise<Record<string, string>>,
+        orgResponse.json() as Promise<Organization>,
+      ]);
+
+      settings = updatedSettings;
+      organization = updatedOrg;
+      toast.success(m.settings_saved_success());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save organization settings");
+      toast.error(err instanceof Error ? err.message : m.settings_saved_error());
     } finally {
-      savingOrg = false;
+      saving = false;
     }
   }
 </script>
@@ -115,26 +106,6 @@
         <p class="mt-1 text-sm text-gray-500">{m.settings_event_duration_help()}</p>
       </div>
 
-      <!-- Submit Button -->
-      <div class="flex justify-end">
-        <button
-          type="submit"
-          disabled={saving}
-          class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {saving ? m.settings_saving_btn() : m.settings_save_btn()}
-        </button>
-      </div>
-    </form>
-  </Card>
-
-  <!-- Organization Settings -->
-  <Card padding="lg" class="mt-6">
-    <h2 class="mb-4 text-lg font-semibold">{m.settings_org_section_title()}</h2>
-    <p class="mb-6 text-sm text-gray-600">
-      {m.settings_org_section_description()}
-    </p>
-    <form onsubmit={handleOrgSubmit} class="space-y-6">
       <!-- Trust Individual Responsibility (Issue #240) -->
       <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4">
         <div>
@@ -238,10 +209,10 @@
       <div class="flex justify-end">
         <button
           type="submit"
-          disabled={savingOrg}
+          disabled={saving}
           class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {savingOrg ? m.settings_saving_btn() : m.settings_org_save_btn()}
+          {saving ? m.settings_saving_btn() : m.settings_save_btn()}
         </button>
       </div>
     </form>
