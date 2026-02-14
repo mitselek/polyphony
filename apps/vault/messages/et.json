@@ -366,6 +366,8 @@
   "roster_export_csv_btn": "Ekspordi CSV",
   "roster_no_events": "Selles hooajas pole sündmusi",
   "roster_no_members": "Ükski liige ei vasta filtritele",
+  "roster_experimental_link": "Proovi kompaktset vaadet",
+  "roster_experimental_back_link": "Tagasi tavavaatesse",
   "roster_table_name_header": "Nimi",
   "roster_stats_events": "Sündmused:",
   "roster_stats_members": "Liikmed:",

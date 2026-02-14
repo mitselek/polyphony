@@ -366,6 +366,8 @@
   "roster_export_csv_btn": "Export CSV",
   "roster_no_events": "No events in this season",
   "roster_no_members": "No members match filters",
+  "roster_experimental_link": "Try compact view",
+  "roster_experimental_back_link": "Back to standard view",
   "roster_table_name_header": "Name",
   "roster_stats_events": "Events:",
   "roster_stats_members": "Members:",

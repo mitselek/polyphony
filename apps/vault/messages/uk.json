@@ -366,6 +366,8 @@
   "roster_export_csv_btn": "Експортувати CSV",
   "roster_no_events": "У цьому сезоні немає подій",
   "roster_no_members": "Жоден учасник не відповідає фільтрам",
+  "roster_experimental_link": "Спробувати компактний вигляд",
+  "roster_experimental_back_link": "Повернутися до стандартного вигляду",
   "roster_table_name_header": "Ім'я",
   "roster_stats_events": "Події:",
   "roster_stats_members": "Учасники:",
