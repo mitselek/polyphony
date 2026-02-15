@@ -53,6 +53,7 @@ export interface CreateMemberInput {
 export interface CreateRosterMemberInput {
 	name: string; // Required
 	email_contact?: string; // Optional contact email
+	roles?: Role[]; // Optional pre-assigned roles
 	voiceIds?: string[];
 	sectionIds?: string[];
 	addedBy: string; // Admin who added them
@@ -184,7 +185,10 @@ export async function createRosterMember(
 		.bind(id, input.orgId, input.addedBy)
 		.run();
 
-	// NO roles inserted (roster-only members can't have roles)
+	// Insert pre-assigned roles if provided
+	if (input.roles && input.roles.length > 0) {
+		await addMemberRoles(db, id, input.roles, input.addedBy, input.orgId);
+	}
 
 	// Insert voice assignments
 	if (input.voiceIds && input.voiceIds.length > 0) {

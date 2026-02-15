@@ -5,10 +5,12 @@ import type { OrgId } from '@polyphony/shared';
 import type { RequestHandler } from './$types';
 import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware';
 import { createRosterMember } from '$lib/server/db/members';
+import { ASSIGNABLE_ROLES, type Role } from '$lib/types';
 
 interface CreateRosterMemberRequest {
 	name: string;
 	emailContact?: string;
+	roles?: string[];
 	voiceIds?: string[];
 	sectionIds?: string[];
 }
@@ -37,21 +39,42 @@ async function checkNameUniqueness(db: D1Database, name: string, orgId: OrgId): 
 	return !existingMember;
 }
 
+function validateRoles(roles: string[] | undefined, currentUserRoles: Role[]): { validRoles?: Role[]; error?: string; status?: number } {
+	if (!roles || roles.length === 0) return { validRoles: undefined };
+
+	const invalidRoles = roles.filter(r => !(ASSIGNABLE_ROLES as readonly string[]).includes(r));
+	if (invalidRoles.length > 0) {
+		return { error: `Invalid role: ${invalidRoles.join(', ')}`, status: 400 };
+	}
+
+	if (roles.includes('owner') && !currentUserRoles.includes('owner')) {
+		return { error: 'Only owners can pre-assign the owner role', status: 403 };
+	}
+
+	return { validRoles: roles as Role[] };
+}
+
 async function createRosterMemberWithValidation(
 	db: D1Database,
 	body: CreateRosterMemberRequest,
 	orgId: OrgId,
-	currentUserId: string
+	currentUserId: string,
+	currentUserRoles: Role[]
 ) {
 	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
 		return { error: 'Name is required', status: 400 };
 	}
 
 	const name = body.name.trim();
-	
+
 	const emailError = validateEmail(body.emailContact);
 	if (emailError) {
 		return { error: emailError, status: 400 };
+	}
+
+	const roleValidation = validateRoles(body.roles, currentUserRoles);
+	if (roleValidation.error) {
+		return { error: roleValidation.error, status: roleValidation.status! };
 	}
 
 	const isUnique = await checkNameUniqueness(db, name, orgId);
@@ -62,6 +85,7 @@ async function createRosterMemberWithValidation(
 	const newMember = await createRosterMember(db, {
 		name,
 		email_contact: body.emailContact?.trim() || undefined,
+		roles: roleValidation.validRoles,
 		voiceIds: body.voiceIds,
 		sectionIds: body.sectionIds,
 		addedBy: currentUserId,
@@ -84,8 +108,8 @@ export const POST: RequestHandler = async ({ request, platform, cookies, locals 
 	const body = (await request.json()) as CreateRosterMemberRequest;
 
 	try {
-		const result = await createRosterMemberWithValidation(db, body, orgId, currentUser.id);
-		
+		const result = await createRosterMemberWithValidation(db, body, orgId, currentUser.id, currentUser.roles);
+
 		if ('error' in result) {
 			return json({ error: result.error }, { status: result.status });
 		}
@@ -94,6 +118,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies, locals 
 			id: result.member.id,
 			name: result.member.name,
 			emailContact: result.member.email_contact,
+			roles: result.member.roles,
 			voices: result.member.voices,
 			sections: result.member.sections,
 			joinedAt: result.member.joined_at

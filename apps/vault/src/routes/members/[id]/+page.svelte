@@ -487,8 +487,8 @@
 		<!-- Roles -->
 		<div class="mb-6">
 			<h2 class="mb-2 text-sm font-medium text-gray-700">{m.member_roles_section()}</h2>
-			{#if data.isAdmin && member.email_id}
-				<!-- Editable roles for admins (only for registered members) -->
+			{#if data.isAdmin}
+				<!-- Editable roles for admins -->
 				<div class="flex flex-wrap gap-2">
 					{#each ASSIGNABLE_ROLES as role}
 						{@const isDisabled = updating ||
@@ -517,6 +517,9 @@
 						</button>
 					{/each}
 				</div>
+				{#if !member.email_id && member.roles.length > 0}
+					<p class="mt-1 text-xs text-amber-600">{m.member_roles_pending_registration()}</p>
+				{/if}
 			{:else if member.roles.length > 0}
 				<!-- Read-only roles display -->
 				<div class="flex flex-wrap gap-2">

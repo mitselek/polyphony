@@ -67,6 +67,14 @@ const createMockDb = () => {
 					if (sql.includes('INSERT INTO member_organizations')) {
 						return { success: true, meta: { changes: 1 } };
 					}
+					// INSERT INTO member_roles
+					if (sql.includes('INSERT INTO member_roles')) {
+						const [member_id, , role] = params as [string, string, string, string | null];
+						const existing = memberRoles.get(member_id) || [];
+						existing.push(role);
+						memberRoles.set(member_id, existing);
+						return { success: true, meta: { changes: 1 } };
+					}
 					// UPDATE members SET email_id
 					if (sql.includes('UPDATE members SET email_id')) {
 						const [email_id, id] = params as [string, string];
@@ -264,6 +272,28 @@ describe('Two-tier member system', () => {
 			expect(member.email_id).toBeNull();
 		});
 
+		it('should create roster member with pre-assigned roles', async () => {
+			const member = await createRosterMember(db, {
+				orgId: TEST_ORG_ID,
+				name: 'Future Admin',
+				roles: ['admin', 'librarian'],
+				addedBy: 'owner-123'
+			});
+
+			expect(member.roles).toEqual(['admin', 'librarian']);
+			expect(isRegistered(member)).toBe(false);
+		});
+
+		it('should create roster member without roles (backward compat)', async () => {
+			const member = await createRosterMember(db, {
+				orgId: TEST_ORG_ID,
+				name: 'No Roles Member',
+				addedBy: 'admin-123'
+			});
+
+			expect(member.roles).toEqual([]);
+		});
+
 		it('should enforce case-insensitive name uniqueness', async () => {
 			await createRosterMember(db, {
 				orgId: TEST_ORG_ID,
@@ -403,16 +433,17 @@ describe('Two-tier member system', () => {
 	});
 
 	describe('Data migration workflow', () => {
-		it('should support complete workflow: roster → upgrade → roles', async () => {
-			// 1. Add to roster (before OAuth)
+		it('should support complete workflow: roster with pre-assigned roles → upgrade', async () => {
+			// 1. Add to roster with pre-assigned roles (before OAuth)
 			const roster = await createRosterMember(db, {
 				orgId: TEST_ORG_ID,
 				name: 'New Singer',
 				email_contact: 'personal@email.com',
-				addedBy: 'conductor-id'
+				roles: ['conductor'],
+				addedBy: 'owner-id'
 			});
 
-			expect(roster.roles).toEqual([]);
+			expect(roster.roles).toEqual(['conductor']);
 			expect(isRegistered(roster)).toBe(false);
 
 			// 2. Member accepts invite and does OAuth
@@ -421,9 +452,8 @@ describe('Two-tier member system', () => {
 			expect(registered.email_id).toBe('oauth@google.com');
 			expect(registered.email_contact).toBe('personal@email.com');
 			expect(isRegistered(registered)).toBe(true);
-
-			// 3. Now they can be granted roles (future feature)
-			// This will be tested in integration tests once role management is updated
+			// 3. Pre-assigned roles survive the upgrade
+			expect(registered.roles).toEqual(['conductor']);
 		});
 	});
 });

@@ -1,16 +1,32 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
+	import { ASSIGNABLE_ROLES } from '$lib/types';
 	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
 	let name = $state('');
 	let emailContact = $state('');
+	let roleNames = $state<Set<string>>(new Set());
 	let voiceIds = $state<Set<string>>(new Set());
 	let sectionIds = $state<Set<string>>(new Set());
 	let isSubmitting = $state(false);
 	let error = $state('');
+
+	const availableRoles = $derived(
+		ASSIGNABLE_ROLES.filter(role => role !== 'owner' || data.isOwner)
+	);
+
+	function toggleRole(role: string) {
+		const newRoles = new Set(roleNames);
+		if (newRoles.has(role)) {
+			newRoles.delete(role);
+		} else {
+			newRoles.add(role);
+		}
+		roleNames = newRoles;
+	}
 
 	function toggleVoice(voiceId: string) {
 		const newVoices = new Set(voiceIds);
@@ -52,6 +68,7 @@
 				body: JSON.stringify({
 					name: name.trim(),
 					emailContact: emailContact.trim() || undefined,
+					roles: roleNames.size > 0 ? Array.from(roleNames) : undefined,
 					voiceIds: Array.from(voiceIds),
 					sectionIds: Array.from(sectionIds)
 				})
@@ -180,6 +197,29 @@
 				</div>
 				<p class="mt-2 text-sm text-gray-500">
 					{m.add_roster_sections_help()}
+				</p>
+			</fieldset>
+
+			<fieldset>
+				<legend class="mb-2 block text-sm font-medium text-gray-700">
+					{m.add_roster_roles_label()}
+				</legend>
+				<div class="space-y-2">
+					{#each availableRoles as role}
+						<label class="flex items-center gap-2">
+							<input
+								type="checkbox"
+								checked={roleNames.has(role)}
+								onchange={() => toggleRole(role)}
+								disabled={isSubmitting}
+								class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
+							/>
+							<span class="text-sm font-medium">{m[`roles_${role}`]()}</span>
+						</label>
+					{/each}
+				</div>
+				<p class="mt-2 text-sm text-gray-500">
+					{m.add_roster_roles_help()}
 				</p>
 			</fieldset>
 

@@ -23,6 +23,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 
 	return {
 		availableVoices,
-		availableSections
+		availableSections,
+		isOwner: currentUser.roles.includes('owner')
 	};
 };

@@ -291,6 +291,100 @@ describe('POST /api/members/roster', () => {
 		});
 	});
 
+	it('creates roster member with pre-assigned roles', async () => {
+		const { createRosterMember } = await import('$lib/server/db/members');
+		const newMember = {
+			id: 'new-member-id',
+			name: 'Future Admin',
+			nickname: null,
+			email_id: null,
+			email_contact: null,
+			roles: ['admin' as const, 'librarian' as const],
+			voices: [],
+			sections: [],
+			invited_by: 'admin-id',
+			joined_at: '2024-01-15T00:00:00Z'
+		};
+		vi.mocked(createRosterMember).mockResolvedValue(newMember);
+
+		const event = createMockEvent({
+			name: 'Future Admin',
+			roles: ['admin', 'librarian']
+		});
+		const response = await POST(event);
+
+		expect(response.status).toBe(201);
+		const data = await response.json() as any;
+		expect(data.roles).toEqual(['admin', 'librarian']);
+		expect(createRosterMember).toHaveBeenCalledWith(mockDb, {
+			name: 'Future Admin',
+			email_contact: undefined,
+			roles: ['admin', 'librarian'],
+			voiceIds: undefined,
+			sectionIds: undefined,
+			addedBy: 'admin-id',
+			orgId: 'org_test_001'
+		});
+	});
+
+	it('rejects invalid role values', async () => {
+		const event = createMockEvent({
+			name: 'Bad Roles',
+			roles: ['admin', 'superuser']
+		});
+		const response = await POST(event);
+
+		expect(response.status).toBe(400);
+		const data = await response.json() as any;
+		expect(data.error).toContain('Invalid role');
+	});
+
+	it('rejects owner role when current user is not owner', async () => {
+		// mockAdminMember has roles: ['admin'], not 'owner'
+		const event = createMockEvent({
+			name: 'Wants Owner',
+			roles: ['owner']
+		});
+		const response = await POST(event);
+
+		expect(response.status).toBe(403);
+		const data = await response.json() as any;
+		expect(data.error).toContain('owner');
+	});
+
+	it('allows owner role when current user is owner', async () => {
+		const { getAuthenticatedMember } = await import('$lib/server/auth/middleware');
+		vi.mocked(getAuthenticatedMember).mockResolvedValue({
+			...mockAdminMember,
+			roles: ['owner' as const, 'admin' as const]
+		});
+
+		const { createRosterMember } = await import('$lib/server/db/members');
+		const newMember = {
+			id: 'new-member-id',
+			name: 'New Owner',
+			nickname: null,
+			email_id: null,
+			email_contact: null,
+			roles: ['owner' as const],
+			voices: [],
+			sections: [],
+			invited_by: 'admin-id',
+			joined_at: '2024-01-15T00:00:00Z'
+		};
+		vi.mocked(createRosterMember).mockResolvedValue(newMember);
+
+		const event = createMockEvent({
+			name: 'New Owner',
+			roles: ['owner']
+		});
+		const response = await POST(event);
+
+		expect(response.status).toBe(201);
+		const data = await response.json() as any;
+		expect(data.roles).toEqual(['owner']);
+	});
+
 	it('handles empty emailContact string as undefined', async () => {
 		const { createRosterMember } = await import('$lib/server/db/members');
 		const newMember = {
