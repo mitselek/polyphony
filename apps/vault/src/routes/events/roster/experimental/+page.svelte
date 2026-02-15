@@ -34,15 +34,34 @@
 	const FULL_WIDTH = 150;
 	const MIN_WIDTH = 44;
 	const FADE_DISTANCE = 50; // Scroll distance over which fade occurs
+	const SCROLL_THRESHOLD = 2; // Minimum scroll to trigger shrinking (ignore layout quirks)
 
+	let scrollContainer: HTMLElement | undefined = $state();
 	let scrollLeft = $state(0);
-	let columnWidth = $derived(Math.max(MIN_WIDTH, FULL_WIDTH - scrollLeft));
+	let isScrollable = $derived(scrollContainer ? scrollContainer.scrollWidth > scrollContainer.clientWidth : false);
+	let isActuallyScrolled = $derived(scrollLeft > SCROLL_THRESHOLD);
+	let columnWidth = $derived(isScrollable && isActuallyScrolled ? Math.max(MIN_WIDTH, FULL_WIDTH - scrollLeft) : FULL_WIDTH);
 	let fullNameOpacity = $derived(Math.max(0, 1 - scrollLeft / FADE_DISTANCE));
 	let initialsOpacity = $derived(Math.min(1, scrollLeft / FADE_DISTANCE));
 
 	function handleScroll(e: Event) {
 		scrollLeft = (e.target as HTMLElement).scrollLeft;
 	}
+
+	// Debug logging
+	$effect(() => {
+		if (scrollContainer) {
+			console.log('[Roster Debug]', {
+				scrollLeft,
+				isScrollable,
+				isActuallyScrolled,
+				columnWidth,
+				scrollWidth: scrollContainer.scrollWidth,
+				clientWidth: scrollContainer.clientWidth,
+				diff: scrollContainer.scrollWidth - scrollContainer.clientWidth
+			});
+		}
+	});
 	// --- End experimental ---
 
 	// Watch for data changes (e.g., on navigation) and update local state
@@ -348,135 +367,131 @@
 			<p class="text-gray-500">{m.roster_no_members()}</p>
 		</Card>
 	{:else}
-		<!-- Table Container with Horizontal Scroll + scroll tracking -->
-		<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm" onscroll={handleScroll}>
-			<table class="min-w-full border-collapse">
-				<thead class="border-b-2 border-gray-300">
-					<tr>
-						<!-- Sticky Name Column Header - dynamic width -->
-						<th
-							class="sticky left-0 top-0 z-30 border-r-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
-							style="width: {columnWidth}px; min-width: {MIN_WIDTH}px; max-width: {columnWidth}px;"
+		<!-- Grid Container with Horizontal Scroll ONLY + scroll tracking -->
+		<div class="rounded-lg border border-gray-200 bg-white shadow-sm" style="overflow-x: auto; overflow-y: clip;" bind:this={scrollContainer} onscroll={handleScroll}>
+			<div
+				class="grid"
+				style="grid-template-columns: {columnWidth}px repeat({roster.events.length}, minmax(100px, 1fr)); min-width: min-content;"
+			>
+				<!-- Header Row -->
+				<!-- Sticky Name Column Header -->
+				<div
+					class="sticky left-0 top-0 z-30 border-r-2 border-b-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
+					style="width: {columnWidth}px;"
+				>
+					{m.roster_table_name_header()}
+				</div>
+
+				{#each roster.events as event}
+					<div
+						class="sticky top-0 z-10 border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
+						onclick={() => navigateToEvent(event.id)}
+						title="Click to view event details"
+						role="button"
+						tabindex="0"
+						onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
+					>
+						<div class="flex flex-col gap-0.5">
+							<span class="font-semibold">{event.name}</span>
+							<span class="text-gray-500">{formatDateShort(event.date, locale)}</span>
+							<span class="text-gray-400">{formatTime(event.date, locale)}</span>
+						</div>
+					</div>
+				{/each}
+
+				<!-- Member Rows -->
+				{#each roster.members as member, index}
+					{@const prevMember = index > 0 ? roster.members[index - 1] : null}
+					{@const currentSectionId = member.primarySection?.id}
+					{@const prevSectionId = prevMember?.primarySection?.id}
+					{@const isNewSection = index === 0 || currentSectionId !== prevSectionId}
+
+					{#if isNewSection && index > 0}
+						<!-- Section Separator -->
+						<div class="h-2 bg-gray-50" style="grid-column: 1 / -1;"></div>
+					{/if}
+
+					<!-- Member Name Cell (sticky first column) -->
+					<div
+						class="group sticky left-0 z-20 border-r-2 border-b border-gray-300 bg-white p-0 overflow-hidden hover:bg-gray-50"
+						style="width: {columnWidth}px;"
+					>
+						<a
+							href="/members/{member.id}"
+							class="relative flex items-center px-2 py-3 hover:bg-blue-50"
+							title={member.nickname || member.name}
 						>
-							{m.roster_table_name_header()}
-						</th>
-
-						{#each roster.events as event}
-							<th
-								class="sticky top-0 z-10 border-r border-gray-200 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
-								style="min-width: 100px;"
-								onclick={() => navigateToEvent(event.id)}
-								title="Click to view event details"
-								role="button"
-								tabindex="0"
-								onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
+							<!-- Left side: full name + badge, fades out & scrolls out -->
+							<div
+								class="absolute left-2 flex items-center gap-2 transition-opacity duration-200"
+								style="opacity: {fullNameOpacity}"
 							>
-								<div class="flex flex-col gap-0.5">
-									<span class="font-semibold">{event.name}</span>
-									<span class="text-gray-500">{formatDateShort(event.date, locale)}</span>
-									<span class="text-gray-400">{formatTime(event.date, locale)}</span>
+								{#if isNewSection && member.primarySection}
+									<SectionBadge section={member.primarySection} class="shrink-0" />
+								{/if}
+								<span class="text-sm font-medium text-gray-900 hover:text-blue-600 whitespace-nowrap">
+									{member.nickname || member.name}
+								</span>
+							</div>
+
+							<!-- Right side: initials, fades in & stays visible -->
+							<span
+								class="ml-auto text-right text-sm font-medium text-gray-900 hover:text-blue-600 transition-opacity duration-200"
+								style="opacity: {initialsOpacity}"
+							>
+								{getInitials(member.nickname || member.name)}
+							</span>
+						</a>
+					</div>
+
+					<!-- Event Participation Cells -->
+					{#each roster.events as event}
+						{@const participationMap = event.participation}
+						{@const status = participationMap.get(member.id)}
+						{@const eventIsPast = isPast(event.date)}
+						{@const canEditRsvp = canEditCellFor(member.id, event.date, 'rsvp')}
+						{@const canEditAtt = canEditCellFor(member.id, event.date, 'attendance')}
+
+						<div
+							class="border-r border-b border-gray-200 group-hover:bg-gray-50 p-0 text-center text-sm"
+							title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
+						>
+							{#if eventIsPast}
+								<div class="flex h-full mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
+									<button
+										class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
+										onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
+										disabled={!canEditRsvp}
+										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
+									>
+										{getRsvpText(status?.plannedStatus ?? null)}
+									</button>
+									<div class="w-px bg-gray-300"></div>
+									<button
+										class="participation-cell flex-1 px-2 py-1 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
+										onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
+										disabled={!canEditAtt}
+										title="{m.roster_attendance_label()}: {status?.actualStatus ?? 'not recorded'}"
+									>
+										{getAttendanceText(status?.actualStatus ?? null)}
+									</button>
 								</div>
-							</th>
-						{/each}
-					</tr>
-				</thead>
-
-				<tbody>
-					{#each roster.members as member, index}
-						{@const prevMember = index > 0 ? roster.members[index - 1] : null}
-						{@const currentSectionId = member.primarySection?.id}
-						{@const prevSectionId = prevMember?.primarySection?.id}
-						{@const isNewSection = index === 0 || currentSectionId !== prevSectionId}
-
-						{#if isNewSection && index > 0}
-							<tr class="h-2 bg-gray-50">
-								<td colspan={1 + roster.events.length} class="border-none"></td>
-							</tr>
-						{/if}
-
-						<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<!-- Sticky Member Cell - layered fade transition (#244) -->
-							<td
-								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white p-0 overflow-hidden"
-								style="width: {columnWidth}px; min-width: {MIN_WIDTH}px; max-width: {columnWidth}px;"
-							>
-								<a
-									href="/members/{member.id}"
-									class="relative flex items-center px-2 py-3 hover:bg-blue-50"
-									title={member.nickname || member.name}
-								>
-									<!-- Left side: full name + badge, fades out & scrolls out -->
-									<div
-										class="absolute left-2 flex items-center gap-2 transition-opacity duration-200"
-										style="opacity: {fullNameOpacity}"
+							{:else}
+								<div class="mx-1 my-1">
+									<button
+										class="participation-cell w-full rounded-full px-3 py-1 border border-gray-300 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}"
+										onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
+										disabled={!canEditRsvp}
+										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
 									>
-										{#if isNewSection && member.primarySection}
-											<SectionBadge section={member.primarySection} class="shrink-0" />
-										{/if}
-										<span class="text-sm font-medium text-gray-900 hover:text-blue-600 whitespace-nowrap">
-											{member.nickname || member.name}
-										</span>
-									</div>
-
-									<!-- Right side: initials, fades in & stays visible -->
-									<span
-										class="ml-auto text-right text-sm font-medium text-gray-900 hover:text-blue-600 transition-opacity duration-200"
-										style="opacity: {initialsOpacity}"
-									>
-										{getInitials(member.nickname || member.name)}
-									</span>
-								</a>
-							</td>
-
-							{#each roster.events as event}
-								{@const participationMap = event.participation}
-								{@const status = participationMap.get(member.id)}
-								{@const eventIsPast = isPast(event.date)}
-								{@const canEditRsvp = canEditCellFor(member.id, event.date, 'rsvp')}
-								{@const canEditAtt = canEditCellFor(member.id, event.date, 'attendance')}
-
-								<td
-									class="border-r border-gray-200 p-0 text-center text-sm"
-									title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
-								>
-									{#if eventIsPast}
-										<div class="flex h-full mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
-											<button
-												class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
-												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
-												disabled={!canEditRsvp}
-												title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
-											>
-												{getRsvpText(status?.plannedStatus ?? null)}
-											</button>
-											<div class="w-px bg-gray-300"></div>
-											<button
-												class="participation-cell flex-1 px-2 py-1 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
-												onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
-												disabled={!canEditAtt}
-												title="{m.roster_attendance_label()}: {status?.actualStatus ?? 'not recorded'}"
-											>
-												{getAttendanceText(status?.actualStatus ?? null)}
-											</button>
-										</div>
-									{:else}
-										<div class="mx-1 my-1">
-											<button
-												class="participation-cell w-full rounded-full px-3 py-1 border border-gray-300 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}"
-												onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
-												disabled={!canEditRsvp}
-												title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
-											>
-												{getRsvpText(status?.plannedStatus ?? null)}
-											</button>
-										</div>
-									{/if}
-								</td>
-							{/each}
-						</tr>
+										{getRsvpText(status?.plannedStatus ?? null)}
+									</button>
+								</div>
+							{/if}
+						</div>
 					{/each}
-				</tbody>
-			</table>
+				{/each}
+			</div>
 		</div>
 
 		<!-- Summary Stats -->
@@ -674,15 +689,8 @@
 		color: #6b7280;
 	}
 
-	tr:hover td.sticky {
-		background-color: #f9fafb;
-	}
-
-	thead th.sticky {
-		box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.1);
-	}
-
-	tbody td.sticky {
+	/* Sticky column shadow */
+	.sticky.left-0 {
 		box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.1);
 	}
 </style>
