@@ -30,14 +30,15 @@
 	let popupPosition = $state<{ x: number; y: number }>({ x: 0, y: 0 });
 	let updating = $state(false);
 
-	// --- Experimental: scroll-driven column shrinking (Issue #242) ---
+	// --- Experimental: scroll-driven column shrinking (Issue #244) ---
 	const FULL_WIDTH = 150;
 	const MIN_WIDTH = 44;
-	const INITIALS_THRESHOLD = 80; // Switch to initials when column narrows past this
+	const FADE_DISTANCE = 50; // Scroll distance over which fade occurs
 
 	let scrollLeft = $state(0);
 	let columnWidth = $derived(Math.max(MIN_WIDTH, FULL_WIDTH - scrollLeft));
-	let showInitials = $derived(columnWidth <= INITIALS_THRESHOLD);
+	let fullNameOpacity = $derived(Math.max(0, 1 - scrollLeft / FADE_DISTANCE));
+	let initialsOpacity = $derived(Math.min(1, scrollLeft / FADE_DISTANCE));
 
 	function handleScroll(e: Event) {
 		scrollLeft = (e.target as HTMLElement).scrollLeft;
@@ -394,23 +395,35 @@
 						{/if}
 
 						<tr class="border-b border-gray-100 hover:bg-gray-50">
-							<!-- Sticky Member Cell - dynamic width, conditional initials -->
+							<!-- Sticky Member Cell - layered fade transition (#244) -->
 							<td
 								class="sticky left-0 z-20 border-r-2 border-gray-300 bg-white p-0 overflow-hidden"
 								style="width: {columnWidth}px; min-width: {MIN_WIDTH}px; max-width: {columnWidth}px;"
 							>
 								<a
 									href="/members/{member.id}"
-									class="flex items-center gap-2 px-2 py-3 hover:bg-blue-50 overflow-hidden"
+									class="relative flex items-center px-2 py-3 hover:bg-blue-50"
 									title={member.nickname || member.name}
 								>
-									{#if isNewSection && member.primarySection && columnWidth > 110}
-										<SectionBadge section={member.primarySection} class="shrink-0" />
-									{/if}
-									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto text-right truncate">
-										{showInitials
-											? getInitials(member.nickname || member.name)
-											: (member.nickname || member.name)}
+									<!-- Left side: full name + badge, fades out & scrolls out -->
+									<div
+										class="absolute left-2 flex items-center gap-2 transition-opacity duration-200"
+										style="opacity: {fullNameOpacity}"
+									>
+										{#if isNewSection && member.primarySection}
+											<SectionBadge section={member.primarySection} class="shrink-0" />
+										{/if}
+										<span class="text-sm font-medium text-gray-900 hover:text-blue-600 whitespace-nowrap">
+											{member.nickname || member.name}
+										</span>
+									</div>
+
+									<!-- Right side: initials, fades in & stays visible -->
+									<span
+										class="ml-auto text-right text-sm font-medium text-gray-900 hover:text-blue-600 transition-opacity duration-200"
+										style="opacity: {initialsOpacity}"
+									>
+										{getInitials(member.nickname || member.name)}
 									</span>
 								</a>
 							</td>
