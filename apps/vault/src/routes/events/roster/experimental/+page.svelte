@@ -33,10 +33,11 @@
 	// --- Experimental: scroll-driven column shrinking (Issue #242) ---
 	const FULL_WIDTH = 150;
 	const MIN_WIDTH = 44;
+	const INITIALS_THRESHOLD = 80; // Switch to initials when column narrows past this
 
 	let scrollLeft = $state(0);
 	let columnWidth = $derived(Math.max(MIN_WIDTH, FULL_WIDTH - scrollLeft));
-	let showInitials = $derived(scrollLeft > 0);
+	let showInitials = $derived(columnWidth <= INITIALS_THRESHOLD);
 
 	function handleScroll(e: Event) {
 		scrollLeft = (e.target as HTMLElement).scrollLeft;
@@ -403,7 +404,7 @@
 									class="flex items-center gap-2 px-2 py-3 hover:bg-blue-50 overflow-hidden"
 									title={member.nickname || member.name}
 								>
-									{#if isNewSection && member.primarySection && !showInitials}
+									{#if isNewSection && member.primarySection && columnWidth > 110}
 										<SectionBadge section={member.primarySection} class="shrink-0" />
 									{/if}
 									<span class="text-sm font-medium text-gray-900 hover:text-blue-600 ml-auto text-right truncate">
