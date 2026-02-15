@@ -8,6 +8,7 @@ import type { RequestHandler } from './$types';
 import { createOrganization, getAllOrganizations } from '$lib/server/db/organizations';
 import { registerSubdomain } from '$lib/server/cloudflare/domains';
 import type { CreateOrganizationInput } from '$lib/types';
+import { generateId } from '$lib/server/utils/id';
 
 /**
  * GET /api/public/organizations
@@ -69,12 +70,40 @@ function parseOrgCreationInput(body: unknown): CreateOrganizationInput {
 	};
 }
 
+async function createOwnerMember(db: D1Database, orgId: string, contactEmail: string) {
+	const memberId = generateId();
+	const now = new Date().toISOString();
+
+	// Create member record with contactEmail as both name and email_id
+	await db
+		.prepare('INSERT INTO members (id, name, email_id, email_contact, invited_by) VALUES (?, ?, ?, NULL, NULL)')
+		.bind(memberId, contactEmail, contactEmail)
+		.run();
+
+	// Link member to organization
+	await db
+		.prepare('INSERT INTO member_organizations (member_id, org_id, invited_by, joined_at) VALUES (?, ?, NULL, ?)')
+		.bind(memberId, orgId, now)
+		.run();
+
+	// Grant owner role
+	await db
+		.prepare('INSERT INTO member_roles (member_id, org_id, role, granted_at, granted_by) VALUES (?, ?, ?, ?, NULL)')
+		.bind(memberId, orgId, 'owner', now)
+		.run();
+
+	return { memberId, email: contactEmail };
+}
+
 async function performOrganizationCreation(db: D1Database, orgInput: CreateOrganizationInput, env: {
 	CF_ACCOUNT_ID?: string;
 	CF_API_TOKEN?: string;
 	CF_PAGES_PROJECT?: string;
 }) {
 	const organization = await createOrganization(db, orgInput);
+
+	// Create owner member from contact email
+	const owner = await createOwnerMember(db, organization.id, orgInput.contactEmail);
 
 	const domainResult = await registerSubdomain(orgInput.subdomain, {
 		CF_ACCOUNT_ID: env.CF_ACCOUNT_ID,
@@ -88,7 +117,7 @@ async function performOrganizationCreation(db: D1Database, orgInput: CreateOrgan
 		console.log('[Org Creation] Domain registered:', domainResult.domain, domainResult.status);
 	}
 
-	return organization;
+	return { organization, owner };
 }
 
 /**
@@ -111,9 +140,9 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const orgInput = parseOrgCreationInput(body);
 
 	try {
-		const organization = await performOrganizationCreation(
-			platform.env.DB, 
-			orgInput, 
+		const { organization, owner } = await performOrganizationCreation(
+			platform.env.DB,
+			orgInput,
 			{
 				CF_ACCOUNT_ID: platform.env.CF_ACCOUNT_ID,
 				CF_API_TOKEN: platform.env.CF_API_TOKEN,
@@ -121,7 +150,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			}
 		);
 
-		return json({ organization }, { status: 201 });
+		return json({ organization, owner }, { status: 201 });
 	} catch (err) {
 		console.error('[Org Creation] Error:', err);
 		if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {

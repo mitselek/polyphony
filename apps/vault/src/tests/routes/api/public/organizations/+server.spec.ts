@@ -115,12 +115,12 @@ describe('POST /api/public/organizations', () => {
 			type: 'collective',
 			contactEmail: 'new@example.com'
 		};
-		
+
 		(mockEvent.request!.json as any) = vi.fn().mockResolvedValue(input);
-		
+
 		const response = await POST(mockEvent as any);
 		const data = await response.json() as any;
-		
+
 		expect(response.status).toBe(201);
 		expect(data.organization).toMatchObject({
 			name: 'New Choir',
@@ -130,6 +130,54 @@ describe('POST /api/public/organizations', () => {
 		});
 		expect(data.organization.id).toMatch(/^org_/);
 		expect(data.organization.createdAt).toBeTruthy();
+	});
+
+	it('creates an owner member for the contact email', async () => {
+		const queries: string[] = [];
+		const bindings: any[][] = [];
+
+		mockDB.prepare = vi.fn((sql: string) => {
+			queries.push(sql);
+			return {
+				bind: vi.fn((...args: any[]) => {
+					bindings.push(args);
+					return {
+						run: vi.fn().mockResolvedValue({ meta: { changes: 1 } })
+					};
+				})
+			};
+		}) as any;
+
+		const input = {
+			name: 'New Choir',
+			subdomain: 'newchoir',
+			type: 'collective',
+			contactEmail: 'owner@example.com'
+		};
+
+		(mockEvent.request!.json as any) = vi.fn().mockResolvedValue(input);
+
+		const response = await POST(mockEvent as any);
+		expect(response.status).toBe(201);
+
+		const data = await response.json() as any;
+		expect(data.owner).toBeDefined();
+		expect(data.owner.email).toBe('owner@example.com');
+		expect(data.owner.memberId).toBeTruthy();
+
+		// Verify member INSERT was called
+		const memberInsert = queries.find(q => q.includes('INSERT INTO members'));
+		expect(memberInsert).toBeTruthy();
+
+		// Verify member_organizations INSERT was called
+		const orgMemberInsert = queries.find(q => q.includes('INSERT INTO member_organizations'));
+		expect(orgMemberInsert).toBeTruthy();
+
+		// Verify member_roles INSERT with 'owner' role was called
+		const roleInsert = queries.find(q => q.includes('INSERT INTO member_roles'));
+		expect(roleInsert).toBeTruthy();
+		const roleBindings = bindings[queries.indexOf(roleInsert!)];
+		expect(roleBindings).toContain('owner');
 	});
 
 	it('creates a new umbrella organization', async () => {
