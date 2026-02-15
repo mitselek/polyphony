@@ -137,7 +137,7 @@
 	<footer class="border-t border-slate-100 bg-slate-50 py-8">
 		<div class="mx-auto max-w-5xl px-6 text-center">
 			<p class="text-sm text-slate-500">
-				Operated by <a href="https://scoreinstitute.eu" class="font-medium text-indigo-600 hover:text-indigo-700">Institute of Beautiful Scores</a>
+				Operated by Mihkel Putrinš @ <a href="https://github.com/mitselek" class="font-medium text-indigo-600 hover:text-indigo-700">Institute of Beautiful Scores</a>
 			</p>
 			<p class="mt-2 text-xs text-slate-400">
 				Open source · Privacy-first · Built for choirs
