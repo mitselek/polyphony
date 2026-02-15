@@ -2,7 +2,6 @@
 // Issue #220 - Move registration UI from Vault to Registry
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { RequestEvent } from '@sveltejs/kit';
 
 describe('Registration Flow', () => {
 	let mockFetch: ReturnType<typeof vi.fn>;
@@ -10,7 +9,7 @@ describe('Registration Flow', () => {
 
 	beforeEach(() => {
 		mockFetch = vi.fn();
-		globalThis.fetch = mockFetch;
+		globalThis.fetch = mockFetch as typeof fetch;
 
 		mockEvent = {
 			request: new Request('http://localhost/register', { method: 'POST' }),

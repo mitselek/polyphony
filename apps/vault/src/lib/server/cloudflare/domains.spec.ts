@@ -13,7 +13,7 @@ describe('registerSubdomain', () => {
 
 	beforeEach(() => {
 		mockFetch = vi.fn();
-		globalThis.fetch = mockFetch;
+		globalThis.fetch = mockFetch as typeof fetch;
 	});
 
 	it('should return error when CF_ACCOUNT_ID is missing', async () => {

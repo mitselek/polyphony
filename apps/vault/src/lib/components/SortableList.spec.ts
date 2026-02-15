@@ -18,10 +18,10 @@ describe('SortableList', () => {
 		{ id: '3', name: 'Third Item' }
 	];
 
-	let onReorder: ReturnType<typeof vi.fn>;
+	let onReorder: ReturnType<typeof vi.fn<(itemIds: string[]) => void>>;
 
 	beforeEach(() => {
-		onReorder = vi.fn();
+		onReorder = vi.fn<(itemIds: string[]) => void>();
 	});
 
 	afterEach(() => {
