@@ -44,7 +44,7 @@
 			<div class="grid gap-4 sm:grid-cols-3">
 				<div class="rounded-xl bg-slate-50 p-6 text-center">
 					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">1</div>
-					<h3 class="font-medium text-slate-900">Create Your Vault</h3>
+					<h3 class="font-medium text-slate-900">Register Your Collective</h3>
 					<p class="mt-2 text-sm text-slate-500">Get your choir's own subdomain (e.g., yourchoir.polyphony.uk)</p>
 				</div>
 				<div class="rounded-xl bg-slate-50 p-6 text-center">
@@ -75,14 +75,14 @@
 				</p>
 			</a>
 
-			<!-- Create a Vault -->
-			<a href="/deploy" class="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md hover:ring-emerald-200">
+			<!-- Register Your Collective -->
+			<a href="/register" class="group rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-100 transition hover:shadow-md hover:ring-emerald-200">
 				<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 					</svg>
 				</div>
-				<h3 class="mb-2 text-xl font-semibold text-slate-900">Create a Vault</h3>
+				<h3 class="mb-2 text-xl font-semibold text-slate-900">Register Your Collective</h3>
 				<p class="text-slate-600">
 					Start your choir's own Vault — manage your library, members, and events in one place.
 				</p>
