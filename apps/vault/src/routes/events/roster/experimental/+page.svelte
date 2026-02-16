@@ -414,7 +414,7 @@
 		<!-- Body band: horizontally scrollable -->
 		<div
 			class="rounded-b-lg border-x border-b border-gray-200 bg-white shadow-sm"
-			style="overflow-x: auto;"
+			style="overflow-x: auto; overflow-y: hidden;"
 			bind:this={scrollContainer}
 			onscroll={handleScroll}
 		>
