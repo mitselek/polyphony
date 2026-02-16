@@ -38,31 +38,20 @@
 	const SCROLL_THRESHOLD = 2; // Minimum scroll to trigger shrinking (ignore layout quirks)
 
 	let scrollContainer: HTMLElement | undefined = $state();
+	let headerScrollEl: HTMLElement | undefined = $state();
 	let scrollLeft = $state(0);
 	let isScrollable = $derived(scrollContainer ? scrollContainer.scrollWidth > scrollContainer.clientWidth : false);
 	let isActuallyScrolled = $derived(scrollLeft > SCROLL_THRESHOLD);
 	let columnWidth = $derived(isScrollable && isActuallyScrolled ? Math.max(MIN_WIDTH, FULL_WIDTH - scrollLeft) : FULL_WIDTH);
 	let fullNameOpacity = $derived(Math.max(0, 1 - scrollLeft / FADE_DISTANCE));
 	let initialsOpacity = $derived(Math.min(1, scrollLeft / FADE_DISTANCE));
+	let gridColumns = $derived(`${columnWidth}px repeat(${roster.events.length}, minmax(100px, 1fr))`);
 
 	function handleScroll(e: Event) {
 		scrollLeft = (e.target as HTMLElement).scrollLeft;
+		if (headerScrollEl) headerScrollEl.scrollLeft = scrollLeft;
 	}
 
-	// Debug logging
-	$effect(() => {
-		if (scrollContainer) {
-			console.log('[Roster Debug]', {
-				scrollLeft,
-				isScrollable,
-				isActuallyScrolled,
-				columnWidth,
-				scrollWidth: scrollContainer.scrollWidth,
-				clientWidth: scrollContainer.clientWidth,
-				diff: scrollContainer.scrollWidth - scrollContainer.clientWidth
-			});
-		}
-	});
 	// --- End experimental column shrinking ---
 
 	// --- Experimental: smart unstick header row (Issue #247) ---
@@ -73,7 +62,8 @@
 	function handleWindowScroll() {
 		if (!scrollContainer) return;
 		const gridBottom = scrollContainer.getBoundingClientRect().bottom;
-		headerSticky = shouldHeaderStick(gridBottom, window.innerHeight, UNSTICK_THRESHOLD);
+		const vh = window.innerHeight;
+		headerSticky = shouldHeaderStick(gridBottom, vh, UNSTICK_THRESHOLD);
 	}
 	// --- End experimental header unstick ---
 
@@ -383,38 +373,48 @@
 			<p class="text-gray-500">{m.roster_no_members()}</p>
 		</Card>
 	{:else}
-		<!-- Grid Container with Horizontal Scroll ONLY + scroll tracking -->
-		<div class="rounded-lg border border-gray-200 bg-white shadow-sm" style="overflow-x: auto; overflow-y: clip;" bind:this={scrollContainer} onscroll={handleScroll}>
-			<div
-				class="grid"
-				style="grid-template-columns: {columnWidth}px repeat({roster.events.length}, minmax(100px, 1fr)); min-width: min-content;"
-			>
-				<!-- Header Row -->
-				<!-- Corner cell: always sticky left, conditionally sticky top -->
-				<div
-					class="sticky left-0 {headerSticky ? 'top-0 z-30' : 'z-20'} border-r-2 border-b-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
-					style="width: {columnWidth}px;"
-				>
-					{m.roster_table_name_header()}
-				</div>
-
-				{#each roster.events as event}
+		<!-- Split Header Pattern: header band (sticky) + body band (scrollable) -->
+		<div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+			<!-- Header band: sticky to viewport, scroll synced via JS -->
+			<div class="{headerSticky ? 'sticky top-0 shadow-md rounded-t-lg' : ''} z-40 bg-white">
+				<div bind:this={headerScrollEl} style="overflow: hidden;">
 					<div
-						class="{headerSticky ? 'sticky top-0' : ''} z-10 border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
-						onclick={() => navigateToEvent(event.id)}
-						title="Click to view event details"
-						role="button"
-						tabindex="0"
-						onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
+						class="grid"
+						style="grid-template-columns: {gridColumns}; min-width: min-content;"
 					>
-						<div class="flex flex-col gap-0.5">
-							<span class="font-semibold">{event.name}</span>
-							<span class="text-gray-500">{formatDateShort(event.date, locale)}</span>
-							<span class="text-gray-400">{formatTime(event.date, locale)}</span>
+						<div
+							class="sticky left-0 z-30 border-r-2 border-b-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
+							style="width: {columnWidth}px;"
+						>
+							{m.roster_table_name_header()}
 						</div>
-					</div>
-				{/each}
 
+						{#each roster.events as event}
+							<div
+								class="border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
+								onclick={() => navigateToEvent(event.id)}
+								title="Click to view event details"
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
+							>
+								<div class="flex flex-col gap-0.5">
+									<span class="font-semibold">{event.name}</span>
+									<span class="text-gray-500">{formatDateShort(event.date, locale)}</span>
+									<span class="text-gray-400">{formatTime(event.date, locale)}</span>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
+
+			<!-- Body band: horizontally scrollable -->
+			<div style="overflow-x: auto;" bind:this={scrollContainer} onscroll={handleScroll}>
+				<div
+					class="grid"
+					style="grid-template-columns: {gridColumns}; min-width: min-content;"
+				>
 				<!-- Member Rows -->
 				{#each roster.members as member, index}
 					{@const prevMember = index > 0 ? roster.members[index - 1] : null}
@@ -507,6 +507,7 @@
 						</div>
 					{/each}
 				{/each}
+				</div>
 			</div>
 		</div>
 
