@@ -558,7 +558,7 @@
 							class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 						>
 							{#if uploadingFile}
-								{m.editions_uploading()}
+								{m.edition_uploading()}
 							{:else if saving}
 								{m.actions_saving()}
 							{:else}

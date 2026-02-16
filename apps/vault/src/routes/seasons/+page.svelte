@@ -203,13 +203,13 @@
 	<!-- Create/Edit Form Modal -->
 	<Modal
 		open={showCreateForm}
-		title={editingSeason ? m.seasons_modal_title_edit() : m.seasons_modal_title_add()}
+		title={editingSeason ? m.season_modal_title_edit() : m.season_modal_title_add()}
 		onclose={closeForm}
 	>
 		<form onsubmit={handleSubmit}>
 			<div class="mb-4">
 				<label for="name" class="mb-1 block text-sm font-medium text-gray-700">
-					{m.seasons_name_label()}
+					{m.season_name_label()}
 				</label>
 				<input
 					id="name"
@@ -222,7 +222,7 @@
 			</div>
 			<div class="mb-4">
 				<label for="start_date" class="mb-1 block text-sm font-medium text-gray-700">
-					{m.seasons_start_date_label()}
+					{m.season_start_date_label()}
 				</label>
 				<input
 					id="start_date"
@@ -232,7 +232,7 @@
 					required
 				/>
 				<p class="mt-1 text-xs text-gray-500">
-					{m.seasons_start_date_help()}
+					{m.season_start_date_help()}
 				</p>
 			</div>
 
@@ -249,7 +249,7 @@
 					disabled={saving}
 					class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 				>
-					{saving ? m.seasons_submit_btn_save() : editingSeason ? m.seasons_submit_btn_update() : m.seasons_submit_btn_create()}
+					{saving ? m.season_submit_btn_save() : editingSeason ? m.season_submit_btn_update() : m.season_submit_btn_create()}
 				</button>
 			</div>
 		</form>

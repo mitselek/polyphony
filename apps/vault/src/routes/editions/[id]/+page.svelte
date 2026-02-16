@@ -396,10 +396,10 @@
 
 		<!-- Digital Assets Card -->
 		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold">{m.editions_digital_assets_title()}</h2>
+			<h2 class="mb-4 text-lg font-semibold">{m.edition_digital_assets_title()}</h2>
 
 			{#if !data.edition.fileKey && !data.edition.externalUrl}
-				<p class="text-gray-500">{m.editions_no_digital_assets()}</p>
+				<p class="text-gray-500">{m.edition_no_digital_assets()}</p>
 			{:else}
 				<div class="space-y-4">
 					<!-- File download -->
