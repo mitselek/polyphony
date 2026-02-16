@@ -375,11 +375,12 @@
 			<p class="text-gray-500">{m.roster_no_members()}</p>
 		</Card>
 	{:else}
-		<!-- Split Header Pattern: header band (sticky) + body band (scrollable) -->
-		<div class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-clip">
-			<!-- Header band: sticky to viewport, scroll synced via JS -->
-			<div class="sticky z-40 bg-white {headerTop >= 0 ? 'shadow-md rounded-t-lg' : ''}" style="top: {headerTop}px;">
-				<div bind:this={headerScrollEl} style="overflow: hidden;">
+		<!-- Header band: sticky, overflow:hidden clips grid, no wrapper to break sticky -->
+		<div
+			class="sticky z-40 rounded-t-lg border-t border-x border-gray-200 bg-white {headerTop >= 0 ? 'shadow-md' : ''}"
+			style="top: {headerTop}px; overflow: hidden;"
+			bind:this={headerScrollEl}
+		>
 					<div
 						class="grid"
 						style="grid-template-columns: {gridColumns}; min-width: min-content;"
@@ -408,11 +409,15 @@
 							</div>
 						{/each}
 					</div>
-				</div>
-			</div>
+		</div>
 
-			<!-- Body band: horizontally scrollable -->
-			<div style="overflow-x: auto;" bind:this={scrollContainer} onscroll={handleScroll}>
+		<!-- Body band: horizontally scrollable -->
+		<div
+			class="rounded-b-lg border-x border-b border-gray-200 bg-white shadow-sm"
+			style="overflow-x: auto;"
+			bind:this={scrollContainer}
+			onscroll={handleScroll}
+		>
 				<div
 					class="grid"
 					style="grid-template-columns: {gridColumns}; min-width: min-content;"
@@ -510,7 +515,6 @@
 					{/each}
 				{/each}
 				</div>
-			</div>
 		</div>
 
 		<!-- Summary Stats -->
