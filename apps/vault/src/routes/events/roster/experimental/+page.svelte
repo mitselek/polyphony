@@ -374,7 +374,7 @@
 		</Card>
 	{:else}
 		<!-- Split Header Pattern: header band (sticky) + body band (scrollable) -->
-		<div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+		<div class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-clip">
 			<!-- Header band: sticky to viewport, scroll synced via JS -->
 			<div class="{headerSticky ? 'sticky top-0 shadow-md rounded-t-lg' : ''} z-40 bg-white">
 				<div bind:this={headerScrollEl} style="overflow: hidden;">
