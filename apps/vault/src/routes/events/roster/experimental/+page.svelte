@@ -10,6 +10,7 @@
 	import { SectionBadge } from '$lib/components/badges';
 	import SeasonNavigation from '$lib/components/SeasonNavigation.svelte';
 	import { canEditCell } from '$lib/utils/participation-permissions';
+	import { shouldHeaderStick } from '$lib/utils/sticky-header';
 	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
@@ -62,7 +63,19 @@
 			});
 		}
 	});
-	// --- End experimental ---
+	// --- End experimental column shrinking ---
+
+	// --- Experimental: smart unstick header row (Issue #247) ---
+	const UNSTICK_THRESHOLD = 100;
+
+	let headerSticky = $state(true);
+
+	function handleWindowScroll() {
+		if (!scrollContainer) return;
+		const gridBottom = scrollContainer.getBoundingClientRect().bottom;
+		headerSticky = shouldHeaderStick(gridBottom, window.innerHeight, UNSTICK_THRESHOLD);
+	}
+	// --- End experimental header unstick ---
 
 	// Watch for data changes (e.g., on navigation) and update local state
 	$effect(() => {
@@ -288,12 +301,15 @@
 	}
 </script>
 
-<!-- Close popup when clicking outside -->
-<svelte:window onclick={(e) => {
-	if (activePopup && !(e.target as HTMLElement).closest('.participation-popup, .participation-cell')) {
-		closePopup();
-	}
-}} />
+<!-- Close popup when clicking outside + track vertical scroll for header unstick -->
+<svelte:window
+	onclick={(e) => {
+		if (activePopup && !(e.target as HTMLElement).closest('.participation-popup, .participation-cell')) {
+			closePopup();
+		}
+	}}
+	onscroll={handleWindowScroll}
+/>
 
 <svelte:head>
 	<title>{m.roster_title()} | Polyphony Vault</title>
@@ -374,9 +390,9 @@
 				style="grid-template-columns: {columnWidth}px repeat({roster.events.length}, minmax(100px, 1fr)); min-width: min-content;"
 			>
 				<!-- Header Row -->
-				<!-- Sticky Name Column Header -->
+				<!-- Corner cell: always sticky left, conditionally sticky top -->
 				<div
-					class="sticky left-0 top-0 z-30 border-r-2 border-b-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
+					class="sticky left-0 {headerSticky ? 'top-0 z-30' : 'z-20'} border-r-2 border-b-2 border-gray-300 bg-white px-2 py-3 text-center text-sm font-semibold text-gray-700 overflow-hidden"
 					style="width: {columnWidth}px;"
 				>
 					{m.roster_table_name_header()}
@@ -384,7 +400,7 @@
 
 				{#each roster.events as event}
 					<div
-						class="sticky top-0 z-10 border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
+						class="{headerSticky ? 'sticky top-0' : ''} z-10 border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
 						onclick={() => navigateToEvent(event.id)}
 						title="Click to view event details"
 						role="button"
