@@ -57,13 +57,15 @@
 	// --- Experimental: smart unstick header row (Issue #247) ---
 	const UNSTICK_THRESHOLD = 100;
 
-	let headerSticky = $state(true);
+	let headerTop = $state(0);
 
 	function handleWindowScroll() {
 		if (!scrollContainer) return;
 		const gridBottom = scrollContainer.getBoundingClientRect().bottom;
 		const vh = window.innerHeight;
-		headerSticky = shouldHeaderStick(gridBottom, vh, UNSTICK_THRESHOLD);
+		headerTop = shouldHeaderStick(gridBottom, vh, UNSTICK_THRESHOLD)
+			? 0
+			: gridBottom - (vh - UNSTICK_THRESHOLD);
 	}
 	// --- End experimental header unstick ---
 
@@ -376,7 +378,7 @@
 		<!-- Split Header Pattern: header band (sticky) + body band (scrollable) -->
 		<div class="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-clip">
 			<!-- Header band: sticky to viewport, scroll synced via JS -->
-			<div class="{headerSticky ? 'sticky top-0 shadow-md rounded-t-lg' : ''} z-40 bg-white">
+			<div class="sticky z-40 bg-white {headerTop >= 0 ? 'shadow-md rounded-t-lg' : ''}" style="top: {headerTop}px;">
 				<div bind:this={headerScrollEl} style="overflow: hidden;">
 					<div
 						class="grid"
