@@ -287,7 +287,12 @@
 <div class="container mx-auto max-w-full px-4 py-8">
 	<div class="mb-6">
 		<h1 class="text-3xl font-bold">{m.roster_title()}</h1>
-		<p class="mt-2 text-gray-600">{m.roster_description()}</p>
+		<div class="mt-2 flex items-center gap-4">
+			<p class="text-gray-600">{m.roster_description()}</p>
+			<a href="/events/roster/experimental" class="text-sm text-gray-400 hover:text-gray-600 whitespace-nowrap">
+				{m.roster_experimental_link()}
+			</a>
+		</div>
 	</div>
 
 	<!-- Season Navigation -->
@@ -327,21 +332,13 @@
 			</div>
 
 			<!-- CSV Export Link -->
-			<div class="flex items-center gap-3">
-				<a
-					href={csvExportUrl()}
-					class="inline-block rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
-					download="roster.csv"
-				>
-					{m.roster_export_csv_btn()}
-				</a>
-				<a
-					href="/events/roster/experimental"
-					class="text-sm text-gray-400 hover:text-gray-600"
-				>
-					{m.roster_experimental_link()}
-				</a>
-			</div>
+			<a
+				href={csvExportUrl()}
+				class="inline-block rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+				download="roster.csv"
+			>
+				{m.roster_export_csv_btn()}
+			</a>
 		</div>
 	</Card>
 
