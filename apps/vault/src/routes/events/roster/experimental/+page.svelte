@@ -480,7 +480,7 @@
 							title="{member.name}{member.nickname ? ' (' + member.nickname + ')' : ''} - {event.name}"
 						>
 							{#if eventIsPast}
-								<div class="flex h-full mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
+								<div class="flex mx-1 my-1 rounded-full overflow-hidden border border-gray-300">
 									<button
 										class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 										onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
