@@ -142,10 +142,10 @@
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">{m.settings_language_default()}</option>
-          <option value="en">English</option>
-          <option value="et">Estonian</option>
-          <option value="lv">Latvian</option>
-          <option value="uk">Ukrainian</option>
+          <option value="en">{m.settings_lang_en()}</option>
+          <option value="et">{m.settings_lang_et()}</option>
+          <option value="lv">{m.settings_lang_lv()}</option>
+          <option value="uk">{m.settings_lang_uk()}</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
           {m.settings_language_help()}
@@ -163,11 +163,11 @@
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">{m.settings_locale_default()}</option>
-          <option value="en-US">English US (en-US)</option>
-          <option value="en-GB">English UK (en-GB)</option>
-          <option value="et-EE">Estonian (et-EE)</option>
-          <option value="lv-LV">Latvian (lv-LV)</option>
-          <option value="uk-UA">Ukrainian (uk-UA)</option>
+          <option value="en-US">{m.settings_locale_en_us()}</option>
+          <option value="en-GB">{m.settings_locale_en_gb()}</option>
+          <option value="et-EE">{m.settings_locale_et_ee()}</option>
+          <option value="lv-LV">{m.settings_locale_lv_lv()}</option>
+          <option value="uk-UA">{m.settings_locale_uk_ua()}</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
           {m.settings_locale_help()}
@@ -185,20 +185,20 @@
           class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">{m.settings_timezone_default()}</option>
-          <option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
-          <option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
-          <option value="Europe/Riga">Riga (EET/EEST)</option>
-          <option value="Europe/Vilnius">Vilnius (EET/EEST)</option>
-          <option value="Europe/Stockholm">Stockholm (CET/CEST)</option>
-          <option value="Europe/Berlin">Berlin (CET/CEST)</option>
-          <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
-          <option value="Europe/Paris">Paris (CET/CEST)</option>
-          <option value="Europe/London">London (GMT/BST)</option>
-          <option value="Europe/Kyiv">Kyiv (EET/EEST)</option>
-          <option value="America/New_York">New York (EST/EDT)</option>
-          <option value="America/Chicago">Chicago (CST/CDT)</option>
-          <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
-          <option value="UTC">UTC</option>
+          <option value="Europe/Tallinn">{m.settings_tz_tallinn()}</option>
+          <option value="Europe/Helsinki">{m.settings_tz_helsinki()}</option>
+          <option value="Europe/Riga">{m.settings_tz_riga()}</option>
+          <option value="Europe/Vilnius">{m.settings_tz_vilnius()}</option>
+          <option value="Europe/Stockholm">{m.settings_tz_stockholm()}</option>
+          <option value="Europe/Berlin">{m.settings_tz_berlin()}</option>
+          <option value="Europe/Amsterdam">{m.settings_tz_amsterdam()}</option>
+          <option value="Europe/Paris">{m.settings_tz_paris()}</option>
+          <option value="Europe/London">{m.settings_tz_london()}</option>
+          <option value="Europe/Kyiv">{m.settings_tz_kyiv()}</option>
+          <option value="America/New_York">{m.settings_tz_new_york()}</option>
+          <option value="America/Chicago">{m.settings_tz_chicago()}</option>
+          <option value="America/Los_Angeles">{m.settings_tz_los_angeles()}</option>
+          <option value="UTC">{m.settings_tz_utc()}</option>
         </select>
         <p class="mt-1 text-sm text-gray-500">
           {m.settings_timezone_help()}
