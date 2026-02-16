@@ -4,9 +4,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"deploy": "vite build && wrangler pages deploy .svelte-kit/cloudflare",
+		"deploy": "pnpm paraglide && vite build && wrangler pages deploy .svelte-kit/cloudflare",
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "pnpm paraglide && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
