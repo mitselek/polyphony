@@ -6,6 +6,7 @@
 	 * - /invite page (after creating or showing pending invite)
 	 */
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		inviteLink: string;
@@ -25,9 +26,9 @@
 	async function copyLink() {
 		try {
 			await navigator.clipboard.writeText(inviteLink);
-			toast.success('Invite link copied!');
+			toast.success(m.invite_link_copied());
 		} catch {
-			toast.error('Failed to copy link');
+			toast.error(m.invite_link_copy_failed());
 		}
 	}
 </script>
@@ -35,12 +36,12 @@
 <div class="rounded-lg border p-4 {bgClass}">
 	<p class="mb-3 font-medium {textClass}">
 		{#if isSuccess}
-			Invitation created for {memberName}
+			{m.invite_link_created({ name: memberName })}
 		{:else}
-			Invitation pending for {memberName}
+			{m.invite_link_pending({ name: memberName })}
 		{/if}
 	</p>
-	<p class="mb-3 text-sm {subTextClass}">Share this link with the invitee:</p>
+	<p class="mb-3 text-sm {subTextClass}">{m.invite_link_share()}</p>
 	<div class="flex gap-2">
 		<input
 			type="text"
@@ -54,7 +55,7 @@
 			onclick={copyLink}
 			class="rounded px-4 py-2 text-sm text-white {buttonClass}"
 		>
-			Copy Link
+			{m.invite_link_copy()}
 		</button>
 	</div>
 </div>

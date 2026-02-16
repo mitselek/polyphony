@@ -52,7 +52,7 @@
 		e.preventDefault();
 
 		if (!name.trim()) {
-			error = 'Name is required';
+			error = m.members_error_name_required();
 			return;
 		}
 
@@ -76,13 +76,13 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to add roster member');
+				throw new Error(data.error ?? m.members_error_add_roster());
 			}
 
 			// Success - redirect to members list with success message
 			goto(`/members?added=${encodeURIComponent(name.trim())}`);
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to add roster member';
+			error = err instanceof Error ? err.message : m.members_error_add_roster();
 		} finally {
 			isSubmitting = false;
 		}

@@ -33,7 +33,7 @@
 	$effect(() => {
 		const addedName = $page.url.searchParams.get('added');
 		if (addedName) {
-			toast.success(`Successfully added roster member "${addedName}"`);
+			toast.success(m.members_toast_roster_added({ name: addedName }));
 			// Remove query param from URL without reload
 			const url = new URL($page.url);
 			url.searchParams.delete('added');
@@ -55,11 +55,11 @@
 			const response = await fetch(`/api/invites/${inviteId}`, { method: 'DELETE' });
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to revoke invite');
+				throw new Error(result.message ?? m.members_error_revoke_invite());
 			}
 			invites = invites.filter((inv) => inv.id !== inviteId);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to revoke invite');
+			toast.error(err instanceof Error ? err.message : m.members_error_revoke_invite());
 		} finally {
 			revokingInvite = null;
 		}
@@ -72,7 +72,7 @@
 			const response = await fetch(`/api/invites/${inviteId}/renew`, { method: 'POST' });
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to renew invite');
+				throw new Error(result.message ?? m.members_error_renew_invite());
 			}
 			
 			// API returns raw DB format, transform to UI format
@@ -102,9 +102,9 @@
 			};
 			
 			invites = invites.map((inv) => (inv.id === inviteId ? renewedInvite : inv));
-			toast.success(`Renewed invite for ${name}`);
+			toast.success(m.members_toast_invite_renewed({ name }));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to renew invite');
+			toast.error(err instanceof Error ? err.message : m.members_error_renew_invite());
 		} finally {
 			renewingInvite = null;
 		}
@@ -113,9 +113,9 @@
 	async function copyInviteLink(link: string, name: string) {
 		try {
 			await navigator.clipboard.writeText(link);
-			toast.success(`Copied invite link for ${name}`);
+			toast.success(m.members_toast_invite_link_copied({ name }));
 		} catch {
-			toast.error(`Failed to copy link for ${name}`);
+			toast.error(m.members_error_copy_link({ name }));
 		}
 	}
 
@@ -150,7 +150,7 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to update role');
+				throw new Error(result.message ?? m.members_error_update_role());
 			}
 
 			members = members.map((m) =>
@@ -164,7 +164,7 @@
 					: m
 			);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to update role');
+			toast.error(err instanceof Error ? err.message : m.members_error_update_role());
 		} finally {
 			updatingMember = null;
 		}
@@ -182,7 +182,7 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to add voice');
+				throw new Error(result.message ?? m.members_error_add_voice());
 			}
 
 			const voice = data.availableVoices.find((v: { id: string }) => v.id === voiceId);
@@ -194,7 +194,7 @@
 				);
 			}
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to add voice');
+			toast.error(err instanceof Error ? err.message : m.members_error_add_voice());
 		} finally {
 			updatingMember = null;
 		}
@@ -212,7 +212,7 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to remove voice');
+				throw new Error(result.message ?? m.members_error_remove_voice());
 			}
 
 			members = members.map((m) =>
@@ -221,7 +221,7 @@
 					: m
 			);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove voice');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_voice());
 		} finally {
 			updatingMember = null;
 		}
@@ -239,7 +239,7 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to add section');
+				throw new Error(result.message ?? m.members_error_add_section());
 			}
 
 			const section = data.availableSections.find((s: { id: string }) => s.id === sectionId);
@@ -251,7 +251,7 @@
 				);
 			}
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to add section');
+			toast.error(err instanceof Error ? err.message : m.members_error_add_section());
 		} finally {
 			updatingMember = null;
 		}
@@ -269,7 +269,7 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to remove section');
+				throw new Error(result.message ?? m.members_error_remove_section());
 			}
 
 			members = members.map((m) =>
@@ -278,7 +278,7 @@
 					: m
 			);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove section');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_section());
 		} finally {
 			updatingMember = null;
 		}
@@ -296,12 +296,12 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { message?: string };
-				throw new Error(result.message ?? 'Failed to remove member');
+				throw new Error(result.message ?? m.members_error_remove_member());
 			}
 
 			members = members.filter((m) => m.id !== memberId);
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove member');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_member());
 		} finally {
 			removingMember = null;
 		}

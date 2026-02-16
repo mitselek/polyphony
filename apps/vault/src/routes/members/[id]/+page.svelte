@@ -78,15 +78,15 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to update name');
+				throw new Error(data.error ?? m.members_error_update_name());
 			}
 
 			// Update local state
 			member = { ...member, name: trimmedName };
 			isEditingName = false;
-			toast.success('Name updated successfully');
+			toast.success(m.members_toast_name_updated());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to update name');
+			toast.error(err instanceof Error ? err.message : m.members_error_update_name());
 		} finally {
 			updating = false;
 		}
@@ -126,15 +126,15 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to update nickname');
+				throw new Error(data.error ?? m.members_error_update_nickname());
 			}
 
 			// Update local state
 			member = { ...member, nickname: trimmedNickname || null };
 			isEditingNickname = false;
-			toast.success(trimmedNickname ? 'Nickname updated' : 'Nickname cleared');
+			toast.success(trimmedNickname ? m.members_toast_nickname_updated() : m.members_toast_nickname_cleared());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to update nickname');
+			toast.error(err instanceof Error ? err.message : m.members_error_update_nickname());
 		} finally {
 			updating = false;
 		}
@@ -169,7 +169,7 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { message?: string };
-				throw new Error(data.message ?? 'Failed to update role');
+				throw new Error(data.message ?? m.members_error_update_role());
 			}
 
 			// Update local state
@@ -179,9 +179,9 @@
 					? [...member.roles, role]
 					: member.roles.filter((r) => r !== role)
 			};
-			toast.success(`Role ${action === 'add' ? 'added' : 'removed'} successfully`);
+			toast.success(action === 'add' ? m.members_toast_role_added() : m.members_toast_role_removed());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to update role');
+			toast.error(err instanceof Error ? err.message : m.members_error_update_role());
 		} finally {
 			updating = false;
 		}
@@ -200,7 +200,7 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to add voice');
+				throw new Error(respData.message ?? m.members_error_add_voice());
 			}
 
 			const voice = data.availableVoices.find((v) => v.id === voiceId);
@@ -210,9 +210,9 @@
 					voices: isPrimary ? [voice, ...member.voices] : [...member.voices, voice]
 				};
 			}
-			toast.success('Voice added successfully');
+			toast.success(m.members_toast_voice_added());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to add voice');
+			toast.error(err instanceof Error ? err.message : m.members_error_add_voice());
 		} finally {
 			updating = false;
 		}
@@ -230,16 +230,16 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to remove voice');
+				throw new Error(respData.message ?? m.members_error_remove_voice());
 			}
 
 			member = {
 				...member,
 				voices: member.voices.filter((v) => v.id !== voiceId)
 			};
-			toast.success('Voice removed successfully');
+			toast.success(m.members_toast_voice_removed());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove voice');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_voice());
 		} finally {
 			updating = false;
 		}
@@ -258,7 +258,7 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to add section');
+				throw new Error(respData.message ?? m.members_error_add_section());
 			}
 
 			const section = data.availableSections.find((s) => s.id === sectionId);
@@ -268,9 +268,9 @@
 					sections: isPrimary ? [section, ...member.sections] : [...member.sections, section]
 				};
 			}
-			toast.success('Section added successfully');
+			toast.success(m.members_toast_section_added());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to add section');
+			toast.error(err instanceof Error ? err.message : m.members_error_add_section());
 		} finally {
 			updating = false;
 		}
@@ -288,16 +288,16 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to remove section');
+				throw new Error(respData.message ?? m.members_error_remove_section());
 			}
 
 			member = {
 				...member,
 				sections: member.sections.filter((s) => s.id !== sectionId)
 			};
-			toast.success('Section removed successfully');
+			toast.success(m.members_toast_section_removed());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove section');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_section());
 		} finally {
 			updating = false;
 		}
@@ -317,13 +317,13 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to remove member');
+				throw new Error(respData.message ?? m.members_error_remove_member());
 			}
 
 			// Navigate back to members list
 			goto('/members');
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to remove member');
+			toast.error(err instanceof Error ? err.message : m.members_error_remove_member());
 			updating = false;
 		}
 	}
@@ -353,13 +353,13 @@
 
 			if (!response.ok) {
 				const errData = await response.json() as { message?: string };
-				throw new Error(errData.message ?? 'Failed to save preferences');
+				throw new Error(errData.message ?? m.members_error_save_preferences());
 			}
 
 			memberPrefs = await response.json() as MemberPreferences;
-			toast.success('Preferences saved');
+			toast.success(m.members_toast_preferences_saved());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to save preferences');
+			toast.error(err instanceof Error ? err.message : m.members_error_save_preferences());
 		} finally {
 			savingPrefs = false;
 		}
@@ -661,10 +661,10 @@
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
 						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.language })}</option>
-						<option value="en">English</option>
-						<option value="et">Estonian</option>
-						<option value="lv">Latvian</option>
-						<option value="uk">Ukrainian</option>
+						<option value="en">{m.settings_lang_en()}</option>
+						<option value="et">{m.settings_lang_et()}</option>
+						<option value="lv">{m.settings_lang_lv()}</option>
+						<option value="uk">{m.settings_lang_uk()}</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
 						{m.member_preference_effective()} {resolvedPrefs.language} {getEffectiveLabel(resolvedPrefs.source.language)}
@@ -682,11 +682,11 @@
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
 						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.locale })}</option>
-						<option value="en-US">English US (en-US)</option>
-						<option value="en-GB">English UK (en-GB)</option>
-						<option value="et-EE">Estonian (et-EE)</option>
-						<option value="lv-LV">Latvian (lv-LV)</option>
-						<option value="uk-UA">Ukrainian (uk-UA)</option>
+						<option value="en-US">{m.settings_locale_en_us()}</option>
+						<option value="en-GB">{m.settings_locale_en_gb()}</option>
+						<option value="et-EE">{m.settings_locale_et_ee()}</option>
+						<option value="lv-LV">{m.settings_locale_lv_lv()}</option>
+						<option value="uk-UA">{m.settings_locale_uk_ua()}</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
 						{m.member_preference_effective()} {resolvedPrefs.locale} {getEffectiveLabel(resolvedPrefs.source.locale)}
@@ -704,20 +704,20 @@
 						class="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 					>
 						<option value="">{m.settings_use_org_default({ value: resolvedPrefs.timezone })}</option>
-						<option value="Europe/Tallinn">Tallinn (EET/EEST)</option>
-						<option value="Europe/Helsinki">Helsinki (EET/EEST)</option>
-						<option value="Europe/Riga">Riga (EET/EEST)</option>
-						<option value="Europe/Vilnius">Vilnius (EET/EEST)</option>
-						<option value="Europe/Stockholm">Stockholm (CET/CEST)</option>
-						<option value="Europe/Berlin">Berlin (CET/CEST)</option>
-						<option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
-						<option value="Europe/Paris">Paris (CET/CEST)</option>
-						<option value="Europe/London">London (GMT/BST)</option>
-						<option value="Europe/Moscow">Moscow (MSK)</option>
-						<option value="America/New_York">New York (EST/EDT)</option>
-						<option value="America/Chicago">Chicago (CST/CDT)</option>
-						<option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
-						<option value="UTC">UTC</option>
+						<option value="Europe/Tallinn">{m.settings_tz_tallinn()}</option>
+						<option value="Europe/Helsinki">{m.settings_tz_helsinki()}</option>
+						<option value="Europe/Riga">{m.settings_tz_riga()}</option>
+						<option value="Europe/Vilnius">{m.settings_tz_vilnius()}</option>
+						<option value="Europe/Stockholm">{m.settings_tz_stockholm()}</option>
+						<option value="Europe/Berlin">{m.settings_tz_berlin()}</option>
+						<option value="Europe/Amsterdam">{m.settings_tz_amsterdam()}</option>
+						<option value="Europe/Paris">{m.settings_tz_paris()}</option>
+						<option value="Europe/London">{m.settings_tz_london()}</option>
+						<option value="Europe/Moscow">{m.settings_tz_moscow()}</option>
+						<option value="America/New_York">{m.settings_tz_new_york()}</option>
+						<option value="America/Chicago">{m.settings_tz_chicago()}</option>
+						<option value="America/Los_Angeles">{m.settings_tz_los_angeles()}</option>
+						<option value="UTC">{m.settings_tz_utc()}</option>
 					</select>
 					<p class="mt-1 text-xs text-gray-500">
 						{m.member_preference_effective()} {resolvedPrefs.timezone} {getEffectiveLabel(resolvedPrefs.source.timezone)}
@@ -767,7 +767,7 @@
 									</p>
 									<p class="mt-1 text-xs text-gray-400">
 										{m.member_score_assigned_date({ date: new Date(copy.assignedAt).toLocaleDateString() })}{#if data.org && copy.org.subdomain !== data.org.subdomain}
-											{' '}by {copy.org.name}{/if}
+											{' '}{m.member_score_by_org({ name: copy.org.name })}{/if}
 									</p>
 								</div>
 								

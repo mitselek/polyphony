@@ -2,6 +2,7 @@
 	import type { Voice, Section, Role } from '$lib/types';
 	import { VoiceBadge, SectionBadge } from '$lib/components/badges';
 	import { isExpired } from '$lib/utils/formatters';
+	import * as m from '$lib/paraglide/messages.js';
 
 	export interface Invite {
 		id: string;
@@ -36,7 +37,7 @@
 {#if invites.length > 0}
 	<div class="mb-8">
 		<h2 class="mb-4 text-xl font-semibold text-gray-700">
-			Pending Invitations ({invites.length})
+			{m.invites_pending_title({ count: String(invites.length) })}
 		</h2>
 		<div class="space-y-3">
 			{#each invites as invite (invite.id)}
@@ -47,17 +48,17 @@
 							<span class="font-medium">{invite.name}</span>
 							{#if expired}
 								<span class="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-									EXPIRED
+									{m.invites_expired_badge()}
 								</span>
 							{/if}
-							
+
 							<!-- Role badges -->
 							{#each invite.roles as role}
 								<span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
 									{role}
 								</span>
 							{/each}
-							
+
 							<!-- Voice badges -->
 							{#if invite.voices && invite.voices.length > 0}
 								<div class="flex gap-1">
@@ -66,7 +67,7 @@
 									{/each}
 								</div>
 							{/if}
-							
+
 							<!-- Section badges -->
 							{#if invite.sections && invite.sections.length > 0}
 								<div class="flex gap-1">
@@ -77,11 +78,11 @@
 							{/if}
 						</div>
 						<p class="mt-1 text-sm {expired ? 'text-gray-600' : 'text-gray-500'}">
-							Invited by {invite.invitedBy} · 
+							{m.invites_invited_by({ name: invite.invitedBy })} ·
 							{#if expired}
-								Expired {new Date(invite.expiresAt).toLocaleDateString()}
+								{m.invites_expired_date({ date: new Date(invite.expiresAt).toLocaleDateString() })}
 							{:else}
-								Expires {new Date(invite.expiresAt).toLocaleDateString()}
+								{m.invites_expires_date({ date: new Date(invite.expiresAt).toLocaleDateString() })}
 							{/if}
 						</p>
 					</div>
@@ -89,27 +90,27 @@
 						<button
 							onclick={() => onCopyLink(invite.inviteLink, invite.name)}
 							class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
-							title="Copy invitation link"
+							title={m.invites_copy_link_title()}
 						>
-							Copy Link
+							{m.invites_copy_link()}
 						</button>
 						{#if expired}
 							<button
 								onclick={() => onRenew(invite.id, invite.name)}
 								disabled={renewingInvite === invite.id}
 								class="rounded px-3 py-1 text-sm text-green-600 hover:bg-green-50 disabled:opacity-50"
-								title="Extend expiration by 48 hours"
+								title={m.invites_renew_title()}
 							>
-								{renewingInvite === invite.id ? 'Renewing...' : 'Renew'}
+								{renewingInvite === invite.id ? m.invites_renewing() : m.invites_renew()}
 							</button>
 						{/if}
 						<button
 							onclick={() => onRevoke(invite.id, invite.name)}
 							disabled={revokingInvite === invite.id}
 							class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-							title="Revoke invitation"
+							title={m.invites_revoke_title()}
 						>
-							{revokingInvite === invite.id ? 'Revoking...' : 'Revoke'}
+							{revokingInvite === invite.id ? m.invites_revoking() : m.invites_revoke()}
 						</button>
 					</div>
 				</div>
