@@ -5,6 +5,7 @@
   import { formatDateTimeFull, formatDurationBetween, calculateDurationMinutes, DEFAULT_EVENT_DURATION_MINUTES } from "$lib/utils/formatters";
   import { getEventTypeBadgeClass, EVENT_TYPES, getEventTypeLabel } from "$lib/utils/badges";
   import { toast } from "$lib/stores/toast";
+  import * as m from "$lib/paraglide/messages.js";
 
   interface EventData {
     id: string;
@@ -157,9 +158,7 @@
 
   // Delete event
   async function deleteEvent() {
-    const confirmed = confirm(
-      `Are you sure you want to delete "${event.title}"?\n\nThis will also remove all program entries. This action cannot be undone.`
-    );
+    const confirmed = confirm(m.event_delete_confirm({ name: event.title }));
 
     if (!confirmed) return;
 
@@ -188,7 +187,7 @@
     <!-- Edit Mode -->
     <div class="space-y-4">
       <div>
-        <label for="edit-title" class="block text-sm font-medium text-gray-700">Title</label>
+        <label for="edit-title" class="block text-sm font-medium text-gray-700">{m.event_title_label()}</label>
         <input
           type="text"
           id="edit-title"
@@ -198,7 +197,7 @@
         />
       </div>
       <div>
-        <label for="edit-type" class="block text-sm font-medium text-gray-700">Type</label>
+        <label for="edit-type" class="block text-sm font-medium text-gray-700">{m.event_type_label()}</label>
         <select
           id="edit-type"
           bind:value={editForm.event_type}
@@ -210,7 +209,7 @@
         </select>
       </div>
       <div>
-        <label for="edit-location" class="block text-sm font-medium text-gray-700">Location</label>
+        <label for="edit-location" class="block text-sm font-medium text-gray-700">{m.event_location_label()}</label>
         <input
           type="text"
           id="edit-location"
@@ -223,7 +222,7 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Date -->
         <div>
-          <label for="edit-date" class="block text-sm font-medium text-gray-700">Date</label>
+          <label for="edit-date" class="block text-sm font-medium text-gray-700">{m.event_start_date_label()}</label>
           <input
             type="date"
             id="edit-date"
@@ -235,7 +234,7 @@
 
         <!-- Start Time -->
         <div>
-          <label for="edit-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+          <label for="edit-time" class="block text-sm font-medium text-gray-700">{m.event_start_time_label()}</label>
           <input
             type="time"
             id="edit-time"
@@ -248,7 +247,7 @@
 
       <!-- Duration Row -->
       <fieldset>
-        <legend class="block text-sm font-medium text-gray-700">Duration</legend>
+        <legend class="block text-sm font-medium text-gray-700">{m.event_duration_label()}</legend>
         <div class="mt-1 flex items-center gap-3">
           <div class="flex items-center gap-1">
             <input
@@ -259,7 +258,7 @@
               max="30"
               class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none"
             />
-            <span class="text-sm text-gray-600">days</span>
+            <span class="text-sm text-gray-600">{m.event_duration_days()}</span>
           </div>
           <div class="flex items-center gap-1">
             <input
@@ -270,7 +269,7 @@
               max="23"
               class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none"
             />
-            <span class="text-sm text-gray-600">hours</span>
+            <span class="text-sm text-gray-600">{m.event_duration_hours()}</span>
           </div>
           <div class="flex items-center gap-1">
             <input
@@ -282,14 +281,14 @@
               step="5"
               class="w-16 rounded-lg border border-gray-300 px-2 py-2 text-center focus:border-blue-500 focus:outline-none"
             />
-            <span class="text-sm text-gray-600">min</span>
+            <span class="text-sm text-gray-600">{m.event_duration_minutes()}</span>
           </div>
         </div>
       </fieldset>
 
       <!-- Calculated End DateTime -->
       <div>
-        <span id="ends-at-label" class="block text-sm font-medium text-gray-700">Ends at</span>
+        <span id="ends-at-label" class="block text-sm font-medium text-gray-700">{m.event_end_time_label()}</span>
         <div
           aria-labelledby="ends-at-label"
           class="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700"
@@ -300,7 +299,7 @@
 
       <div>
         <label for="edit-description" class="block text-sm font-medium text-gray-700"
-          >Description</label
+          >{m.event_description_label()}</label
         >
         <textarea
           id="edit-description"
@@ -315,14 +314,14 @@
           disabled={updatingEvent}
           class="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
         >
-          {updatingEvent ? "Saving..." : "Save Changes"}
+          {updatingEvent ? m.actions_saving() : m.event_save_changes()}
         </button>
         <button
           onclick={cancelEditEvent}
           disabled={updatingEvent}
           class="rounded-lg border border-gray-300 px-4 py-2 transition hover:bg-gray-50 disabled:opacity-50"
         >
-          Cancel
+          {m.actions_cancel()}
         </button>
       </div>
     </div>
@@ -337,7 +336,7 @@
               event.event_type
             )}"
           >
-            {event.event_type}
+            {getEventTypeLabel(event.event_type)}
           </span>
         </div>
 
@@ -360,7 +359,7 @@
             <span>{formatDateTimeFull(event.starts_at)}</span>
           </div>
           <div class="ml-7 text-sm text-gray-500">
-            Duration: {event.ends_at ? formatDurationBetween(event.starts_at, event.ends_at) : '-'}
+            {m.event_duration_label()}: {event.ends_at ? formatDurationBetween(event.starts_at, event.ends_at) : '-'}
           </div>
         </div>
 
@@ -397,17 +396,17 @@
           <button
             onclick={startEditEvent}
             class="rounded-lg border border-gray-300 px-4 py-2 text-sm transition hover:bg-gray-50"
-            title="Edit event"
+            title={m.actions_edit()}
           >
-            Edit
+            {m.actions_edit()}
           </button>
           <button
             onclick={deleteEvent}
             disabled={deletingEvent}
             class="rounded-lg border border-red-300 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-            title="Delete event"
+            title={m.actions_delete()}
           >
-            {deletingEvent ? "Deleting..." : "Delete"}
+            {deletingEvent ? m.event_deleting() : m.actions_delete()}
           </button>
         </div>
       {/if}

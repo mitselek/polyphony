@@ -2,6 +2,7 @@
 	import type { EventRepertoire, Work, Edition, EventRepertoireWork } from '$lib/types';
 	import Card from '$lib/components/Card.svelte';
 	import { toast } from '$lib/stores/toast';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		eventId: string;
@@ -89,7 +90,7 @@
 	}
 
 	async function removeWork(eventWorkId: string, work: Work) {
-		if (!confirm(`Remove "${work.title}" from this event's repertoire?`)) return;
+		if (!confirm(m.repertoire_remove_confirm({ name: work.title }))) return;
 
 		removingWorkId = eventWorkId;
 
@@ -250,10 +251,10 @@
 
 <Card padding="lg" class="mb-8">
 	<div class="mb-4 flex items-center justify-between">
-		<h2 class="text-2xl font-semibold">Repertoire</h2>
+		<h2 class="text-2xl font-semibold">{m.repertoire_title()}</h2>
 		{#if repertoire.works.length > 0}
 			<span class="text-sm text-gray-500">
-				{repertoire.works.length} work{repertoire.works.length !== 1 ? 's' : ''}
+				{repertoire.works.length} {repertoire.works.length !== 1 ? m.repertoire_works_count_plural() : m.repertoire_works_count_singular()}
 			</span>
 		{/if}
 	</div>
@@ -261,9 +262,9 @@
 	<!-- Works List -->
 	{#if repertoire.works.length === 0}
 		<div class="py-8 text-center text-gray-500">
-			<p>No works in the repertoire yet.</p>
+			<p>{m.repertoire_empty()}</p>
 			{#if canManage}
-				<p class="mt-2 text-sm">Add works below to build the event repertoire.</p>
+				<p class="mt-2 text-sm">{m.repertoire_empty_help()}</p>
 			{/if}
 		</div>
 	{:else}
@@ -291,9 +292,9 @@
 								{#if seasonWorkIds.has(repWork.work.id)}
 									<span
 										class="ml-2 rounded bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700"
-										title="From season repertoire"
+										title={m.repertoire_from_season_group()}
 									>
-										season
+										{m.repertoire_from_season()}
 									</span>
 								{/if}
 							</h3>
@@ -302,9 +303,9 @@
 							{/if}
 							{#if repWork.editions.length > 0}
 								<p class="mt-1 text-xs text-gray-500">
-									{repWork.editions.length} edition{repWork.editions.length !== 1 ? 's' : ''}
+									{repWork.editions.length} {repWork.editions.length !== 1 ? m.repertoire_editions_count_plural() : m.repertoire_editions_count_singular()}
 									{#if repWork.editions.find((e) => e.isPrimary)}
-										– Primary: {repWork.editions.find((e) => e.isPrimary)?.edition.name}
+										{m.repertoire_primary_label()} {repWork.editions.find((e) => e.isPrimary)?.edition.name}
 									{/if}
 								</p>
 							{/if}
@@ -314,7 +315,7 @@
 						<button
 							onclick={() => toggleWork(repWork.eventWorkId)}
 							class="rounded p-1 text-gray-500 hover:bg-gray-200"
-							title={isExpanded ? 'Collapse' : 'Expand to manage editions'}
+							title={isExpanded ? m.repertoire_collapse() : m.repertoire_expand()}
 						>
 							<svg
 								class="h-5 w-5 transition-transform {isExpanded ? 'rotate-180' : ''}"
@@ -337,7 +338,7 @@
 								onclick={() => removeWork(repWork.eventWorkId, repWork.work)}
 								disabled={removingWorkId === repWork.eventWorkId}
 								class="rounded p-1 text-red-600 hover:bg-red-100 disabled:opacity-50"
-								title="Remove from repertoire"
+								title={m.repertoire_remove_from_repertoire()}
 							>
 								<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 									<path
@@ -354,11 +355,11 @@
 					<!-- Expanded: Editions Management -->
 					{#if isExpanded}
 						<div class="border-t border-gray-200 bg-white p-4">
-							<h4 class="mb-3 text-sm font-medium text-gray-700">Editions</h4>
+							<h4 class="mb-3 text-sm font-medium text-gray-700">{m.repertoire_editions()}</h4>
 
 							<!-- Existing Editions -->
 							{#if repWork.editions.length === 0}
-								<p class="mb-3 text-sm text-gray-500">No editions selected yet.</p>
+								<p class="mb-3 text-sm text-gray-500">{m.repertoire_no_editions()}</p>
 							{:else}
 								<div class="mb-4 space-y-2">
 									{#each repWork.editions as edItem (edItem.workEditionId)}
@@ -372,7 +373,7 @@
 												class="shrink-0 {edItem.isPrimary
 													? 'text-yellow-500'
 													: 'text-gray-300 hover:text-yellow-400'}"
-												title={edItem.isPrimary ? 'Primary edition' : 'Set as primary'}
+												title={edItem.isPrimary ? m.repertoire_primary_edition() : m.repertoire_set_primary()}
 												disabled={edItem.isPrimary}
 											>
 												<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -399,7 +400,7 @@
 														removeEdition(repWork.eventWorkId, edItem.workEditionId)}
 													disabled={removingEditionId === edItem.workEditionId}
 													class="rounded p-1 text-red-600 hover:bg-red-100 disabled:opacity-50"
-													title="Remove edition"
+													title={m.repertoire_remove_edition()}
 												>
 													<svg
 														class="h-4 w-4"
@@ -428,7 +429,7 @@
 										bind:value={selectedEditionId}
 										class="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
 									>
-										<option value="">Select edition to add...</option>
+										<option value="">{m.repertoire_select_edition()}</option>
 										{#each availableEditions as ed (ed.id)}
 											<option value={ed.id}>
 												{ed.name}
@@ -441,18 +442,18 @@
 										disabled={!selectedEditionId || addingEditionToWorkId === repWork.eventWorkId}
 										class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
 									>
-										{addingEditionToWorkId === repWork.eventWorkId ? 'Adding...' : 'Add'}
+										{addingEditionToWorkId === repWork.eventWorkId ? m.repertoire_adding() : m.actions_add()}
 									</button>
 								</div>
 							{:else if canManage}
 								<p class="text-sm text-gray-500">
 									{#if !workEditionsMap[repWork.work.id] || workEditionsMap[repWork.work.id].length === 0}
-										No editions available for this work.
+										{m.repertoire_no_editions_available()}
 										<a href="/works/{repWork.work.id}" class="text-blue-600 hover:underline">
-											Add editions in the library
+											{m.repertoire_add_editions_link()}
 										</a>
 									{:else}
-										All editions have been added.
+										{m.repertoire_all_editions_added()}
 									{/if}
 								</p>
 							{/if}
@@ -466,12 +467,12 @@
 	<!-- Add Work to Repertoire -->
 	{#if canManage}
 		<div class="mt-6 border-t border-gray-200 pt-6">
-			<h3 class="mb-3 text-lg font-semibold">Add Work</h3>
+			<h3 class="mb-3 text-lg font-semibold">{m.repertoire_add_work()}</h3>
 
 			{#if availableWorks.length === 0}
 				<p class="text-sm text-gray-500">
-					All works have been added.
-					<a href="/works" class="text-blue-600 hover:underline">Create a new work</a>
+					{m.repertoire_all_works_added()}
+					<a href="/works" class="text-blue-600 hover:underline">{m.repertoire_create_work_link()}</a>
 				</p>
 			{:else}
 				<div class="flex gap-2">
@@ -479,9 +480,9 @@
 						bind:value={selectedWorkId}
 						class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
 					>
-						<option value="">Select a work...</option>
+						<option value="">{m.repertoire_select_work()}</option>
 						{#if groupedAvailableWorks().inSeason.length > 0}
-							<optgroup label="From Season Repertoire">
+							<optgroup label={m.repertoire_from_season_group()}>
 								{#each groupedAvailableWorks().inSeason as work (work.id)}
 									<option value={work.id}>
 										{work.title}{work.composer ? ` - ${work.composer}` : ''}
@@ -490,7 +491,7 @@
 							</optgroup>
 						{/if}
 						{#if groupedAvailableWorks().other.length > 0}
-							<optgroup label="Other Works">
+							<optgroup label={m.repertoire_other_works_group()}>
 								{#each groupedAvailableWorks().other as work (work.id)}
 									<option value={work.id}>
 										{work.title}{work.composer ? ` - ${work.composer}` : ''}
@@ -504,7 +505,7 @@
 						disabled={!selectedWorkId || addingWork}
 						class="rounded-lg bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50"
 					>
-						{addingWork ? 'Adding...' : 'Add'}
+						{addingWork ? m.repertoire_adding() : m.actions_add()}
 					</button>
 				</div>
 			{/if}

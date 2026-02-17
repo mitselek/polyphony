@@ -44,7 +44,7 @@
           d="M15 19l-7-7 7-7"
         />
       </svg>
-      {m.actions_back()} to {m.events_title()}
+      {m.events_back_to_events()}
     </a>
   </div>
 

@@ -5,19 +5,20 @@
   import type { PlannedStatus, ActualStatus } from "$lib/types";
   import { toast } from "$lib/stores/toast";
   import { groupBySection, sortBySection } from "$lib/utils/section-ordering";
+  import * as m from "$lib/paraglide/messages.js";
 
-  const rsvpOptions = [
-    { value: 'yes', label: 'Yes', activeClass: 'bg-green-600 text-white border-green-700' },
-    { value: 'no', label: 'No', activeClass: 'bg-red-600 text-white border-red-700' },
-    { value: 'maybe', label: 'Maybe', activeClass: 'bg-yellow-600 text-white border-yellow-700' },
-    { value: 'late', label: 'Late', activeClass: 'bg-orange-600 text-white border-orange-700' },
-  ];
+  const rsvpOptions = $derived([
+    { value: 'yes', label: m.rsvp_yes(), activeClass: 'bg-green-600 text-white border-green-700' },
+    { value: 'no', label: m.rsvp_no(), activeClass: 'bg-red-600 text-white border-red-700' },
+    { value: 'maybe', label: m.rsvp_maybe(), activeClass: 'bg-yellow-600 text-white border-yellow-700' },
+    { value: 'late', label: m.rsvp_late(), activeClass: 'bg-orange-600 text-white border-orange-700' },
+  ]);
 
-  const attendanceOptions = [
-    { value: 'present', label: 'Present', activeClass: 'bg-green-600 text-white border-green-700' },
-    { value: 'absent', label: 'Absent', activeClass: 'bg-red-600 text-white border-red-700' },
-    { value: 'late', label: 'Late', activeClass: 'bg-orange-600 text-white border-orange-700' },
-  ];
+  const attendanceOptions = $derived([
+    { value: 'present', label: m.attendance_present(), activeClass: 'bg-green-600 text-white border-green-700' },
+    { value: 'absent', label: m.attendance_absent(), activeClass: 'bg-red-600 text-white border-red-700' },
+    { value: 'late', label: m.attendance_late(), activeClass: 'bg-orange-600 text-white border-orange-700' },
+  ]);
 
   interface Section {
     name: string;
@@ -177,7 +178,7 @@
   }
 
   async function markAllPresent() {
-    const confirmed = confirm("Mark all members as present?");
+    const confirmed = confirm(m.participation_mark_all_confirm());
     if (!confirmed) return;
 
     bulkUpdatingAttendance = true;
@@ -235,11 +236,11 @@
       return orderA - orderB;
     });
 
-    if (orderedSections.length === 0) return "No RSVPs yet";
+    if (orderedSections.length === 0) return m.participation_no_rsvps();
 
     const summary = orderedSections.map(([section, count]) => `${section}: ${count}`).join("  ");
 
-    return `${summary}  (${totalYes} total)`;
+    return `${summary}  ${m.participation_total({ count: totalYes })}`;
   }
 
   // Group members by section, sorted by displayOrder
@@ -254,12 +255,12 @@
 </script>
 
 <Card padding="lg" class="mb-8">
-  <h2 class="mb-4 text-2xl font-semibold">Participation</h2>
+  <h2 class="mb-4 text-2xl font-semibold">{m.participation_title()}</h2>
 
   <!-- My RSVP -->
   {#if canEditOwnRsvp}
     <div class="mb-6 rounded-lg bg-blue-50 p-4">
-      <h3 class="mb-2 font-semibold text-blue-900">Your RSVP</h3>
+      <h3 class="mb-2 font-semibold text-blue-900">{m.participation_your_rsvp()}</h3>
       <StatusButtons
         options={rsvpOptions}
         current={myParticipation?.plannedStatus ?? null}
@@ -271,10 +272,9 @@
     <div class="mb-6 rounded-lg bg-gray-100 p-4">
       <p class="text-sm text-gray-600">
         {#if myParticipation?.plannedStatus}
-          Your RSVP: <span class="font-medium capitalize">{myParticipation.plannedStatus}</span> (locked
-          - event has started)
+          {m.participation_rsvp_locked_with_status({ status: myParticipation.plannedStatus })}
         {:else}
-          RSVP is locked (event has started)
+          {m.participation_rsvp_locked()}
         {/if}
       </p>
     </div>
@@ -283,7 +283,7 @@
   <!-- My Attendance (Issue #240: self-service when trust setting is enabled) -->
   {#if canEditOwnAttendance && !canRecordAttendance}
     <div class="mb-6 rounded-lg bg-purple-50 p-4">
-      <h3 class="mb-2 font-semibold text-purple-900">Your Attendance</h3>
+      <h3 class="mb-2 font-semibold text-purple-900">{m.participation_your_attendance()}</h3>
       <StatusButtons
         options={attendanceOptions}
         current={myParticipation?.actualStatus ?? null}
@@ -292,7 +292,7 @@
       />
       {#if myParticipation?.actualStatus}
         <p class="mt-2 text-sm text-purple-700">
-          Current status: <span class="font-medium capitalize">{myParticipation.actualStatus}</span>
+          {m.participation_current_status()} <span class="font-medium capitalize">{myParticipation.actualStatus}</span>
         </p>
       {/if}
     </div>
@@ -301,16 +301,16 @@
   <!-- Section Summary -->
   <div class="mb-4">
     <div class="flex items-center justify-between">
-      <h3 class="font-semibold">RSVPs by Section</h3>
+      <h3 class="font-semibold">{m.participation_rsvps_by_section()}</h3>
       <button
         onclick={() => (showParticipationDetails = !showParticipationDetails)}
         class="text-sm text-blue-600 hover:text-blue-800"
       >
-        {showParticipationDetails ? "Hide details" : "Show details"}
+        {showParticipationDetails ? m.participation_hide_details() : m.participation_show_details()}
       </button>
     </div>
     <p class="mt-2 text-sm text-gray-600">
-      {loadingParticipation ? "Loading..." : getSectionSummary()}
+      {loadingParticipation ? m.common_loading() : getSectionSummary()}
     </p>
   </div>
 
@@ -338,12 +338,12 @@
                       {member.plannedStatus}
                     </span>
                   {:else}
-                    <span class="ml-2 text-gray-500">No response</span>
+                    <span class="ml-2 text-gray-500">{m.participation_no_response()}</span>
                   {/if}
                 </div>
                 {#if member.actualStatus}
                   <span class="text-xs text-gray-500">
-                    Attended: {member.actualStatus}
+                    {m.participation_attended()} {member.actualStatus}
                   </span>
                 {/if}
               </div>
@@ -358,13 +358,13 @@
   {#if hasStarted && canRecordAttendance}
     <div class="mt-6 border-t border-gray-200 pt-6">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="font-semibold">Record Attendance</h3>
+        <h3 class="font-semibold">{m.participation_record_attendance()}</h3>
         <button
           onclick={markAllPresent}
           disabled={bulkUpdatingAttendance}
           class="rounded-lg bg-green-600 px-4 py-2 text-sm text-white transition hover:bg-green-700 disabled:opacity-50"
         >
-          {bulkUpdatingAttendance ? "Updating..." : "Mark All Present"}
+          {bulkUpdatingAttendance ? m.participation_updating() : m.participation_mark_all_present()}
         </button>
       </div>
 
@@ -372,10 +372,10 @@
         <table class="w-full">
           <thead class="border-b border-gray-200 bg-gray-50">
             <tr>
-              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700"> Member </th>
-              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700"> Section </th>
-              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700"> RSVP </th>
-              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700"> Attendance </th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">{m.common_member()}</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">{m.common_section()}</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">{m.events_rsvp()}</th>
+              <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">{m.events_attendance()}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -389,7 +389,7 @@
                   {#if member.plannedStatus}
                     <span class="capitalize">{member.plannedStatus}</span>
                   {:else}
-                    <span class="text-gray-400">No response</span>
+                    <span class="text-gray-400">{m.participation_no_response()}</span>
                   {/if}
                 </td>
                 <td class="px-4 py-2">

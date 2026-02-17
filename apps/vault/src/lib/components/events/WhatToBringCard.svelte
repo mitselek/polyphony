@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
 	import { getEditionDownloadUrl } from '$lib/utils/urls';
+	import * as m from '$lib/paraglide/messages.js';
 
 	/**
 	 * Material info for a single edition
@@ -64,19 +65,19 @@
 
 <Card variant="static" padding="lg">
 	<div class="flex items-center justify-between mb-4">
-		<h2 class="text-xl font-semibold">What to Bring</h2>
+		<h2 class="text-xl font-semibold">{m.materials_title()}</h2>
 		{#if materials.summary.warningCount > 0}
 			<span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
 				</svg>
-				{materials.summary.warningCount} {materials.summary.warningCount === 1 ? 'copy needed' : 'copies needed'}
+				{materials.summary.warningCount} {materials.summary.warningCount === 1 ? m.materials_copies_needed_singular() : m.materials_copies_needed_plural()}
 			</span>
 		{/if}
 	</div>
 
 	{#if materials.materials.length === 0}
-		<p class="text-gray-500 text-sm">No materials assigned to this event yet.</p>
+		<p class="text-gray-500 text-sm">{m.materials_empty()}</p>
 	{:else}
 		<div class="space-y-4">
 			{#each materialsByWork() as { work, editions } (work.id)}
@@ -93,7 +94,7 @@
 							<div class="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
 								<div class="flex items-center gap-2">
 									{#if material.edition.isPrimary}
-										<span class="text-amber-500" title="Primary edition">★</span>
+										<span class="text-amber-500" title={m.materials_primary_edition()}>★</span>
 									{/if}
 									<span class="text-gray-700">{material.edition.name}</span>
 								</div>
@@ -101,18 +102,18 @@
 								<div class="flex items-center gap-3">
 									<!-- Copy assignment status -->
 									{#if material.assignedCopy}
-										<span class="inline-flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800" title="Assigned to you">
+										<span class="inline-flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800" title={m.materials_assigned_to_you()}>
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
 											</svg>
-											Copy #{material.assignedCopy.copyNumber}
+											{m.materials_copy_number({ number: material.assignedCopy.copyNumber })}
 										</span>
 									{:else if material.needsCopy}
-										<span class="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800" title="You need a copy">
+										<span class="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800" title={m.materials_need_copy_long()}>
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
 											</svg>
-											Need copy
+											{m.materials_need_copy()}
 										</span>
 									{/if}
 									
@@ -121,12 +122,12 @@
 										<a 
 											href={getEditionDownloadUrl(material.edition.id)}
 											class="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 hover:bg-blue-200 transition"
-											title="Download PDF"
+											title={m.materials_download_pdf()}
 										>
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
 											</svg>
-											PDF
+											{m.materials_pdf()}
 										</a>
 									{/if}
 								</div>
@@ -139,16 +140,16 @@
 
 		<!-- Summary footer -->
 		<div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-4 text-xs text-gray-500">
-			<span>{materials.summary.totalWorks} {materials.summary.totalWorks === 1 ? 'work' : 'works'}</span>
+			<span>{materials.summary.totalWorks} {materials.summary.totalWorks === 1 ? m.materials_summary_works_singular() : m.materials_summary_works_plural()}</span>
 			<span>•</span>
-			<span>{materials.summary.totalEditions} {materials.summary.totalEditions === 1 ? 'edition' : 'editions'}</span>
+			<span>{materials.summary.totalEditions} {materials.summary.totalEditions === 1 ? m.materials_summary_editions_singular() : m.materials_summary_editions_plural()}</span>
 			{#if materials.summary.copiesAssigned > 0}
 				<span>•</span>
-				<span class="text-green-600">{materials.summary.copiesAssigned} assigned</span>
+				<span class="text-green-600">{materials.summary.copiesAssigned} {m.materials_assigned()}</span>
 			{/if}
 			{#if materials.summary.digitalAvailable > 0}
 				<span>•</span>
-				<span class="text-blue-600">{materials.summary.digitalAvailable} downloadable</span>
+				<span class="text-blue-600">{materials.summary.digitalAvailable} {m.materials_downloadable()}</span>
 			{/if}
 		</div>
 	{/if}
