@@ -3,6 +3,7 @@
   import Card from "$lib/components/Card.svelte";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
   import { toast } from "$lib/stores/toast";
+  import { groupBySection, sortBySection } from "$lib/utils/section-ordering";
 
   interface Section {
     name: string;
@@ -227,19 +228,14 @@
     return `${summary}  (${totalYes} total)`;
   }
 
-  // Group members by section
+  // Group members by section, sorted by displayOrder
   function getMembersBySection() {
-    const grouped: Record<string, ParticipationMember[]> = {};
+    return groupBySection(participationData, (p) => p.primarySection);
+  }
 
-    participationData.forEach((p) => {
-      const sectionName = p.primarySection?.name || "No section";
-      if (!grouped[sectionName]) {
-        grouped[sectionName] = [];
-      }
-      grouped[sectionName].push(p);
-    });
-
-    return grouped;
+  // Sort participation data by section displayOrder then member name
+  function getSortedParticipation() {
+    return sortBySection(participationData, (p) => p.primarySection, (p) => p.memberName);
   }
 </script>
 
@@ -369,7 +365,7 @@
   <!-- Detailed Participation List -->
   {#if showParticipationDetails}
     <div class="mt-4 space-y-4">
-      {#each Object.entries(getMembersBySection()) as [sectionName, members]}
+      {#each getMembersBySection() as [sectionName, members]}
         <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
           <h4 class="mb-3 font-semibold text-gray-900">{sectionName}</h4>
           <div class="space-y-2">
@@ -431,7 +427,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            {#each participationData as member}
+            {#each getSortedParticipation() as member}
               <tr>
                 <td class="px-4 py-2 text-sm">{member.memberName}</td>
                 <td class="px-4 py-2 text-sm">

@@ -7,6 +7,7 @@
 	import { SectionBadge } from '$lib/components/badges';
 	import { toast } from '$lib/stores/toast';
 	import { getEditionViewUrl, getEditionDownloadUrl } from '$lib/utils/urls';
+	import { groupBySection } from '$lib/utils/section-ordering';
 	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
@@ -48,35 +49,18 @@
 	// Group filtered members by section, ordered by section displayOrder then member name
 	const membersBySection = $derived(() => {
 		const members = filteredMembers();
-		const grouped: Record<string, typeof members> = {};
-		const sectionOrder: Record<string, number> = {};
-
-		for (const member of members) {
-			const sectionName = member.primarySection?.name ?? 'No section';
-			const order = member.primarySection?.displayOrder ?? 999;
-			if (!grouped[sectionName]) {
-				grouped[sectionName] = [];
-				sectionOrder[sectionName] = order;
-			}
-			grouped[sectionName].push(member);
-		}
+		const groups = groupBySection(members, (m) => m.primarySection);
 
 		// Sort members within each section by display name
-		for (const section of Object.keys(grouped)) {
-			grouped[section].sort((a, b) => {
+		for (const [, sectionMembers] of groups) {
+			sectionMembers.sort((a, b) => {
 				const nameA = a.nickname || a.name;
 				const nameB = b.nickname || b.name;
 				return nameA.localeCompare(nameB);
 			});
 		}
 
-		// Return sorted entries by section order
-		return Object.entries(grouped).sort(([, ], [, ]) => {
-			// Sort by section order
-			return 0; // Already sorted in next step
-		}).sort(([a], [b]) => {
-			return (sectionOrder[a] ?? 999) - (sectionOrder[b] ?? 999);
-		});
+		return groups;
 	});
 
 	const editionTypes: Record<EditionType, string> = {
