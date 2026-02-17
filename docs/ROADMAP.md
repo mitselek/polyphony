@@ -74,11 +74,12 @@ See [SCHEMA-V2-EVOLUTION.md](SCHEMA-V2-EVOLUTION.md) for complete schema design.
 Migration files for V2 schema:
 
 - [x] `0025_organizations.sql` - organizations table
-- [x] `0026_member_organizations.sql` - junction table, migrate existing members
-- [x] `0027_member_roles_org_id.sql` - add org_id to member_roles
-- [x] `0028_sections_org_id.sql` - add org_id to sections
-- [x] `0029_content_org_id.sql` - add org_id to events, works, seasons, invites
-- [x] `0030_affiliations.sql` - affiliations table with history
+- [x] `0026_drop_event_programs.sql` - drop legacy event_programs table
+- [x] `0027_member_organizations.sql` - junction table, migrate existing members
+- [x] `0028_member_roles_org_id.sql` - add org_id to member_roles
+- [x] `0029_sections_org_id.sql` - add org_id to sections
+- [x] `0030_content_org_id.sql` - add org_id to events, works, seasons, invites
+- [x] `0031_affiliations.sql` - affiliations table with history
 
 ### 0.5.2 Data Migration ✅
 

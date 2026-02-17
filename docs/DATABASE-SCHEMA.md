@@ -66,7 +66,7 @@ Rate limiting for email sending (5 per hour per address).
 
 All organizational data lives here. Single deployment hosts all organizations (data isolated by `org_id`).
 
-Current state after migrations 0001-0032 (Schema V2).
+Current state after migrations 0001-0038 (Schema V2).
 
 ### Organizations (Schema V2)
 
@@ -1158,15 +1158,21 @@ RSVP and attendance tracking for events.
 | **0022**  | **Seasons** - Added seasons table for annual/term-based repertoire organization.                                                                                                                                             |
 | **0023**  | **Season repertoire** - Added season_works and season_work_editions tables for season-level repertoire.                                                                                                                      |
 | **0024**  | **Event repertoire** - Added event_works and event_work_editions tables for event-level repertoire (replaces event_programs).                                                                                                |
-| **0025a** | **Drop event_programs** - Removed deprecated event_programs table after migration to event_works/event_work_editions.                                                                                                        |
-| **0025b** | **Organizations** (Schema V2) - Added organizations table with types `umbrella` and `collective`. Seeded Kammerkoor Crede.                                                                                                   |
-| **0026**  | **Member organizations** (Schema V2) - Added member_organizations junction table linking members to orgs. Migrated existing members to Crede.                                                                                |
-| **0027**  | **Member roles org_id** (Schema V2) - Added org_id to member_roles, changed PK to (member_id, org_id, role).                                                                                                                 |
-| **0028**  | **Sections org_id** (Schema V2) - Added org_id to sections, added UNIQUE(org_id, name) constraint.                                                                                                                           |
-| **0029**  | **Content org_id** (Schema V2) - Added org_id to events, works, seasons, invites. Changed seasons UNIQUE to (org_id, start_date).                                                                                            |
-| **0030**  | **Affiliations** (Schema V2) - Added affiliations table for collective ↔ umbrella relationships with history tracking.                                                                                                       |
-| **0031**  | **Festival event type** - Added `festival` to events.event_type CHECK constraint.                                                                                                                                            |
-| **0032**  | **Organizations type index** - Added missing idx_organizations_type index.                                                                                                                                                   |
+| **0025**  | **Organizations** (Schema V2) - Added organizations table with types `umbrella` and `collective`. Seeded Kammerkoor Crede.                                                                                                   |
+| **0026**  | **Drop event_programs** - Removed deprecated event_programs table after migration to event_works/event_work_editions.                                                                                                        |
+| **0027**  | **Member organizations** (Schema V2) - Added member_organizations junction table linking members to orgs. Migrated existing members to Crede.                                                                                |
+| **0028**  | **Member roles org_id** (Schema V2) - Added org_id to member_roles, changed PK to (member_id, org_id, role).                                                                                                                 |
+| **0029**  | **Sections org_id** (Schema V2) - Added org_id to sections, added UNIQUE(org_id, name) constraint.                                                                                                                           |
+| **0030**  | **Content org_id** (Schema V2) - Added org_id to events, works, seasons, invites. Changed seasons UNIQUE to (org_id, start_date).                                                                                            |
+| **0031**  | **Affiliations** (Schema V2) - Added affiliations table for collective ↔ umbrella relationships with history tracking.                                                                                                       |
+| **0032**  | **Festival event type** - Added `festival` to events.event_type CHECK constraint.                                                                                                                                            |
+| **0033**  | **Organizations type index** - Added missing idx_organizations_type index.                                                                                                                                                   |
+| **0034**  | **Organizations i18n** - Added language, locale, timezone columns to organizations table.                                                                                                                                    |
+| **0035**  | **Member preferences** - Added member_preferences table for i18n overrides.                                                                                                                                                  |
+| **0036**  | **Drop global name unique** - Dropped idx_members_name_lower (name uniqueness now per-org at app level).                                                                                                                     |
+| **0037**  | **Fix primary section triggers** - Org-scoped primary section triggers (clear primaries only within same org).                                                                                                               |
+| **0038**  | **Trust individual responsibility** - Added trust_individual_responsibility column to organizations.                                                                                                                         |
+| **0039**  | **DATETIME to TEXT** - Rebuilt vault_settings, works, editions, physical_copies to normalize DATETIME columns to TEXT with `(datetime('now'))` default.                                                                      |
 
 ---
 
@@ -1175,7 +1181,7 @@ RSVP and attendance tracking for events.
 | Category            | Tables                                                           |
 | ------------------- | ---------------------------------------------------------------- |
 | **Organizations**   | organizations, member_organizations, affiliations                |
-| **Core**            | members, member_roles                                            |
+| **Core**            | members, member_roles, member_preferences                        |
 | **Voices/Sections** | voices, sections, member_voices, member_sections                 |
 | **Score Library**   | works, editions, edition_sections, edition_files, edition_chunks |
 | **Inventory**       | physical_copies, copy_assignments                                |
@@ -1184,7 +1190,7 @@ RSVP and attendance tracking for events.
 | **Invitations**     | invites, invite_voices, invite_sections                          |
 | **Supporting**      | sessions, takedowns, vault_settings                              |
 
-**Total: 25 tables** (after Schema V2 additions: organizations, member_organizations, affiliations)
+**Total: 26 tables** (after Schema V2 additions: organizations, member_organizations, affiliations, member_preferences)
 
 ---
 
