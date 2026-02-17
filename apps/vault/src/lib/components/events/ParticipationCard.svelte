@@ -1,9 +1,23 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Card from "$lib/components/Card.svelte";
+  import StatusButtons from "$lib/components/events/StatusButtons.svelte";
   import type { PlannedStatus, ActualStatus } from "$lib/types";
   import { toast } from "$lib/stores/toast";
   import { groupBySection, sortBySection } from "$lib/utils/section-ordering";
+
+  const rsvpOptions = [
+    { value: 'yes', label: 'Yes', activeClass: 'bg-green-600 text-white border-green-700' },
+    { value: 'no', label: 'No', activeClass: 'bg-red-600 text-white border-red-700' },
+    { value: 'maybe', label: 'Maybe', activeClass: 'bg-yellow-600 text-white border-yellow-700' },
+    { value: 'late', label: 'Late', activeClass: 'bg-orange-600 text-white border-orange-700' },
+  ];
+
+  const attendanceOptions = [
+    { value: 'present', label: 'Present', activeClass: 'bg-green-600 text-white border-green-700' },
+    { value: 'absent', label: 'Absent', activeClass: 'bg-red-600 text-white border-red-700' },
+    { value: 'late', label: 'Late', activeClass: 'bg-orange-600 text-white border-orange-700' },
+  ];
 
   interface Section {
     name: string;
@@ -246,48 +260,12 @@
   {#if canEditOwnRsvp}
     <div class="mb-6 rounded-lg bg-blue-50 p-4">
       <h3 class="mb-2 font-semibold text-blue-900">Your RSVP</h3>
-      <div class="flex gap-2">
-        <button
-          onclick={() => updateMyRsvp("yes")}
-          disabled={updatingRsvp}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus ===
-          'yes'
-            ? 'bg-green-600 text-white border-green-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Yes
-        </button>
-        <button
-          onclick={() => updateMyRsvp("no")}
-          disabled={updatingRsvp}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus ===
-          'no'
-            ? 'bg-red-600 text-white border-red-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          No
-        </button>
-        <button
-          onclick={() => updateMyRsvp("maybe")}
-          disabled={updatingRsvp}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus ===
-          'maybe'
-            ? 'bg-yellow-600 text-white border-yellow-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Maybe
-        </button>
-        <button
-          onclick={() => updateMyRsvp("late")}
-          disabled={updatingRsvp}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.plannedStatus ===
-          'late'
-            ? 'bg-orange-600 text-white border-orange-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Late
-        </button>
-      </div>
+      <StatusButtons
+        options={rsvpOptions}
+        current={myParticipation?.plannedStatus ?? null}
+        disabled={updatingRsvp}
+        onselect={(v) => updateMyRsvp(v as PlannedStatus)}
+      />
     </div>
   {:else}
     <div class="mb-6 rounded-lg bg-gray-100 p-4">
@@ -306,38 +284,12 @@
   {#if canEditOwnAttendance && !canRecordAttendance}
     <div class="mb-6 rounded-lg bg-purple-50 p-4">
       <h3 class="mb-2 font-semibold text-purple-900">Your Attendance</h3>
-      <div class="flex gap-2">
-        <button
-          onclick={() => updateOwnAttendance("present")}
-          disabled={updatingOwnAttendance}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
-          'present'
-            ? 'bg-green-600 text-white border-green-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Present
-        </button>
-        <button
-          onclick={() => updateOwnAttendance("absent")}
-          disabled={updatingOwnAttendance}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
-          'absent'
-            ? 'bg-red-600 text-white border-red-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Absent
-        </button>
-        <button
-          onclick={() => updateOwnAttendance("late")}
-          disabled={updatingOwnAttendance}
-          class="rounded-lg border px-4 py-2 text-sm font-medium transition {myParticipation?.actualStatus ===
-          'late'
-            ? 'bg-orange-600 text-white border-orange-700'
-            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-        >
-          Late
-        </button>
-      </div>
+      <StatusButtons
+        options={attendanceOptions}
+        current={myParticipation?.actualStatus ?? null}
+        disabled={updatingOwnAttendance}
+        onselect={(v) => updateOwnAttendance(v as ActualStatus)}
+      />
       {#if myParticipation?.actualStatus}
         <p class="mt-2 text-sm text-purple-700">
           Current status: <span class="font-medium capitalize">{myParticipation.actualStatus}</span>
@@ -441,38 +393,13 @@
                   {/if}
                 </td>
                 <td class="px-4 py-2">
-                  <div class="flex gap-1">
-                    <button
-                      onclick={() => updateAttendance(member.memberId, "present")}
-                      disabled={recordingAttendance[member.memberId]}
-                      class="rounded border px-2 py-1 text-xs transition {member.actualStatus ===
-                      'present'
-                        ? 'bg-green-600 text-white border-green-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-                    >
-                      Present
-                    </button>
-                    <button
-                      onclick={() => updateAttendance(member.memberId, "absent")}
-                      disabled={recordingAttendance[member.memberId]}
-                      class="rounded border px-2 py-1 text-xs transition {member.actualStatus ===
-                      'absent'
-                        ? 'bg-red-600 text-white border-red-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-                    >
-                      Absent
-                    </button>
-                    <button
-                      onclick={() => updateAttendance(member.memberId, "late")}
-                      disabled={recordingAttendance[member.memberId]}
-                      class="rounded border px-2 py-1 text-xs transition {member.actualStatus ===
-                      'late'
-                        ? 'bg-orange-600 text-white border-orange-700'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} disabled:opacity-50"
-                    >
-                      Late
-                    </button>
-                  </div>
+                  <StatusButtons
+                    options={attendanceOptions}
+                    current={member.actualStatus}
+                    disabled={recordingAttendance[member.memberId]}
+                    size="sm"
+                    onselect={(v) => updateAttendance(member.memberId, v as ActualStatus)}
+                  />
                 </td>
               </tr>
             {/each}
