@@ -1,12 +1,14 @@
 name: Deploy Vault to Cloudflare Pages
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - 'apps/vault/**'
       - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/deploy-vault.yml'
 
 jobs:
