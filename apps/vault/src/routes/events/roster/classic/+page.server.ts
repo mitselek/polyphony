@@ -1,5 +1,4 @@
-// Server-side loader for experimental roster view (Issue #242)
-// Reuses the same data loading logic as the parent roster page
+// Server-side loader for roster table page
 import { error } from '@sveltejs/kit';
 import type { OrgId } from '@polyphony/shared';
 import type { PageServerLoad } from './$types';
@@ -26,6 +25,9 @@ interface RosterFilters {
 	sectionId?: string;
 }
 
+/**
+ * Get unique primary sections that have singers assigned
+ */
 async function getActiveSections(db: D1Database, orgId: OrgId): Promise<Section[]> {
 	const { results } = await db
 		.prepare(
@@ -53,6 +55,7 @@ async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId
 	if (seasonIdParam) {
 		return await getSeason(db, seasonIdParam);
 	}
+	// Default to current season by date
 	const today = new Date().toISOString().split('T')[0];
 	return await getSeasonByDate(db, orgId, today);
 }
@@ -86,16 +89,17 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 		season ? getSeasonNavigation(db, orgId, season.id) : Promise.resolve({ prev: null, next: null })
 	]);
 
-	const canManageParticipation = currentMember.roles.some(r =>
+	const canManageParticipation = currentMember.roles.some(r => 
 		['conductor', 'section_leader', 'owner'].includes(r)
 	);
 
+	// Issue #240: Trust Individual Responsibility
 	const org = await getOrganizationById(db, orgId);
 	const trustIndividualResponsibility = org?.trustIndividualResponsibility ?? false;
 
-	return {
-		roster,
-		sections,
+	return { 
+		roster, 
+		sections, 
 		filters,
 		currentMemberId: currentMember.id,
 		canManageParticipation,
