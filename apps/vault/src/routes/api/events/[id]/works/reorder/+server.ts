@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies,
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
-	const event = await getEventById(db, params.id);
+	const event = await getEventById(db, params.id, locals.org.id);
 	if (!event) throw error(404, 'Event not found');
 
 	let body: { eventWorkIds: string[] };

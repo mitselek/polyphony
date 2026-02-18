@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	}
 
 	// Load vault settings for default event duration
-	const defaultDuration = await getSetting(db, 'default_event_duration') || '2';
+	const defaultDuration = await getSetting(db, 'default_event_duration', locals.org.id) || '2';
 
 	return {
 		defaultDuration: parseInt(defaultDuration, 10)

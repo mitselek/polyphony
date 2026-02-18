@@ -1,9 +1,11 @@
 // API endpoints for managing members
-// DELETE /api/members/[id] - Remove a member from the vault
+// DELETE /api/members/[id] - Remove a member from the current organization
 // PATCH /api/members/[id] - Update a member (admin or own profile)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { getAuthenticatedMember, assertAdmin, isOwner as checkIsOwner } from '$lib/server/auth/middleware';
 import { updateMemberName, updateMemberNickname } from '$lib/server/db/members';
+import { getMemberRoles } from '$lib/server/db/roles';
+import { removeMemberFromOrganization } from '$lib/server/db/member-organizations';
 
 interface UpdateMemberRequest {
 	name?: string;
@@ -105,21 +107,15 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 		throw error(400, 'Cannot remove yourself');
 	}
 
-	// Get target member's roles
-	const targetUser = await db
-		.prepare(
-			`SELECT GROUP_CONCAT(role) as roles
-			 FROM member_roles
-			 WHERE member_id = ?`
-		)
-		.bind(targetMemberId)
-		.first<{ roles: string | null }>();
+	const orgId = locals.org.id;
 
-	if (!targetUser) {
+	// Get target member's roles in THIS org
+	const targetUserRoles = await getMemberRoles(db, targetMemberId!, orgId);
+
+	if (targetUserRoles.length === 0) {
 		throw error(404, 'Member not found');
 	}
 
-	const targetUserRoles = targetUser.roles?.split(',') ?? [];
 	const targetIsOwner = targetUserRoles.includes('owner');
 
 	// Only owners can remove other owners
@@ -127,11 +123,14 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 		throw error(403, 'Only owners can remove other owners');
 	}
 
-	// Delete member (roles will cascade delete due to foreign key)
+	// Remove member from this organization (roles cascade via member_roles.org_id)
+	// This removes the member_organizations record; member_roles for this org
+	// are cleaned up separately since they have their own org_id scope
 	await db
-		.prepare('DELETE FROM members WHERE id = ?')
-		.bind(targetMemberId)
+		.prepare('DELETE FROM member_roles WHERE member_id = ? AND org_id = ?')
+		.bind(targetMemberId, orgId)
 		.run();
+	await removeMemberFromOrganization(db, targetMemberId!, orgId);
 
 	return json({ success: true });
 }

@@ -41,7 +41,7 @@ export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const editionId = params.id;
 	if (!editionId) throw error(400, 'Edition ID is required');
 
-	const edition = await getEditionById(db, editionId);
+	const edition = await getEditionById(db, editionId, locals.org.id);
 	if (!edition) throw notFoundError('Edition');
 
 	return new Response(JSON.stringify(edition), {
@@ -63,7 +63,7 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 	const validationErr = validateUpdateInput(body);
 	if (validationErr) return validationError(validationErr);
 
-	const edition = await updateEdition(db, editionId, buildUpdateInput(body));
+	const edition = await updateEdition(db, editionId, buildUpdateInput(body), locals.org.id);
 	if (!edition) throw notFoundError('Edition');
 
 	return new Response(JSON.stringify(edition), {
@@ -81,7 +81,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 	const editionId = params.id;
 	if (!editionId) throw error(400, 'Edition ID is required');
 
-	const deleted = await deleteEdition(db, editionId);
+	const deleted = await deleteEdition(db, editionId, locals.org.id);
 	if (!deleted) throw notFoundError('Edition');
 
 	return new Response(JSON.stringify({ success: true }), {

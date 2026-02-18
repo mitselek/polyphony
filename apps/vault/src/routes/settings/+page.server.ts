@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 
 	// Load settings, voices (with counts), sections (with counts), and organization
 	const [settings, voices, sections, organization] = await Promise.all([
-		getAllSettings(db),
+		getAllSettings(db, orgId),
 		getAllVoicesWithCounts(db),
 		getAllSectionsWithCounts(db, orgId),
 		getOrganizationById(db, orgId)

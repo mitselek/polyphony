@@ -20,13 +20,13 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 	const workId = params.id;
 	if (!workId) throw error(400, 'Work ID is required');
 
-	const work = await getWorkById(db, workId);
-	if (!work) throw error(404, 'Work not found');
-
 	const orgId = locals.org.id;
 
+	const work = await getWorkById(db, workId, orgId);
+	if (!work) throw error(404, 'Work not found');
+
 	const [editions, sections, canManage] = await Promise.all([
-		getEditionsByWorkId(db, workId),
+		getEditionsByWorkId(db, workId, orgId),
 		getAllSections(db, orgId),
 		checkCanManage(db, cookies.get('member_id'), orgId)
 	]);

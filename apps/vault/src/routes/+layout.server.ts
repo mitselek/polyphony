@@ -19,7 +19,7 @@ export const load: LayoutServerLoad = async ({ platform, cookies, locals }) => {
 	try {
 		const [member, localeSetting] = await Promise.all([
 			getMemberById(platform.env.DB, memberId, locals.org.id),
-			getSetting(platform.env.DB, 'locale')
+			getSetting(platform.env.DB, 'locale', locals.org.id)
 		]);
 
 		const locale = localeSetting || 'system';

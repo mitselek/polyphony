@@ -219,8 +219,8 @@
   </Card>
 
   <!-- Voices Management -->
-  <SettingsEntityCard type="voice" bind:items={voices} orgId={organization.id} />
+  <SettingsEntityCard type="voice" bind:items={voices} />
 
   <!-- Sections Management -->
-  <SettingsEntityCard type="section" bind:items={sections} orgId={organization.id} />
+  <SettingsEntityCard type="section" bind:items={sections} />
 </div>

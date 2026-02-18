@@ -13,8 +13,8 @@ function validateInput(body: ReturnInput): string | null {
 	return !body.assignmentId || typeof body.assignmentId !== 'string' ? 'assignmentId is required' : null;
 }
 
-async function validateAssignment(db: D1Database, copyId: string, assignmentId: string) {
-	const copy = await getPhysicalCopyById(db, copyId);
+async function validateAssignment(db: D1Database, copyId: string, assignmentId: string, orgId: import('@polyphony/shared').OrgId) {
+	const copy = await getPhysicalCopyById(db, copyId, orgId);
 	if (!copy) throw error(404, 'Copy not found');
 	const assignment = await getAssignmentById(db, assignmentId);
 	if (!assignment) throw error(404, 'Assignment not found');
@@ -36,7 +36,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	const inputError = validateInput(body);
 	if (inputError) return json({ error: inputError }, { status: 400 });
 
-	const assignmentError = await validateAssignment(db, copyId, body.assignmentId);
+	const assignmentError = await validateAssignment(db, copyId, body.assignmentId, locals.org.id);
 	if (assignmentError) return json({ error: assignmentError }, { status: 400 });
 
 	const updated = await returnCopy(db, body.assignmentId);

@@ -28,14 +28,14 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 	}
 
 	// Toggle the section
-	const updated = await toggleSectionActive(db, sectionId, body.isActive);
+	const updated = await toggleSectionActive(db, sectionId, body.isActive, locals.org.id);
 
 	if (!updated) {
 		throw error(404, 'Section not found');
 	}
 
 	// Return updated section
-	const section = await getSectionById(db, sectionId);
+	const section = await getSectionById(db, sectionId, locals.org.id);
 	return json(section);
 }
 
@@ -55,7 +55,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 	}
 
 	try {
-		const deleted = await deleteSection(db, sectionId);
+		const deleted = await deleteSection(db, sectionId, locals.org.id);
 		if (!deleted) {
 			throw error(404, 'Section not found');
 		}

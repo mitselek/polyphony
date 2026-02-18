@@ -25,7 +25,7 @@ export async function GET(event: RequestEvent) {
 		throw error(400, 'Event ID required');
 	}
 
-	const eventData = await getEventById(db, eventId);
+	const eventData = await getEventById(db, eventId, locals.org.id);
 	if (!eventData) {
 		throw error(404, 'Event not found');
 	}
@@ -55,14 +55,14 @@ export async function PATCH(event: RequestEvent) {
 	}
 
 	const body = await parseBody(request, updateEventSchema);
-	const success = await updateEvent(db, eventId, body);
-	
+	const success = await updateEvent(db, eventId, body, locals.org.id);
+
 	if (!success) {
 		throw error(404, 'Event not found');
 	}
 
 	// Fetch and return the updated event
-	const updated = await getEventById(db, eventId);
+	const updated = await getEventById(db, eventId, locals.org.id);
 	return json(updated);
 }
 
@@ -87,8 +87,8 @@ export async function DELETE(event: RequestEvent) {
 		throw error(400, 'Event ID required');
 	}
 
-	const deleted = await deleteEvent(db, eventId);
-	
+	const deleted = await deleteEvent(db, eventId, locals.org.id);
+
 	if (!deleted) {
 		throw error(404, 'Event not found');
 	}

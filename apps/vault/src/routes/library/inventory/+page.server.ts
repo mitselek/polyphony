@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	}
 
 	// Load inventory summaries
-	const summaries = await getEditionInventorySummaries(db);
+	const summaries = await getEditionInventorySummaries(db, locals.org.id);
 
 	return {
 		summaries

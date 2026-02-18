@@ -8,17 +8,17 @@ import { getEventRepertoire, addWorkToEvent } from '$lib/server/db/event-reperto
 import { getEventById } from '$lib/server/db/events';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 
-async function requireEvent(db: D1Database, eventId: string) {
-	const event = await getEventById(db, eventId);
+async function requireEvent(db: D1Database, eventId: string, orgId: import('@polyphony/shared').OrgId) {
+	const event = await getEventById(db, eventId, orgId);
 	if (!event) throw error(404, 'Event not found');
 	return event;
 }
 
-export const GET: RequestHandler = async ({ params, platform }) => {
+export const GET: RequestHandler = async ({ params, platform, locals }) => {
 	if (!platform?.env?.DB) throw error(500, 'Database not available');
 	const db = platform.env.DB;
 
-	await requireEvent(db, params.id);
+	await requireEvent(db, params.id, locals.org.id);
 	const repertoire = await getEventRepertoire(db, params.id);
 	return json(repertoire);
 };
@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies,
 
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
-	await requireEvent(db, params.id);
+	await requireEvent(db, params.id, locals.org.id);
 
 	const body = await request.json() as { workId?: string; notes?: string };
 	if (!body.workId || typeof body.workId !== 'string') {

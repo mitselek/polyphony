@@ -20,7 +20,7 @@ export async function GET(event: RequestEvent) {
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
-	const settings = await getAllSettings(db);
+	const settings = await getAllSettings(db, locals.org.id);
 	return json(settings);
 }
 
@@ -42,11 +42,11 @@ export async function PATCH(event: RequestEvent) {
 
 	// Update each provided setting
 	const updatePromises = Object.entries(updates).map(([key, value]) =>
-		setSetting(db, key, String(value), member.id)
+		setSetting(db, key, String(value), member.id, locals.org.id)
 	);
 	await Promise.all(updatePromises);
 
 	// Return updated settings
-	const settings = await getAllSettings(db);
+	const settings = await getAllSettings(db, locals.org.id);
 	return json(settings);
 }

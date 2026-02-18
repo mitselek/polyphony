@@ -63,21 +63,21 @@
 		return groups;
 	});
 
-	const editionTypes: Record<EditionType, string> = {
-		full_score: 'Full Score',
-		vocal_score: 'Vocal Score',
-		part: 'Part',
-		reduction: 'Reduction',
-		audio: 'Audio',
-		video: 'Video',
-		supplementary: 'Supplementary'
-	};
+	const editionTypes = $derived<Record<EditionType, string>>({
+		full_score: m.edition_type_full_score(),
+		vocal_score: m.edition_type_vocal_score(),
+		part: m.edition_type_part(),
+		reduction: m.edition_type_reduction(),
+		audio: m.edition_type_audio(),
+		video: m.edition_type_video(),
+		supplementary: m.edition_type_supplementary()
+	});
 
-	const licenseTypes: Record<LicenseType, string> = {
-		public_domain: 'Public Domain',
-		licensed: 'Licensed',
-		owned: 'Owned'
-	};
+	const licenseTypes = $derived<Record<LicenseType, string>>({
+		public_domain: m.edition_license_public_domain(),
+		licensed: m.edition_license_licensed(),
+		owned: m.edition_license_owned()
+	});
 
 	function getTypeClass(type: EditionType): string {
 		switch (type) {
@@ -236,7 +236,7 @@
 			}
 
 			copies = copies.map((c) => (c.id === copyId ? { ...c, assignment: null } : c));
-			toast.success('Copy marked as returned');
+			toast.success(m.copies_toast_returned());
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to return copy');
 		} finally {
@@ -305,7 +305,7 @@
 				<p class="mt-2 text-lg text-gray-600">
 					<a href="/works/{data.work.id}" class="text-blue-600 hover:underline">{data.work.title}</a>
 					{#if data.work.composer}
-						<span class="text-gray-400">by</span> {data.work.composer}
+						<span class="text-gray-400">{m.edition_view_by_composer()}</span> {data.work.composer}
 					{/if}
 				</p>
 			</div>
@@ -400,7 +400,7 @@
 									<p class="text-sm text-gray-500">
 										{formatFileSize(data.edition.fileSize)}
 										{#if data.edition.fileUploadedAt}
-											• Uploaded {new Date(data.edition.fileUploadedAt).toLocaleDateString()}
+											• {m.edition_uploaded_date({ date: new Date(data.edition.fileUploadedAt).toLocaleDateString() })}
 										{/if}
 									</p>
 								</div>
@@ -467,17 +467,17 @@
 						onclick={() => (showCreateForm = !showCreateForm)}
 						class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
 					>
-						{showCreateForm ? 'Cancel' : '+ Add Copies'}
+						{showCreateForm ? m.copies_cancel_btn() : m.copies_add_btn()}
 					</button>
 				</div>
 
 				<!-- Create Copies Form -->
 				{#if showCreateForm}
 					<div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-						<h3 class="mb-3 font-medium text-gray-900">Add New Copies</h3>
+						<h3 class="mb-3 font-medium text-gray-900">{m.copies_add_copies_title()}</h3>
 						<div class="flex flex-wrap items-end gap-4">
 							<div>
-								<label for="count" class="block text-sm font-medium text-gray-700">Count</label>
+								<label for="count" class="block text-sm font-medium text-gray-700">{m.copies_count_label()}</label>
 								<input
 									id="count"
 									type="number"
@@ -488,25 +488,25 @@
 								/>
 							</div>
 							<div>
-								<label for="prefix" class="block text-sm font-medium text-gray-700">Prefix (optional)</label>
+								<label for="prefix" class="block text-sm font-medium text-gray-700">{m.copies_prefix_label()}</label>
 								<input
 									id="prefix"
 									type="text"
-									placeholder="e.g., M"
+									placeholder={m.copies_prefix_placeholder()}
 									bind:value={batchPrefix}
 									class="mt-1 w-24 rounded-lg border border-gray-300 px-3 py-2"
 								/>
 							</div>
 							<div>
-								<label for="condition" class="block text-sm font-medium text-gray-700">Condition</label>
+								<label for="condition" class="block text-sm font-medium text-gray-700">{m.copies_condition_label()}</label>
 								<select
 									id="condition"
 									bind:value={copyCondition}
 									class="mt-1 rounded-lg border border-gray-300 px-3 py-2"
 								>
-									<option value="good">Good</option>
-									<option value="fair">Fair</option>
-									<option value="poor">Poor</option>
+									<option value="good">{m.copies_condition_good()}</option>
+									<option value="fair">{m.copies_condition_fair()}</option>
+									<option value="poor">{m.copies_condition_poor()}</option>
 								</select>
 							</div>
 							<button
@@ -514,7 +514,7 @@
 								disabled={creating || batchCount < 1}
 								class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
 							>
-								{creating ? 'Creating...' : 'Create'}
+								{creating ? m.copies_creating() : m.copies_create_btn()}
 							</button>
 						</div>
 						<p class="mt-2 text-xs text-gray-500">
@@ -535,10 +535,10 @@
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Condition</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-									<th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_copy()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_condition()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_status()}</th>
+									<th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_actions()}</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-200 bg-white">
@@ -553,11 +553,11 @@
 												<div>
 													<span class="font-medium text-gray-900">{copy.assignment.memberName}</span>
 													<span class="block text-xs text-gray-500">
-														since {new Date(copy.assignment.assignedAt).toLocaleDateString()}
+														{m.copies_since_date({ date: new Date(copy.assignment.assignedAt).toLocaleDateString() })}
 													</span>
 												</div>
 											{:else}
-												<span class="text-green-600">Available</span>
+												<span class="text-green-600">{m.copies_available_label()}</span>
 											{/if}
 										</td>
 										<td class="whitespace-nowrap px-4 py-3 text-right">
@@ -567,21 +567,19 @@
 													disabled={returning}
 													class="text-sm text-amber-600 hover:text-amber-800 disabled:opacity-50"
 												>
-													Return
-												</button>
+													{m.copies_return_btn()}												</button>
 											{:else}
 												<button
 													onclick={() => openAssignModal(copy.id)}
 													class="text-sm text-blue-600 hover:text-blue-800"
 												>
-													Assign
-												</button>
+													{m.copies_assign_btn()}												</button>
 												<button
 													onclick={() => deleteCopy(copy.id, copy.copyNumber)}
 													disabled={deleting === copy.id}
 													class="ml-3 text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
 												>
-													{deleting === copy.id ? '...' : 'Delete'}
+													{deleting === copy.id ? '...' : m.copies_delete_btn()}
 												</button>
 											{/if}
 										</td>
@@ -596,18 +594,18 @@
 			<!-- Current Holders Section (Issue #125) -->
 			{#if data.currentHolders.length > 0}
 				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-					<h2 class="mb-4 text-lg font-semibold">Current Holders ({data.currentHolders.length})</h2>
+					<h2 class="mb-4 text-lg font-semibold">{m.copies_holders_count({ count: data.currentHolders.length })}</h2>
 					<p class="mb-4 text-sm text-gray-500">
-						Members who currently have copies of this edition
+						{m.copies_holders_desc()}
 					</p>
 					
 					<div class="overflow-hidden rounded-lg border border-gray-200">
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Member</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Since</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_copy()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_member()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_since()}</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-200 bg-white">
@@ -633,20 +631,20 @@
 			<!-- Assignment History Section -->
 			{#if data.assignmentHistory.length > 0}
 				<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-					<h2 class="mb-4 text-lg font-semibold">Assignment History</h2>
+					<h2 class="mb-4 text-lg font-semibold">{m.copies_history_title()}</h2>
 					<p class="mb-4 text-sm text-gray-500">
-						Complete history of copy assignments for this edition
+						{m.copies_history_desc()}
 					</p>
 					
 					<div class="overflow-hidden rounded-lg border border-gray-200">
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Copy #</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Member</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Assigned</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Returned</th>
-									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Assigned By</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_copy()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_member()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_assigned()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_returned()}</th>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{m.copies_header_assigned_by()}</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-200 bg-white">
@@ -661,7 +659,7 @@
 											{#if entry.returnedAt}
 												<span class="text-gray-600">{new Date(entry.returnedAt).toLocaleDateString()}</span>
 											{:else}
-												<span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">Current</span>
+												<span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">{m.copies_current_badge()}</span>
 											{/if}
 										</td>
 										<td class="whitespace-nowrap px-4 py-3 text-gray-500">
@@ -679,19 +677,19 @@
 </div>
 
 <!-- Assign Copy Modal -->
-<Modal open={showAssignModal} title="Assign Copy" onclose={closeAssignModal}>
+<Modal open={showAssignModal} title={m.copies_assign_copy_title()} onclose={closeAssignModal}>
 	<!-- Search filter -->
 	<div class="mb-3">
 		<input
 			type="text"
 			bind:value={memberSearchQuery}
-			placeholder="Filter by name..."
+			placeholder={m.copies_filter_name_placeholder()}
 			class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
 		/>
 	</div>
 
 	<div class="mb-4">
-		<label for="member" class="block text-sm font-medium text-gray-700">Select Member</label>
+		<label for="member" class="block text-sm font-medium text-gray-700">{m.copies_select_member_label()}</label>
 		<select
 			id="member"
 			bind:value={selectedMemberId}
@@ -709,7 +707,7 @@
 			{/each}
 		</select>
 		{#if filteredMembers().length === 0}
-			<p class="mt-2 text-sm text-gray-500">No members match your search</p>
+			<p class="mt-2 text-sm text-gray-500">{m.copies_no_member_match()}</p>
 		{/if}
 	</div>
 
@@ -718,14 +716,14 @@
 			onclick={closeAssignModal}
 			class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
 		>
-			Cancel
+		{m.copies_cancel_btn()}
 		</button>
 		<button
 			onclick={assignCopy}
 			disabled={!selectedMemberId || assigning}
 			class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
 		>
-			{assigning ? 'Assigning...' : 'Assign'}
+			{assigning ? m.copies_assigning() : m.copies_assign_btn()}
 		</button>
 	</div>
 </Modal>

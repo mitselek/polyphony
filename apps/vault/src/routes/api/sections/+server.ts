@@ -15,13 +15,8 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
-	// Parse request body
-	const body = (await request.json()) as Partial<CreateSectionInput>;
-
-	// Validate required fields
-	if (!body.orgId || typeof body.orgId !== 'string' || body.orgId.trim().length === 0) {
-		return json({ error: 'Organization ID is required' }, { status: 400 });
-	}
+	// Parse request body — orgId comes from locals.org.id (NOT request body) to prevent spoofing
+	const body = (await request.json()) as Partial<Omit<CreateSectionInput, 'orgId'>>;
 
 	if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
 		return json({ error: 'Name is required' }, { status: 400 });
@@ -31,9 +26,9 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 		return json({ error: 'Abbreviation is required' }, { status: 400 });
 	}
 
-	// Build input with defaults
+	// Build input with defaults — always use server-side org context
 	const input: CreateSectionInput = {
-		orgId: body.orgId.trim(),
+		orgId: locals.org.id,
 		name: body.name.trim(),
 		abbreviation: body.abbreviation.trim(),
 		parentSectionId: body.parentSectionId ?? undefined,

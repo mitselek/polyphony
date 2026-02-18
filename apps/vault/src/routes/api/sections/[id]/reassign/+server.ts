@@ -26,14 +26,16 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 		return json({ error: 'Target section ID is required' }, { status: 400 });
 	}
 
+	const orgId = locals.org.id;
+
 	// Validate source section exists
-	const sourceSection = await getSectionById(db, sourceSectionId);
+	const sourceSection = await getSectionById(db, sourceSectionId, orgId);
 	if (!sourceSection) {
 		throw error(404, 'Source section not found');
 	}
 
 	// Validate target section exists
-	const targetSection = await getSectionById(db, body.targetSectionId);
+	const targetSection = await getSectionById(db, body.targetSectionId, orgId);
 	if (!targetSection) {
 		return json({ error: 'Target section not found' }, { status: 400 });
 	}
@@ -44,7 +46,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	}
 
 	// Perform reassignment
-	const movedCount = await reassignSection(db, sourceSectionId, body.targetSectionId);
+	const movedCount = await reassignSection(db, sourceSectionId, body.targetSectionId, orgId);
 
 	return json({
 		success: true,
