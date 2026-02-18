@@ -244,36 +244,8 @@
 							</div>
 						</div>
 
-						{#if !member.email_id}
-							<!-- Roster-only member - show invitation status or button -->
-							{@const inviteLink = pendingInviteLinks[member.id]}
-							<div class="mt-3 rounded-lg border {inviteLink ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50'} p-3">
-								{#if inviteLink}
-									<div class="flex items-center justify-between">
-										<p class="text-sm text-blue-800">
-											{m.members_invite_pending_text()}
-										</p>
-										<button
-											onclick={() => copyInviteLink(inviteLink, member.name)}
-											class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-100"
-										>
-											{m.invites_copy_link()}
-										</button>
-									</div>
-								{:else}
-									<p class="mb-2 text-sm text-amber-800">
-										{m.members_roster_no_invite()}
-									</p>
-									<a
-										href="/invite?rosterId={member.id}"
-										class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-									>
-										{m.member_send_invite_btn()}
-									</a>
-								{/if}
-							</div>
-						{:else}
-							<!-- Registered member - show role badges -->
+						<!-- Role management - shown for all members (roster-only and registered) -->
+						<div class="mt-3 flex flex-wrap gap-2">
 							{#each ASSIGNABLE_ROLES as role}
 								{@const isDisabled = updatingMember === member.id ||
 									(member.id === currentUserId && role === 'owner') ||
@@ -305,6 +277,41 @@
 							{#if member.roles.length === 0}
 								<span class="text-sm text-gray-500">{m.member_no_roles()}</span>
 							{/if}
+						</div>
+
+						{#if !member.email_id}
+							<!-- Roster-only: pending note (only when roles exist) + invitation box -->
+							{#if member.roles.length > 0}
+								<p class="mt-1 text-xs text-amber-700">
+									{m.member_roles_pending_registration()}
+								</p>
+							{/if}
+							{@const inviteLink = pendingInviteLinks[member.id]}
+							<div class="mt-3 rounded-lg border {inviteLink ? 'border-blue-200 bg-blue-50' : 'border-amber-200 bg-amber-50'} p-3">
+								{#if inviteLink}
+									<div class="flex items-center justify-between">
+										<p class="text-sm text-blue-800">
+											{m.members_invite_pending_text()}
+										</p>
+										<button
+											onclick={() => copyInviteLink(inviteLink, member.name)}
+											class="rounded px-3 py-1 text-sm text-blue-600 hover:bg-blue-100"
+										>
+											{m.invites_copy_link()}
+										</button>
+									</div>
+								{:else}
+									<p class="mb-2 text-sm text-amber-800">
+										{m.members_roster_no_invite()}
+									</p>
+									<a
+										href="/invite?rosterId={member.id}"
+										class="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+									>
+										{m.member_send_invite_btn()}
+									</a>
+								{/if}
+							</div>
 						{/if}
 					</div>
 				</div>
