@@ -6,7 +6,7 @@ _Juhend rühmavanemale kohaloleku märkimiseks_
 
 ## Sissejuhatus
 
-Häälerühma vanem (**Section Leader**) on dirigendi parem käsi kohaloleku kontrollimisel. Sinu põhiülesanne on hoolitseda selle eest, et sinu häälerühma (nt sopranite või basside) osavõtt saaks korrektselt kirja.
+Häälerühma vanem (**Section Leader**) on dirigendi parem käsi kohaloleku kontrollimisel. Sinu põhiülesanne on hoolitseda selle eest, et proovides osalejate kohalolek saaks korrektselt kirja.
 
 ---
 
@@ -14,7 +14,7 @@ Häälerühma vanem (**Section Leader**) on dirigendi parem käsi kohaloleku kon
 
 Häälerühma vanemana on sul üks peamine lisavõimalus võrreldes tavalauljaga:
 
-- **Kohaloleku märkimine:** Saad märkida proovides osalejaid, kuid tavaliselt on see piiratud sinu enda häälerühmaga (või kõigiga, sõltuvalt koori seadetest).
+- **Kohaloleku märkimine:** Saad märkida kõigi kooriliikmetele proovides kohalolekut — see õigus kehtib kogu koori, mitte ainult oma häälerühma suhtes.
 
 ⚠️ **Mida sa teha ei saa:**
 
@@ -25,18 +25,28 @@ Häälerühma vanemana on sul üks peamine lisavõimalus võrreldes tavalauljaga
 
 ## Kuidas märkida kohalolekut?
 
+### Üksiku sündmuse kohaloleku märkimine
+
 Kui proov on alanud või lõppenud:
 
 1. Vali menüüst **"Events"**.
 2. Kliki vastaval proovil või kontserdil.
-3. Vali vaheleht **"Attendance"**.
-4. Otsi nimekirjast oma häälerühma liikmed.
+3. Keri alla jaotiseni **"Participation"** — kohaloleku märkimine on siin lõimitult, eraldi vahelehet pole.
+4. Otsi nimekirjast liikmed.
 5. Märgi staatus:
    - **Present (Kohal):** Roheline linnuke.
+   - **Late (Hilines):** Kollane kellake.
    - **Absent (Puudub):** Punane rist.
-   - **Excused (Vabandusega):** Kui puudumine on põhjendatud (nt haigus).
 
 Sinu märgitud info salvestub koheselt ja on nähtav dirigendile ja administraatoritele statistika tegemiseks.
+
+### Mitme sündmuse kohaloleku vaade (Roster)
+
+Mitme proovi kohaloleku ülevaatamiseks kasuta **Roster** vaadet:
+
+1. Vali menüüst **"Roster"**.
+2. Siin näed kõigi liikmete kohalolekut kõikide hooaja sündmuste lõikes ühe tabelina.
+3. Saad kohalolekut märkida otse tabelist, klikkides vastavale lahtrile.
 
 ---
 
@@ -47,4 +57,4 @@ Sinu märgitud info salvestub koheselt ja on nähtav dirigendile ja administraat
 
 ---
 
-_Juhend uuendatud: 09.02.2026_
+_Juhend uuendatud: 18.02.2026_
