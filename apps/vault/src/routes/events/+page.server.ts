@@ -21,9 +21,9 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	
 	if (seasonIdParam) {
 		// Specific season requested
-		season = await getSeason(db, seasonIdParam);
+		season = await getSeason(db, seasonIdParam, orgId);
 	}
-	
+
 	if (!season) {
 		// Default to current season (by today's date)
 		const today = new Date().toISOString().split('T')[0];
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 	}
 
 	// Load events for the season (or empty if no season)
-	const events = season ? await getSeasonEvents(db, season.id) : [];
+	const events = season ? await getSeasonEvents(db, season.id, orgId) : [];
 
 	// Load participation status for each event
 	const eventsWithParticipation = await Promise.all(

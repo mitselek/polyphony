@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ platform, cookies, params, locals }
 	}
 
 	// Load event details
-	const event = await getEventById(db, eventId);
+	const event = await getEventById(db, eventId, orgId);
 	if (!event) {
 		throw error(404, 'Event not found');
 	}
@@ -76,12 +76,12 @@ export const load: PageServerLoad = async ({ platform, cookies, params, locals }
 	// Build map of work -> editions for repertoire management
 	const workEditionsMap: Record<string, Edition[]> = {};
 	for (const repWork of repertoire.works) {
-		workEditionsMap[repWork.work.id] = await getEditionsByWorkId(db, repWork.work.id);
+		workEditionsMap[repWork.work.id] = await getEditionsByWorkId(db, repWork.work.id, orgId);
 	}
 	// Also load editions for available works (for when adding)
 	for (const work of availableWorks.slice(0, 20)) { // Limit to first 20 for performance
 		if (!workEditionsMap[work.id]) {
-			workEditionsMap[work.id] = await getEditionsByWorkId(db, work.id);
+			workEditionsMap[work.id] = await getEditionsByWorkId(db, work.id, orgId);
 		}
 	}
 

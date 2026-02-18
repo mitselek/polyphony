@@ -16,7 +16,7 @@ function validateInput(body: AssignInput): string | null {
 }
 
 async function validateEntities(db: D1Database, copyId: string, memberId: string, orgId: import('@polyphony/shared').OrgId) {
-	const copy = await getPhysicalCopyById(db, copyId);
+	const copy = await getPhysicalCopyById(db, copyId, orgId);
 	if (!copy) throw error(404, 'Copy not found');
 	const member = await getMemberById(db, memberId, orgId);
 	if (!member) throw error(404, 'Member not found');

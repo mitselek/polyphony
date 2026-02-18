@@ -1,6 +1,7 @@
 // Physical copies database operations
 // Part of Epic #106 - Phase B: Physical Inventory
 
+import type { OrgId } from '@polyphony/shared';
 import type { CopyCondition } from '$lib/types';
 import { generateId } from '$lib/server/utils/id';
 
@@ -76,6 +77,7 @@ export async function createPhysicalCopy(
 	const condition = input.condition ?? 'good';
 	const acquiredAt = input.acquiredAt ?? null;
 	const notes = input.notes ?? null;
+	const now = new Date().toISOString();
 
 	await db
 		.prepare(
@@ -85,11 +87,15 @@ export async function createPhysicalCopy(
 		.bind(id, input.editionId, input.copyNumber, condition, acquiredAt, notes)
 		.run();
 
-	const copy = await getPhysicalCopyById(db, id);
-	if (!copy) {
-		throw new Error('Failed to create physical copy');
-	}
-	return copy;
+	return {
+		id,
+		editionId: input.editionId,
+		copyNumber: input.copyNumber,
+		condition,
+		acquiredAt,
+		notes,
+		createdAt: now
+	};
 }
 
 /**
@@ -118,7 +124,8 @@ function generateCopyNumbers(
  */
 export async function batchCreatePhysicalCopies(
 	db: D1Database,
-	input: BatchCreateInput
+	input: BatchCreateInput,
+	orgId: OrgId
 ): Promise<PhysicalCopy[]> {
 	const { editionId, count, prefix = '', condition = 'good', acquiredAt } = input;
 
@@ -141,7 +148,7 @@ export async function batchCreatePhysicalCopies(
 
 	await db.batch(statements);
 
-	return getPhysicalCopiesByEdition(db, editionId);
+	return getPhysicalCopiesByEdition(db, editionId, orgId);
 }
 
 /**
@@ -188,34 +195,47 @@ async function getNextAvailableCopyNumber(
 }
 
 /**
- * Get a physical copy by ID
+ * Get a physical copy by ID, scoped to organization (via editions → works JOIN)
  */
 export async function getPhysicalCopyById(
 	db: D1Database,
-	id: string
+	id: string,
+	orgId: OrgId
 ): Promise<PhysicalCopy | null> {
 	const row = await db
-		.prepare('SELECT * FROM physical_copies WHERE id = ?')
-		.bind(id)
+		.prepare(`
+			SELECT pc.id, pc.edition_id, pc.copy_number, pc.condition,
+				pc.acquired_at, pc.notes, pc.created_at
+			FROM physical_copies pc
+			JOIN editions e ON pc.edition_id = e.id
+			JOIN works w ON e.work_id = w.id
+			WHERE pc.id = ? AND w.org_id = ?
+		`)
+		.bind(id, orgId)
 		.first<PhysicalCopyRow>();
 
 	return row ? rowToCopy(row) : null;
 }
 
 /**
- * Get all physical copies for an edition
+ * Get all physical copies for an edition, scoped to organization (via editions → works JOIN)
  */
 export async function getPhysicalCopiesByEdition(
 	db: D1Database,
-	editionId: string
+	editionId: string,
+	orgId: OrgId
 ): Promise<PhysicalCopy[]> {
 	const { results } = await db
 		.prepare(
-			`SELECT * FROM physical_copies 
-			 WHERE edition_id = ? 
-			 ORDER BY copy_number COLLATE NOCASE`
+			`SELECT pc.id, pc.edition_id, pc.copy_number, pc.condition,
+				pc.acquired_at, pc.notes, pc.created_at
+			 FROM physical_copies pc
+			 JOIN editions e ON pc.edition_id = e.id
+			 JOIN works w ON e.work_id = w.id
+			 WHERE pc.edition_id = ? AND w.org_id = ?
+			 ORDER BY pc.copy_number COLLATE NOCASE`
 		)
-		.bind(editionId)
+		.bind(editionId, orgId)
 		.all<PhysicalCopyRow>();
 
 	return results.map(rowToCopy);
@@ -246,15 +266,20 @@ function buildUpdateQuery(input: UpdatePhysicalCopyInput): UpdateQuery {
 }
 
 /**
- * Update a physical copy (condition, notes, acquired_at)
+ * Update a physical copy (condition, notes, acquired_at), scoped to organization
  */
 export async function updatePhysicalCopy(
 	db: D1Database,
 	id: string,
-	input: UpdatePhysicalCopyInput
+	input: UpdatePhysicalCopyInput,
+	orgId: OrgId
 ): Promise<PhysicalCopy | null> {
+	// Verify the copy belongs to this org before updating
+	const existing = await getPhysicalCopyById(db, id, orgId);
+	if (!existing) return null;
+
 	const { updates, values } = buildUpdateQuery(input);
-	if (updates.length === 0) return getPhysicalCopyById(db, id);
+	if (updates.length === 0) return existing;
 
 	values.push(id);
 	await db
@@ -262,13 +287,17 @@ export async function updatePhysicalCopy(
 		.bind(...values)
 		.run();
 
-	return getPhysicalCopyById(db, id);
+	return getPhysicalCopyById(db, id, orgId);
 }
 
 /**
- * Delete a physical copy
+ * Delete a physical copy, scoped to organization
  */
-export async function deletePhysicalCopy(db: D1Database, id: string): Promise<boolean> {
+export async function deletePhysicalCopy(db: D1Database, id: string, orgId: OrgId): Promise<boolean> {
+	// Verify the copy belongs to this org before deleting
+	const existing = await getPhysicalCopyById(db, id, orgId);
+	if (!existing) return false;
+
 	const result = await db
 		.prepare('DELETE FROM physical_copies WHERE id = ?')
 		.bind(id)
@@ -339,13 +368,14 @@ export interface EditionInventorySummary {
 }
 
 /**
- * Get inventory summary for all editions with physical copies
+ * Get inventory summary for all editions with physical copies, scoped to organization
  */
 export async function getEditionInventorySummaries(
-	db: D1Database
+	db: D1Database,
+	orgId: OrgId
 ): Promise<EditionInventorySummary[]> {
 	const query = `
-		SELECT 
+		SELECT
 			e.id as edition_id,
 			e.name as edition_name,
 			w.title as work_title,
@@ -357,11 +387,12 @@ export async function getEditionInventorySummaries(
 		JOIN works w ON e.work_id = w.id
 		JOIN physical_copies pc ON pc.edition_id = e.id
 		LEFT JOIN copy_assignments ca ON ca.copy_id = pc.id AND ca.returned_at IS NULL
+		WHERE w.org_id = ?
 		GROUP BY e.id
 		ORDER BY w.title, e.name
 	`;
 
-	const { results } = await db.prepare(query).all<{
+	const { results } = await db.prepare(query).bind(orgId).all<{
 		edition_id: string;
 		edition_name: string;
 		work_title: string;

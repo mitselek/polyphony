@@ -107,7 +107,7 @@ export async function POST(event: RequestEvent) {
 
 	if (!body.eventId || !body.memberId) throw error(400, 'eventId and memberId are required');
 
-	const eventData = await getEventById(db, body.eventId);
+	const eventData = await getEventById(db, body.eventId, locals.org.id);
 	if (!eventData) throw error(404, 'Event not found');
 
 	// Issue #240: Check organization trust setting

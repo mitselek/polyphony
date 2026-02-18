@@ -54,20 +54,17 @@
 
 	// --- End experimental column shrinking ---
 
-	// --- Experimental: smart unstick header row (Issue #247) ---
+	// --- Smart unstick header row (Issue #247) ---
 	const UNSTICK_THRESHOLD = 100;
 
-	let headerTop = $state(0);
+	let headerShouldStick = $state(true);
 
 	function handleWindowScroll() {
 		if (!scrollContainer) return;
 		const gridBottom = scrollContainer.getBoundingClientRect().bottom;
-		const vh = window.innerHeight;
-		headerTop = shouldHeaderStick(gridBottom, vh, UNSTICK_THRESHOLD)
-			? 0
-			: gridBottom - (vh - UNSTICK_THRESHOLD);
+		headerShouldStick = shouldHeaderStick(gridBottom, window.innerHeight, UNSTICK_THRESHOLD);
 	}
-	// --- End experimental header unstick ---
+	// --- End smart unstick ---
 
 	// Watch for data changes (e.g., on navigation) and update local state
 	$effect(() => {
@@ -375,10 +372,10 @@
 			<p class="text-gray-500">{m.roster_no_members()}</p>
 		</Card>
 	{:else}
-		<!-- Header band: sticky, overflow:hidden clips grid, no wrapper to break sticky -->
+		<!-- Header band: sticky when content extends below viewport, static otherwise (#247) -->
 		<div
-			class="sticky z-40 rounded-t-lg border-t border-x border-gray-200 bg-white {headerTop >= 0 ? 'shadow-md' : ''}"
-			style="top: {headerTop}px; overflow: hidden;"
+			class="{headerShouldStick ? 'sticky top-0 z-40 shadow-md' : 'z-40'} rounded-t-lg border-t border-x border-gray-200 bg-white"
+			style="overflow: hidden;"
 			bind:this={headerScrollEl}
 		>
 					<div

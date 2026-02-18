@@ -63,7 +63,7 @@ export const load: PageServerLoad = async ({ params, fetch, platform, cookies, l
 		
 		// Load editions for each work in repertoire (for edition management UI)
 		for (const repWork of repertoire.works) {
-			const editions = await getEditionsByWorkId(db, repWork.work.id);
+			const editions = await getEditionsByWorkId(db, repWork.work.id, locals.org.id);
 			workEditionsMap[repWork.work.id] = editions;
 		}
 	}

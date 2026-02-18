@@ -252,7 +252,7 @@ describe('Works API Routes', () => {
 
 			const response = await GET_ID(event);
 
-			expect(mockGetWorkById).toHaveBeenCalledWith(expect.anything(), 'work-1');
+			expect(mockGetWorkById).toHaveBeenCalledWith(expect.anything(), 'work-1', TEST_ORG_ID);
 			
 			const data = (await response.json()) as Work;
 			expect(data.id).toBe('work-1');
@@ -298,7 +298,8 @@ describe('Works API Routes', () => {
 			expect(mockUpdateWork).toHaveBeenCalledWith(
 				expect.anything(),
 				'work-1',
-				expect.objectContaining({ title: 'Updated Title' })
+				expect.objectContaining({ title: 'Updated Title' }),
+				TEST_ORG_ID
 			);
 			
 			const data = (await response.json()) as Work;
@@ -323,7 +324,8 @@ describe('Works API Routes', () => {
 			expect(mockUpdateWork).toHaveBeenCalledWith(
 				expect.anything(),
 				'work-1',
-				expect.objectContaining({ composer: null })
+				expect.objectContaining({ composer: null }),
+				TEST_ORG_ID
 			);
 			
 			const data = (await response.json()) as Work;
@@ -373,7 +375,7 @@ describe('Works API Routes', () => {
 			const response = await DELETE(event);
 
 			expect(mockAssertLibrarian).toHaveBeenCalled();
-			expect(mockDeleteWork).toHaveBeenCalledWith(expect.anything(), 'work-1');
+			expect(mockDeleteWork).toHaveBeenCalledWith(expect.anything(), 'work-1', TEST_ORG_ID);
 			expect(response.status).toBe(200);
 			
 			const data = (await response.json()) as { success: boolean };

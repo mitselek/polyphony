@@ -2,6 +2,7 @@
 // GET /api/editions/[id]/copies - List all copies for edition
 // POST /api/editions/[id]/copies - Create copy(ies)
 import { json, error, type RequestEvent } from '@sveltejs/kit';
+import type { OrgId } from '@polyphony/shared';
 import { getAuthenticatedMember, assertLibrarian } from '$lib/server/auth/middleware';
 import { getEditionById } from '$lib/server/db/editions';
 import {
@@ -85,10 +86,10 @@ export async function GET({ params, platform, cookies, url, locals }: RequestEve
 	if (!editionId) throw error(400, 'Edition ID is required');
 
 	// Verify edition exists
-	const edition = await getEditionById(db, editionId);
+	const edition = await getEditionById(db, editionId, locals.org.id);
 	if (!edition) throw error(404, 'Edition not found');
 
-	const copies = await getPhysicalCopiesByEdition(db, editionId);
+	const copies = await getPhysicalCopiesByEdition(db, editionId, locals.org.id);
 
 	// Include stats if requested
 	const includeStats = url.searchParams.get('stats') === 'true';
@@ -100,7 +101,7 @@ export async function GET({ params, platform, cookies, url, locals }: RequestEve
 	return json(copies);
 }
 
-async function handleBatchCreate(db: D1Database, editionId: string, body: CreateBatchInput) {
+async function handleBatchCreate(db: D1Database, editionId: string, body: CreateBatchInput, orgId: OrgId) {
 	const copies = await batchCreatePhysicalCopies(db, {
 		editionId,
 		count: body.count,
@@ -108,7 +109,7 @@ async function handleBatchCreate(db: D1Database, editionId: string, body: Create
 		startNumber: body.startNumber,
 		condition: body.condition,
 		acquiredAt: body.acquiredAt
-	});
+	}, orgId);
 	const stats = await getCopyStats(db, editionId);
 	return json({ copies, stats }, { status: 201 });
 }
@@ -134,7 +135,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	const editionId = params.id;
 	if (!editionId) throw error(400, 'Edition ID is required');
 
-	const edition = await getEditionById(db, editionId);
+	const edition = await getEditionById(db, editionId, locals.org.id);
 	if (!edition) throw error(404, 'Edition not found');
 
 	const body = (await request.json()) as CreateInput;
@@ -142,6 +143,6 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	if (validationError) return json({ error: validationError }, { status: 400 });
 
 	return isBatchInput(body)
-		? handleBatchCreate(db, editionId, body)
+		? handleBatchCreate(db, editionId, body, locals.org.id)
 		: handleSingleCreate(db, editionId, body);
 }

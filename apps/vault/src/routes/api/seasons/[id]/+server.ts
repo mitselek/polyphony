@@ -20,16 +20,17 @@ export async function GET({ params, url, platform, cookies, locals }: RequestEve
 		throw error(400, 'Season ID is required');
 	}
 
-	const season = await getSeason(db, seasonId);
+	const orgId = locals.org.id;
+	const season = await getSeason(db, seasonId, orgId);
 	if (!season) {
 		throw error(404, 'Season not found');
 	}
 
 	// Check if events should be included
 	const includeEvents = url.searchParams.get('events') === 'true';
-	
+
 	if (includeEvents) {
-		const events = await getSeasonEvents(db, seasonId);
+		const events = await getSeasonEvents(db, seasonId, orgId);
 		return json({ ...season, events });
 	}
 
@@ -77,7 +78,7 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 	}
 
 	try {
-		const updated = await updateSeason(db, seasonId, input);
+		const updated = await updateSeason(db, seasonId, input, locals.org.id);
 		if (!updated) {
 			throw error(404, 'Season not found');
 		}
@@ -105,7 +106,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 		throw error(400, 'Season ID is required');
 	}
 
-	const deleted = await deleteSeason(db, seasonId);
+	const deleted = await deleteSeason(db, seasonId, locals.org.id);
 	if (!deleted) {
 		throw error(404, 'Season not found');
 	}

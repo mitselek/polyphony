@@ -51,7 +51,7 @@ async function getActiveSections(db: D1Database, orgId: OrgId): Promise<Section[
 
 async function resolveSeason(db: D1Database, seasonIdParam: string | null, orgId: OrgId): Promise<Season | null> {
 	if (seasonIdParam) {
-		return await getSeason(db, seasonIdParam);
+		return await getSeason(db, seasonIdParam, orgId);
 	}
 	const today = new Date().toISOString().split('T')[0];
 	return await getSeasonByDate(db, orgId, today);

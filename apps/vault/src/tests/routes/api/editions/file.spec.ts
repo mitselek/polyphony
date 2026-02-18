@@ -218,7 +218,8 @@ describe('POST /api/editions/[id]/file', () => {
 				fileName: 'test.pdf',
 				fileSize: 1024,
 				uploadedBy: 'member-1'
-			})
+			}),
+			expect.anything()
 		);
 	});
 
@@ -354,7 +355,7 @@ describe('DELETE /api/editions/[id]/file', () => {
 			expect.anything(),
 			'edition-1'
 		);
-		expect(mockRemoveEditionFile).toHaveBeenCalledWith(expect.anything(), 'edition-1');
+		expect(mockRemoveEditionFile).toHaveBeenCalledWith(expect.anything(), 'edition-1', expect.anything());
 	});
 
 	it('returns 400 when no file attached', async () => {

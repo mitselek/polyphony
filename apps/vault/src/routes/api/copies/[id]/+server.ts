@@ -40,7 +40,7 @@ export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const copyId = params.id;
 	if (!copyId) throw error(400, 'Copy ID is required');
 
-	const copy = await getPhysicalCopyById(db, copyId);
+	const copy = await getPhysicalCopyById(db, copyId, locals.org.id);
 	if (!copy) throw error(404, 'Copy not found');
 
 	return json(copy);
@@ -57,8 +57,8 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 	const copyId = params.id;
 	if (!copyId) throw error(400, 'Copy ID is required');
 
-	// Verify copy exists
-	const existing = await getPhysicalCopyById(db, copyId);
+	// Verify copy exists and belongs to this org
+	const existing = await getPhysicalCopyById(db, copyId, locals.org.id);
 	if (!existing) throw error(404, 'Copy not found');
 
 	const body = (await request.json()) as UpdateInput;
@@ -71,7 +71,7 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 		condition: body.condition,
 		notes: body.notes,
 		acquiredAt: body.acquiredAt
-	});
+	}, locals.org.id);
 
 	return json(copy);
 }
@@ -87,7 +87,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 	const copyId = params.id;
 	if (!copyId) throw error(400, 'Copy ID is required');
 
-	const deleted = await deletePhysicalCopy(db, copyId);
+	const deleted = await deletePhysicalCopy(db, copyId, locals.org.id);
 	if (!deleted) throw error(404, 'Copy not found');
 
 	return json({ success: true });

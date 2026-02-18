@@ -342,7 +342,8 @@ describe('Edition Copies API - /api/editions/[id]/copies', () => {
 			expect(response.status).toBe(201);
 			expect(mockBatchCreatePhysicalCopies).toHaveBeenCalledWith(
 				expect.anything(),
-				expect.objectContaining({ prefix: 'M' })
+				expect.objectContaining({ prefix: 'M' }),
+				expect.anything()
 			);
 		});
 

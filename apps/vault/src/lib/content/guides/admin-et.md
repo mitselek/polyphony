@@ -37,8 +37,8 @@ Korraldab liikmete nimekirja. **Ei tegele nootide lisamisega** — see on eralda
 
 **Ülesanded:**
 
-- Saadab uutele lauljatele liitumiskutseid
-- Määrab liikmetele rolle (v.a omaniku rolli)
+- Lisab uued lauljad nimekirja ja saadab neile liitumiskutseid
+- Määrab liikmetele rolle (v.a omaniku rolli — seda saab muuta ainult omanik)
 - Eemaldab vajadusel liikmeid nimekirjast
 
 **Kellele sobib:** Koori sekretär, juhatuse liige või koorivanem.
@@ -77,11 +77,11 @@ Korraldab proovigraafikut ja jälgib osavõttu.
 
 ### Häälerühma vanem (Section Leader)
 
-Aitab pidada arvestust oma häälerühma üle.
+Aitab pidada arvestust kohaloleku üle.
 
 **Ülesanded:**
 
-- Märgib oma häälerühma liikmete kohalolekut proovides
+- Märgib liikmete kohalolekut proovides
 
 **Kellele sobib:** Soprani, aldi, tenori või bassi vanem.
 
@@ -96,17 +96,20 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 | Nootide vaatamine ja allalaadimine  |   ✅   |  ✅   |        ✅         |    ✅    |        ✅        |       ✅        |
 | **Nootide lisamine ja muutmine**    |   ❌   |  ❌   |        ✅         |    ❌    |        ❌        |       ❌        |
 | **Liikmete kutsumine ja haldamine** |   ✅   |  ✅   |        ❌         |    ❌    |        ❌        |       ❌        |
-| **Rollide muutmine**                |   ✅   |  ✅   |        ❌         |    ❌    |        ❌        |       ❌        |
+| **Rollide muutmine**                |   ✅   |  ✅¹  |        ❌         |    ❌    |        ❌        |       ❌        |
 | **Proovide lisamine kalendrisse**   |   ❌   |  ❌   |        ❌         |    ✅    |        ❌        |       ❌        |
 | **Kohaloleku märkimine**            |   ❌   |  ❌   |        ❌         |    ✅    |        ✅        |       ❌        |
+| **Seadete haldamine**               |   ✅   |  ❌   |        ❌         |    ❌    |        ❌        |       ❌        |
 | Keskkonna kustutamine               |   ✅   |  ❌   |        ❌         |    ❌    |        ❌        |       ❌        |
 
 **Selgitus:**
 
 - ✅ = Lubatud
 - ❌ = Ei ole lubatud
+- ¹ Admin saab muuta kõiki rolle **v.a omaniku rolli** — seda saab muuta ainult omanik.
 - **Tavaline laulja** = Iga sisse logitud liige, kellel pole ühtegi lisarolli.
 - **Omanik** saab endale lisada rolle (Raamatukoguhoidja, Dirigent jne) kui vajab nende õigusi.
+- **Individuaalse vastutuse usaldamine (Trust Individual Responsibility):** Kui see seade on sisse lülitatud, saavad ka tavalised lauljad ise oma RSVP ja kohalolekut märkida. Vaikimisi on see lubada ainult administraatoritel ja dirigentidel.
 
 ---
 
@@ -114,15 +117,16 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 
 ### …lisada uut lauljat?
 
-1. **Admin** (või omanik) valib menüüst **"Members"** ja klikib **"Invite Member"**.
-2. Kirjutab lahtrisse laulja nime.
-3. Määrab sobiva häälerühma (nt "Sopran" või "Bass").
-4. Saadab kutse teele.
-   > Uus liige saab unikaalse kutselingi, millega ta pääseb ligi nootidele. E-posti aadressi pole kutsumisel kohe vaja teada.
+Liikme lisamine toimub kahes sammus:
+
+1. **Admin** (või omanik) valib menüüst **"Members"** ja klikib **"Add Roster Member"**.
+2. Sisestab laulja nime ja määrab sobiva häälerühma (nt "Sopran" või "Bass"). Salvesta.
+3. Ava äsja lisatud liikme profiil ja klikib **"Send Invitation"**.
+   > Liige saab unikaalse kutselingi, millega ta saab registreeruda ja pääseda ligi nootidele. E-posti aadressi pole kutsumisel kohe vaja teada — liige lisatakse esmalt nimekirja, kutse saadetakse hiljem.
 
 ### …lisada uut nooti?
 
-1. **Raamatukoguhoidja** (või omanik) avab **"Library"**.
+1. **Raamatukoguhoidja** (või omanik) avab **"Works"**.
 2. Valib **"Add Work"** (lisa teos).
 3. Laeb üles PDF-faili ja täidab vajalikud andmed (pealkiri, autor).
 
@@ -131,6 +135,26 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 1. **Dirigent** (või omanik) avab **"Events"**.
 2. Loob uue sündmuse, märkides kuupäeva ja kellaaja.
 3. Pärast proovi avab sama sündmuse ja märgib, kes olid kohal.
+
+### …hallata seadeid?
+
+Ainult **omanik** pääseb ligi seadete lehele (**"Settings"**). Sealt saab:
+
+- Muuta vaikimisi sündmuse kestust
+- Määrata koori vaikimisi keele ja ajavööndi
+- Lülitada sisse/välja **Individuaalse vastutuse usaldamine** — kui see on sees, saavad liikmed ise oma RSVP ja kohalolekut hallata.
+
+---
+
+## Uued nimekirja liikmed (roster-only)
+
+Lauljad saab lisada nimekirja **enne** kutse saatmist. Sellist liiget nimetatakse _nimekirja liikmeks_ (roster-only):
+
+- Ta on nähtav osalusstatistikas ja sündmuste nimekirjas
+- Ta **ei saa sisse logida** enne, kui talle on kutse saadetud ja ta on registreerumise lõpetanud
+- Kutse saatmise hetkel saab talle eelnevalt rolle määrata — need aktiveeruvad kohe pärast registreerumist
+
+See kaheastmeline mudel võimaldab koori nimekirja korras hoida ka enne, kui kõik lauljad on registreerumise lõpetanud.
 
 ---
 
@@ -141,8 +165,8 @@ Kui oled äsja saanud administraatori või omaniku õigused, soovitame alustada 
 1. **Vaata üle oma rollid.**
    Mine lehele "Members" ja otsi nimekirjast üles enda nimi. Veendu, et sul on olemas kõik vajalikud rollid oma töö tegemiseks.
 
-2. **Kutsu kooriliikmed.**
-   Kasuta "Invite Member" nuppu, et saata kutsed häälerühmade kaupa.
+2. **Lisa kooriliikmed nimekirja.**
+   Kasuta "Add Roster Member" nuppu, et lisada lauljad häälerühmade kaupa. Seejärel saada neile kutsed "Send Invitation" kaudu.
 
 3. **Määra abilised.**
    Leia nimekirjast üles inimesed, kes aitavad noote või proove hallata, ja lisa neile vastavad rollid (nt _Admin_ või _Librarian_). Selleks kliki liikme nime juures olevale rolli nupule.
@@ -157,12 +181,12 @@ Kui oled äsja saanud administraatori või omaniku õigused, soovitame alustada 
 **Miks ma ei saa noote üles laadida?**
 Tõenäoliselt puudub sul **Raamatukoguhoidja (Librarian)** roll. Palu administraatoril või omanikul see endale lisada.
 
-**Miks ma ei näe "Invite Member" nuppu?**
-Sul puudub **Administraatori (Admin)** roll. Ainult adminid ja omanikud saavad uusi inimesi kutsuda.
+**Miks ma ei näe "Add Roster Member" nuppu?**
+Sul puudub **Administraatori (Admin)** roll. Ainult adminid ja omanikud saavad liikmeid lisada.
 
 **Kas ma saan liikmelt rolli ära võtta?**
 Jah. Liikumisel "Members" lehel ja vajutades aktiivsele rollile (nt sinine "Admin" nupp), muutub see mitteaktiivseks ja õigus kaob koheselt.
 
 ---
 
-_Juhend uuendatud: 05.02.2026_
+_Juhend uuendatud: 18.02.2026_

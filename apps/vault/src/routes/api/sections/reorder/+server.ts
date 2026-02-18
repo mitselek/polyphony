@@ -5,10 +5,7 @@ import { getAuthenticatedMember, assertAdmin } from '$lib/server/auth/middleware
 import { reorderSections, getAllSectionsWithCounts } from '$lib/server/db/sections';
 
 /** Validate request body for section reordering */
-function validateReorderRequest(body: { orgId?: string; sectionIds?: string[] }): string | null {
-	if (!body.orgId || typeof body.orgId !== 'string') {
-		return 'orgId is required';
-	}
+function validateReorderRequest(body: { sectionIds?: string[] }): string | null {
 	if (!Array.isArray(body.sectionIds) || body.sectionIds.length === 0) {
 		return 'sectionIds must be a non-empty array';
 	}
@@ -25,12 +22,12 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertAdmin(member);
 
-	const body = (await request.json()) as { orgId?: string; sectionIds?: string[] };
+	const body = (await request.json()) as { sectionIds?: string[] };
 	const validationError = validateReorderRequest(body);
 	if (validationError) return json({ error: validationError }, { status: 400 });
 
 	try {
-		await reorderSections(db, body.sectionIds!);
+		await reorderSections(db, body.sectionIds!, locals.org.id);
 		const sections = await getAllSectionsWithCounts(db, locals.org.id);
 		return json(sections);
 	} catch (err) {

@@ -33,7 +33,7 @@ async function loadCopiesWithAssignments(
 	editionId: string,
 	orgId: OrgId
 ): Promise<CopyWithAssignment[]> {
-	const copies = await getPhysicalCopiesByEdition(db, editionId);
+	const copies = await getPhysicalCopiesByEdition(db, editionId, orgId);
 	const members = await getAllMembers(db, orgId);
 	const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
@@ -100,13 +100,13 @@ export const load: PageServerLoad = async ({ params, platform, cookies, locals }
 	const db = platform?.env?.DB;
 	if (!db) throw error(500, 'Database not available');
 
-	const edition = await getEditionById(db, params.id);
+	const orgId = locals.org.id;
+
+	const edition = await getEditionById(db, params.id, orgId);
 	if (!edition) throw error(404, 'Edition not found');
 
-	const work = await getWorkById(db, edition.workId);
+	const work = await getWorkById(db, edition.workId, orgId);
 	if (!work) throw error(404, 'Work not found');
-
-	const orgId = locals.org.id;
 	const canManage = await checkCanManage(db, cookies.get('member_id'), orgId);
 
 	const [sections, librarianData] = await Promise.all([

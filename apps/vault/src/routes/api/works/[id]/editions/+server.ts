@@ -37,10 +37,10 @@ export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 	const workId = params.id;
 	if (!workId) throw error(400, 'Work ID is required');
 
-	const work = await getWorkById(db, workId);
+	const work = await getWorkById(db, workId, locals.org.id);
 	if (!work) throw notFoundError('Work');
 
-	const editions = await getEditionsByWorkId(db, workId);
+	const editions = await getEditionsByWorkId(db, workId, locals.org.id);
 	return new Response(JSON.stringify(editions), {
 		headers: { 'Content-Type': 'application/json' }
 	});
@@ -56,7 +56,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	const workId = params.id;
 	if (!workId) throw error(400, 'Work ID is required');
 
-	const work = await getWorkById(db, workId);
+	const work = await getWorkById(db, workId, locals.org.id);
 	if (!work) throw notFoundError('Work');
 
 	const body = (await request.json()) as Partial<CreateEditionInput>;

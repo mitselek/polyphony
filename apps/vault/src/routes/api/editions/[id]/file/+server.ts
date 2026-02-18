@@ -12,6 +12,7 @@ import {
 	deleteEditionFile
 } from '$lib/server/storage/edition-storage';
 import type { Edition } from '$lib/types';
+import type { OrgId } from '@polyphony/shared';
 
 // Helper: Get DB with error handling
 function getDb(platform: RequestEvent['platform']): D1Database {
@@ -21,9 +22,9 @@ function getDb(platform: RequestEvent['platform']): D1Database {
 }
 
 // Helper: Get edition by ID with validation
-async function getValidatedEdition(db: D1Database, editionId: string | undefined): Promise<Edition> {
+async function getValidatedEdition(db: D1Database, editionId: string | undefined, orgId: OrgId): Promise<Edition> {
 	if (!editionId) throw error(400, 'Edition ID is required');
-	const edition = await getEditionById(db, editionId);
+	const edition = await getEditionById(db, editionId, orgId);
 	if (!edition) throw error(404, 'Edition not found');
 	return edition;
 }
@@ -43,7 +44,7 @@ function buildPdfResponse(data: ArrayBuffer, size: number, fileName: string, dow
 export async function GET({ params, platform, cookies, url, locals }: RequestEvent) {
 	const db = getDb(platform);
 	await getAuthenticatedMember(db, cookies, locals.org.id);
-	const edition = await getValidatedEdition(db, params.id);
+	const edition = await getValidatedEdition(db, params.id, locals.org.id);
 
 	if (!edition.fileKey) throw error(404, 'No file attached to this edition');
 
@@ -62,7 +63,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
-	const edition = await getValidatedEdition(db, params.id);
+	const edition = await getValidatedEdition(db, params.id, locals.org.id);
 	const file = await extractAndValidateFile(request);
 
 	// Delete existing file if present
@@ -77,7 +78,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 		fileName: file.name,
 		fileSize: file.size,
 		uploadedBy: member.id
-	});
+	}, locals.org.id);
 
 	if (!updated) throw error(500, 'Failed to update edition with file info');
 	return json(updated);
@@ -99,12 +100,12 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
-	const edition = await getValidatedEdition(db, params.id);
+	const edition = await getValidatedEdition(db, params.id, locals.org.id);
 	if (!edition.fileKey) throw error(400, 'No file attached to this edition');
 
 	await deleteEditionFile(db, params.id!);
 
-	const updated = await removeEditionFile(db, params.id!);
+	const updated = await removeEditionFile(db, params.id!, locals.org.id);
 	if (!updated) throw error(500, 'Failed to remove file info from edition');
 
 	return json(updated);

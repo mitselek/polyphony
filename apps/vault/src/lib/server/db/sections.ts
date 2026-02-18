@@ -71,12 +71,12 @@ export async function getAllSections(db: D1Database, orgId: OrgId): Promise<Sect
 }
 
 /**
- * Get section by id
+ * Get section by id, scoped to organization
  */
-export async function getSectionById(db: D1Database, id: string): Promise<Section | null> {
+export async function getSectionById(db: D1Database, id: string, orgId: OrgId): Promise<Section | null> {
 	const row = await db
-		.prepare('SELECT * FROM sections WHERE id = ?')
-		.bind(id)
+		.prepare('SELECT * FROM sections WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.first<SectionRow>();
 
 	return row ? rowToSection(row) : null;
@@ -117,17 +117,18 @@ export async function createSection(db: D1Database, input: CreateSectionInput): 
 }
 
 /**
- * Toggle section active status
+ * Toggle section active status, scoped to organization
  * @returns true if section was updated, false if section not found
  */
 export async function toggleSectionActive(
 	db: D1Database,
 	id: string,
-	isActive: boolean
+	isActive: boolean,
+	orgId: OrgId
 ): Promise<boolean> {
 	const result = await db
-		.prepare('UPDATE sections SET is_active = ? WHERE id = ?')
-		.bind(isActive ? 1 : 0, id)
+		.prepare('UPDATE sections SET is_active = ? WHERE id = ? AND org_id = ?')
+		.bind(isActive ? 1 : 0, id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
@@ -153,12 +154,16 @@ export async function getAllSectionsWithCounts(db: D1Database, orgId: OrgId): Pr
 }
 
 /**
- * Get assignment count for a specific section
+ * Get assignment count for a specific section, scoped to organization
  */
-export async function getSectionAssignmentCount(db: D1Database, id: string): Promise<number> {
+export async function getSectionAssignmentCount(db: D1Database, id: string, orgId: OrgId): Promise<number> {
+	// Verify section belongs to org before counting
+	const section = await getSectionById(db, id, orgId);
+	if (!section) return 0;
+
 	const result = await db
 		.prepare(`
-			SELECT 
+			SELECT
 				(SELECT COUNT(*) FROM member_sections WHERE section_id = ?) +
 				(SELECT COUNT(*) FROM invite_sections WHERE section_id = ?) AS count
 		`)
@@ -169,7 +174,7 @@ export async function getSectionAssignmentCount(db: D1Database, id: string): Pro
 }
 
 /**
- * Reassign all section assignments from source to target
+ * Reassign all section assignments from source to target, scoped to organization
  * Skips duplicates (member/invite already has target section)
  * Preserves is_primary flag
  * @returns number of assignments moved
@@ -177,14 +182,20 @@ export async function getSectionAssignmentCount(db: D1Database, id: string): Pro
 export async function reassignSection(
 	db: D1Database,
 	sourceId: string,
-	targetId: string
+	targetId: string,
+	orgId: OrgId
 ): Promise<number> {
 	if (sourceId === targetId) {
 		throw new Error('Cannot reassign section to itself');
 	}
 
-	// Check target exists
-	const target = await getSectionById(db, targetId);
+	// Check both sections belong to this org
+	const source = await getSectionById(db, sourceId, orgId);
+	if (!source) {
+		throw new Error('Source section not found');
+	}
+
+	const target = await getSectionById(db, targetId, orgId);
 	if (!target) {
 		throw new Error('Target section not found');
 	}
@@ -235,34 +246,34 @@ export async function reassignSection(
 }
 
 /**
- * Delete a section (only if no assignments exist)
+ * Delete a section (only if no assignments exist), scoped to organization
  * @returns true if deleted, false if not found
  * @throws Error if section has assignments
  */
-export async function deleteSection(db: D1Database, id: string): Promise<boolean> {
-	const count = await getSectionAssignmentCount(db, id);
+export async function deleteSection(db: D1Database, id: string, orgId: OrgId): Promise<boolean> {
+	const count = await getSectionAssignmentCount(db, id, orgId);
 	if (count > 0) {
 		throw new Error(`Cannot delete section with ${count} assignments. Reassign first.`);
 	}
 
 	const result = await db
-		.prepare('DELETE FROM sections WHERE id = ?')
-		.bind(id)
+		.prepare('DELETE FROM sections WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
 }
 
 /**
- * Reorder sections by updating display_order for each section
+ * Reorder sections by updating display_order for each section, scoped to organization
  * @param sectionIds - Array of section IDs in desired order
  */
-export async function reorderSections(db: D1Database, sectionIds: string[]): Promise<void> {
+export async function reorderSections(db: D1Database, sectionIds: string[], orgId: OrgId): Promise<void> {
 	// Use batch to update all display orders atomically
 	const statements = sectionIds.map((id, index) =>
 		db
-			.prepare('UPDATE sections SET display_order = ? WHERE id = ?')
-			.bind(index + 1, id)
+			.prepare('UPDATE sections SET display_order = ? WHERE id = ? AND org_id = ?')
+			.bind(index + 1, id, orgId)
 	);
 
 	await db.batch(statements);

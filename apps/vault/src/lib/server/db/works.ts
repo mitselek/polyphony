@@ -51,12 +51,12 @@ export async function createWork(db: D1Database, input: CreateWorkInput): Promis
 }
 
 /**
- * Get a work by ID
+ * Get a work by ID, scoped to organization
  */
-export async function getWorkById(db: D1Database, id: string): Promise<Work | null> {
+export async function getWorkById(db: D1Database, id: string, orgId: OrgId): Promise<Work | null> {
 	const row = await db
-		.prepare('SELECT id, org_id, title, composer, lyricist, created_at FROM works WHERE id = ?')
-		.bind(id)
+		.prepare('SELECT id, org_id, title, composer, lyricist, created_at FROM works WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.first<WorkRow>();
 
 	return row ? rowToWork(row) : null;
@@ -99,17 +99,17 @@ function buildUpdateSet(input: UpdateWorkInput): { updates: string[]; values: (s
 }
 
 /**
- * Execute update and fetch result
+ * Execute update and fetch result, scoped to organization
  */
-async function executeUpdate(db: D1Database, id: string, updates: string[], values: (string | null)[]): Promise<Work | null> {
+async function executeUpdate(db: D1Database, id: string, updates: string[], values: (string | null)[], orgId: OrgId): Promise<Work | null> {
 	if (updates.length === 0) {
 		// No updates provided, return current state
-		return getWorkById(db, id);
+		return getWorkById(db, id, orgId);
 	}
 
-	values.push(id);
+	values.push(id, orgId);
 	const result = await db
-		.prepare(`UPDATE works SET ${updates.join(', ')} WHERE id = ?`)
+		.prepare(`UPDATE works SET ${updates.join(', ')} WHERE id = ? AND org_id = ?`)
 		.bind(...values)
 		.run();
 
@@ -118,30 +118,31 @@ async function executeUpdate(db: D1Database, id: string, updates: string[], valu
 		return null;
 	}
 
-	return getWorkById(db, id);
+	return getWorkById(db, id, orgId);
 }
 
 /**
- * Update a work
+ * Update a work, scoped to organization
  * Returns the updated work, or null if not found
  */
 export async function updateWork(
 	db: D1Database,
 	id: string,
-	input: UpdateWorkInput
+	input: UpdateWorkInput,
+	orgId: OrgId
 ): Promise<Work | null> {
 	const { updates, values } = buildUpdateSet(input);
-	return executeUpdate(db, id, updates, values);
+	return executeUpdate(db, id, updates, values, orgId);
 }
 
 /**
- * Delete a work
+ * Delete a work, scoped to organization
  * Returns true if deleted, false if not found
  */
-export async function deleteWork(db: D1Database, id: string): Promise<boolean> {
+export async function deleteWork(db: D1Database, id: string, orgId: OrgId): Promise<boolean> {
 	const result = await db
-		.prepare('DELETE FROM works WHERE id = ?')
-		.bind(id)
+		.prepare('DELETE FROM works WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;

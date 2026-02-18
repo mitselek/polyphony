@@ -13,7 +13,7 @@ export const POST: RequestHandler = async ({ params, request, platform, cookies,
 	const member = await getAuthenticatedMember(db, cookies, locals.org.id);
 	assertLibrarian(member);
 
-	const season = await getSeason(db, params.id);
+	const season = await getSeason(db, params.id, locals.org.id);
 	if (!season) throw error(404, 'Season not found');
 
 	let body: { seasonWorkIds: string[] };

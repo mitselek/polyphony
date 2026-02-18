@@ -92,7 +92,7 @@ describe('Seasons database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRow);
 
-			const season = await getSeason(db, 'season-123');
+			const season = await getSeason(db, 'season-123', TEST_ORG_ID);
 
 			expect(season).toEqual(mockRow);
 		});
@@ -100,7 +100,7 @@ describe('Seasons database layer', () => {
 		it('returns null when not found', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const season = await getSeason(db, 'nonexistent');
+			const season = await getSeason(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(season).toBeNull();
 		});
@@ -167,7 +167,7 @@ describe('Seasons database layer', () => {
 		it('returns empty array when season not found', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const events = await getSeasonEvents(db, 'nonexistent');
+			const events = await getSeasonEvents(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(events).toEqual([]);
 		});
@@ -196,7 +196,7 @@ describe('Seasons database layer', () => {
 				results: mockEvents
 			});
 
-			const events = await getSeasonEvents(db, 's1');
+			const events = await getSeasonEvents(db, 's1', TEST_ORG_ID);
 
 			expect(events).toHaveLength(2);
 		});
@@ -221,7 +221,7 @@ describe('Seasons database layer', () => {
 				results: mockEvents
 			});
 
-			const events = await getSeasonEvents(db, 's1');
+			const events = await getSeasonEvents(db, 's1', TEST_ORG_ID);
 
 			expect(events).toHaveLength(1);
 		});
@@ -231,7 +231,7 @@ describe('Seasons database layer', () => {
 		it('returns null when season not found', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const result = await updateSeason(db, 'nonexistent', { name: 'New Name' });
+			const result = await updateSeason(db, 'nonexistent', { name: 'New Name' }, TEST_ORG_ID);
 
 			expect(result).toBeNull();
 		});
@@ -250,7 +250,7 @@ describe('Seasons database layer', () => {
 				.mockResolvedValueOnce(existingSeason)
 				.mockResolvedValueOnce(updatedSeason);
 
-			const result = await updateSeason(db, 's1', { name: 'Autumn 2026' });
+			const result = await updateSeason(db, 's1', { name: 'Autumn 2026' }, TEST_ORG_ID);
 
 			expect(result?.name).toBe('Autumn 2026');
 		});
@@ -265,7 +265,7 @@ describe('Seasons database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(existingSeason);
 
-			const result = await updateSeason(db, 's1', {});
+			const result = await updateSeason(db, 's1', {}, TEST_ORG_ID);
 
 			expect(result).toEqual(existingSeason);
 			// run() should not be called since no updates
@@ -286,28 +286,36 @@ describe('Seasons database layer', () => {
 			);
 
 			await expect(
-				updateSeason(db, 's1', { start_date: '2027-01-15' })
+				updateSeason(db, 's1', { start_date: '2027-01-15' }, TEST_ORG_ID)
 			).rejects.toThrow('Season with start date 2027-01-15 already exists');
 		});
 	});
 
 	describe('deleteSeason', () => {
 		it('returns true when season deleted', async () => {
+			// getSeason (org verification) must find the season first
+			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				id: 's1',
+				org_id: TEST_ORG_ID,
+				name: 'Fall 2026',
+				start_date: '2026-09-01',
+				created_at: '',
+				updated_at: ''
+			});
 			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
 				meta: { changes: 1 }
 			});
 
-			const result = await deleteSeason(db, 's1');
+			const result = await deleteSeason(db, 's1', TEST_ORG_ID);
 
 			expect(result).toBe(true);
 		});
 
 		it('returns false when season not found', async () => {
-			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-				meta: { changes: 0 }
-			});
+			// getSeason returns null — org verification fails
+			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const result = await deleteSeason(db, 'nonexistent');
+			const result = await deleteSeason(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(result).toBe(false);
 		});

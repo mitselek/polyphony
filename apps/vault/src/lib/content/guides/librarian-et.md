@@ -30,7 +30,7 @@ Raamatukoguhoidjana on sul järgmised erivõimekused:
 
 ### …lisada uut teost (Work)?
 
-1. Vali menüüst **"Library"**.
+1. Vali menüüst **"Works"**.
 2. Kliki nupule **"Add Work"**.
 3. Sisesta teose põhiandmed:
    - **Pealkiri (Title):** Teose nimi originaalkeeles.
@@ -41,17 +41,26 @@ Raamatukoguhoidjana on sul järgmised erivõimekused:
 Polyphony eristab "Teost" (nt "Pärt - Ukuaru valss") ja selle konkreetset "Väljaannet" ehk nooti (nt "Naiskoori seade PDF"). Ühe teose all võib olla mitu erinevat versiooni.
 
 1. Ava teos, millele soovid nooti lisada.
-2. Kliki **"Add Edition"** või lohista PDF fail vastavasse alasse.
-3. Täpsusta faili sisu (nt "Segakoori partituur", "Klaverisaade").
-4. Salvesta. Noot on nüüd kooriliikmetele nähtav.
+2. Kliki **"Add Edition"**.
+3. Vali väljaande **tüüp**:
+   - **Full Score** — täispartituur (kõik hääled koos)
+   - **Vocal Score** — laulupartituur (meloodiad klaveri saatega)
+   - **Part** — ühe häälerühma partii (nt ainult sopran)
+   - **Reduction** — klaveriväljavõte
+   - **Audio** — helifail
+   - **External URL** — link välisele allikale (nt IMSLP)
+4. Märgi **litsents**:
+   - **Public Domain** — autoriõigus aegunud, vaba kasutus ⚠️ _Kontrolli alati ise, enne kui avaliku omandi staatusele lood!_
+   - **Licensed** — kooril on litsents selle teose kasutamiseks
+   - **Owned** — koor omab füüsilist originaali
+5. Salvesta. Noot on nüüd kooriliikmetele nähtav.
 
-### …kustutada nooti?
+### …kustutada nooti või teost?
 
-Kui laadisid kogemata üles vale faili:
+Polyphony eristab **Teose (Work)** ja **Väljaande (Edition)** kustutamist:
 
-1. Ava vastav teos ja otsi üles vale fail.
-2. Kliki "Edit" või prügikasti ikoonile.
-3. Kinnita kustutamine.
+- **Väljaande kustutamine:** Ava teos → leia vastav väljaanne → kliki "Edit" → "Delete Edition". Kustutab ainult selle konkreetse faili/versiooni, teos jääb alles.
+- **Teose kustutamine:** Ava teos → kliki "Edit Work" → "Delete Work". Kustutab teose **koos kõigi väljaannetega**. Veendu enne, et kõik väljaanded on kas teisaldatud või kustutatud.
 
 ---
 
@@ -60,7 +69,8 @@ Kui laadisid kogemata üles vale faili:
 - **Failinimed:** Enne üleslaadimist veendu, et PDF-faili nimi oleks arusaadav (nt `Ukuaru_valss_Sopran.pdf`), kuigi süsteem lubab sul hiljem pealkirja muuta.
 - **Metaandmed:** Mida täpsemalt sisestad helilooja ja seadja nimed, seda lihtsam on lauljatel hiljem otsingut kasutada.
 - **Topeltfailid:** Enne uue loo lisamist kontrolli otsinguga, ega see juba olemas ei ole.
+- **Litsents:** Märgi alati õige litsentsitüüp — see on oluline autoriõiguse nõuetele vastamise seisukohast.
 
 ---
 
-_Juhend uuendatud: 09.02.2026_
+_Juhend uuendatud: 18.02.2026_

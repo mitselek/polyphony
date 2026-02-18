@@ -28,7 +28,7 @@ export async function POST(event: RequestEvent) {
 	}
 
 	// Check event exists
-	const eventData = await getEventById(db, eventId);
+	const eventData = await getEventById(db, eventId, locals.org.id);
 	if (!eventData) {
 		throw error(404, 'Event not found');
 	}
@@ -121,7 +121,7 @@ export async function PUT(event: RequestEvent) {
 	}
 
 	// Check event exists
-	const eventData = await getEventById(db, eventId);
+	const eventData = await getEventById(db, eventId, locals.org.id);
 	if (!eventData) {
 		throw error(404, 'Event not found');
 	}

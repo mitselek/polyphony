@@ -21,7 +21,7 @@ export async function GET({ params, platform, cookies, locals }: RequestEvent) {
 		throw error(400, 'Work ID is required');
 	}
 
-	const work = await getWorkById(db, workId);
+	const work = await getWorkById(db, workId, locals.org.id);
 	if (!work) {
 		throw error(404, 'Work not found');
 	}
@@ -75,7 +75,7 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 		}
 	}
 
-	const work = await updateWork(db, workId, input);
+	const work = await updateWork(db, workId, input, locals.org.id);
 	if (!work) {
 		throw error(404, 'Work not found');
 	}
@@ -98,7 +98,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 		throw error(400, 'Work ID is required');
 	}
 
-	const deleted = await deleteWork(db, workId);
+	const deleted = await deleteWork(db, workId, locals.org.id);
 	if (!deleted) {
 		throw error(404, 'Work not found');
 	}
