@@ -763,7 +763,7 @@
 										<p class="text-sm text-gray-600">{copy.work.composer}</p>
 									{/if}
 									<p class="mt-1 text-sm text-gray-500">
-										{copy.edition.name} · Copy #{copy.copyNumber}
+										{copy.edition.name} · {m.members_copy_number({ number: copy.copyNumber })}
 									</p>
 									<p class="mt-1 text-xs text-gray-400">
 										{m.member_score_assigned_date({ date: new Date(copy.assignedAt).toLocaleDateString() })}{#if data.org && copy.org.subdomain !== data.org.subdomain}

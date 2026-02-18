@@ -31,21 +31,21 @@
 	let formFile = $state<File | null>(null);
 	let uploadingFile = $state(false);
 
-	const EDITION_TYPES: { value: EditionType; label: string }[] = [
-		{ value: 'full_score', label: 'Full Score' },
-		{ value: 'vocal_score', label: 'Vocal Score' },
-		{ value: 'part', label: 'Part' },
-		{ value: 'reduction', label: 'Reduction' },
-		{ value: 'audio', label: 'Audio' },
-		{ value: 'video', label: 'Video' },
-		{ value: 'supplementary', label: 'Supplementary' }
-	];
+	const EDITION_TYPES = $derived<{ value: EditionType; label: string }[]>([
+		{ value: 'full_score', label: m.edition_type_full_score() },
+		{ value: 'vocal_score', label: m.edition_type_vocal_score() },
+		{ value: 'part', label: m.edition_type_part() },
+		{ value: 'reduction', label: m.edition_type_reduction() },
+		{ value: 'audio', label: m.edition_type_audio() },
+		{ value: 'video', label: m.edition_type_video() },
+		{ value: 'supplementary', label: m.edition_type_supplementary() }
+	]);
 
-	const LICENSE_TYPES: { value: LicenseType; label: string }[] = [
-		{ value: 'public_domain', label: 'Public Domain' },
-		{ value: 'licensed', label: 'Licensed' },
-		{ value: 'owned', label: 'Owned' }
-	];
+	const LICENSE_TYPES = $derived<{ value: LicenseType; label: string }[]>([
+		{ value: 'public_domain', label: m.edition_license_public_domain() },
+		{ value: 'licensed', label: m.edition_license_licensed() },
+		{ value: 'owned', label: m.edition_license_owned() }
+	]);
 
 	// Sync with data on navigation
 	$effect(() => {
@@ -107,7 +107,7 @@
 			
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to upload file');
+				throw new Error(data.error ?? m.edition_upload_failed());
 			}
 		} finally {
 			uploadingFile = false;
@@ -124,7 +124,7 @@
 		e.preventDefault();
 
 		if (!formName.trim()) {
-			toast.error('Name is required');
+			toast.error(m.edition_name_required());
 			return;
 		}
 
@@ -151,7 +151,7 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to update edition');
+					throw new Error(data.error ?? m.edition_save_failed());
 				}
 
 				const updated = (await response.json()) as Edition;
@@ -168,7 +168,7 @@
 					editions = editions.map((ed) => (ed.id === updated.id ? updated : ed));
 				}
 				
-				toast.success(`"${updated.name}" updated successfully`);
+				toast.success(m.edition_updated_toast({ name: updated.name }));
 			} else {
 				// Create new edition
 				const response = await fetch(`/api/works/${data.work.id}/editions`, {
@@ -189,7 +189,7 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to create edition');
+					throw new Error(data.error ?? m.edition_save_failed());
 				}
 
 				const created = (await response.json()) as Edition;
@@ -205,19 +205,19 @@
 					}
 				}
 				
-				toast.success(`"${created.name}" created successfully`);
+				toast.success(m.edition_created_toast({ name: created.name }));
 			}
 
 			closeForm();
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Operation failed');
+			toast.error(err instanceof Error ? err.message : m.edition_operation_failed());
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function deleteEdition(edition: Edition) {
-		if (!confirm(`Delete "${edition.name}"? This cannot be undone.`)) return;
+		if (!confirm(m.edition_confirm_delete({ name: edition.name }))) return;
 
 		deletingId = edition.id;
 
@@ -226,13 +226,13 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to delete edition');
+				throw new Error(data.error ?? m.edition_delete_failed());
 			}
 
 			editions = editions.filter((ed) => ed.id !== edition.id);
-			toast.success(`"${edition.name}" deleted`);
+			toast.success(m.edition_deleted_toast({ name: edition.name }));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Delete failed');
+			toast.error(err instanceof Error ? err.message : m.edition_delete_failed());
 		} finally {
 			deletingId = null;
 		}
@@ -248,7 +248,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.work.title} | Works Catalog</title>
+	<title>{data.work.title} | {m.works_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
@@ -307,7 +307,7 @@
 								</div>
 								<div class="mt-1 space-y-0.5 text-sm text-gray-600">
 									{#if edition.arranger}
-										<p>arr. {edition.arranger}</p>
+										<p>{m.edition_arr_prefix()} {edition.arranger}</p>
 									{/if}
 									{#if edition.publisher}
 										<p>{edition.publisher}</p>

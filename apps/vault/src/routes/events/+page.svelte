@@ -68,7 +68,7 @@
 
 				if (!response.ok) {
 					const errorData = await response.json() as { message?: string };
-					throw new Error(errorData.message || 'Failed to update RSVP');
+					throw new Error(errorData.message || m.event_rsvp_update_failed());
 				}
 
 				// Update local state
@@ -80,7 +80,7 @@
 				});
 			} catch (err) {
 				console.error('Failed to update RSVP:', err);
-				alert('Failed to update RSVP. Please try again.');
+				alert(m.event_rsvp_update_failed_alert());
 			} finally {
 				updatingRsvp[eventId] = false;
 			}
@@ -206,7 +206,12 @@
 					<!-- Event Type Badge -->
 					<div class="mb-3">
 						<span class="inline-block rounded-full border px-3 py-1 text-xs font-medium {getEventTypeBadgeClass(event.event_type)}">
-							{event.event_type}
+							{{
+							rehearsal: m.events_rehearsal(),
+							concert: m.events_concert(),
+							retreat: m.events_retreat(),
+							festival: m.events_festival()
+						}[event.event_type] ?? event.event_type}
 						</span>
 					</div>
 
@@ -289,7 +294,7 @@
 										class="rounded border px-2 py-1 text-xs font-medium transition {getRsvpButtonStyle(event.myRsvp, 'late')} disabled:opacity-50"
 										title={m.roster_rsvp_late_title()}
 									>
-										Late
+										{m.event_rsvp_late()}
 									</button>
 								</div>
 							</div>
@@ -297,7 +302,7 @@
 							<div class="border-t border-gray-200 pt-4">
 								<p class="text-xs text-gray-500 text-center">
 									{#if event.myRsvp}
-										{m.events_rsvp_label()} <span class="font-medium capitalize">{event.myRsvp}</span> (locked)
+										{m.events_rsvp_label()} <span class="font-medium capitalize">{event.myRsvp}</span> {m.event_rsvp_locked_suffix()}
 									{:else}
 										{m.events_rsvp_locked()}
 									{/if}

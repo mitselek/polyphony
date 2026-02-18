@@ -94,7 +94,7 @@
 				id: rawInvite.id,
 				name: rawInvite.roster_member_name,
 				expiresAt: rawInvite.expires_at,
-				invitedBy: original?.invitedBy ?? 'Unknown',
+				invitedBy: original?.invitedBy ?? m.members_invited_by_unknown(),
 				inviteLink: original?.inviteLink ?? '',
 				roles: rawInvite.roles,
 				voices: rawInvite.voices,

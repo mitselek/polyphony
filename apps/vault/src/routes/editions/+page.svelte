@@ -20,21 +20,21 @@
 		sections = data.sections;
 	});
 
-	const editionTypes: { value: EditionType; label: string }[] = [
-		{ value: 'full_score', label: 'Full Score' },
-		{ value: 'vocal_score', label: 'Vocal Score' },
-		{ value: 'part', label: 'Part' },
-		{ value: 'reduction', label: 'Reduction' },
-		{ value: 'audio', label: 'Audio' },
-		{ value: 'video', label: 'Video' },
-		{ value: 'supplementary', label: 'Supplementary' }
-	];
+	const editionTypes = $derived<{ value: EditionType; label: string }[]>([
+		{ value: 'full_score', label: m.edition_type_full_score() },
+		{ value: 'vocal_score', label: m.edition_type_vocal_score() },
+		{ value: 'part', label: m.edition_type_part() },
+		{ value: 'reduction', label: m.edition_type_reduction() },
+		{ value: 'audio', label: m.edition_type_audio() },
+		{ value: 'video', label: m.edition_type_video() },
+		{ value: 'supplementary', label: m.edition_type_supplementary() }
+	]);
 
-	const licenseTypes: { value: LicenseType; label: string }[] = [
-		{ value: 'public_domain', label: 'Public Domain' },
-		{ value: 'licensed', label: 'Licensed' },
-		{ value: 'owned', label: 'Owned' }
-	];
+	const licenseTypes = $derived<{ value: LicenseType; label: string }[]>([
+		{ value: 'public_domain', label: m.edition_license_public_domain() },
+		{ value: 'licensed', label: m.edition_license_licensed() },
+		{ value: 'owned', label: m.edition_license_owned() }
+	]);
 
 	let filteredEditions = $derived(
 		editions.filter((e) => {
@@ -181,7 +181,7 @@
 
 	<!-- Results count -->
 	<p class="mb-4 text-sm text-gray-500">
-		{filteredEditions.length} of {editions.length} editions
+		{m.editions_count({ filtered: filteredEditions.length, total: editions.length })}
 	</p>
 
 	<!-- Edition List -->
@@ -221,7 +221,7 @@
 							<p class="mt-1 text-gray-600">
 								{edition.workTitle}
 								{#if edition.workComposer}
-									<span class="text-gray-400">by</span> {edition.workComposer}
+									<span class="text-gray-400">{m.editions_by_composer()}</span> {edition.workComposer}
 								{/if}
 							</p>
 
@@ -232,7 +232,7 @@
 										<span>{edition.publisher}</span>
 									{/if}
 									{#if edition.arranger}
-										<span class="text-gray-400">arr.</span> {edition.arranger}
+										<span class="text-gray-400">{m.edition_arr_prefix()}</span> {edition.arranger}
 									{/if}
 								</p>
 							{/if}
@@ -253,14 +253,14 @@
 							<!-- Asset indicators -->
 							<div class="flex gap-1">
 								{#if edition.fileKey}
-									<span class="text-gray-400" title="Has file">
+									<span class="text-gray-400" title={m.editions_has_file()}>
 										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
 										</svg>
 									</span>
 								{/if}
 								{#if edition.externalUrl}
-									<span class="text-gray-400" title="Has external link">
+									<span class="text-gray-400" title={m.editions_has_external_link()}>
 										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
 										</svg>
@@ -273,7 +273,7 @@
 					<!-- Voicing -->
 					{#if edition.voicing}
 						<p class="mt-2 text-sm text-gray-500">
-							<span class="font-medium">Voicing:</span> {edition.voicing}
+							<span class="font-medium">{m.edition_voicing_label()}:</span> {edition.voicing}
 						</p>
 					{/if}
 				</a>

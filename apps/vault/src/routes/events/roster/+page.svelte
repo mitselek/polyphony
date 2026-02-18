@@ -393,7 +393,7 @@
 							<div
 								class="border-r border-b-2 border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition"
 								onclick={() => navigateToEvent(event.id)}
-								title="Click to view event details"
+								title={m.event_col_click_to_view()}
 								role="button"
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && navigateToEvent(event.id)}
@@ -482,7 +482,7 @@
 										class="participation-cell flex-1 px-2 py-1 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 										onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
 										disabled={!canEditRsvp}
-										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
+										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? m.roster_rsvp_none()}"
 									>
 										{getRsvpText(status?.plannedStatus ?? null)}
 									</button>
@@ -491,7 +491,7 @@
 										class="participation-cell flex-1 px-2 py-1 {getAttendanceClass(status?.actualStatus ?? null)} {canEditAtt ? 'cursor-pointer hover:brightness-95' : 'cursor-default opacity-60'}"
 										onclick={(e) => canEditAtt && openPopup(e, member.id, event.id, 'attendance')}
 										disabled={!canEditAtt}
-										title="{m.roster_attendance_label()}: {status?.actualStatus ?? 'not recorded'}"
+										title="{m.roster_attendance_label()}: {status?.actualStatus ?? m.roster_attendance_not_recorded()}"
 									>
 										{getAttendanceText(status?.actualStatus ?? null)}
 									</button>
@@ -502,7 +502,7 @@
 										class="participation-cell w-full rounded-full px-3 py-1 border border-gray-300 {getRsvpClass(status?.plannedStatus ?? null)} {canEditRsvp ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}"
 										onclick={(e) => canEditRsvp && openPopup(e, member.id, event.id, 'rsvp')}
 										disabled={!canEditRsvp}
-										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? 'none'}"
+										title="{m.roster_rsvp_label()}: {status?.plannedStatus ?? m.roster_rsvp_none()}"
 									>
 										{getRsvpText(status?.plannedStatus ?? null)}
 									</button>
@@ -553,7 +553,7 @@
 												{rsvpOpportunities > 0 ? ((stats.rsvpResponded / rsvpOpportunities) * 100).toFixed(0) : 0}%
 											</span>
 										</div>
-										<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title="Yes: {stats.rsvpYes}, No: {stats.rsvpNo}, Maybe: {stats.rsvpMaybe}, Late: {stats.rsvpLate}, No response: {rsvpOpportunities - stats.rsvpResponded}">
+										<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title={m.roster_rsvp_bar_tooltip({ yes: stats.rsvpYes, no: stats.rsvpNo, maybe: stats.rsvpMaybe, late: stats.rsvpLate, none: rsvpOpportunities - stats.rsvpResponded })}>
 											{#if rsvpOpportunities > 0}
 												<div class="h-full bg-green-500 transition-all" style="width: {(stats.rsvpYes / rsvpOpportunities) * 100}%"></div>
 												<div class="h-full bg-red-500 transition-all" style="width: {(stats.rsvpNo / rsvpOpportunities) * 100}%"></div>
@@ -571,7 +571,7 @@
 													{attOpportunities > 0 ? ((stats.attRecorded / attOpportunities) * 100).toFixed(0) : 0}%
 												</span>
 											</div>
-											<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title="Present: {stats.attPresent}, Late: {stats.attLate}, Absent: {stats.attAbsent}, Not recorded: {attOpportunities - stats.attRecorded}">
+											<div class="h-5 bg-gray-200 rounded-sm overflow-hidden flex" title={m.roster_attendance_bar_tooltip({ present: stats.attPresent, late: stats.attLate, absent: stats.attAbsent, none: attOpportunities - stats.attRecorded })}>
 												{#if attOpportunities > 0}
 													<div class="h-full bg-green-500 transition-all" style="width: {(stats.attPresent / attOpportunities) * 100}%"></div>
 													<div class="h-full bg-orange-400 transition-all" style="width: {(stats.attLate / attOpportunities) * 100}%"></div>

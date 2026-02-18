@@ -65,7 +65,7 @@
 		e.preventDefault();
 		
 		if (!formTitle.trim()) {
-			error = 'Title is required';
+			error = m.work_title_required();
 			return;
 		}
 
@@ -87,12 +87,12 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to update work');
+					throw new Error(data.error ?? m.work_update_failed());
 				}
 
 				const updated = (await response.json()) as Work;
 				works = works.map((w) => (w.id === updated.id ? updated : w));
-				toast.success(`"${updated.title}" updated successfully`);
+				toast.success(m.work_updated_toast({ title: updated.title }));
 			} else {
 				// Create new work
 				const response = await fetch('/api/works', {
@@ -107,24 +107,24 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to create work');
+					throw new Error(data.error ?? m.work_create_failed());
 				}
 
 				const created = (await response.json()) as Work;
 				works = [...works, created].sort((a, b) => a.title.localeCompare(b.title));
-				toast.success(`"${created.title}" created successfully`);
+				toast.success(m.work_created_toast({ title: created.title }));
 			}
 
 			closeForm();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Operation failed';
+			error = err instanceof Error ? err.message : m.work_operation_failed();
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function deleteWork(work: Work) {
-		if (!confirm(`Delete "${work.title}"? This cannot be undone.`)) return;
+		if (!confirm(m.work_confirm_delete({ title: work.title }))) return;
 
 		deletingId = work.id;
 		error = '';
@@ -134,13 +134,13 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to delete work');
+				throw new Error(data.error ?? m.work_delete_failed());
 			}
 
 			works = works.filter((w) => w.id !== work.id);
-			toast.success(`"${work.title}" deleted`);
+			toast.success(m.work_deleted_toast({ title: work.title }));
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Delete failed';
+			error = err instanceof Error ? err.message : m.work_delete_failed();
 		} finally {
 			deletingId = null;
 		}
@@ -278,10 +278,10 @@
 							<p class="text-gray-600">{work.composer}</p>
 						{/if}
 						{#if work.lyricist}
-							<p class="text-sm text-gray-500">text: {work.lyricist}</p>
+							<p class="text-sm text-gray-500">{m.work_lyricist_prefix()} {work.lyricist}</p>
 						{/if}
 						<p class="mt-1 text-xs text-gray-400">
-							Added {new Date(work.createdAt).toLocaleDateString()}
+							{m.work_added_date({ date: new Date(work.createdAt).toLocaleDateString() })}
 						</p>
 					</div>
 					{#if data.canManage}
@@ -308,6 +308,6 @@
 	{/if}
 
 	<p class="mt-6 text-sm text-gray-500">
-		{filteredWorks.length} of {works.length} works
+		{m.work_count({ filtered: filteredWorks.length, total: works.length })}
 	</p>
 </div>

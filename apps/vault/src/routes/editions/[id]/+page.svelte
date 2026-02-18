@@ -150,7 +150,7 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { error?: string };
-				throw new Error(respData.error ?? 'Failed to create copies');
+				throw new Error(respData.error ?? m.copies_create_failed());
 			}
 
 			const newCopies = (await response.json()) as typeof copies;
@@ -158,9 +158,9 @@
 			showCreateForm = false;
 			batchCount = 1;
 			batchPrefix = '';
-			toast.success(`Created ${newCopies.length} cop${newCopies.length === 1 ? 'y' : 'ies'}`);
+			toast.success(newCopies.length === 1 ? m.copies_toast_created_one() : m.copies_toast_created({ count: newCopies.length }));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to create copies');
+			toast.error(err instanceof Error ? err.message : m.copies_create_failed());
 		} finally {
 			creating = false;
 		}
@@ -191,7 +191,7 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { error?: string };
-				throw new Error(respData.error ?? 'Failed to assign copy');
+				throw new Error(respData.error ?? m.copies_assign_failed());
 			}
 
 			const assignment = (await response.json()) as { id: string; memberId: string; assignedAt: string };
@@ -212,9 +212,9 @@
 			);
 
 			showAssignModal = false;
-			toast.success(`Copy assigned to ${member?.name}`);
+			toast.success(m.copies_toast_assigned({ name: member?.name ?? '' }));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to assign copy');
+			toast.error(err instanceof Error ? err.message : m.copies_assign_failed());
 		} finally {
 			assigning = false;
 		}
@@ -232,20 +232,20 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { error?: string };
-				throw new Error(respData.error ?? 'Failed to return copy');
+				throw new Error(respData.error ?? m.copies_return_failed());
 			}
 
 			copies = copies.map((c) => (c.id === copyId ? { ...c, assignment: null } : c));
 			toast.success(m.copies_toast_returned());
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to return copy');
+			toast.error(err instanceof Error ? err.message : m.copies_return_failed());
 		} finally {
 			returning = false;
 		}
 	}
 
 	async function deleteCopy(copyId: string, copyNumber: string) {
-		const confirmed = confirm(`Delete copy ${copyNumber}? This cannot be undone.`);
+		const confirmed = confirm(m.copies_delete_confirm({ number: copyNumber }));
 		if (!confirmed) return;
 
 		deleting = copyId;
@@ -257,13 +257,13 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { error?: string };
-				throw new Error(respData.error ?? 'Failed to delete copy');
+				throw new Error(respData.error ?? m.copies_delete_failed());
 			}
 
 			copies = copies.filter((c) => c.id !== copyId);
-			toast.success(`Copy ${copyNumber} deleted`);
+			toast.success(m.copies_toast_deleted({ number: copyNumber }));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to delete copy');
+			toast.error(err instanceof Error ? err.message : m.copies_delete_failed());
 		} finally {
 			deleting = null;
 		}
@@ -455,12 +455,9 @@
 			<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
 				<div class="mb-4 flex items-center justify-between">
 					<div>
-						<h2 class="text-lg font-semibold">Physical Copies</h2>
+						<h2 class="text-lg font-semibold">{m.copies_physical_title()}</h2>
 						<p class="text-sm text-gray-500">
-							{copyStats.total} cop{copyStats.total === 1 ? 'y' : 'ies'}
-							{#if copyStats.total > 0}
-								({copyStats.assigned} assigned, {copyStats.available} available)
-							{/if}
+							{copyStats.total === 0 ? m.copies_copy_stats_zero() : m.copies_copy_stats({ total: copyStats.total, assigned: copyStats.assigned, available: copyStats.available })}
 						</p>
 					</div>
 					<button
@@ -519,9 +516,9 @@
 						</div>
 						<p class="mt-2 text-xs text-gray-500">
 							{#if batchPrefix}
-								Creates: {batchPrefix}-01{#if batchCount > 1}, {batchPrefix}-02{#if batchCount > 2}, ...{/if}{/if}
+								{batchCount > 1 ? m.copies_create_preview_prefix_more({ prefix: batchPrefix }) : m.copies_create_preview_prefix({ prefix: batchPrefix })}
 							{:else}
-								Creates: 1{#if batchCount > 1}, 2{#if batchCount > 2}, ...{/if}{/if}
+								{batchCount > 1 ? m.copies_create_preview_numbered_more() : m.copies_create_preview_numbered()}
 							{/if}
 						</p>
 					</div>
@@ -529,7 +526,7 @@
 
 				<!-- Copies List -->
 				{#if copies.length === 0}
-					<p class="py-8 text-center text-gray-500">No physical copies yet. Click "Add Copies" to create some.</p>
+					<p class="py-8 text-center text-gray-500">{m.copies_empty()}</p>
 				{:else}
 					<div class="overflow-hidden rounded-lg border border-gray-200">
 						<table class="min-w-full divide-y divide-gray-200">

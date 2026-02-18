@@ -33,10 +33,10 @@
 				submitted = true;
 			} else {
 				const result = (await response.json()) as { error?: string };
-				error = result.error || 'Failed to submit takedown request';
+				error = result.error || m.copyright_error_submit_failed();
 			}
 		} catch (e) {
-			error = 'Network error. Please try again.';
+			error = m.copyright_error_network();
 		} finally {
 			submitting = false;
 		}

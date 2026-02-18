@@ -32,7 +32,7 @@
 		e.preventDefault();
 
 		if (!rosterMember) {
-			toast.error('Roster member is required. Go to Members → Add Roster Member first.');
+			toast.error(m.invite_error_required_member());
 			return;
 		}
 
@@ -54,15 +54,15 @@
 
 			if (!response.ok) {
 				const respData = (await response.json()) as { message?: string };
-				throw new Error(respData.message ?? 'Failed to send invite');
+				throw new Error(respData.message ?? m.invite_error_send_failed());
 			}
 
 			const result = (await response.json()) as { inviteLink: string };
 			inviteLink = result.inviteLink;
-			success = `Invitation created for ${rosterMember.name}! Copy the link below and share it with them.`;
+			success = m.invite_success_message({ name: rosterMember.name });
 			roles = new Set();
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to send invite');
+			toast.error(err instanceof Error ? err.message : m.invite_error_send_failed());
 		} finally {
 			isSubmitting = false;
 		}
@@ -125,7 +125,7 @@
 			/>
 
 			<div class="mt-4 text-center">
-				<a href="/members" class="text-blue-600 hover:underline">← Back to Members</a>
+				<a href="/members" class="text-blue-600 hover:underline">{m.invite_back_to_members()}</a>
 			</div>
 		</div>
 	{:else}
@@ -171,7 +171,7 @@
 											class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-200"
 										/>
 										<span class="text-sm">
-											<span class="font-medium capitalize">{role.replace('_', ' ')}</span>
+											<span class="font-medium">{m[`roles_${role}`]()}</span>
 											{#if role === 'owner'}
 												- {m.invite_role_owner_desc()}
 											{:else if role === 'admin'}

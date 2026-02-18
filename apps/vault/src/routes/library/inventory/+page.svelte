@@ -25,7 +25,7 @@
 			<nav class="mb-4 text-sm text-gray-500">
 				<a href="/works" class="hover:text-blue-600">{m.library_breadcrumb()}</a>
 				<span class="mx-2">›</span>
-				<span>Inventory</span>
+				<span>{m.library_inventory_breadcrumb()}</span>
 			</nav>
 			<h1 class="text-3xl font-bold">{m.library_inventory_title()}</h1>
 			<p class="mt-2 text-gray-600">{m.library_inventory_description()}</p>

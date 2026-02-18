@@ -117,12 +117,12 @@
 		e.preventDefault();
 		
 		if (!title.trim()) {
-			error = 'Title is required';
+			error = m.event_new_title_required();
 			return;
 		}
 
 		if (generatedEvents.filter(e => e.checked).length === 0) {
-			error = 'Please select at least one event date';
+			error = m.event_new_date_required();
 			return;
 		}
 
@@ -161,7 +161,7 @@
 			// Success - redirect to events list
 			await goto('/events');
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to create events';
+			error = err instanceof Error ? err.message : m.event_new_create_failed();
 			submitting = false;
 		}
 	}

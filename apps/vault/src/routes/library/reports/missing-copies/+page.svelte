@@ -198,12 +198,12 @@
 							<div class="text-sm text-gray-600">
 								{group.edition.workTitle}
 								{#if group.edition.composer}
-									<span class="text-gray-400">by {group.edition.composer}</span>
+									<span class="text-gray-400">{m.edition_view_by_composer()} {group.edition.composer}</span>
 								{/if}
 							</div>
 						</div>
 						<span class="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
-							{group.members.length} missing
+							{m.missing_count_badge({ count: group.members.length })}
 						</span>
 					</div>
 				</div>

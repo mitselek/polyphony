@@ -38,7 +38,7 @@
 			const result = (await response.json()) as { success: boolean; error?: string; message?: string };
 
 			if (!response.ok) {
-				error = result.error || 'Failed to send magic link';
+				error = result.error || m.login_error_send_failed();
 				return;
 			}
 
@@ -46,7 +46,7 @@
 			const checkEmailUrl = `/login/check-email?email=${encodeURIComponent(email)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ''}`;
 			window.location.href = checkEmailUrl;
 		} catch (err) {
-			error = 'Network error. Please try again.';
+			error = m.login_error_network();
 		} finally {
 			isSubmitting = false;
 		}

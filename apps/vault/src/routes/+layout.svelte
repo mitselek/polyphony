@@ -82,7 +82,7 @@
 			<button
 				class="flex flex-col gap-1.5 p-2 md:hidden"
 				onclick={() => mobileMenuOpen = !mobileMenuOpen}
-				aria-label="Toggle menu"
+				aria-label={m.layout_toggle_menu()}
 				aria-expanded={mobileMenuOpen}
 			>
 				<span class="block h-0.5 w-6 bg-gray-600 transition-transform {mobileMenuOpen ? 'translate-y-2 rotate-45' : ''}"></span>

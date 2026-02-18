@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.edition.name} | PDF Viewer | Polyphony Vault</title>
+	<title>{data.edition.name} | {m.edition_pdf_viewer_title()} | Polyphony Vault</title>
 </svelte:head>
 
 <div class="flex h-screen flex-col bg-gray-900">
@@ -53,7 +53,7 @@
 			src={pdfUrl}
 			type="application/pdf"
 			class="h-full w-full"
-			title="PDF viewer for {data.edition.name}"
+			title={m.edition_view_pdf_title({ name: data.edition.name })}
 		/>
 	</div>
 </div>

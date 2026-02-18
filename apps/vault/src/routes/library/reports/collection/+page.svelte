@@ -72,15 +72,15 @@
 
 			if (!response.ok) {
 				const result = (await response.json()) as { error?: string };
-				throw new Error(result.error ?? 'Failed to mark copies as returned');
+				throw new Error(result.error ?? m.collection_error_mark_returned());
 			}
 
 			const result = (await response.json()) as { returned: number };
-			toast.success(`Marked ${result.returned} ${result.returned === 1 ? 'copy' : 'copies'} as returned`);
+			toast.success(m.collection_toast_marked_returned({ count: result.returned }));
 			selectedIds = new Set();
 			await invalidateAll();
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to mark copies as returned');
+			toast.error(err instanceof Error ? err.message : m.collection_error_mark_returned());
 		} finally {
 			isReturning = false;
 		}
@@ -145,10 +145,7 @@
 		<div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
 			{#if hasOutstanding}
 				<p class="text-lg">
-					<span class="font-semibold">{data.totalOutstanding}</span>
-					{data.totalOutstanding === 1 ? 'copy' : 'copies'} outstanding from
-					<span class="font-semibold">{data.memberCount}</span>
-					{data.memberCount === 1 ? 'member' : 'members'}
+					{m.collection_summary_outstanding({ copies: data.totalOutstanding, members: data.memberCount })}
 				</p>
 			{:else}
 				<p class="text-lg text-green-700">✓ {m.collection_all_collected()}</p>
@@ -210,7 +207,7 @@
 							</a>
 						</h3>
 						<span class="text-sm text-gray-500">
-							({member.copies.length} {member.copies.length === 1 ? 'copy' : 'copies'})
+							{m.collection_member_copies_label({ count: member.copies.length })}
 						</span>
 					</div>
 
@@ -232,10 +229,10 @@
 										<div class="text-sm text-gray-500">{copy.editionName}</div>
 									</td>
 									<td class="whitespace-nowrap px-4 py-2 text-gray-600">
-										Copy #{copy.copyNumber}
+										{m.collection_copy_number()}{copy.copyNumber}
 									</td>
 									<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
-										Since {new Date(copy.assignedAt).toLocaleDateString()}
+										{m.collection_assigned_since()} {new Date(copy.assignedAt).toLocaleDateString()}
 									</td>
 								</tr>
 							{/each}

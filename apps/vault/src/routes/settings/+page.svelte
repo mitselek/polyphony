@@ -53,12 +53,12 @@
 
       if (!settingsResponse.ok) {
         const data = (await settingsResponse.json()) as { message?: string };
-        throw new Error(data.message ?? "Failed to save settings");
+        throw new Error(data.message ?? m.settings_save_settings_error());
       }
 
       if (!orgResponse.ok) {
         const result = (await orgResponse.json()) as { message?: string };
-        throw new Error(result.message ?? "Failed to save organization settings");
+        throw new Error(result.message ?? m.settings_save_org_error());
       }
 
       const [updatedSettings, updatedOrg] = await Promise.all([
@@ -121,7 +121,7 @@
           type="button"
           role="switch"
           aria-checked={organization.trustIndividualResponsibility}
-          aria-label="Trust Individual Responsibility"
+          aria-label={m.settings_trust_aria()}
           onclick={() => (organization.trustIndividualResponsibility = !organization.trustIndividualResponsibility)}
           class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 {organization.trustIndividualResponsibility ? 'bg-blue-600' : 'bg-gray-200'}"
         >

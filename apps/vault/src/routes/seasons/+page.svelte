@@ -52,12 +52,12 @@
 		e.preventDefault();
 
 		if (!formName.trim()) {
-			error = 'Name is required';
+			error = m.season_error_name_required();
 			return;
 		}
 
 		if (!formStartDate) {
-			error = 'Start date is required';
+			error = m.season_error_start_date_required();
 			return;
 		}
 
@@ -78,7 +78,7 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to update season');
+					throw new Error(data.error ?? m.season_error_update_failed());
 				}
 
 				const updated = (await response.json()) as Season;
@@ -87,7 +87,7 @@
 				seasons = [...seasons].sort(
 					(a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
 				);
-				toast.success(`"${updated.name}" updated successfully`);
+				toast.success(m.season_toast_updated({ name: updated.name }));
 			} else {
 				// Create new season
 				const response = await fetch('/api/seasons', {
@@ -101,7 +101,7 @@
 
 				if (!response.ok) {
 					const data = (await response.json()) as { error?: string };
-					throw new Error(data.error ?? 'Failed to create season');
+					throw new Error(data.error ?? m.season_error_create_failed());
 				}
 
 				const created = (await response.json()) as Season;
@@ -109,19 +109,19 @@
 				seasons = [...seasons, created].sort(
 					(a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
 				);
-				toast.success(`"${created.name}" created successfully`);
+				toast.success(m.season_toast_created({ name: created.name }));
 			}
 
 			closeForm();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Operation failed';
+			error = err instanceof Error ? err.message : m.common_error();
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function deleteSeason(season: Season) {
-		if (!confirm(`Delete "${season.name}"? This cannot be undone.`)) return;
+		if (!confirm(m.season_confirm_delete({ name: season.name }))) return;
 
 		deletingId = season.id;
 		error = '';
@@ -131,13 +131,13 @@
 
 			if (!response.ok) {
 				const data = (await response.json()) as { error?: string };
-				throw new Error(data.error ?? 'Failed to delete season');
+				throw new Error(data.error ?? m.season_error_delete_failed());
 			}
 
 			seasons = seasons.filter((s) => s.id !== season.id);
-			toast.success(`"${season.name}" deleted`);
+			toast.success(m.season_toast_deleted({ name: season.name }));
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Delete failed';
+			error = err instanceof Error ? err.message : m.season_error_delete_failed();
 		} finally {
 			deletingId = null;
 		}
@@ -216,7 +216,7 @@
 					type="text"
 					bind:value={formName}
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-					placeholder="e.g., Fall 2026"
+					placeholder={m.season_name_placeholder()}
 					required
 				/>
 			</div>
@@ -309,7 +309,7 @@
 										disabled={deletingId === season.id}
 										class="rounded px-3 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
 									>
-										{deletingId === season.id ? 'Deleting...' : m.actions_delete()}
+										{deletingId === season.id ? m.season_deleting() : m.actions_delete()}
 									</button>
 								</div>
 							{/snippet}
@@ -321,7 +321,7 @@
 		</div>
 
 		<p class="mt-6 text-sm text-gray-500">
-			{seasons.length} season{seasons.length === 1 ? '' : 's'}
+			{m.seasons_count({ count: seasons.length })}
 		</p>
 	{/if}
 </div>
