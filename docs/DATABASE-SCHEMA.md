@@ -66,7 +66,7 @@ Rate limiting for email sending (5 per hour per address).
 
 All organizational data lives here. Single deployment hosts all organizations (data isolated by `org_id`).
 
-Current state after migrations 0001-0038 (Schema V2).
+Current state after migrations 0001-0040 (Schema V2).
 
 ### Organizations (Schema V2)
 
@@ -829,6 +829,7 @@ Junction table: sections to assign when invite is accepted.
 ```mermaid
 erDiagram
     members ||--o{ sessions : "authenticates"
+    organizations ||--o{ vault_settings : "configures"
     members ||--o{ vault_settings : "updates"
 
     sessions {
@@ -839,6 +840,7 @@ erDiagram
     }
 
     vault_settings {
+        TEXT org_id PK,FK
         TEXT key PK
         TEXT value
         TEXT updated_by FK
@@ -899,16 +901,21 @@ Copyright takedown requests (targets editions, not legacy scores).
 
 #### vault_settings
 
-Configuration settings for the vault (key-value store with audit trail).
+Configuration settings per organization (key-value store with audit trail). **Schema V2: Per-organization.**
 
-| Column     | Type | Constraints      | Description             |
-| ---------- | ---- | ---------------- | ----------------------- |
-| key        | TEXT | PK               | Setting key             |
-| value      | TEXT | NOT NULL         | Setting value           |
-| updated_by | TEXT | FK → members(id) | Member who last updated |
-| updated_at | TEXT | DEFAULT now()    | Last update timestamp   |
+| Column     | Type | Constraints                              | Description                    |
+| ---------- | ---- | ---------------------------------------- | ------------------------------ |
+| org_id     | TEXT | PK, FK → organizations(id) CASCADE      | Organization scope (Schema V2) |
+| key        | TEXT | PK                                       | Setting key                    |
+| value      | TEXT | NOT NULL                                 | Setting value                  |
+| updated_by | TEXT | FK → members(id) ON DELETE SET NULL      | Member who last updated        |
+| updated_at | TEXT | NOT NULL, DEFAULT now()                  | Last update timestamp          |
 
 **Indexes:** None additional
+
+**Constraints:**
+
+- PRIMARY KEY (org_id, key) - Settings are unique per organization
 
 **Default settings:**
 
@@ -1173,6 +1180,7 @@ RSVP and attendance tracking for events.
 | **0037**  | **Fix primary section triggers** - Org-scoped primary section triggers (clear primaries only within same org).                                                                                                               |
 | **0038**  | **Trust individual responsibility** - Added trust_individual_responsibility column to organizations.                                                                                                                         |
 | **0039**  | **DATETIME to TEXT** - Rebuilt vault_settings, works, editions, physical_copies to normalize DATETIME columns to TEXT with `(datetime('now'))` default.                                                                      |
+| **0040**  | **Settings org scope** - Added org_id to vault_settings, changed PK to composite (org_id, key) for multi-org isolation. Migrated existing rows to oldest organization.                                                       |
 
 ---
 
