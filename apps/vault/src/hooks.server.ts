@@ -93,7 +93,7 @@ export function isPublicOrAuthRoute(pathname: string): boolean {
 	return (
 		pathname.startsWith('/api/public/') ||
 		pathname.startsWith('/api/auth/') ||
-		pathname.startsWith('/api/takedowns') // TODO: takedowns need org scoping (#takedowns-tech-debt)
+		pathname.startsWith('/api/takedowns/') || pathname === '/api/takedowns' // TODO: takedowns need org scoping (#250)
 	);
 }
 
