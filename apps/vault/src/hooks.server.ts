@@ -1,8 +1,9 @@
 // Server hooks for subdomain-based organization routing
 // Implements #165 - Schema V2 multi-organization support
 // Implements #188 - i18n Paraglide integration
+// Implements #231 - Org context validation for protected API routes
 
-import type { Handle } from '@sveltejs/kit';
+import { error, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { getOrganizationBySubdomain } from '$lib/server/db/organizations';
 import { resolvePreferences } from '$lib/server/i18n/preferences';
@@ -83,6 +84,31 @@ const orgHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * Check if a path is a public or auth route that doesn't require org context.
+ * Public API routes are used by Registry (no subdomain context).
+ * Auth routes handle OAuth redirects before org context is established.
+ */
+export function isPublicOrAuthRoute(pathname: string): boolean {
+	return (
+		pathname.startsWith('/api/public/') ||
+		pathname.startsWith('/api/auth/') ||
+		pathname.startsWith('/api/takedowns') // TODO: takedowns need org scoping (#takedowns-tech-debt)
+	);
+}
+
+// Org context guard - validates org context exists for protected API routes (#231)
+// Runs after orgHandle to catch cases where org resolution silently failed
+const orgContextGuard: Handle = async ({ event, resolve }) => {
+	const path = event.url.pathname;
+
+	if (path.startsWith('/api/') && !isPublicOrAuthRoute(path) && !event.locals.org) {
+		throw error(500, 'Internal error: Missing organization context');
+	}
+
+	return resolve(event);
+};
+
 // Locale resolution handle - syncs DB language preference with Paraglide cookie
 // Runs after orgHandle (org is resolved) and before paraglideHandle
 const localeHandle: Handle = async ({ event, resolve }) => {
@@ -142,5 +168,5 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		});
 	});
 
-// Chain handles: org routing → locale resolution → paraglide i18n
-export const handle: Handle = sequence(orgHandle, localeHandle, paraglideHandle);
+// Chain handles: org routing → org context guard → locale resolution → paraglide i18n
+export const handle: Handle = sequence(orgHandle, orgContextGuard, localeHandle, paraglideHandle);

@@ -1,6 +1,6 @@
-// Unit tests for subdomain extraction in hooks.server.ts
+// Unit tests for hooks.server.ts
 import { describe, it, expect } from 'vitest';
-import { extractSubdomain } from './hooks.server';
+import { extractSubdomain, isPublicOrAuthRoute } from './hooks.server';
 
 describe('extractSubdomain', () => {
 	describe('localhost handling', () => {
@@ -53,6 +53,66 @@ describe('extractSubdomain', () => {
 		it('returns null for vault subdomain', () => {
 			expect(extractSubdomain('vault.polyphony.uk')).toBeNull();
 			expect(extractSubdomain('vault.localhost')).toBeNull();
+		});
+	});
+});
+
+describe('isPublicOrAuthRoute', () => {
+	describe('public API routes (no org context needed)', () => {
+		it('returns true for /api/public/ routes', () => {
+			expect(isPublicOrAuthRoute('/api/public/organizations')).toBe(true);
+			expect(isPublicOrAuthRoute('/api/public/scores/pd')).toBe(true);
+			expect(isPublicOrAuthRoute('/api/public/subdomains/check/crede')).toBe(true);
+		});
+
+		it('returns true for /api/auth/ routes', () => {
+			expect(isPublicOrAuthRoute('/api/auth/login')).toBe(true);
+			expect(isPublicOrAuthRoute('/api/auth/callback')).toBe(true);
+			expect(isPublicOrAuthRoute('/api/auth/logout')).toBe(true);
+		});
+	});
+
+	describe('protected API routes (org context required)', () => {
+		it('returns false for /api/members/', () => {
+			expect(isPublicOrAuthRoute('/api/members/abc123')).toBe(false);
+		});
+
+		it('returns false for /api/events/', () => {
+			expect(isPublicOrAuthRoute('/api/events')).toBe(false);
+			expect(isPublicOrAuthRoute('/api/events/abc/works')).toBe(false);
+		});
+
+		it('returns false for /api/editions/', () => {
+			expect(isPublicOrAuthRoute('/api/editions/abc')).toBe(false);
+		});
+
+		it('returns false for /api/settings/', () => {
+			expect(isPublicOrAuthRoute('/api/settings')).toBe(false);
+		});
+
+		it('returns false for /api/works/', () => {
+			expect(isPublicOrAuthRoute('/api/works')).toBe(false);
+		});
+
+		it('returns false for /api/voices/', () => {
+			expect(isPublicOrAuthRoute('/api/voices')).toBe(false);
+		});
+
+		it('returns false for /api/sections/', () => {
+			expect(isPublicOrAuthRoute('/api/sections')).toBe(false);
+		});
+
+		it('returns false for /api/participation/', () => {
+			expect(isPublicOrAuthRoute('/api/participation')).toBe(false);
+		});
+	});
+
+	describe('non-API routes', () => {
+		it('returns false for page routes', () => {
+			expect(isPublicOrAuthRoute('/members')).toBe(false);
+			expect(isPublicOrAuthRoute('/events')).toBe(false);
+			expect(isPublicOrAuthRoute('/login')).toBe(false);
+			expect(isPublicOrAuthRoute('/')).toBe(false);
 		});
 	});
 });

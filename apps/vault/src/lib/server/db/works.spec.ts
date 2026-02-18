@@ -84,7 +84,7 @@ describe('Works database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRow);
 
-			const work = await getWorkById(db, 'work-123');
+			const work = await getWorkById(db, 'work-123', TEST_ORG_ID);
 
 			expect(work).not.toBeNull();
 			expect(work?.title).toBe('Messiah');
@@ -96,7 +96,7 @@ describe('Works database layer', () => {
 		it('returns null when not found', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-			const work = await getWorkById(db, 'nonexistent');
+			const work = await getWorkById(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(work).toBeNull();
 		});
@@ -136,7 +136,7 @@ describe('Works database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRow);
 
-			const work = await updateWork(db, 'work-123', { title: 'Updated Title' });
+			const work = await updateWork(db, 'work-123', { title: 'Updated Title' }, TEST_ORG_ID);
 
 			expect(work?.title).toBe('Updated Title');
 		});
@@ -152,7 +152,7 @@ describe('Works database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRow);
 
-			const work = await updateWork(db, 'work-123', { composer: null });
+			const work = await updateWork(db, 'work-123', { composer: null }, TEST_ORG_ID);
 
 			expect(work?.composer).toBeNull();
 		});
@@ -160,7 +160,7 @@ describe('Works database layer', () => {
 		it('returns null when work not found', async () => {
 			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ meta: { changes: 0 } });
 
-			const work = await updateWork(db, 'nonexistent', { title: 'New Title' });
+			const work = await updateWork(db, 'nonexistent', { title: 'New Title' }, TEST_ORG_ID);
 
 			expect(work).toBeNull();
 		});
@@ -170,7 +170,7 @@ describe('Works database layer', () => {
 		it('deletes existing work', async () => {
 			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ meta: { changes: 1 } });
 
-			const deleted = await deleteWork(db, 'work-123');
+			const deleted = await deleteWork(db, 'work-123', TEST_ORG_ID);
 
 			expect(deleted).toBe(true);
 		});
@@ -178,7 +178,7 @@ describe('Works database layer', () => {
 		it('returns false when work not found', async () => {
 			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ meta: { changes: 0 } });
 
-			const deleted = await deleteWork(db, 'nonexistent');
+			const deleted = await deleteWork(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(deleted).toBe(false);
 		});

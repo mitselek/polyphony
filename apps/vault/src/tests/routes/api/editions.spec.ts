@@ -109,7 +109,7 @@ describe('Editions API Routes', () => {
 
 			const response = await GET_EDITION(event);
 
-			expect(mockGetEditionById).toHaveBeenCalledWith(expect.anything(), 'edition-1');
+			expect(mockGetEditionById).toHaveBeenCalledWith(expect.anything(), 'edition-1', expect.anything());
 			
 			const data = (await response.json()) as Edition;
 			expect(data.id).toBe('edition-1');
@@ -165,7 +165,8 @@ describe('Editions API Routes', () => {
 			expect(mockUpdateEdition).toHaveBeenCalledWith(
 				expect.anything(),
 				'edition-1',
-				expect.objectContaining({ name: 'Updated Edition' })
+				expect.objectContaining({ name: 'Updated Edition' }),
+				expect.anything()
 			);
 			
 			const data = (await response.json()) as Edition;
@@ -240,7 +241,8 @@ describe('Editions API Routes', () => {
 			expect(mockUpdateEdition).toHaveBeenCalledWith(
 				expect.anything(),
 				'edition-1',
-				expect.objectContaining({ arranger: null })
+				expect.objectContaining({ arranger: null }),
+				expect.anything()
 			);
 			
 			const data = (await response.json()) as Edition;
@@ -291,7 +293,7 @@ describe('Editions API Routes', () => {
 			const response = await DELETE(event);
 
 			expect(mockAssertLibrarian).toHaveBeenCalled();
-			expect(mockDeleteEdition).toHaveBeenCalledWith(expect.anything(), 'edition-1');
+			expect(mockDeleteEdition).toHaveBeenCalledWith(expect.anything(), 'edition-1', expect.anything());
 			expect(response.status).toBe(200);
 			
 			const data = (await response.json()) as { success: boolean };
@@ -332,8 +334,8 @@ describe('Editions API Routes', () => {
 
 			const response = await GET_EDITIONS(event);
 
-			expect(mockGetWorkById).toHaveBeenCalledWith(expect.anything(), 'work-1');
-			expect(mockGetEditionsByWorkId).toHaveBeenCalledWith(expect.anything(), 'work-1');
+			expect(mockGetWorkById).toHaveBeenCalledWith(expect.anything(), 'work-1', expect.anything());
+			expect(mockGetEditionsByWorkId).toHaveBeenCalledWith(expect.anything(), 'work-1', expect.anything());
 			
 			const data = (await response.json()) as Edition[];
 			expect(data).toHaveLength(1);

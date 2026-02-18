@@ -70,6 +70,10 @@ function createMockDB(): D1Database {
 			return {
 				bind: (...params: any[]) => ({
 					first: async () => {
+						if (sql.includes('WHERE id = ?') && sql.includes('AND org_id = ?')) {
+							const section = sections.get(params[0]);
+							return section && section.org_id === params[1] ? section : null;
+						}
 						if (sql.includes('WHERE id = ?')) {
 							return sections.get(params[0]) || null;
 						}
@@ -103,9 +107,9 @@ function createMockDB(): D1Database {
 							return { success: true, meta: { changes: 1 } };
 						}
 						if (sql.includes('UPDATE sections SET is_active')) {
-							const [isActive, id] = params;
+							const [isActive, id, orgId] = params;
 							const section = sections.get(id);
-							if (section) {
+							if (section && (!orgId || section.org_id === orgId)) {
 								section.is_active = isActive;
 								return { success: true, meta: { changes: 1 } };
 							}
@@ -190,7 +194,7 @@ describe('sections.ts', () => {
 
 	describe('getSectionById', () => {
 		it('should return section by id', async () => {
-			const section = await getSectionById(db, 'soprano');
+			const section = await getSectionById(db, 'soprano', CREDE_ORG_ID);
 			expect(section).toBeDefined();
 			expect(section!.name).toBe('Soprano');
 			expect(section!.abbreviation).toBe('S');
@@ -198,12 +202,12 @@ describe('sections.ts', () => {
 		});
 
 		it('should return null for non-existent id', async () => {
-			const section = await getSectionById(db, 'nonexistent');
+			const section = await getSectionById(db, 'nonexistent', CREDE_ORG_ID);
 			expect(section).toBeNull();
 		});
 
 		it('should convert snake_case to camelCase', async () => {
-			const section = await getSectionById(db, 'soprano-1');
+			const section = await getSectionById(db, 'soprano-1', CREDE_ORG_ID);
 			expect(section).toHaveProperty('parentSectionId');
 			expect(section).toHaveProperty('displayOrder');
 			expect(section).toHaveProperty('isActive');
@@ -280,12 +284,12 @@ describe('sections.ts', () => {
 
 	describe('toggleSectionActive', () => {
 		it('should toggle section active status', async () => {
-			const result = await toggleSectionActive(db, 'soprano-1', true);
+			const result = await toggleSectionActive(db, 'soprano-1', true, CREDE_ORG_ID);
 			expect(result).toBe(true);
 		});
 
 		it('should return false for non-existent section', async () => {
-			const result = await toggleSectionActive(db, 'nonexistent', true);
+			const result = await toggleSectionActive(db, 'nonexistent', true, CREDE_ORG_ID);
 			expect(result).toBe(false);
 		});
 	});
@@ -306,7 +310,7 @@ describe('sections.ts', () => {
 			expect(section.orgId).toBe(OTHER_ORG_ID);
 
 			// Both orgs have Alto sections
-			const credeAlto = await getSectionById(db, 'alto');
+			const credeAlto = await getSectionById(db, 'alto', CREDE_ORG_ID);
 			expect(credeAlto?.orgId).toBe(CREDE_ORG_ID);
 		});
 	});

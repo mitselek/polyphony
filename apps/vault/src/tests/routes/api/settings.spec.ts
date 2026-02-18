@@ -17,13 +17,14 @@ vi.mock('@sveltejs/kit', async () => {
 	};
 });
 
-// Mock database
+// Mock database — stores settings keyed by "org_id:key"
 function createMockDb(membersData: Map<string, any> = new Map()) {
 	const store = new Map<string, { value: string; updated_by: string | null; updated_at: string }>();
 
-	// Pre-populate with default settings
-	store.set('default_event_duration', { value: '120', updated_by: null, updated_at: new Date().toISOString() });
-	store.set('conductor_id', { value: '', updated_by: null, updated_at: new Date().toISOString() });
+	// Pre-populate with default settings (keyed by org_id:key)
+	const defaultOrg = 'test-org';
+	store.set(`${defaultOrg}:default_event_duration`, { value: '120', updated_by: null, updated_at: new Date().toISOString() });
+	store.set(`${defaultOrg}:conductor_id`, { value: '', updated_by: null, updated_at: new Date().toISOString() });
 
 	return {
 		prepare: (query: string) => {
@@ -33,22 +34,22 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 					return statement;
 				},
 				first: async () => {
-					if (query.includes('SELECT') && query.includes('WHERE key')) {
-						const key = statement._params?.[0] as string;
-						const row = store.get(key);
-						return row ? { key, ...row } : null;
+					// getSetting: WHERE org_id = ? AND key = ?
+					if (query.includes('SELECT') && query.includes('vault_settings') && query.includes('WHERE')) {
+						const org_id = statement._params?.[0] as string;
+						const key = statement._params?.[1] as string;
+						const row = store.get(`${org_id}:${key}`);
+						return row ? { value: row.value } : null;
 					}
 					// Member lookup (with JOIN member_organizations)
 					if (query.includes('FROM members') && query.includes('member_organizations') && query.includes('WHERE m.id')) {
 						const id = statement._params?.[0] as string;
 						const memberData = membersData.get(id);
 						if (!memberData) return null;
-						// Return member without roles (roles come from separate query)
 						return {
 							id: memberData.id,
 							email_id: memberData.email_id,
 							name: memberData.name,
-
 							invited_by: memberData.invited_by,
 							joined_at: memberData.joined_at
 						};
@@ -56,11 +57,15 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 					return null;
 				},
 				all: async () => {
+					// getAllSettings: WHERE org_id = ?
 					if (query.includes('SELECT') && query.includes('FROM vault_settings')) {
-						const results = Array.from(store.entries()).map(([key, data]) => ({
-							key,
-							...data
-						}));
+						const org_id = statement._params?.[0] as string;
+						const results = Array.from(store.entries())
+							.filter(([k]) => k.startsWith(`${org_id}:`))
+							.map(([k, data]) => ({
+								key: k.split(':').slice(1).join(':'),
+								value: data.value
+							}));
 						return { results };
 					}
 					// Member roles lookup
@@ -75,9 +80,10 @@ function createMockDb(membersData: Map<string, any> = new Map()) {
 					return { results: [] };
 				},
 				run: async () => {
+					// setSetting: INSERT (org_id, key, value, updated_by)
 					if (query.includes('INSERT') || query.includes('ON CONFLICT')) {
-						const [key, value, updated_by] = statement._params as [string, string, string | undefined];
-						store.set(key, {
+						const [org_id, key, value, updated_by] = statement._params as [string, string, string, string | undefined];
+						store.set(`${org_id}:${key}`, {
 							value,
 							updated_by: updated_by ?? null,
 							updated_at: new Date().toISOString()

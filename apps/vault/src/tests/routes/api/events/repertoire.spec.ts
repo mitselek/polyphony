@@ -182,7 +182,7 @@ describe('Event Repertoire API Routes', () => {
 			const event = createMockEventBase();
 			const response = await GET(event as unknown as GetEventParams);
 
-			expect(mockGetEventById).toHaveBeenCalledWith(expect.anything(), 'event-1');
+			expect(mockGetEventById).toHaveBeenCalledWith(expect.anything(), 'event-1', expect.anything());
 			expect(mockGetEventRepertoire).toHaveBeenCalledWith(expect.anything(), 'event-1');
 
 			const data = (await response.json()) as { eventId: string; works: unknown[] };

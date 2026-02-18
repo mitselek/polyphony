@@ -119,18 +119,20 @@ export async function createEdition(db: D1Database, input: CreateEditionInput): 
 }
 
 /**
- * Get an edition by ID with section assignments
+ * Get an edition by ID with section assignments, scoped to organization (via works JOIN)
  */
-export async function getEditionById(db: D1Database, id: string): Promise<Edition | null> {
+export async function getEditionById(db: D1Database, id: string, orgId: OrgId): Promise<Edition | null> {
 	const row = await db
 		.prepare(`
-			SELECT id, work_id, name, arranger, publisher, voicing,
-				edition_type, license_type, notes, external_url,
-				file_key, file_name, file_size, file_uploaded_at, file_uploaded_by,
-				created_at
-			FROM editions WHERE id = ?
+			SELECT e.id, e.work_id, e.name, e.arranger, e.publisher, e.voicing,
+				e.edition_type, e.license_type, e.notes, e.external_url,
+				e.file_key, e.file_name, e.file_size, e.file_uploaded_at, e.file_uploaded_by,
+				e.created_at
+			FROM editions e
+			JOIN works w ON e.work_id = w.id
+			WHERE e.id = ? AND w.org_id = ?
 		`)
-		.bind(id)
+		.bind(id, orgId)
 		.first<EditionRow>();
 
 	if (!row) {
@@ -149,20 +151,21 @@ export async function getEditionById(db: D1Database, id: string): Promise<Editio
 }
 
 /**
- * Get all editions for a work
+ * Get all editions for a work, scoped to organization (via works JOIN)
  */
-export async function getEditionsByWorkId(db: D1Database, workId: string): Promise<Edition[]> {
+export async function getEditionsByWorkId(db: D1Database, workId: string, orgId: OrgId): Promise<Edition[]> {
 	const { results } = await db
 		.prepare(`
-			SELECT id, work_id, name, arranger, publisher, voicing,
-				edition_type, license_type, notes, external_url,
-				file_key, file_name, file_size, file_uploaded_at, file_uploaded_by,
-				created_at
-			FROM editions
-			WHERE work_id = ?
-			ORDER BY edition_type, name ASC
+			SELECT e.id, e.work_id, e.name, e.arranger, e.publisher, e.voicing,
+				e.edition_type, e.license_type, e.notes, e.external_url,
+				e.file_key, e.file_name, e.file_size, e.file_uploaded_at, e.file_uploaded_by,
+				e.created_at
+			FROM editions e
+			JOIN works w ON e.work_id = w.id
+			WHERE e.work_id = ? AND w.org_id = ?
+			ORDER BY e.edition_type, e.name ASC
 		`)
-		.bind(workId)
+		.bind(workId, orgId)
 		.all<EditionRow>();
 
 	// For list view, we don't load sections (use getEditionById for full details)
@@ -234,29 +237,36 @@ async function updateSectionAssignments(db: D1Database, editionId: string, secti
 }
 
 /**
- * Update an edition
+ * Update an edition, scoped to organization (via works JOIN)
  */
-export async function updateEdition(db: D1Database, id: string, input: UpdateEditionInput): Promise<Edition | null> {
+export async function updateEdition(db: D1Database, id: string, input: UpdateEditionInput, orgId: OrgId): Promise<Edition | null> {
+	// Verify the edition belongs to this org before updating
+	const existing = await getEditionById(db, id, orgId);
+	if (!existing) return null;
+
 	const { updates, values } = buildUpdateClause(input);
 
 	if (updates.length > 0) {
 		values.push(id);
-		const result = await db.prepare(`UPDATE editions SET ${updates.join(', ')} WHERE id = ?`).bind(...values).run();
-		if ((result.meta.changes ?? 0) === 0) return null;
+		await db.prepare(`UPDATE editions SET ${updates.join(', ')} WHERE id = ?`).bind(...values).run();
 	}
 
 	if (input.sectionIds !== undefined) {
 		await updateSectionAssignments(db, id, input.sectionIds);
 	}
 
-	return getEditionById(db, id);
+	return getEditionById(db, id, orgId);
 }
 
 /**
- * Delete an edition
+ * Delete an edition, scoped to organization (via works JOIN)
  * Section assignments are deleted via CASCADE
  */
-export async function deleteEdition(db: D1Database, id: string): Promise<boolean> {
+export async function deleteEdition(db: D1Database, id: string, orgId: OrgId): Promise<boolean> {
+	// Verify the edition belongs to this org before deleting
+	const existing = await getEditionById(db, id, orgId);
+	if (!existing) return false;
+
 	const result = await db
 		.prepare('DELETE FROM editions WHERE id = ?')
 		.bind(id)
@@ -274,25 +284,33 @@ export interface EditionFileInfo {
 }
 
 /**
- * Update file info for an edition (used after file upload)
+ * Update file info for an edition (used after file upload), scoped to organization
  */
-export async function updateEditionFile(db: D1Database, id: string, fileInfo: EditionFileInfo): Promise<Edition | null> {
+export async function updateEditionFile(db: D1Database, id: string, fileInfo: EditionFileInfo, orgId: OrgId): Promise<Edition | null> {
+	// Verify the edition belongs to this org before updating
+	const existing = await getEditionById(db, id, orgId);
+	if (!existing) return null;
+
 	const now = new Date().toISOString();
 	const { fileKey, fileName, fileSize, uploadedBy } = fileInfo;
 
-	const result = await db
+	await db
 		.prepare(`UPDATE editions SET file_key = ?, file_name = ?, file_size = ?, file_uploaded_at = ?, file_uploaded_by = ? WHERE id = ?`)
 		.bind(fileKey, fileName, fileSize, now, uploadedBy, id)
 		.run();
 
-	return (result.meta.changes ?? 0) === 0 ? null : getEditionById(db, id);
+	return getEditionById(db, id, orgId);
 }
 
 /**
- * Remove file from an edition
+ * Remove file from an edition, scoped to organization (via works JOIN)
  */
-export async function removeEditionFile(db: D1Database, id: string): Promise<Edition | null> {
-	const result = await db
+export async function removeEditionFile(db: D1Database, id: string, orgId: OrgId): Promise<Edition | null> {
+	// Verify the edition belongs to this org before updating
+	const existing = await getEditionById(db, id, orgId);
+	if (!existing) return null;
+
+	await db
 		.prepare(`
 			UPDATE editions
 			SET file_key = NULL, file_name = NULL, file_size = NULL, file_uploaded_at = NULL, file_uploaded_by = NULL
@@ -301,9 +319,5 @@ export async function removeEditionFile(db: D1Database, id: string): Promise<Edi
 		.bind(id)
 		.run();
 
-	if ((result.meta.changes ?? 0) === 0) {
-		return null;
-	}
-
-	return getEditionById(db, id);
+	return getEditionById(db, id, orgId);
 }

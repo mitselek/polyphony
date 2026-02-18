@@ -79,19 +79,21 @@ function createMockDb(): D1Database {
 						return { results: upcoming as T[], success: true, meta: {} };
 					}
 
-					// SELECT by ID
+					// SELECT by ID (+ org_id)
 					if (lowerQuery.includes('select') && lowerQuery.includes('where id = ?')) {
 						const events = storage.get('events') ?? [];
 						const id = boundValues[0];
-						const event = events.find((e) => e.id === id);
+						const orgId = boundValues[1];
+						const event = events.find((e) => e.id === id && (!orgId || e.org_id === orgId));
 						return { results: event ? ([event] as T[]) : [], success: true, meta: {} };
 					}
 
-					// UPDATE
+					// UPDATE (id is second-to-last, orgId is last)
 					if (lowerQuery.includes('update events')) {
 						const events = storage.get('events') ?? [];
-						const id = boundValues[boundValues.length - 1]; // ID is last in UPDATE
-						const index = events.findIndex((e) => e.id === id);
+						const orgId = boundValues[boundValues.length - 1];
+						const id = boundValues[boundValues.length - 2];
+						const index = events.findIndex((e) => e.id === id && (!orgId || e.org_id === orgId));
 						if (index >= 0) {
 							// Parse SET clause to update fields
 							const [title, description, location, starts_at, ends_at] = boundValues;
@@ -109,11 +111,12 @@ function createMockDb(): D1Database {
 						return { results: [] as T[], success: true, meta: { changes: 0 } };
 					}
 
-					// DELETE
+					// DELETE (id + orgId)
 					if (lowerQuery.includes('delete from events')) {
 						const events = storage.get('events') ?? [];
 						const id = boundValues[0];
-						const filtered = events.filter((e) => e.id !== id);
+						const orgId = boundValues[1];
+						const filtered = events.filter((e) => !(e.id === id && (!orgId || e.org_id === orgId)));
 						const changes = events.length - filtered.length;
 						storage.set('events', filtered);
 						return { results: [] as T[], success: true, meta: { changes } };
@@ -268,7 +271,7 @@ describe('Events Database', () => {
 				testMemberId
 			);
 
-			const event = await getEventById(db, created.id);
+			const event = await getEventById(db, created.id, TEST_ORG_ID);
 
 			expect(event).not.toBeNull();
 			expect(event?.title).toBe('Test Event');
@@ -278,7 +281,7 @@ describe('Events Database', () => {
 		});
 
 		it('returns null for non-existent event', async () => {
-			const event = await getEventById(db, 'non-existent-id');
+			const event = await getEventById(db, 'non-existent-id', TEST_ORG_ID);
 			expect(event).toBeNull();
 		});
 	});
@@ -302,11 +305,11 @@ describe('Events Database', () => {
 				title: 'Updated Title',
 				description: 'New description',
 				location: 'New location'
-			});
+			}, TEST_ORG_ID);
 
 			expect(updated).toBe(true);
 
-			const event = await getEventById(db, created.id);
+			const event = await getEventById(db, created.id, TEST_ORG_ID);
 			expect(event?.title).toBe('Updated Title');
 			expect(event?.description).toBe('New description');
 			expect(event?.location).toBe('New location');
@@ -328,10 +331,10 @@ describe('Events Database', () => {
 				testMemberId
 			);
 
-			const deleted = await deleteEvent(db, created.id);
+			const deleted = await deleteEvent(db, created.id, TEST_ORG_ID);
 			expect(deleted).toBe(true);
 
-			const event = await getEventById(db, created.id);
+			const event = await getEventById(db, created.id, TEST_ORG_ID);
 			expect(event).toBeNull();
 		});
 	});

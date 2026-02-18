@@ -124,7 +124,7 @@ describe('Editions database layer', () => {
 			mockDb._setFirstResult(editionRow);
 			mockDb._setAllResults([]);
 
-			const edition = await getEditionById(mockDb, 'ed-123');
+			const edition = await getEditionById(mockDb, 'ed-123', TEST_ORG_ID);
 
 			expect(edition).not.toBeNull();
 			expect(edition?.id).toBe('ed-123');
@@ -135,7 +135,7 @@ describe('Editions database layer', () => {
 
 		it('returns null when not found', async () => {
 			mockDb._setFirstResult(null);
-			const edition = await getEditionById(mockDb, 'nonexistent');
+			const edition = await getEditionById(mockDb, 'nonexistent', TEST_ORG_ID);
 			expect(edition).toBeNull();
 		});
 
@@ -143,7 +143,7 @@ describe('Editions database layer', () => {
 			mockDb._setFirstResult(makeEditionRow({ edition_type: 'part' }));
 			mockDb._setAllResults([{ section_id: 'sec-s1' }, { section_id: 'sec-s2' }]);
 
-			const edition = await getEditionById(mockDb, 'ed-123');
+			const edition = await getEditionById(mockDb, 'ed-123', TEST_ORG_ID);
 			expect(edition?.sectionIds).toEqual(['sec-s1', 'sec-s2']);
 		});
 	});
@@ -156,7 +156,7 @@ describe('Editions database layer', () => {
 			];
 			mockDb._setAllResults(editions);
 
-			const result = await getEditionsByWorkId(mockDb, 'work-123');
+			const result = await getEditionsByWorkId(mockDb, 'work-123', TEST_ORG_ID);
 
 			expect(result).toHaveLength(2);
 			expect(result[0].name).toBe('Full Score');
@@ -165,7 +165,7 @@ describe('Editions database layer', () => {
 
 		it('returns empty array when no editions', async () => {
 			mockDb._setAllResults([]);
-			const result = await getEditionsByWorkId(mockDb, 'work-no-editions');
+			const result = await getEditionsByWorkId(mockDb, 'work-no-editions', TEST_ORG_ID);
 			expect(result).toEqual([]);
 		});
 	});
@@ -212,7 +212,7 @@ describe('Editions database layer', () => {
 			mockDb._setFirstResult(makeEditionRow({ name: 'New Name', publisher: 'New Publisher' }));
 			mockDb._setAllResults([]);
 
-			const edition = await updateEdition(mockDb, 'ed-123', { name: 'New Name', publisher: 'New Publisher' });
+			const edition = await updateEdition(mockDb, 'ed-123', { name: 'New Name', publisher: 'New Publisher' }, TEST_ORG_ID);
 
 			expect(edition?.name).toBe('New Name');
 			expect(edition?.publisher).toBe('New Publisher');
@@ -220,7 +220,7 @@ describe('Editions database layer', () => {
 
 		it('returns null when edition not found', async () => {
 			mockDb._setChanges(0);
-			const edition = await updateEdition(mockDb, 'nonexistent', { name: 'Test' });
+			const edition = await updateEdition(mockDb, 'nonexistent', { name: 'Test' }, TEST_ORG_ID);
 			expect(edition).toBeNull();
 		});
 
@@ -228,7 +228,7 @@ describe('Editions database layer', () => {
 			mockDb._setFirstResult(makeEditionRow({ publisher: 'Old Publisher', voicing: 'SATB' }));
 			mockDb._setAllResults([]);
 
-			const edition = await updateEdition(mockDb, 'ed-123', { arranger: null, notes: null });
+			const edition = await updateEdition(mockDb, 'ed-123', { arranger: null, notes: null }, TEST_ORG_ID);
 
 			expect(edition?.arranger).toBeNull();
 			expect(edition?.notes).toBeNull();
@@ -237,9 +237,11 @@ describe('Editions database layer', () => {
 
 	describe('deleteEdition', () => {
 		it('deletes existing edition', async () => {
+			mockDb._setFirstResult(makeEditionRow());
+			mockDb._setAllResults([]);
 			mockDb._setChanges(1);
 
-			const result = await deleteEdition(mockDb, 'ed-123');
+			const result = await deleteEdition(mockDb, 'ed-123', TEST_ORG_ID);
 
 			expect(result).toBe(true);
 		});
@@ -247,7 +249,7 @@ describe('Editions database layer', () => {
 		it('returns false when edition not found', async () => {
 			mockDb._setChanges(0);
 
-			const result = await deleteEdition(mockDb, 'nonexistent');
+			const result = await deleteEdition(mockDb, 'nonexistent', TEST_ORG_ID);
 
 			expect(result).toBe(false);
 		});

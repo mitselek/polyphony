@@ -110,7 +110,6 @@ describe('POST /api/sections', () => {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					orgId: 'org_crede_001',
 					name: 'Tenor 1',
 					abbreviation: 'T1'
 				})
@@ -120,8 +119,9 @@ describe('POST /api/sections', () => {
 		const response = await POST(event);
 
 		expect(response.status).toBe(201);
+		// orgId comes from locals.org.id (server-side), not request body
 		expect(createSection).toHaveBeenCalledWith({}, {
-			orgId: 'org_crede_001',
+			orgId: createOrgId('test-org'),
 			name: 'Tenor 1',
 			abbreviation: 'T1',
 			parentSectionId: undefined,
@@ -136,7 +136,6 @@ describe('POST /api/sections', () => {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					orgId: 'org_crede_001',
 					name: 'Tenor 1',
 					abbreviation: 'T1',
 					parentSectionId: 'parent-section',
@@ -149,8 +148,9 @@ describe('POST /api/sections', () => {
 		const response = await POST(event);
 
 		expect(response.status).toBe(201);
+		// orgId comes from locals.org.id (server-side), not request body
 		expect(createSection).toHaveBeenCalledWith({}, {
-			orgId: 'org_crede_001',
+			orgId: createOrgId('test-org'),
 			name: 'Tenor 1',
 			abbreviation: 'T1',
 			parentSectionId: 'parent-section',
@@ -168,27 +168,11 @@ describe('POST /api/sections', () => {
 			request: new Request('http://localhost/api/sections', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', name: 'Test', abbreviation: 'T' })
+				body: JSON.stringify({ name: 'Test', abbreviation: 'T' })
 			})
 		});
 
 		await expect(POST(event)).rejects.toMatchObject({ status: 403 });
-	});
-
-	it('returns 400 if orgId is missing', async () => {
-		const event = createMockEvent({
-			request: new Request('http://localhost/api/sections', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: 'Tenor 1', abbreviation: 'T1' })
-			})
-		});
-
-		const response = await POST(event);
-
-		expect(response.status).toBe(400);
-		const data = await response.json() as { error: string };
-		expect(data.error).toContain('Organization ID');
 	});
 
 	it('returns 400 if name is missing', async () => {
@@ -196,7 +180,7 @@ describe('POST /api/sections', () => {
 			request: new Request('http://localhost/api/sections', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', abbreviation: 'T1' })
+				body: JSON.stringify({ abbreviation: 'T1' })
 			})
 		});
 
@@ -212,7 +196,7 @@ describe('POST /api/sections', () => {
 			request: new Request('http://localhost/api/sections', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', name: 'Tenor 1' })
+				body: JSON.stringify({ name: 'Tenor 1' })
 			})
 		});
 
@@ -230,7 +214,7 @@ describe('POST /api/sections', () => {
 			request: new Request('http://localhost/api/sections', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', name: 'Soprano 1', abbreviation: 'S1' })
+				body: JSON.stringify({ name: 'Soprano 1', abbreviation: 'S1' })
 			})
 		});
 
@@ -258,8 +242,8 @@ describe('PATCH /api/sections/[id]', () => {
 		const response = await PATCH(event as Parameters<typeof PATCH>[0]);
 
 		expect(response.status).toBe(200);
-		expect(toggleSectionActive).toHaveBeenCalledWith({}, 'section-1', false);
-		expect(getSectionById).toHaveBeenCalledWith({}, 'section-1');
+		expect(toggleSectionActive).toHaveBeenCalledWith({}, 'section-1', false, expect.anything());
+		expect(getSectionById).toHaveBeenCalledWith({}, 'section-1', expect.anything());
 	});
 
 	it('toggles section to active', async () => {
@@ -275,7 +259,7 @@ describe('PATCH /api/sections/[id]', () => {
 		const response = await PATCH(event as Parameters<typeof PATCH>[0]);
 
 		expect(response.status).toBe(200);
-		expect(toggleSectionActive).toHaveBeenCalledWith({}, 'section-1', true);
+		expect(toggleSectionActive).toHaveBeenCalledWith({}, 'section-1', true, expect.anything());
 	});
 
 	it('returns 400 if isActive is not a boolean', async () => {
@@ -342,7 +326,7 @@ describe('DELETE /api/sections/[id]', () => {
 		expect(response.status).toBe(200);
 		const data = await response.json() as { success: boolean };
 		expect(data.success).toBe(true);
-		expect(deleteSection).toHaveBeenCalledWith({}, 'section-1');
+		expect(deleteSection).toHaveBeenCalledWith({}, 'section-1', expect.anything());
 	});
 
 	it('returns 404 if section not found', async () => {
@@ -395,31 +379,15 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', sectionIds: ['section-2', 'section-1', 'section-3'] })
+				body: JSON.stringify({ sectionIds: ['section-2', 'section-1', 'section-3'] })
 			})
 		});
 
 		const response = await REORDER(event);
 
 		expect(response.status).toBe(200);
-		expect(reorderSections).toHaveBeenCalledWith({}, ['section-2', 'section-1', 'section-3']);
-		expect(getAllSectionsWithCounts).toHaveBeenCalledWith({}, 'test-org');
-	});
-
-	it('returns 400 if orgId is missing', async () => {
-		const event = createMockEvent({
-			request: new Request('http://localhost/api/sections/reorder', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sectionIds: ['section-1'] })
-			})
-		});
-
-		const response = await REORDER(event);
-
-		expect(response.status).toBe(400);
-		const data = await response.json() as { error: string };
-		expect(data.error).toContain('orgId');
+		expect(reorderSections).toHaveBeenCalledWith({}, ['section-2', 'section-1', 'section-3'], expect.anything());
+		expect(getAllSectionsWithCounts).toHaveBeenCalledWith({}, expect.anything());
 	});
 
 	it('returns 400 if sectionIds is missing', async () => {
@@ -427,7 +395,7 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001' })
+				body: JSON.stringify({})
 			})
 		});
 
@@ -441,7 +409,7 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', sectionIds: 'section-1' })
+				body: JSON.stringify({ sectionIds: 'section-1' })
 			})
 		});
 
@@ -455,7 +423,7 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', sectionIds: [] })
+				body: JSON.stringify({ sectionIds: [] })
 			})
 		});
 
@@ -469,7 +437,7 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', sectionIds: ['section-1', 123, 'section-2'] })
+				body: JSON.stringify({ sectionIds: ['section-1', 123, 'section-2'] })
 			})
 		});
 
@@ -487,7 +455,7 @@ describe('POST /api/sections/reorder', () => {
 			request: new Request('http://localhost/api/sections/reorder', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ orgId: 'org_crede_001', sectionIds: ['section-1'] })
+				body: JSON.stringify({ sectionIds: ['section-1'] })
 			})
 		});
 

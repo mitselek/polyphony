@@ -1,5 +1,6 @@
 // Physical copies database layer tests
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createOrgId } from '@polyphony/shared';
 import {
 	createPhysicalCopy,
 	batchCreatePhysicalCopies,
@@ -13,6 +14,8 @@ import {
 	getUnassignedCopies,
 	getCopiesByCondition
 } from './physical-copies';
+
+const TEST_ORG_ID = createOrgId('org_test_001');
 
 // Mock D1Database
 function createMockDb() {
@@ -102,7 +105,7 @@ describe('Physical copies database layer', () => {
 			const copies = await batchCreatePhysicalCopies(db, {
 				editionId: 'ed-1',
 				count: 3
-			});
+			}, TEST_ORG_ID);
 
 			expect(copies).toHaveLength(3);
 			expect(db.batch).toHaveBeenCalled();
@@ -119,7 +122,7 @@ describe('Physical copies database layer', () => {
 				editionId: 'ed-1',
 				count: 2,
 				prefix: 'M'
-			});
+			}, TEST_ORG_ID);
 
 			expect(copies).toHaveLength(2);
 		});
@@ -135,7 +138,7 @@ describe('Physical copies database layer', () => {
 				editionId: 'ed-1',
 				count: 2,
 				startNumber: 10
-			});
+			}, TEST_ORG_ID);
 
 			expect(db.batch).toHaveBeenCalled();
 		});
@@ -145,7 +148,7 @@ describe('Physical copies database layer', () => {
 				batchCreatePhysicalCopies(db, {
 					editionId: 'ed-1',
 					count: 0
-				})
+				}, TEST_ORG_ID)
 			).rejects.toThrow('Count must be positive');
 		});
 
@@ -154,7 +157,7 @@ describe('Physical copies database layer', () => {
 				batchCreatePhysicalCopies(db, {
 					editionId: 'ed-1',
 					count: -5
-				})
+				}, TEST_ORG_ID)
 			).rejects.toThrow('Count must be positive');
 		});
 
@@ -181,7 +184,7 @@ describe('Physical copies database layer', () => {
 			const copies = await batchCreatePhysicalCopies(db, {
 				editionId: 'ed-1',
 				count: 2
-			});
+			}, TEST_ORG_ID);
 
 			// Should return all copies including new ones starting from 4
 			expect(copies).toHaveLength(5);
@@ -202,7 +205,7 @@ describe('Physical copies database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(mockRow);
 
-			const copy = await getPhysicalCopyById(db, 'copy-123');
+			const copy = await getPhysicalCopyById(db, 'copy-123', TEST_ORG_ID);
 
 			expect(copy).not.toBeNull();
 			expect(copy?.id).toBe('copy-123');
@@ -212,7 +215,7 @@ describe('Physical copies database layer', () => {
 		it('returns null when not found', async () => {
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-			const copy = await getPhysicalCopyById(db, 'nonexistent');
+			const copy = await getPhysicalCopyById(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(copy).toBeNull();
 		});
@@ -222,7 +225,7 @@ describe('Physical copies database layer', () => {
 		it('returns empty array when no copies', async () => {
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
 
-			const copies = await getPhysicalCopiesByEdition(db, 'edition-1');
+			const copies = await getPhysicalCopiesByEdition(db, 'edition-1', TEST_ORG_ID);
 
 			expect(copies).toEqual([]);
 		});
@@ -234,7 +237,7 @@ describe('Physical copies database layer', () => {
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
 
-			const copies = await getPhysicalCopiesByEdition(db, 'ed-1');
+			const copies = await getPhysicalCopiesByEdition(db, 'ed-1', TEST_ORG_ID);
 
 			expect(copies).toHaveLength(2);
 			expect(copies[0].condition).toBe('good');
@@ -255,7 +258,7 @@ describe('Physical copies database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(mockRow);
 
-			const updated = await updatePhysicalCopy(db, 'copy-123', { condition: 'poor' });
+			const updated = await updatePhysicalCopy(db, 'copy-123', { condition: 'poor' }, TEST_ORG_ID);
 
 			expect(updated?.condition).toBe('poor');
 		});
@@ -272,7 +275,7 @@ describe('Physical copies database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(mockRow);
 
-			const updated = await updatePhysicalCopy(db, 'copy-123', { notes: 'New binding' });
+			const updated = await updatePhysicalCopy(db, 'copy-123', { notes: 'New binding' }, TEST_ORG_ID);
 
 			expect(updated?.notes).toBe('New binding');
 		});
@@ -289,7 +292,7 @@ describe('Physical copies database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(mockRow);
 
-			const updated = await updatePhysicalCopy(db, 'copy-123', { notes: null });
+			const updated = await updatePhysicalCopy(db, 'copy-123', { notes: null }, TEST_ORG_ID);
 
 			expect(updated?.notes).toBeNull();
 		});
@@ -306,7 +309,7 @@ describe('Physical copies database layer', () => {
 			};
 			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(mockRow);
 
-			const updated = await updatePhysicalCopy(db, 'copy-123', {});
+			const updated = await updatePhysicalCopy(db, 'copy-123', {}, TEST_ORG_ID);
 
 			expect(updated?.condition).toBe('good');
 		});
@@ -314,17 +317,28 @@ describe('Physical copies database layer', () => {
 
 	describe('deletePhysicalCopy', () => {
 		it('returns true when copy deleted', async () => {
+			// getPhysicalCopyById (org verification) must find the copy first
+			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue({
+				id: 'copy-123',
+				edition_id: 'edition-1',
+				copy_number: '01',
+				condition: 'good',
+				acquired_at: null,
+				notes: null,
+				created_at: '2026-01-29T12:00:00Z'
+			});
 			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { changes: 1 } });
 
-			const result = await deletePhysicalCopy(db, 'copy-123');
+			const result = await deletePhysicalCopy(db, 'copy-123', TEST_ORG_ID);
 
 			expect(result).toBe(true);
 		});
 
 		it('returns false when copy not found', async () => {
-			(db.prepare('').run as ReturnType<typeof vi.fn>).mockResolvedValue({ meta: { changes: 0 } });
+			// getPhysicalCopyById returns null — org verification fails
+			(db.prepare('').first as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-			const result = await deletePhysicalCopy(db, 'nonexistent');
+			const result = await deletePhysicalCopy(db, 'nonexistent', TEST_ORG_ID);
 
 			expect(result).toBe(false);
 		});
@@ -404,7 +418,7 @@ describe('Physical copies database layer', () => {
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
 
-			const summaries = await getEditionInventorySummaries(db);
+			const summaries = await getEditionInventorySummaries(db, TEST_ORG_ID);
 
 			expect(summaries).toHaveLength(2);
 			
@@ -425,7 +439,7 @@ describe('Physical copies database layer', () => {
 		it('returns empty array when no editions have copies', async () => {
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [] });
 
-			const summaries = await getEditionInventorySummaries(db);
+			const summaries = await getEditionInventorySummaries(db, TEST_ORG_ID);
 
 			expect(summaries).toEqual([]);
 		});
@@ -444,7 +458,7 @@ describe('Physical copies database layer', () => {
 			];
 			(db.prepare('').all as ReturnType<typeof vi.fn>).mockResolvedValue({ results: mockResults });
 
-			const summaries = await getEditionInventorySummaries(db);
+			const summaries = await getEditionInventorySummaries(db, TEST_ORG_ID);
 
 			expect(summaries[0].total).toBe(3);
 			expect(summaries[0].lost).toBe(3);

@@ -86,15 +86,16 @@ export async function createSeason(
 }
 
 /**
- * Get a season by ID
+ * Get a season by ID, scoped to organization
  */
 export async function getSeason(
 	db: D1Database,
-	id: string
+	id: string,
+	orgId: OrgId
 ): Promise<Season | null> {
 	const row = await db
-		.prepare('SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE id = ?')
-		.bind(id)
+		.prepare('SELECT id, org_id, name, start_date, created_at, updated_at FROM seasons WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.first<SeasonRow>();
 
 	return row ? rowToSeason(row) : null;
@@ -132,16 +133,17 @@ export async function getSeasonByDate(
 }
 
 /**
- * Get all events within a season's date range
+ * Get all events within a season's date range, scoped to organization
  * A season's range is from its start_date to the day before the next season's start_date
  * (or unbounded if it's the most recent season)
  */
 export async function getSeasonEvents(
 	db: D1Database,
-	seasonId: string
+	seasonId: string,
+	orgId: OrgId
 ): Promise<Event[]> {
 	// First get the season
-	const season = await getSeason(db, seasonId);
+	const season = await getSeason(db, seasonId, orgId);
 	if (!season) {
 		return [];
 	}
@@ -249,15 +251,16 @@ function buildSeasonUpdateSet(input: UpdateSeasonInput): { updates: string[]; va
 }
 
 /**
- * Update a season
+ * Update a season, scoped to organization
  * @throws Error if start_date already exists on another season
  */
 export async function updateSeason(
 	db: D1Database,
 	id: string,
-	input: UpdateSeasonInput
+	input: UpdateSeasonInput,
+	orgId: OrgId
 ): Promise<Season | null> {
-	const existing = await getSeason(db, id);
+	const existing = await getSeason(db, id, orgId);
 	if (!existing) return null;
 
 	const { updates, values } = buildSeasonUpdateSet(input);
@@ -278,20 +281,25 @@ export async function updateSeason(
 		throw error;
 	}
 
-	return getSeason(db, id);
+	return getSeason(db, id, orgId);
 }
 
 /**
- * Delete a season
+ * Delete a season, scoped to organization
  * @returns true if deleted, false if not found
  */
 export async function deleteSeason(
 	db: D1Database,
-	id: string
+	id: string,
+	orgId: OrgId
 ): Promise<boolean> {
+	// Verify the season belongs to this org
+	const existing = await getSeason(db, id, orgId);
+	if (!existing) return false;
+
 	const result = await db
-		.prepare('DELETE FROM seasons WHERE id = ?')
-		.bind(id)
+		.prepare('DELETE FROM seasons WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
