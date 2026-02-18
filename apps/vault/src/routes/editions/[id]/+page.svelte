@@ -432,7 +432,7 @@
 									</svg>
 								</div>
 								<div>
-									<p class="font-medium text-gray-900">External Link</p>
+									<p class="font-medium text-gray-900">{m.edition_external_link_label()}</p>
 									<p class="text-sm text-gray-500 truncate max-w-md">{data.edition.externalUrl}</p>
 								</div>
 							</div>
@@ -442,7 +442,7 @@
 								rel="noopener noreferrer"
 								class="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
 							>
-								Open Link
+								{m.edition_external_link_open()}
 							</a>
 						</div>
 					{/if}

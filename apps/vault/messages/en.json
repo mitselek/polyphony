@@ -140,6 +140,7 @@
   "edition_edit_link": "Edit Edition",
   "edition_empty": "No editions yet.",
   "edition_external_link_label": "External Link",
+  "edition_external_link_open": "Open Link",
   "edition_external_link_placeholder": "https://...",
   "edition_license_label": "License",
   "edition_license_licensed": "Licensed",
