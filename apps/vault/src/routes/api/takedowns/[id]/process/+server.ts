@@ -1,7 +1,7 @@
-// POST /api/takedowns/[id]/process - Admin-only process takedown request
+// POST /api/takedowns/[id]/process - Admin-only process takedown request (org-scoped)
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { processTakedown } from '$lib/server/db/takedowns';
+import { processTakedown, getTakedownById } from '$lib/server/db/takedowns';
 import { getMemberRole, isAdminRole } from '$lib/server/db/permissions';
 
 interface ProcessRequest {
@@ -9,9 +9,14 @@ interface ProcessRequest {
 	notes?: string;
 }
 
-export const POST: RequestHandler = async ({ request, params, platform, cookies }) => {
+export const POST: RequestHandler = async ({ request, params, platform, cookies, locals }) => {
+	const org = locals.org;
+	if (!org) {
+		return json({ error: 'Organization context required' }, { status: 500 });
+	}
+
 	const memberId = cookies.get('member_id');
-	
+
 	if (!memberId) {
 		return json({ error: 'Authentication required' }, { status: 401 });
 	}
@@ -27,6 +32,12 @@ export const POST: RequestHandler = async ({ request, params, platform, cookies 
 	}
 
 	try {
+		// Verify takedown exists and belongs to this org before processing
+		const takedown = await getTakedownById(db, params.id);
+		if (!takedown || takedown.org_id !== org.id) {
+			return json({ error: 'Takedown request not found' }, { status: 404 });
+		}
+
 		const body = await request.json() as ProcessRequest;
 
 		if (body.action !== 'approve' && body.action !== 'reject') {
@@ -36,6 +47,7 @@ export const POST: RequestHandler = async ({ request, params, platform, cookies 
 		const status = body.action === 'approve' ? 'approved' : 'rejected';
 		const result = await processTakedown(db, {
 			takedownId: params.id,
+			orgId: org.id,
 			status,
 			processedBy: memberId,
 			notes: body.notes || ''
@@ -45,9 +57,9 @@ export const POST: RequestHandler = async ({ request, params, platform, cookies 
 			return json({ error: result.error || 'Takedown request not found' }, { status: 404 });
 		}
 
-		return json({ 
-			success: true, 
-			message: `Takedown request ${body.action}d successfully` 
+		return json({
+			success: true,
+			message: `Takedown request ${body.action}d successfully`
 		});
 	} catch (error) {
 		console.error('Process takedown error:', error);
