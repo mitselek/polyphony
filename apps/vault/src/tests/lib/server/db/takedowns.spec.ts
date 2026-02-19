@@ -246,6 +246,7 @@ describe('Takedown System', () => {
 
 			const result = await processTakedown(mockDb as unknown as D1Database, {
 				takedownId: takedown.id,
+				orgId: TEST_ORG_ID,
 				status: 'approved',
 				processedBy: 'admin-456',
 				notes: 'Verified copyright ownership'
@@ -267,6 +268,7 @@ describe('Takedown System', () => {
 
 			const result = await processTakedown(mockDb as unknown as D1Database, {
 				takedownId: takedown.id,
+				orgId: TEST_ORG_ID,
 				status: 'rejected',
 				processedBy: 'admin-456',
 				notes: 'Could not verify ownership'
@@ -279,6 +281,7 @@ describe('Takedown System', () => {
 		it('returns error for invalid takedown id', async () => {
 			const result = await processTakedown(mockDb as unknown as D1Database, {
 				takedownId: 'nonexistent',
+				orgId: TEST_ORG_ID,
 				status: 'approved',
 				processedBy: 'admin-456',
 				notes: 'Test'

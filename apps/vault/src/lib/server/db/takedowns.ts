@@ -30,6 +30,7 @@ export interface CreateTakedownInput {
 
 export interface ProcessTakedownInput {
 	takedownId: string;
+	orgId: string;
 	status: 'approved' | 'rejected';
 	processedBy: string;
 	notes: string;
@@ -227,6 +228,12 @@ export async function processTakedown(
 	input: ProcessTakedownInput
 ): Promise<ProcessTakedownResult> {
 	const takedown = await getTakedownById(db, input.takedownId);
+
+	// Defense-in-depth: verify takedown belongs to the requesting org
+	if (takedown && takedown.org_id !== input.orgId) {
+		return { success: false, error: 'Not found' };
+	}
+
 	const validation = canProcessTakedown(takedown);
 
 	if (!validation.valid) {

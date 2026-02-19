@@ -6,7 +6,8 @@ import { POST as PROCESS } from '../../../routes/api/takedowns/[id]/process/+ser
 // Mock the takedowns module
 vi.mock('$lib/server/db/takedowns', () => ({
 	listTakedownRequests: vi.fn(),
-	processTakedown: vi.fn()
+	processTakedown: vi.fn(),
+	getTakedownById: vi.fn()
 }));
 
 // Mock the middleware
@@ -20,7 +21,7 @@ vi.mock('$lib/server/db/permissions', () => ({
 	isAdminRole: vi.fn((role: string) => role === 'admin')
 }));
 
-import { listTakedownRequests, processTakedown } from '$lib/server/db/takedowns';
+import { listTakedownRequests, processTakedown, getTakedownById } from '$lib/server/db/takedowns';
 import { getMemberRole } from '$lib/server/db/permissions';
 
 function createMockRequest(url: string = 'http://localhost/api/takedowns'): Request {
@@ -138,7 +139,8 @@ describe('POST /api/takedowns/[id]/process', () => {
 			request: createMockProcessRequest({ action: 'approve' }),
 			params: { id: 'takedown-123' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies(null)
+			cookies: createMockCookies(null),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(401);
@@ -151,7 +153,8 @@ describe('POST /api/takedowns/[id]/process', () => {
 			request: createMockProcessRequest({ action: 'approve' }),
 			params: { id: 'takedown-123' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('user-123')
+			cookies: createMockCookies('user-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(403);
@@ -159,13 +162,15 @@ describe('POST /api/takedowns/[id]/process', () => {
 
 	it('should approve takedown request', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
+		vi.mocked(getTakedownById).mockResolvedValue({ id: 'takedown-123', org_id: 'org_crede_001', edition_id: 'ed-1', claimant_name: 'A', claimant_email: 'a@b.c', reason: 'R', attestation: true, status: 'pending', created_at: '', processed_at: null, processed_by: null, resolution_notes: null });
 		vi.mocked(processTakedown).mockResolvedValue({ success: true });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'approve', notes: 'Verified copyright claim' }),
 			params: { id: 'takedown-123' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(200);
@@ -173,6 +178,7 @@ describe('POST /api/takedowns/[id]/process', () => {
 			expect.anything(),
 			{
 				takedownId: 'takedown-123',
+				orgId: 'org_crede_001',
 				status: 'approved',
 				processedBy: 'admin-123',
 				notes: 'Verified copyright claim'
@@ -182,13 +188,15 @@ describe('POST /api/takedowns/[id]/process', () => {
 
 	it('should reject takedown request', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
+		vi.mocked(getTakedownById).mockResolvedValue({ id: 'takedown-456', org_id: 'org_crede_001', edition_id: 'ed-1', claimant_name: 'A', claimant_email: 'a@b.c', reason: 'R', attestation: true, status: 'pending', created_at: '', processed_at: null, processed_by: null, resolution_notes: null });
 		vi.mocked(processTakedown).mockResolvedValue({ success: true });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'reject', notes: 'No valid claim' }),
 			params: { id: 'takedown-456' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(200);
@@ -196,6 +204,7 @@ describe('POST /api/takedowns/[id]/process', () => {
 			expect.anything(),
 			{
 				takedownId: 'takedown-456',
+				orgId: 'org_crede_001',
 				status: 'rejected',
 				processedBy: 'admin-123',
 				notes: 'No valid claim'
@@ -205,13 +214,14 @@ describe('POST /api/takedowns/[id]/process', () => {
 
 	it('should return 404 when takedown not found', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
-		vi.mocked(processTakedown).mockResolvedValue({ success: false, error: 'not_found' });
+		vi.mocked(getTakedownById).mockResolvedValue(null);
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'approve' }),
 			params: { id: 'nonexistent' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(404);
@@ -219,12 +229,14 @@ describe('POST /api/takedowns/[id]/process', () => {
 
 	it('should return 400 for invalid action', async () => {
 		vi.mocked(getMemberRole).mockResolvedValue('admin');
+		vi.mocked(getTakedownById).mockResolvedValue({ id: 'takedown-123', org_id: 'org_crede_001', edition_id: 'ed-1', claimant_name: 'A', claimant_email: 'a@b.c', reason: 'R', attestation: true, status: 'pending', created_at: '', processed_at: null, processed_by: null, resolution_notes: null });
 
 		const response = await PROCESS({
 			request: createMockProcessRequest({ action: 'invalid' }),
 			params: { id: 'takedown-123' },
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof PROCESS>[0]);
 
 		expect(response.status).toBe(400);
