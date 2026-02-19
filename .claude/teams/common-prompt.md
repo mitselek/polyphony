@@ -15,7 +15,7 @@ Polyphony — a choral music sharing platform. Two-tier architecture:
 
 - `CLAUDE.md` — project overview, architecture, commands, conventions
 - `docs/ARCHITECTURE.md` — technical architecture
-- `docs/DATABASE-SCHEMA.md` — D1 schema (26 tables, 42+ migrations)
+- `docs/schema/README.md` — D1 schema (26 tables, 43 migrations, split into modules under `docs/schema/`)
 - `docs/GLOSSARY.md` — canonical terminology
 - GitHub Issues — check open issues for task context
 

@@ -588,7 +588,7 @@ CREATE INDEX idx_invites_token ON invites(token);
 ## Related Documents
 
 - [ROADMAP.md](ROADMAP.md) - Development phases
-- [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) - Current V1 schema
+- [schema/README.md](schema/README.md) - Current schema (split into modules)
 - [UMBRELLA-ORGANIZATIONS.md](UMBRELLA-ORGANIZATIONS.md) - Business model
 
 ---

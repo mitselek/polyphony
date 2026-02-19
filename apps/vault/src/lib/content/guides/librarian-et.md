@@ -48,7 +48,8 @@ Polyphony eristab "Teost" (nt "Pärt - Ukuaru valss") ja selle konkreetset "Väl
    - **Part** — ühe häälerühma partii (nt ainult sopran)
    - **Reduction** — klaveriväljavõte
    - **Audio** — helifail
-   - **External URL** — link välisele allikale (nt IMSLP)
+   - **Video** — videosalvestis (nt YouTube'i link)
+   - **Supplementary** — lisamaterjal (tekst, tõlge, harjutusjuhend vms)
 4. Märgi **litsents**:
    - **Public Domain** — autoriõigus aegunud, vaba kasutus ⚠️ _Kontrolli alati ise, enne kui avaliku omandi staatusele lood!_
    - **Licensed** — kooril on litsents selle teose kasutamiseks
@@ -73,4 +74,4 @@ Polyphony eristab **Teose (Work)** ja **Väljaande (Edition)** kustutamist:
 
 ---
 
-_Juhend uuendatud: 18.02.2026_
+_Juhend uuendatud: 19.02.2026_

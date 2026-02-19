@@ -219,7 +219,7 @@ $effect(() => { localState = data.value; });
 Role types: `'owner' | 'admin' | 'librarian' | 'conductor' | 'section_leader'`
 License types: `'public_domain' | 'licensed' | 'owned'``
 
-Full schema details: `docs/DATABASE-SCHEMA.md`
+Full schema details: `docs/schema/README.md` (split into modules under `docs/schema/`)
 
 ## Key File Locations
 
@@ -272,7 +272,7 @@ Full schema details: `docs/DATABASE-SCHEMA.md`
 1. Create new migration `apps/<app>/migrations/XXXX_description.sql`
 2. Apply locally: `wrangler d1 migrations apply DB --local`
 3. Update TypeScript interfaces in `src/lib/server/db/*.ts`
-4. Update `docs/DATABASE-SCHEMA.md` if major change
+4. Update relevant file in `docs/schema/` if major change
 5. Test with existing data
 
 ## Important Context
@@ -356,7 +356,7 @@ Key documentation files in `docs/`:
 
 - `GLOSSARY.md` - Canonical terminology (use consistently!)
 - `ARCHITECTURE.md` - Technical architecture details
-- `DATABASE-SCHEMA.md` - Vault schema (ERD + tables)
+- `schema/README.md` - Vault schema (ERD + tables, split into modules)
 - `LEGAL-FRAMEWORK.md` - Private Circle defense, compliance
 - `CONCERNS.md` - Open questions and decisions
 - `PHASE0-COMPLETION-REPORT.md` - Phase 0 summary

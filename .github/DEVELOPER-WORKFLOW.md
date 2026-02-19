@@ -525,7 +525,7 @@ sqlite3 .wrangler/state/v3/d1/<database-uuid>/db.sqlite < prod-backup.sql
 
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Project overview and patterns
 - [docs/GLOSSARY.md](docs/GLOSSARY.md) - Terminology
-- [docs/DATABASE-SCHEMA.md](docs/DATABASE-SCHEMA.md) - Schema reference
+- [docs/schema/README.md](docs/schema/README.md) - Schema reference (split into modules)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture
 
 **Key patterns:**

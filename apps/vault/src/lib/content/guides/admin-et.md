@@ -99,7 +99,7 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 | **Rollide muutmine**                |   ✅   |  ✅¹  |        ❌         |    ❌    |        ❌        |       ❌        |
 | **Proovide lisamine kalendrisse**   |   ❌   |  ❌   |        ❌         |    ✅    |        ❌        |       ❌        |
 | **Kohaloleku märkimine**            |   ❌   |  ❌   |        ❌         |    ✅    |        ✅        |       ❌        |
-| **Seadete haldamine**               |   ✅   |  ❌   |        ❌         |    ❌    |        ❌        |       ❌        |
+| **Seadete haldamine**               |   ✅   |  ✅   |        ❌         |    ❌    |        ❌        |       ❌        |
 | Keskkonna kustutamine               |   ✅   |  ❌   |        ❌         |    ❌    |        ❌        |       ❌        |
 
 **Selgitus:**
@@ -109,7 +109,7 @@ Kiire ülevaade, millised tegevused on erinevatele rollidele lubatud:
 - ¹ Admin saab muuta kõiki rolle **v.a omaniku rolli** — seda saab muuta ainult omanik.
 - **Tavaline laulja** = Iga sisse logitud liige, kellel pole ühtegi lisarolli.
 - **Omanik** saab endale lisada rolle (Raamatukoguhoidja, Dirigent jne) kui vajab nende õigusi.
-- **Individuaalse vastutuse usaldamine (Trust Individual Responsibility):** Kui see seade on sisse lülitatud, saavad ka tavalised lauljad ise oma RSVP ja kohalolekut märkida. Vaikimisi on see lubada ainult administraatoritel ja dirigentidel.
+- **Individuaalse vastutuse usaldamine (Trust Individual Responsibility):** Kui see seade on sisse lülitatud, saavad ka tavalised lauljad ise oma RSVP ja kohalolekut märkida. Vaikimisi on see lubatud ainult omanikele, administraatoritele, dirigentidele ja häälerühma vanematele.
 
 ---
 
@@ -126,19 +126,19 @@ Liikme lisamine toimub kahes sammus:
 
 ### …lisada uut nooti?
 
-1. **Raamatukoguhoidja** (või omanik) avab **"Works"**.
+1. **Raamatukoguhoidja** avab **"Works"**.
 2. Valib **"Add Work"** (lisa teos).
 3. Laeb üles PDF-faili ja täidab vajalikud andmed (pealkiri, autor).
 
 ### …korraldada proovi?
 
-1. **Dirigent** (või omanik) avab **"Events"**.
+1. **Dirigent** avab **"Events"**.
 2. Loob uue sündmuse, märkides kuupäeva ja kellaaja.
 3. Pärast proovi avab sama sündmuse ja märgib, kes olid kohal.
 
 ### …hallata seadeid?
 
-Ainult **omanik** pääseb ligi seadete lehele (**"Settings"**). Sealt saab:
+**Omanik** või **administraator** pääseb ligi seadete lehele (**"Settings"**). Sealt saab:
 
 - Muuta vaikimisi sündmuse kestust
 - Määrata koori vaikimisi keele ja ajavööndi
@@ -189,4 +189,4 @@ Jah. Liikumisel "Members" lehel ja vajutades aktiivsele rollile (nt sinine "Admi
 
 ---
 
-_Juhend uuendatud: 18.02.2026_
+_Juhend uuendatud: 19.02.2026_

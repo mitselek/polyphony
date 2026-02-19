@@ -480,7 +480,7 @@ Upgrade from Free to Pro plan when approaching DNS record limits.
 - [STORAGE-ASSESSMENT.md](STORAGE-ASSESSMENT.md) - D1 vs R2 storage analysis
 - [UMBRELLA-ORGANIZATIONS.md](UMBRELLA-ORGANIZATIONS.md) - Business model specification
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
-- [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) - Current V1 vault schema
+- [schema/README.md](schema/README.md) - Current vault schema (split into modules)
 - [CONCERNS.md](CONCERNS.md) - Open questions and risks
 
 ---

@@ -259,7 +259,7 @@ pnpm test:e2e
 | --------------------------------------------- | ------------------------------ |
 | [GLOSSARY.md](docs/GLOSSARY.md)               | Terminology definitions        |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Technical architecture         |
-| [DATABASE-SCHEMA.md](docs/DATABASE-SCHEMA.md) | D1 schema reference (Schema V2)|
+| [schema/README.md](docs/schema/README.md) | D1 schema reference (Schema V2, split into modules)|
 | [LEGAL-FRAMEWORK.md](docs/LEGAL-FRAMEWORK.md) | Legal design and compliance    |
 | [CONCERNS.md](docs/CONCERNS.md)               | Open questions and decisions   |
 
