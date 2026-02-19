@@ -148,8 +148,6 @@
 				<a href="/directory" class="hover:text-indigo-600">Directory</a>
 				<span class="mx-2">·</span>
 				<a href="/dashboard" class="hover:text-indigo-600">Dashboard</a>
-				<span class="mx-2">·</span>
-				<a href="/dashboard" class="hover:text-indigo-600">Dashboard</a>
 			</p>
 		</div>
 	</footer>

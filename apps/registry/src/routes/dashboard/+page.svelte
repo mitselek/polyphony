@@ -7,7 +7,7 @@
 	const activityHistory = $derived(data.activityHistory ?? []);
 
 	// Parse events_today from JSON string
-	const events = $derived(() => {
+	const events = $derived.by(() => {
 		if (!snapshot?.events_today) return { rehearsal: 0, concert: 0, retreat: 0, festival: 0 };
 		try {
 			return typeof snapshot.events_today === 'string'
@@ -41,7 +41,7 @@
 	}
 
 	// Aggregate activity history by date for the chart
-	const dailyAuthCounts = $derived(() => {
+	const dailyAuthCounts = $derived.by(() => {
 		const byDate = new Map<string, number>();
 		for (const row of activityHistory) {
 			byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.count);
@@ -159,15 +159,15 @@
 				</section>
 
 				<!-- Today's Events -->
-				{#if events().rehearsal || events().concert || events().retreat || events().festival}
+				{#if events.rehearsal || events.concert || events.retreat || events.festival}
 					<section class="mb-8">
 						<h2 class="mb-4 text-lg font-semibold text-slate-700">Today's Events</h2>
 						<div class="grid gap-3 sm:grid-cols-4">
 							{#each [
-								{ label: 'Rehearsals', count: events().rehearsal, color: 'blue' },
-								{ label: 'Concerts', count: events().concert, color: 'purple' },
-								{ label: 'Retreats', count: events().retreat, color: 'emerald' },
-								{ label: 'Festivals', count: events().festival, color: 'amber' }
+								{ label: 'Rehearsals', count: events.rehearsal, color: 'blue' },
+								{ label: 'Concerts', count: events.concert, color: 'purple' },
+								{ label: 'Retreats', count: events.retreat, color: 'emerald' },
+								{ label: 'Festivals', count: events.festival, color: 'amber' }
 							] as item}
 								{#if item.count > 0}
 									<div class="rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100">
@@ -201,11 +201,11 @@
 					</div>
 
 					<!-- Auth activity sparkline -->
-					{#if dailyAuthCounts().length > 1}
+					{#if dailyAuthCounts.length > 1}
 						<div class="mt-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
 							<p class="mb-2 text-sm text-slate-500">Auth events (30 days)</p>
 							<svg class="h-16 w-full" viewBox="0 0 400 64" preserveAspectRatio="none">
-								<path d={sparklinePath(dailyAuthCounts(), 400, 64)} fill="none" stroke="#6366f1" stroke-width="2" />
+								<path d={sparklinePath(dailyAuthCounts, 400, 64)} fill="none" stroke="#6366f1" stroke-width="2" />
 							</svg>
 						</div>
 					{/if}
