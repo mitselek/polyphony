@@ -27,13 +27,13 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	}
 
 	// Validate source voice exists
-	const sourceVoice = await getVoiceById(db, sourceVoiceId);
+	const sourceVoice = await getVoiceById(db, sourceVoiceId, locals.org.id);
 	if (!sourceVoice) {
 		throw error(404, 'Source voice not found');
 	}
 
 	// Validate target voice exists
-	const targetVoice = await getVoiceById(db, body.targetVoiceId);
+	const targetVoice = await getVoiceById(db, body.targetVoiceId, locals.org.id);
 	if (!targetVoice) {
 		return json({ error: 'Target voice not found' }, { status: 400 });
 	}
@@ -44,7 +44,7 @@ export async function POST({ params, request, platform, cookies, locals }: Reque
 	}
 
 	// Perform reassignment
-	const movedCount = await reassignVoice(db, sourceVoiceId, body.targetVoiceId);
+	const movedCount = await reassignVoice(db, sourceVoiceId, body.targetVoiceId, locals.org.id);
 
 	return json({
 		success: true,

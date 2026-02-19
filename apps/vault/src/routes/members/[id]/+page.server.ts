@@ -39,7 +39,7 @@ async function loadAuthContext(db: D1Database, cookies: unknown, orgId: OrgId): 
 async function loadAdminData(db: D1Database, isAdmin: boolean, orgId: OrgId) {
 	if (!isAdmin) return { availableVoices: [], availableSections: [] };
 	const [availableVoices, availableSections] = await Promise.all([
-		getActiveVoices(db),
+		getActiveVoices(db, orgId),
 		getActiveSections(db, orgId)
 	]);
 	return { availableVoices, availableSections };

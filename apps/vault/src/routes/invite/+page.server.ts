@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ platform, cookies, url, locals }) =
 
 	// Load active voices and sections for the form
 	const [voices, sections] = await Promise.all([
-		getActiveVoices(db),
+		getActiveVoices(db, orgId),
 		getActiveSections(db, orgId)
 	]);
 

@@ -27,15 +27,15 @@ export async function PATCH({ params, request, platform, cookies, locals }: Requ
 		return json({ error: 'isActive must be a boolean' }, { status: 400 });
 	}
 
-	// Toggle the voice
-	const updated = await toggleVoiceActive(db, voiceId, body.isActive);
+	// Toggle the voice (org-scoped)
+	const updated = await toggleVoiceActive(db, voiceId, body.isActive, locals.org.id);
 
 	if (!updated) {
 		throw error(404, 'Voice not found');
 	}
 
 	// Return updated voice
-	const voice = await getVoiceById(db, voiceId);
+	const voice = await getVoiceById(db, voiceId, locals.org.id);
 	return json(voice);
 }
 
@@ -55,7 +55,7 @@ export async function DELETE({ params, platform, cookies, locals }: RequestEvent
 	}
 
 	try {
-		const deleted = await deleteVoice(db, voiceId);
+		const deleted = await deleteVoice(db, voiceId, locals.org.id);
 		if (!deleted) {
 			throw error(404, 'Voice not found');
 		}

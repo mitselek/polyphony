@@ -35,6 +35,7 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 
 	// Build input with defaults
 	const input: CreateVoiceInput = {
+		orgId: locals.org.id,
 		name: body.name.trim(),
 		abbreviation: body.abbreviation.trim(),
 		category: body.category,

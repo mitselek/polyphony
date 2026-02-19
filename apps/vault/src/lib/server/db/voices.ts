@@ -1,4 +1,4 @@
-// Voices database operations
+// Voices database operations (org-scoped, Schema V2)
 import type { Voice, CreateVoiceInput } from '$lib/types';
 
 interface VoiceRow {
@@ -46,53 +46,56 @@ function rowToVoiceWithCount(row: VoiceWithCountRow): VoiceWithCount {
 }
 
 /**
- * Get all active voices ordered by display_order
+ * Get all active voices ordered by display_order, scoped to org
  */
-export async function getActiveVoices(db: D1Database): Promise<Voice[]> {
+export async function getActiveVoices(db: D1Database, orgId: string): Promise<Voice[]> {
 	const { results } = await db
-		.prepare('SELECT * FROM voices WHERE is_active = 1 ORDER BY display_order ASC')
+		.prepare('SELECT * FROM voices WHERE org_id = ? AND is_active = 1 ORDER BY display_order ASC')
+		.bind(orgId)
 		.all<VoiceRow>();
 
 	return results.map(rowToVoice);
 }
 
 /**
- * Get all voices (including inactive) ordered by display_order
+ * Get all voices (including inactive) ordered by display_order, scoped to org
  */
-export async function getAllVoices(db: D1Database): Promise<Voice[]> {
+export async function getAllVoices(db: D1Database, orgId: string): Promise<Voice[]> {
 	const { results } = await db
-		.prepare('SELECT * FROM voices ORDER BY display_order ASC')
+		.prepare('SELECT * FROM voices WHERE org_id = ? ORDER BY display_order ASC')
+		.bind(orgId)
 		.all<VoiceRow>();
 
 	return results.map(rowToVoice);
 }
 
 /**
- * Get voice by id
+ * Get voice by id, scoped to org
  */
-export async function getVoiceById(db: D1Database, id: string): Promise<Voice | null> {
+export async function getVoiceById(db: D1Database, id: string, orgId: string): Promise<Voice | null> {
 	const row = await db
-		.prepare('SELECT * FROM voices WHERE id = ?')
-		.bind(id)
+		.prepare('SELECT * FROM voices WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.first<VoiceRow>();
 
 	return row ? rowToVoice(row) : null;
 }
 
 /**
- * Create a new voice
+ * Create a new voice, scoped to org
  */
 export async function createVoice(db: D1Database, input: CreateVoiceInput): Promise<Voice> {
-	// Generate id from name (lowercase, replace spaces with hyphens)
-	const id = input.name.toLowerCase().replace(/\s+/g, '-');
+	// Generate id from org + name (lowercase, replace spaces with hyphens)
+	const id = `${input.orgId}_${input.name.toLowerCase().replace(/\s+/g, '-')}`;
 	const isActive = input.isActive ?? true;
 
 	await db
 		.prepare(
-			'INSERT INTO voices (id, name, abbreviation, category, range_group, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)'
+			'INSERT INTO voices (id, org_id, name, abbreviation, category, range_group, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 		)
 		.bind(
 			id,
+			input.orgId,
 			input.name,
 			input.abbreviation,
 			input.category,
@@ -114,34 +117,37 @@ export async function createVoice(db: D1Database, input: CreateVoiceInput): Prom
 }
 
 /**
- * Toggle voice active status
- * @returns true if voice was updated, false if voice not found
+ * Toggle voice active status, scoped to org
+ * @returns true if voice was updated, false if voice not found in this org
  */
 export async function toggleVoiceActive(
 	db: D1Database,
 	id: string,
-	isActive: boolean
+	isActive: boolean,
+	orgId: string
 ): Promise<boolean> {
 	const result = await db
-		.prepare('UPDATE voices SET is_active = ? WHERE id = ?')
-		.bind(isActive ? 1 : 0, id)
+		.prepare('UPDATE voices SET is_active = ? WHERE id = ? AND org_id = ?')
+		.bind(isActive ? 1 : 0, id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
 }
 
 /**
- * Get all voices with assignment counts (member + invite assignments)
+ * Get all voices with assignment counts (member + invite assignments), scoped to org
  */
-export async function getAllVoicesWithCounts(db: D1Database): Promise<VoiceWithCount[]> {
+export async function getAllVoicesWithCounts(db: D1Database, orgId: string): Promise<VoiceWithCount[]> {
 	const { results } = await db
 		.prepare(`
-			SELECT v.*, 
+			SELECT v.*,
 				(SELECT COUNT(*) FROM member_voices mv WHERE mv.voice_id = v.id) +
 				(SELECT COUNT(*) FROM invite_voices iv WHERE iv.voice_id = v.id) AS assignment_count
 			FROM voices v
+			WHERE v.org_id = ?
 			ORDER BY v.display_order ASC
 		`)
+		.bind(orgId)
 		.all<VoiceWithCountRow>();
 
 	return results.map(rowToVoiceWithCount);
@@ -153,7 +159,7 @@ export async function getAllVoicesWithCounts(db: D1Database): Promise<VoiceWithC
 export async function getVoiceAssignmentCount(db: D1Database, id: string): Promise<number> {
 	const result = await db
 		.prepare(`
-			SELECT 
+			SELECT
 				(SELECT COUNT(*) FROM member_voices WHERE voice_id = ?) +
 				(SELECT COUNT(*) FROM invite_voices WHERE voice_id = ?) AS count
 		`)
@@ -164,7 +170,7 @@ export async function getVoiceAssignmentCount(db: D1Database, id: string): Promi
 }
 
 /**
- * Reassign all voice assignments from source to target
+ * Reassign all voice assignments from source to target, scoped to org
  * Skips duplicates (member/invite already has target voice)
  * Preserves is_primary flag
  * @returns number of assignments moved
@@ -172,14 +178,15 @@ export async function getVoiceAssignmentCount(db: D1Database, id: string): Promi
 export async function reassignVoice(
 	db: D1Database,
 	sourceId: string,
-	targetId: string
+	targetId: string,
+	orgId: string
 ): Promise<number> {
 	if (sourceId === targetId) {
 		throw new Error('Cannot reassign voice to itself');
 	}
 
-	// Check target exists
-	const target = await getVoiceById(db, targetId);
+	// Check target exists in this org
+	const target = await getVoiceById(db, targetId, orgId);
 	if (!target) {
 		throw new Error('Target voice not found');
 	}
@@ -189,7 +196,7 @@ export async function reassignVoice(
 	// Move member_voices (skip duplicates)
 	const memberResult = await db
 		.prepare(`
-			UPDATE member_voices 
+			UPDATE member_voices
 			SET voice_id = ?
 			WHERE voice_id = ?
 			AND member_id NOT IN (
@@ -209,7 +216,7 @@ export async function reassignVoice(
 	// Move invite_voices (skip duplicates)
 	const inviteResult = await db
 		.prepare(`
-			UPDATE invite_voices 
+			UPDATE invite_voices
 			SET voice_id = ?
 			WHERE voice_id = ?
 			AND invite_id NOT IN (
@@ -230,31 +237,31 @@ export async function reassignVoice(
 }
 
 /**
- * Delete a voice (only if no assignments exist)
- * @returns true if deleted, false if not found
+ * Delete a voice (only if no assignments exist), scoped to org
+ * @returns true if deleted, false if not found in this org
  * @throws Error if voice has assignments
  */
-export async function deleteVoice(db: D1Database, id: string): Promise<boolean> {
+export async function deleteVoice(db: D1Database, id: string, orgId: string): Promise<boolean> {
 	const count = await getVoiceAssignmentCount(db, id);
 	if (count > 0) {
 		throw new Error(`Cannot delete voice with ${count} assignments. Reassign first.`);
 	}
 
 	const result = await db
-		.prepare('DELETE FROM voices WHERE id = ?')
-		.bind(id)
+		.prepare('DELETE FROM voices WHERE id = ? AND org_id = ?')
+		.bind(id, orgId)
 		.run();
 
 	return (result.meta.changes ?? 0) > 0;
 }
 
 /**
- * Reorder voices by updating display_order
+ * Reorder voices by updating display_order, scoped to org
  * @param voiceIds Array of voice IDs in desired order
  */
-export async function reorderVoices(db: D1Database, voiceIds: string[]): Promise<void> {
+export async function reorderVoices(db: D1Database, voiceIds: string[], orgId: string): Promise<void> {
 	const statements = voiceIds.map((id, index) =>
-		db.prepare('UPDATE voices SET display_order = ? WHERE id = ?').bind(index + 1, id)
+		db.prepare('UPDATE voices SET display_order = ? WHERE id = ? AND org_id = ?').bind(index + 1, id, orgId)
 	);
 	await db.batch(statements);
 }
