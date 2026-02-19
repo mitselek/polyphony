@@ -5,7 +5,7 @@
 	import Toast from '$lib/components/Toast.svelte';
 	import OrgSwitcher from '$lib/components/OrgSwitcher.svelte';
 	import * as m from '$lib/paraglide/messages.js';
-	import { getVisibleNavItems, isNavItemActive } from '$lib/nav';
+	import { getVisibleNavItems, isNavItemActive, shouldShowRosterLink } from '$lib/nav';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 	
@@ -34,7 +34,12 @@
 		<nav class="container mx-auto flex items-center justify-between px-4 py-3">
 			<div class="flex items-center gap-2">
 				<a href="/" class="text-xl font-bold text-gray-900">{data.org?.name ?? 'Polyphony'}</a>
-				{#if data.user && data.memberOrgs?.length > 1}
+				{#if data.user && shouldShowRosterLink(data.memberOrgs)}
+					<a
+						href="/events/roster"
+						class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {isNavItemActive('/events/roster', currentPath) ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}"
+					>{m.nav_roster()}</a>
+				{:else if data.user && (data.memberOrgs?.length ?? 0) > 1}
 					<OrgSwitcher currentSubdomain={data.org?.subdomain ?? ''} orgs={data.memberOrgs} />
 				{/if}
 			</div>
