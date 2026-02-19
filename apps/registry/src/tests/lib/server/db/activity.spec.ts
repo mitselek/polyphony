@@ -1,4 +1,3 @@
-// @ts-nocheck — Module doesn't exist yet (red phase TDD)
 // Tests for Registry auth activity counters
 // Issue #277 — Track auth events with daily counters
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -174,13 +173,11 @@ describe('trackActivity', () => {
 		await trackActivity(db, 'sso_fast_path');
 
 		const today = new Date().toISOString().slice(0, 10);
-		// Verify the SQL was called with today's date
-		expect(db.prepare).toHaveBeenCalled();
-		const bindCall = (db.prepare as any).mock.results[0].value.bind;
-		// The second param to bind should be today's date
-		const callArgs = bindCall.mock.calls[0];
-		expect(callArgs[0]).toBe('sso_fast_path');
-		expect(callArgs[1]).toBe(today);
+		// Verify the entry was stored with today's date
+		const row = (db as any).store.get(`sso_fast_path:${today}`);
+		expect(row).toBeDefined();
+		expect(row.date).toBe(today);
+		expect(row.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 	});
 });
 
@@ -228,20 +225,20 @@ describe('trackActivity — fire-and-forget', () => {
 
 describe('trackActivity — daily aggregation', () => {
 	it('creates separate entries for different dates', async () => {
+		const today = new Date().toISOString().slice(0, 10);
+		// Use a date guaranteed to be different from today
+		const otherDate = today === '2026-02-19' ? '2026-02-18' : '2026-02-19';
 		const db = createMockDb([
-			{ metric: 'oauth_initiated', date: '2026-02-19', count: 10 }
+			{ metric: 'oauth_initiated', date: otherDate, count: 10 }
 		]);
 
-		// Track for today (2026-02-20 or whatever today is)
+		// Track for today
 		await trackActivity(db, 'oauth_initiated');
 
-		const today = new Date().toISOString().slice(0, 10);
-		// Yesterday's count should be untouched
-		expect((db as any).store.get('oauth_initiated:2026-02-19').count).toBe(10);
-		// Today should have count 1 (if today != 2026-02-19)
-		if (today !== '2026-02-19') {
-			expect((db as any).store.get(`oauth_initiated:${today}`).count).toBe(1);
-		}
+		// Other date's count should be untouched
+		expect((db as any).store.get(`oauth_initiated:${otherDate}`).count).toBe(10);
+		// Today should have count 1
+		expect((db as any).store.get(`oauth_initiated:${today}`).count).toBe(1);
 	});
 });
 
