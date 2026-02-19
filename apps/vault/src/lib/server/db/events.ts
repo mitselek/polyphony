@@ -43,6 +43,10 @@ export async function createEvents(
 	events: CreateEventInput[],
 	createdBy: string
 ): Promise<Event[]> {
+	if (!orgId) {
+		throw new Error('Organization ID is required');
+	}
+
 	const createdEvents: Event[] = [];
 
 	// Batch insert all events
