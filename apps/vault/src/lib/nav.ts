@@ -51,6 +51,16 @@ export function isNavItemActive(href: string, currentPath: string): boolean {
 }
 
 /**
+ * Returns true when the user belongs to exactly one organization.
+ * In that case, the nav shows a direct Roster link instead of the OrgSwitcher.
+ */
+export function shouldShowRosterLink(
+	memberOrgs: Array<{ id: string; name: string; subdomain: string }> | null | undefined
+): boolean {
+	return Array.isArray(memberOrgs) && memberOrgs.length === 1;
+}
+
+/**
  * Build a URL to switch to another organization.
  * Always lands on /events/roster (the home view for logged-in users).
  * Accepts optional protocol/host for testability; falls back to polyphony.uk.
