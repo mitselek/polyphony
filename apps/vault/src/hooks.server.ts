@@ -92,7 +92,8 @@ const orgHandle: Handle = async ({ event, resolve }) => {
 export function isPublicOrAuthRoute(pathname: string): boolean {
 	return (
 		pathname.startsWith('/api/public/') ||
-		pathname.startsWith('/api/auth/')
+		pathname.startsWith('/api/auth/') ||
+		pathname.startsWith('/api/internal/')
 	);
 }
 
