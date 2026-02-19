@@ -2,10 +2,15 @@
 // Guides are imported as raw markdown strings via Vite's ?raw suffix
 
 import singerEt from './singer-et.md?raw';
+import singerLv from './singer-lv.md?raw';
 import conductorEt from './conductor-et.md?raw';
+import conductorLv from './conductor-lv.md?raw';
 import librarianEt from './librarian-et.md?raw';
+import librarianLv from './librarian-lv.md?raw';
 import sectionLeaderEt from './section-leader-et.md?raw';
+import sectionLeaderLv from './section-leader-lv.md?raw';
 import adminEt from './admin-et.md?raw';
+import adminLv from './admin-lv.md?raw';
 
 export interface GuideInfo {
 	slug: string;
@@ -26,14 +31,17 @@ export const guides: GuideInfo[] = [
 		roles: [], // Everyone sees this
 		titles: {
 			et: 'Laulja teejuht',
-			en: 'Singer Guide'
+			en: 'Singer Guide',
+			lv: 'Dziedātāja rokasgrāmata'
 		},
 		descriptions: {
 			et: 'Juhend koorilauljale igapäevaseks kasutamiseks',
-			en: 'Daily usage guide for choir singers'
+			en: 'Daily usage guide for choir singers',
+			lv: 'Rokasgrāmata koristam ikdienas lietošanai'
 		},
 		content: {
-			et: singerEt
+			et: singerEt,
+			lv: singerLv
 		},
 		icon: '🎵',
 		order: 1
@@ -43,14 +51,17 @@ export const guides: GuideInfo[] = [
 		roles: ['conductor'],
 		titles: {
 			et: 'Dirigendi teejuht',
-			en: 'Conductor Guide'
+			en: 'Conductor Guide',
+			lv: 'Diriģenta rokasgrāmata'
 		},
 		descriptions: {
 			et: 'Juhend proovide ja kontsertide haldamiseks',
-			en: 'Guide for managing rehearsals and concerts'
+			en: 'Guide for managing rehearsals and concerts',
+			lv: 'Rokasgrāmata mēģinājumu un koncertu pārvaldīšanai'
 		},
 		content: {
-			et: conductorEt
+			et: conductorEt,
+			lv: conductorLv
 		},
 		icon: '🎼',
 		order: 2
@@ -60,14 +71,17 @@ export const guides: GuideInfo[] = [
 		roles: ['librarian'],
 		titles: {
 			et: 'Raamatukoguhoidja teejuht',
-			en: 'Librarian Guide'
+			en: 'Librarian Guide',
+			lv: 'Bibliotekāra rokasgrāmata'
 		},
 		descriptions: {
 			et: 'Juhend noodikogu haldamiseks ja korrashoiuks',
-			en: 'Guide for managing and maintaining the score library'
+			en: 'Guide for managing and maintaining the score library',
+			lv: 'Rokasgrāmata nošu krājuma pārvaldīšanai un uzturēšanai'
 		},
 		content: {
-			et: librarianEt
+			et: librarianEt,
+			lv: librarianLv
 		},
 		icon: '📚',
 		order: 3
@@ -77,14 +91,17 @@ export const guides: GuideInfo[] = [
 		roles: ['section_leader'],
 		titles: {
 			et: 'Häälerühma vanema teejuht',
-			en: 'Section Leader Guide'
+			en: 'Section Leader Guide',
+			lv: 'Balsu grupas vadītāja rokasgrāmata'
 		},
 		descriptions: {
 			et: 'Juhend rühmavanemale kohaloleku märkimiseks',
-			en: 'Guide for section leaders on attendance marking'
+			en: 'Guide for section leaders on attendance marking',
+			lv: 'Rokasgrāmata apmeklējuma atzīmēšanai'
 		},
 		content: {
-			et: sectionLeaderEt
+			et: sectionLeaderEt,
+			lv: sectionLeaderLv
 		},
 		icon: '👥',
 		order: 4
@@ -94,14 +111,17 @@ export const guides: GuideInfo[] = [
 		roles: ['admin', 'owner'],
 		titles: {
 			et: 'Administraatori teejuht',
-			en: 'Admin Guide'
+			en: 'Admin Guide',
+			lv: 'Administratora rokasgrāmata'
 		},
 		descriptions: {
 			et: 'Ülevaade rollidest ja õigustest — kes mida teha saab',
-			en: 'Overview of roles and permissions — who can do what'
+			en: 'Overview of roles and permissions — who can do what',
+			lv: 'Pārskats par lomām un tiesībām — kurš ko var darīt'
 		},
 		content: {
-			et: adminEt
+			et: adminEt,
+			lv: adminLv
 		},
 		icon: '⚙️',
 		order: 5
