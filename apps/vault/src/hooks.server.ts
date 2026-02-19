@@ -109,6 +109,51 @@ const orgContextGuard: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+// SSO auto-auth handle (#256) - auto-redirects to auth when SSO cookie is present
+// but no session exists on the current subdomain. Enables seamless org switching.
+export const ssoHandle: Handle = async ({ event, resolve }) => {
+	const path = event.url.pathname;
+
+	// Never intercept auth routes (would cause redirect loops)
+	if (path.startsWith('/api/auth/')) {
+		return resolve(event);
+	}
+
+	// Already authenticated on this subdomain — nothing to do
+	if (event.cookies.get('member_id')) {
+		return resolve(event);
+	}
+
+	// No SSO cookie — no cross-subdomain session to leverage
+	const ssoCookie = event.cookies.get('polyphony_sso');
+	if (!ssoCookie) {
+		return resolve(event);
+	}
+
+	// Loop guard: if SSO was already attempted, don't retry
+	if (event.url.searchParams.get('sso_attempted') === '1' || event.cookies.get('sso_attempted')) {
+		return resolve(event);
+	}
+
+	// Set loop guard cookie before redirecting — prevents infinite redirect
+	// if the user has SSO but is not a member of this org
+	event.cookies.set('sso_attempted', '1', {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: true,
+		maxAge: 60
+	});
+
+	// Auto-redirect through auth flow with return_to so user lands on intended page
+	const returnTo = event.url.pathname + event.url.search;
+	const loginUrl = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+	return new Response(null, {
+		status: 302,
+		headers: { location: loginUrl }
+	});
+};
+
 // Locale resolution handle - syncs DB language preference with Paraglide cookie
 // Runs after orgHandle (org is resolved) and before paraglideHandle
 const localeHandle: Handle = async ({ event, resolve }) => {
@@ -168,5 +213,5 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		});
 	});
 
-// Chain handles: org routing → org context guard → locale resolution → paraglide i18n
-export const handle: Handle = sequence(orgHandle, orgContextGuard, localeHandle, paraglideHandle);
+// Chain handles: org routing → org context guard → SSO auto-auth → locale resolution → paraglide i18n
+export const handle: Handle = sequence(orgHandle, orgContextGuard, ssoHandle, localeHandle, paraglideHandle);
