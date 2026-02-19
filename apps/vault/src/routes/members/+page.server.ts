@@ -31,7 +31,7 @@ function formatMembers(allMembers: Awaited<ReturnType<typeof getAllMembers>>) {
 function formatInvites(pendingInvites: Awaited<ReturnType<typeof getPendingInvites>>, baseUrl: string) {
 	return pendingInvites.map((inv) => ({
 		id: inv.id,
-		roster_member_id: inv.roster_member_id,
+		rosterId: inv.roster_member_id,
 		name: inv.roster_member_name,
 		roles: inv.roles,
 		voices: inv.voices,
@@ -43,14 +43,6 @@ function formatInvites(pendingInvites: Awaited<ReturnType<typeof getPendingInvit
 	}));
 }
 
-function createInviteLinkMap(pendingInvites: Awaited<ReturnType<typeof getPendingInvites>>, baseUrl: string) {
-	const pendingInviteLinks: Record<string, string> = {};
-	for (const inv of pendingInvites) {
-		pendingInviteLinks[inv.roster_member_id] = `${baseUrl}?token=${inv.token}`;
-	}
-	return pendingInviteLinks;
-}
-
 async function loadMemberPageData(db: D1Database, orgId: OrgId, url: URL) {
 	const allMembers = await getAllMembers(db, orgId);
 	const members = formatMembers(allMembers);
@@ -58,14 +50,13 @@ async function loadMemberPageData(db: D1Database, orgId: OrgId, url: URL) {
 	const pendingInvites = await getPendingInvites(db, orgId);
 	const baseUrl = `${url.origin}/invite/accept`;
 	const invites = formatInvites(pendingInvites, baseUrl);
-	const pendingInviteLinks = createInviteLinkMap(pendingInvites, baseUrl);
 
 	const [availableVoices, availableSections] = await Promise.all([
 		getActiveVoices(db),
 		getActiveSections(db, orgId)
 	]);
 
-	return { members, invites, pendingInviteLinks, availableVoices, availableSections };
+	return { members, invites, availableVoices, availableSections };
 }
 
 export const load: PageServerLoad = async ({ platform, cookies, url, locals }) => {

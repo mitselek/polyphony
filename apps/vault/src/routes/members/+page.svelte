@@ -9,12 +9,16 @@
 	import type { Role } from '$lib/types';
 	import { toast } from '$lib/stores/toast';
 	import * as m from '$lib/paraglide/messages.js';
+	import { buildPendingInviteLinks } from './members-invite-reactivity';
 
 	let { data }: { data: PageData } = $props();
 
 	// Make reactive copies of data for local updates
 	let members = $state(untrack(() => data.members as DisplayMember[]));
 	let invites = $state(untrack(() => data.invites as Invite[]));
+
+	// Derived from invites so it updates instantly on revoke/renew (issue #258)
+	let pendingInviteLinks = $derived(buildPendingInviteLinks(invites));
 	
 	// UI state
 	let searchQuery = $state('');
@@ -92,6 +96,7 @@
 			
 			const renewedInvite: Invite = {
 				id: rawInvite.id,
+				rosterId: rawInvite.roster_member_id,
 				name: rawInvite.roster_member_name,
 				expiresAt: rawInvite.expires_at,
 				invitedBy: original?.invitedBy ?? m.members_invited_by_unknown(),
@@ -363,7 +368,7 @@
 		isAdmin={data.isAdmin}
 		availableVoices={data.availableVoices}
 		availableSections={data.availableSections}
-		pendingInviteLinks={data.pendingInviteLinks}
+		pendingInviteLinks={pendingInviteLinks}
 		{searchQuery}
 		onToggleRole={toggleRole}
 		onAddVoice={addVoice}
