@@ -1,6 +1,6 @@
 import { redirect, error, type RequestEvent } from '@sveltejs/kit';
 
-export async function load({ url, platform }: RequestEvent) {
+export async function load({ url, platform, cookies }: RequestEvent) {
 	const db = platform?.env?.DB;
 	if (!db) {
 		throw error(500, 'Database not available');
@@ -27,7 +27,7 @@ export async function load({ url, platform }: RequestEvent) {
 		}>();
 
 	if (!invite) {
-		throw error(404, 'Invitation not found');
+		throw redirect(302, cookies.get('member_id') ? '/' : '/login');
 	}
 
 	const now = new Date();
@@ -43,7 +43,7 @@ export async function load({ url, platform }: RequestEvent) {
 		.first<{ email_id: string | null }>();
 
 	if (rosterMember?.email_id) {
-		throw error(400, 'This invitation has already been used');
+		throw redirect(302, cookies.get('member_id') ? '/' : '/login');
 	}
 
 	// Redirect to login page with invite token
