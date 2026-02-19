@@ -39,6 +39,8 @@ function createMockDb() {
 	return {} as D1Database;
 }
 
+const TEST_ORG = { id: 'org_crede_001', name: 'Crede', subdomain: 'crede' };
+
 function createMockCookies(memberId: string | null = 'admin-123') {
 	return {
 		get: vi.fn((name: string) => (name === 'member_id' ? memberId : null))
@@ -55,7 +57,8 @@ describe('GET /api/takedowns', () => {
 			request: createMockRequest(),
 			url: new URL('http://localhost/api/takedowns'),
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies(null)
+			cookies: createMockCookies(null),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(401);
@@ -68,7 +71,8 @@ describe('GET /api/takedowns', () => {
 			request: createMockRequest(),
 			url: new URL('http://localhost/api/takedowns'),
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('user-123')
+			cookies: createMockCookies('user-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(403);
@@ -79,7 +83,8 @@ describe('GET /api/takedowns', () => {
 		vi.mocked(listTakedownRequests).mockResolvedValue([
 			{
 				id: 'takedown-1',
-				score_id: 'score-1',
+				edition_id: 'edition-1',
+				org_id: 'org_crede_001',
 				claimant_name: 'Alice',
 				claimant_email: 'alice@example.com',
 				reason: 'Copyright violation',
@@ -96,7 +101,8 @@ describe('GET /api/takedowns', () => {
 			request: createMockRequest(),
 			url: new URL('http://localhost/api/takedowns'),
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(200);
@@ -113,11 +119,12 @@ describe('GET /api/takedowns', () => {
 			request: createMockRequest(),
 			url: new URL('http://localhost/api/takedowns?status=pending'),
 			platform: { env: { DB: createMockDb() } },
-			cookies: createMockCookies('admin-123')
+			cookies: createMockCookies('admin-123'),
+			locals: { org: TEST_ORG }
 		} as unknown as Parameters<typeof GET>[0]);
 
 		expect(response.status).toBe(200);
-		expect(listTakedownRequests).toHaveBeenCalledWith(expect.anything(), 'pending');
+		expect(listTakedownRequests).toHaveBeenCalledWith(expect.anything(), 'org_crede_001', 'pending');
 	});
 });
 

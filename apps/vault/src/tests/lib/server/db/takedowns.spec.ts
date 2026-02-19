@@ -1,4 +1,4 @@
-// TDD: Copyright takedown tests (RED phase)
+// TDD: Copyright takedown tests
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
 	createTakedownRequest,
@@ -12,12 +12,12 @@ import {
 // Mock D1 database
 function createMockDb() {
 	const takedowns: Map<string, Record<string, unknown>> = new Map();
-	const scores: Map<string, Record<string, unknown>> = new Map();
-	
-	// Add a test score
-	scores.set('score-123', {
-		id: 'score-123',
-		title: 'Test Score',
+	const editions: Map<string, Record<string, unknown>> = new Map();
+
+	// Add a test edition
+	editions.set('edition-123', {
+		id: 'edition-123',
+		name: 'Test Edition',
 		deleted_at: null
 	});
 
@@ -27,10 +27,11 @@ function createMockDb() {
 				run: async () => {
 					// Handle INSERT INTO takedowns
 					if (sql.includes('INSERT INTO takedowns')) {
-						const [id, score_id, claimant_name, claimant_email, reason, attestation] = params as string[];
+						const [id, edition_id, org_id, claimant_name, claimant_email, reason, attestation] = params as string[];
 						takedowns.set(id, {
 							id,
-							score_id,
+							edition_id,
+							org_id,
 							claimant_name,
 							claimant_email,
 							reason,
@@ -58,14 +59,14 @@ function createMockDb() {
 						}
 						return { meta: { changes: takedown ? 1 : 0 } };
 					}
-					// Handle UPDATE scores (soft delete)
-					if (sql.includes('UPDATE scores SET deleted_at')) {
-						const scoreId = params[1] as string;
-						const score = scores.get(scoreId);
-						if (score) {
-							score.deleted_at = params[0] as string;
+					// Handle UPDATE editions (soft delete)
+					if (sql.includes('UPDATE editions SET deleted_at')) {
+						const editionId = params[1] as string;
+						const edition = editions.get(editionId);
+						if (edition) {
+							edition.deleted_at = params[0] as string;
 						}
-						return { meta: { changes: score ? 1 : 0 } };
+						return { meta: { changes: edition ? 1 : 0 } };
 					}
 					return { meta: { changes: 1 } };
 				},
@@ -74,26 +75,32 @@ function createMockDb() {
 						const id = params[0] as string;
 						return (takedowns.get(id) as T) ?? null;
 					}
-					if (sql.includes('FROM scores WHERE id')) {
+					if (sql.includes('FROM editions WHERE id')) {
 						const id = params[0] as string;
-						return (scores.get(id) as T) ?? null;
+						return (editions.get(id) as T) ?? null;
 					}
 					return null;
 				},
 				all: async <T>(): Promise<{ results: T[] }> => {
 					if (sql.includes('FROM takedowns')) {
-						// Filter by status if bound
-						const status = params[0] as string | undefined;
-						if (status) {
-							const filtered = Array.from(takedowns.values()).filter(t => t.status === status);
-							return { results: filtered as T[] };
+						// listTakedownRequests now always binds orgId first
+						// With status: params = [orgId, status]
+						// Without status: params = [orgId]
+						const allTakedowns = Array.from(takedowns.values());
+						// Filter by org_id (first param is always orgId now)
+						const orgId = params[0] as string;
+						let filtered = allTakedowns.filter(t => t.org_id === orgId);
+						// If there's a status param (AND status = ?)
+						if (sql.includes('AND status = ?') && params.length > 1) {
+							const status = params[1] as string;
+							filtered = filtered.filter(t => t.status === status);
 						}
-						return { results: Array.from(takedowns.values()) as T[] };
+						return { results: filtered as T[] };
 					}
 					return { results: [] };
 				}
 			}),
-			// Direct .all() without bind (for queries without parameters)
+			// Direct .all() without bind (no longer used — listTakedownRequests always binds orgId)
 			all: async <T>(): Promise<{ results: T[] }> => {
 				if (sql.includes('FROM takedowns')) {
 					return { results: Array.from(takedowns.values()) as T[] };
@@ -102,9 +109,11 @@ function createMockDb() {
 			}
 		}),
 		_takedowns: takedowns,
-		_scores: scores
+		_editions: editions
 	};
 }
+
+const TEST_ORG_ID = 'org_crede_001';
 
 describe('Takedown System', () => {
 	let mockDb: ReturnType<typeof createMockDb>;
@@ -118,7 +127,8 @@ describe('Takedown System', () => {
 	describe('createTakedownRequest', () => {
 		it('creates takedown with valid data', async () => {
 			const takedown = await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'This is my copyrighted work',
@@ -126,7 +136,8 @@ describe('Takedown System', () => {
 			});
 
 			expect(takedown).toBeDefined();
-			expect(takedown.score_id).toBe('score-123');
+			expect(takedown.edition_id).toBe('edition-123');
+			expect(takedown.org_id).toBe(TEST_ORG_ID);
 			expect(takedown.claimant_name).toBe('John Doe');
 			expect(takedown.claimant_email).toBe('john@example.com');
 			expect(takedown.status).toBe('pending');
@@ -135,7 +146,8 @@ describe('Takedown System', () => {
 		it('requires attestation to be true', async () => {
 			await expect(
 				createTakedownRequest(mockDb as unknown as D1Database, {
-					score_id: 'score-123',
+					edition_id: 'edition-123',
+					org_id: TEST_ORG_ID,
 					claimant_name: 'John Doe',
 					claimant_email: 'john@example.com',
 					reason: 'This is my copyrighted work',
@@ -147,7 +159,8 @@ describe('Takedown System', () => {
 		it('validates email format', async () => {
 			await expect(
 				createTakedownRequest(mockDb as unknown as D1Database, {
-					score_id: 'score-123',
+					edition_id: 'edition-123',
+					org_id: TEST_ORG_ID,
 					claimant_name: 'John Doe',
 					claimant_email: 'not-an-email',
 					reason: 'This is my copyrighted work',
@@ -159,7 +172,8 @@ describe('Takedown System', () => {
 		it('requires all fields', async () => {
 			await expect(
 				createTakedownRequest(mockDb as unknown as D1Database, {
-					score_id: 'score-123',
+					edition_id: 'edition-123',
+					org_id: TEST_ORG_ID,
 					claimant_name: '',
 					claimant_email: 'john@example.com',
 					reason: 'Test',
@@ -172,7 +186,8 @@ describe('Takedown System', () => {
 	describe('getTakedownById', () => {
 		it('returns takedown when found', async () => {
 			const created = await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Copyright claim',
@@ -193,9 +208,10 @@ describe('Takedown System', () => {
 	});
 
 	describe('listTakedownRequests', () => {
-		it('returns all takedowns', async () => {
+		it('returns takedowns scoped to org', async () => {
 			await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Claim 1',
@@ -203,23 +219,25 @@ describe('Takedown System', () => {
 			});
 
 			await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'Jane Doe',
 				claimant_email: 'jane@example.com',
 				reason: 'Claim 2',
 				attestation: true
 			});
 
-			const list = await listTakedownRequests(mockDb as unknown as D1Database);
+			const list = await listTakedownRequests(mockDb as unknown as D1Database, TEST_ORG_ID);
 
 			expect(list).toHaveLength(2);
 		});
 	});
 
 	describe('processTakedown', () => {
-		it('approves takedown and soft-deletes score', async () => {
+		it('approves takedown and soft-deletes edition', async () => {
 			const takedown = await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Copyright claim',
@@ -234,12 +252,13 @@ describe('Takedown System', () => {
 			});
 
 			expect(result.success).toBe(true);
-			expect(mockDb._scores.get('score-123')?.deleted_at).toBeDefined();
+			expect(mockDb._editions.get('edition-123')?.deleted_at).toBeDefined();
 		});
 
-		it('rejects takedown without affecting score', async () => {
+		it('rejects takedown without affecting edition', async () => {
 			const takedown = await createTakedownRequest(mockDb as unknown as D1Database, {
-				score_id: 'score-123',
+				edition_id: 'edition-123',
+				org_id: TEST_ORG_ID,
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'False claim',
@@ -254,7 +273,7 @@ describe('Takedown System', () => {
 			});
 
 			expect(result.success).toBe(true);
-			expect(mockDb._scores.get('score-123')?.deleted_at).toBeNull();
+			expect(mockDb._editions.get('edition-123')?.deleted_at).toBeNull();
 		});
 
 		it('returns error for invalid takedown id', async () => {
