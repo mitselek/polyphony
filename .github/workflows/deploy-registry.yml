@@ -8,6 +8,7 @@ on:
       - 'apps/registry/**'
       - 'packages/shared/**'
       - '.github/workflows/deploy-registry.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
