@@ -108,7 +108,11 @@ async function handleLogin(
 		maxAge: 60 * 60 * 24 * 7 // 1 week
 	});
 
-	throw redirect(302, '/');
+	// Redirect to return_to if set by SSO auto-auth, otherwise /
+	const returnTo = cookies.get('auth_return_to');
+	cookies.delete('auth_return_to', { path: '/' });
+	const destination = returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/';
+	throw redirect(302, destination);
 }
 
 function validateTokenParam(url: URL): string {
