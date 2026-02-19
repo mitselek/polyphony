@@ -66,7 +66,7 @@ Rate limiting for email sending (5 per hour per address).
 
 All organizational data lives here. Single deployment hosts all organizations (data isolated by `org_id`).
 
-Current state after migrations 0001-0042 (Schema V2).
+Current state after migrations 0001-0043 (Schema V2).
 
 ### Organizations (Schema V2)
 
