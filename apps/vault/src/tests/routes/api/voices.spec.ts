@@ -121,6 +121,7 @@ describe('POST /api/voices', () => {
 
 		expect(response.status).toBe(201);
 		expect(createVoice).toHaveBeenCalledWith({}, {
+			orgId: 'test-org',
 			name: 'Tenor',
 			abbreviation: 'T',
 			category: 'vocal',
@@ -150,6 +151,7 @@ describe('POST /api/voices', () => {
 
 		expect(response.status).toBe(201);
 		expect(createVoice).toHaveBeenCalledWith({}, {
+			orgId: 'test-org',
 			name: 'Tenor',
 			abbreviation: 'T',
 			category: 'vocal',
@@ -272,8 +274,8 @@ describe('PATCH /api/voices/[id]', () => {
 		const response = await PATCH(event as Parameters<typeof PATCH>[0]);
 
 		expect(response.status).toBe(200);
-		expect(toggleVoiceActive).toHaveBeenCalledWith({}, 'voice-1', false);
-		expect(getVoiceById).toHaveBeenCalledWith({}, 'voice-1');
+		expect(toggleVoiceActive).toHaveBeenCalledWith({}, 'voice-1', false, 'test-org');
+		expect(getVoiceById).toHaveBeenCalledWith({}, 'voice-1', 'test-org');
 	});
 
 	it('toggles voice to active', async () => {
@@ -289,7 +291,7 @@ describe('PATCH /api/voices/[id]', () => {
 		const response = await PATCH(event as Parameters<typeof PATCH>[0]);
 
 		expect(response.status).toBe(200);
-		expect(toggleVoiceActive).toHaveBeenCalledWith({}, 'voice-1', true);
+		expect(toggleVoiceActive).toHaveBeenCalledWith({}, 'voice-1', true, 'test-org');
 	});
 
 	it('returns 400 if isActive is not a boolean', async () => {
@@ -356,7 +358,7 @@ describe('DELETE /api/voices/[id]', () => {
 		expect(response.status).toBe(200);
 		const data = await response.json() as { success: boolean };
 		expect(data.success).toBe(true);
-		expect(deleteVoice).toHaveBeenCalledWith({}, 'voice-1');
+		expect(deleteVoice).toHaveBeenCalledWith({}, 'voice-1', 'test-org');
 	});
 
 	it('returns 404 if voice not found', async () => {
@@ -416,8 +418,8 @@ describe('POST /api/voices/reorder', () => {
 		const response = await REORDER(event);
 
 		expect(response.status).toBe(200);
-		expect(reorderVoices).toHaveBeenCalledWith({}, ['voice-2', 'voice-1', 'voice-3']);
-		expect(getAllVoicesWithCounts).toHaveBeenCalled();
+		expect(reorderVoices).toHaveBeenCalledWith({}, ['voice-2', 'voice-1', 'voice-3'], 'test-org');
+		expect(getAllVoicesWithCounts).toHaveBeenCalledWith({}, 'test-org');
 	});
 
 	it('returns 400 if voiceIds is missing', async () => {

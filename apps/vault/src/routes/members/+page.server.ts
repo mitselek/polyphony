@@ -52,7 +52,7 @@ async function loadMemberPageData(db: D1Database, orgId: OrgId, url: URL) {
 	const invites = formatInvites(pendingInvites, baseUrl);
 
 	const [availableVoices, availableSections] = await Promise.all([
-		getActiveVoices(db),
+		getActiveVoices(db, orgId),
 		getActiveSections(db, orgId)
 	]);
 

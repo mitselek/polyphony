@@ -66,7 +66,7 @@ Rate limiting for email sending (5 per hour per address).
 
 All organizational data lives here. Single deployment hosts all organizations (data isolated by `org_id`).
 
-Current state after migrations 0001-0040 (Schema V2).
+Current state after migrations 0001-0042 (Schema V2).
 
 ### Organizations (Schema V2)
 
@@ -276,24 +276,33 @@ erDiagram
 
 #### voices
 
-Vocal capabilities that members can have (what they CAN sing). **Global across organizations.**
+Vocal capabilities that members can have (what they CAN sing). **Per-organization (Schema V2, migration 0043).**
 
-| Column        | Type    | Constraints         | Description                           |
-| ------------- | ------- | ------------------- | ------------------------------------- |
-| id            | TEXT    | PK                  | Voice ID (e.g., 'soprano', 'tenor')   |
-| name          | TEXT    | NOT NULL, UNIQUE    | Display name                          |
-| abbreviation  | TEXT    | NOT NULL            | Short code (e.g., 'S', 'T')           |
-| category      | TEXT    | CHECK               | `vocal` or `instrumental`             |
-| range_group   | TEXT    |                     | Grouping (soprano, alto, tenor, bass) |
-| display_order | INTEGER | NOT NULL            | Sort order for UI                     |
-| is_active     | INTEGER | NOT NULL, DEFAULT 1 | 0=hidden, 1=available                 |
+| Column        | Type    | Constraints                              | Description                                     |
+| ------------- | ------- | ---------------------------------------- | ----------------------------------------------- |
+| id            | TEXT    | PK                                       | Voice ID (e.g., 'org_crede_001_soprano')        |
+| org_id        | TEXT    | NOT NULL, FK → organizations(id) CASCADE | Owning organization                             |
+| name          | TEXT    | NOT NULL                                 | Display name                                    |
+| abbreviation  | TEXT    | NOT NULL                                 | Short code (e.g., 'S', 'T')                     |
+| category      | TEXT    | CHECK                                    | `vocal` or `instrumental`                       |
+| range_group   | TEXT    |                                          | Grouping (soprano, alto, tenor, bass)           |
+| display_order | INTEGER | NOT NULL                                 | Sort order for UI                               |
+| is_active     | INTEGER | NOT NULL, DEFAULT 1                      | 0=hidden, 1=available                           |
+
+**Constraints:** UNIQUE(org_id, name)
 
 **Indexes:**
 
+- `idx_voices_org` on org_id
 - `idx_voices_category` on category
 - `idx_voices_display_order` on display_order
 
-**Seeded Data:** Soprano, Alto, Tenor, Baritone, Bass (active); subdivisions like Soprano I, Soprano II (inactive by default)
+**Triggers:**
+
+- `enforce_single_primary_voice` — On INSERT to member_voices with is_primary=1, clears other primaries within the same org
+- `enforce_single_primary_voice_update` — Same enforcement on UPDATE
+
+**Seeded Data:** Each organization gets a copy of: Soprano, Alto, Tenor, Baritone, Bass (active); subdivisions like Soprano I, Soprano II (inactive by default)
 
 ---
 
@@ -428,9 +437,9 @@ Abstract musical compositions (independent of specific publications). **Schema V
 
 | Column     | Type | Constraints                    | Description                    |
 | ---------- | ---- | ------------------------------ | ------------------------------ |
-| id         | TEXT | PK                             | Work ID                        |
-| org_id     | TEXT | FK → organizations(id) CASCADE | Organization owner (Schema V2) |
-| title      | TEXT | NOT NULL                       | Composition title              |
+| id         | TEXT | PK                                       | Work ID                        |
+| org_id     | TEXT | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2, NOT NULL since 0042) |
+| title      | TEXT | NOT NULL                                 | Composition title              |
 | composer   | TEXT |                                | Composer name                  |
 | lyricist   | TEXT |                                | Lyricist/librettist            |
 | created_at | TEXT | DEFAULT now()                  | Creation timestamp             |
@@ -768,8 +777,8 @@ Pending member invitations (name-based, with optional pre-assigned voices/sectio
 
 | Column           | Type | Constraints                    | Description                             |
 | ---------------- | ---- | ------------------------------ | --------------------------------------- |
-| id               | TEXT | PK                             | Invite ID                               |
-| org_id           | TEXT | FK → organizations(id) CASCADE | Organization scope (Schema V2)          |
+| id               | TEXT | PK                                       | Invite ID                               |
+| org_id           | TEXT | NOT NULL, FK → organizations(id) CASCADE | Organization scope (Schema V2, NOT NULL since 0042) |
 | token            | TEXT | NOT NULL, UNIQUE               | Secret invite token                     |
 | name             | TEXT | NOT NULL                       | Invitee name (tracking only)            |
 | invited_by       | TEXT | NOT NULL, FK → members(id)     | Inviter                                 |
@@ -848,6 +857,7 @@ erDiagram
 
     takedowns {
         TEXT id PK
+        TEXT org_id FK
         TEXT edition_id FK
         TEXT claimant_email
         TEXT status
@@ -876,24 +886,27 @@ Authentication sessions.
 
 #### takedowns
 
-Copyright takedown requests (targets editions, not legacy scores).
+Copyright takedown requests (org-scoped, targets editions). **Schema V2: Per-organization.**
 
-| Column           | Type    | Constraints                        | Description                       |
-| ---------------- | ------- | ---------------------------------- | --------------------------------- |
-| id               | TEXT    | PK                                 | Takedown ID                       |
-| edition_id       | TEXT    | NOT NULL, FK → editions(id)        | Target edition                    |
-| claimant_name    | TEXT    | NOT NULL                           | Claimant's name                   |
-| claimant_email   | TEXT    | NOT NULL                           | Claimant's email                  |
-| reason           | TEXT    | NOT NULL                           | Takedown reason                   |
-| attestation      | INTEGER | NOT NULL, DEFAULT 0                | Legal attestation checkbox        |
-| status           | TEXT    | NOT NULL, DEFAULT 'pending', CHECK | `pending`, `approved`, `rejected` |
-| created_at       | TEXT    | NOT NULL, DEFAULT now()            | Submission timestamp              |
-| processed_at     | TEXT    |                                    | Processing timestamp              |
-| processed_by     | TEXT    | FK → members(id)                   | Admin who processed               |
-| resolution_notes | TEXT    |                                    | Notes about resolution            |
+| Column           | Type    | Constraints                              | Description                       |
+| ---------------- | ------- | ---------------------------------------- | --------------------------------- |
+| id               | TEXT    | PK                                       | Takedown ID                       |
+| org_id           | TEXT    | NOT NULL, FK → organizations(id) CASCADE | Organization scope (migration 0041) |
+| edition_id       | TEXT    | NOT NULL, FK → editions(id)              | Target edition                    |
+| claimant_name    | TEXT    | NOT NULL                                 | Claimant's name                   |
+| claimant_email   | TEXT    | NOT NULL                                 | Claimant's email                  |
+| reason           | TEXT    | NOT NULL                                 | Takedown reason                   |
+| attestation      | INTEGER | NOT NULL, DEFAULT 0                      | Legal attestation checkbox        |
+| status           | TEXT    | NOT NULL, DEFAULT 'pending', CHECK       | `pending`, `approved`, `rejected` |
+| created_at       | TEXT    | NOT NULL, DEFAULT now()                  | Submission timestamp              |
+| processed_at     | TEXT    |                                          | Processing timestamp              |
+| processed_by     | TEXT    | FK → members(id)                         | Admin who processed               |
+| resolution_notes | TEXT    |                                          | Notes about resolution            |
 
 **Indexes:**
 
+- `idx_takedowns_edition` on edition_id
+- `idx_takedowns_org` on org_id
 - `idx_takedowns_status` on status
 - `idx_takedowns_created` on created_at DESC
 
@@ -978,9 +991,9 @@ Rehearsals, concerts, and other choir events. **Schema V2: Per-organization.**
 
 | Column      | Type | Constraints                    | Description                                   |
 | ----------- | ---- | ------------------------------ | --------------------------------------------- |
-| id          | TEXT | PK                             | Event ID                                      |
-| org_id      | TEXT | FK → organizations(id) CASCADE | Organization owner (Schema V2)                |
-| title       | TEXT | NOT NULL                       | Event title                                   |
+| id          | TEXT | PK                                       | Event ID                                      |
+| org_id      | TEXT | NOT NULL, FK → organizations(id) CASCADE | Organization owner (Schema V2, NOT NULL since 0042) |
+| title       | TEXT | NOT NULL                                 | Event title                                   |
 | description | TEXT |                                | Event description                             |
 | location    | TEXT |                                | Event location                                |
 | starts_at   | TEXT | NOT NULL                       | Start datetime (ISO 8601)                     |
@@ -1181,6 +1194,9 @@ RSVP and attendance tracking for events.
 | **0038**  | **Trust individual responsibility** - Added trust_individual_responsibility column to organizations.                                                                                                                         |
 | **0039**  | **DATETIME to TEXT** - Rebuilt vault_settings, works, editions, physical_copies to normalize DATETIME columns to TEXT with `(datetime('now'))` default.                                                                      |
 | **0040**  | **Settings org scope** - Added org_id to vault_settings, changed PK to composite (org_id, key) for multi-org isolation. Migrated existing rows to oldest organization.                                                       |
+| **0041**  | **Scope takedowns** - D1-safe rebuild of takedowns table: renamed `score_id` → `edition_id` (FK → editions), added `org_id NOT NULL` (FK → organizations). Fixed orphaned FK to dropped `scores` table. Added indexes.      |
+| **0042**  | **org_id NOT NULL** - D1-safe rebuild of events, works, invites to enforce `org_id TEXT NOT NULL`. Saves/restores 13 child/grandchild tables via `_tmp_*` pattern. All rows already had org_id set; this enforces at schema level. |
+| **0043**  | **Voices org_id** (Schema V2) - D1-safe rebuild of voices table with `org_id NOT NULL` and `UNIQUE(org_id, name)`. Seeds per-org copies via CROSS JOIN. Restores member_voices/invite_voices with org-scoped voice IDs. Org-scoped primary voice triggers. |
 
 ---
 

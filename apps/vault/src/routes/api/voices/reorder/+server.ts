@@ -26,9 +26,9 @@ export async function POST({ request, platform, cookies, locals }: RequestEvent)
 		return json({ error: 'voiceIds must contain only strings' }, { status: 400 });
 	}
 
-	await reorderVoices(db, body.voiceIds);
+	await reorderVoices(db, body.voiceIds, locals.org.id);
 
 	// Return updated voices list
-	const voices = await getAllVoicesWithCounts(db);
+	const voices = await getAllVoicesWithCounts(db, locals.org.id);
 	return json(voices);
 }

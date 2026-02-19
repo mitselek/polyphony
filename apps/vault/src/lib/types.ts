@@ -253,6 +253,7 @@ export interface InviteSection {
  * Input for creating a new voice
  */
 export interface CreateVoiceInput {
+	orgId: string; // Schema V2: required
 	name: string;
 	abbreviation: string;
 	category: 'vocal' | 'instrumental';

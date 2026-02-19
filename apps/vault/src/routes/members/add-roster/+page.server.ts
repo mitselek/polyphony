@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ platform, cookies, locals }) => {
 	const orgId = locals.org.id;
 
 	// Load available voices and sections for multi-select
-	const availableVoices = await getActiveVoices(db);
+	const availableVoices = await getActiveVoices(db, orgId);
 	const availableSections = await getActiveSections(db, orgId);
 
 	return {
