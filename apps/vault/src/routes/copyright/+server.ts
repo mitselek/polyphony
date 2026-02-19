@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 import { createTakedownRequest } from '$lib/server/db/takedowns';
 
 interface TakedownRequestBody {
-	score_id: string;
+	edition_id: string;
 	claimant_name: string;
 	claimant_email: string;
 	reason: string;
@@ -22,8 +22,8 @@ function validateRequest(body: unknown): { valid: true; data: TakedownRequestBod
 
 	const data = body as Record<string, unknown>;
 
-	if (!data.score_id || typeof data.score_id !== 'string') {
-		return { valid: false, error: 'score_id is required' };
+	if (!data.edition_id || typeof data.edition_id !== 'string') {
+		return { valid: false, error: 'edition_id is required' };
 	}
 
 	if (!data.claimant_name || typeof data.claimant_name !== 'string') {
@@ -49,7 +49,7 @@ function validateRequest(body: unknown): { valid: true; data: TakedownRequestBod
 	return {
 		valid: true,
 		data: {
-			score_id: data.score_id,
+			edition_id: data.edition_id,
 			claimant_name: data.claimant_name,
 			claimant_email: data.claimant_email,
 			reason: data.reason,
@@ -58,8 +58,13 @@ function validateRequest(body: unknown): { valid: true; data: TakedownRequestBod
 	};
 }
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	try {
+		const org = locals.org;
+		if (!org) {
+			return json({ error: 'Organization context required' }, { status: 500 });
+		}
+
 		const body = await request.json();
 		const validation = validateRequest(body);
 
@@ -72,10 +77,13 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			return json({ error: 'Database unavailable' }, { status: 500 });
 		}
 
-		const takedown = await createTakedownRequest(db, validation.data);
+		const takedown = await createTakedownRequest(db, {
+			...validation.data,
+			org_id: org.id
+		});
 
 		if (!takedown) {
-			return json({ error: 'Score not found or already deleted' }, { status: 404 });
+			return json({ error: 'Edition not found or already deleted' }, { status: 404 });
 		}
 
 		return json(

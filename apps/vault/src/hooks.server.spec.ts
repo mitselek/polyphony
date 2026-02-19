@@ -72,22 +72,12 @@ describe('isPublicOrAuthRoute', () => {
 		});
 	});
 
-	describe('takedowns routes (temporarily exempt)', () => {
-		it('returns true for /api/takedowns', () => {
-			expect(isPublicOrAuthRoute('/api/takedowns')).toBe(true);
-		});
-
-		it('returns true for /api/takedowns/ subpaths', () => {
-			expect(isPublicOrAuthRoute('/api/takedowns/abc123')).toBe(true);
-		});
-
-		it('returns false for routes that merely start with /api/takedowns', () => {
-			expect(isPublicOrAuthRoute('/api/takedownsbulk')).toBe(false);
-			expect(isPublicOrAuthRoute('/api/takedowns-archive')).toBe(false);
-		});
-	});
-
 	describe('protected API routes (org context required)', () => {
+		it('returns false for /api/takedowns (org-scoped, #250)', () => {
+			expect(isPublicOrAuthRoute('/api/takedowns')).toBe(false);
+			expect(isPublicOrAuthRoute('/api/takedowns/abc123')).toBe(false);
+		});
+
 		it('returns false for /api/members/', () => {
 			expect(isPublicOrAuthRoute('/api/members/abc123')).toBe(false);
 		});

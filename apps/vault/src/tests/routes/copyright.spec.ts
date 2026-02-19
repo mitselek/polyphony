@@ -15,6 +15,8 @@ interface TakedownResponse {
 	error?: string;
 }
 
+const TEST_ORG = { id: 'org_crede_001', name: 'Crede', subdomain: 'crede' };
+
 function createMockRequest(body: unknown): Request {
 	return new Request('http://localhost/copyright', {
 		method: 'POST',
@@ -34,7 +36,7 @@ describe('POST /copyright', () => {
 
 	it('should return 201 with takedown ID on valid request', async () => {
 		const mockRequest = {
-			score_id: 'score-123',
+			edition_id: 'edition-123',
 			claimant_name: 'John Doe',
 			claimant_email: 'john@example.com',
 			reason: 'This is my copyrighted work',
@@ -43,7 +45,8 @@ describe('POST /copyright', () => {
 
 		vi.mocked(createTakedownRequest).mockResolvedValue({
 			id: 'takedown-abc',
-			score_id: 'score-123',
+			edition_id: 'edition-123',
+			org_id: 'org_crede_001',
 			claimant_name: 'John Doe',
 			claimant_email: 'john@example.com',
 			reason: 'This is my copyrighted work',
@@ -57,7 +60,8 @@ describe('POST /copyright', () => {
 
 		const response = await POST({
 			request: createMockRequest(mockRequest),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(201);
@@ -66,7 +70,7 @@ describe('POST /copyright', () => {
 		expect(data.message).toContain('received');
 	});
 
-	it('should return 400 when score_id is missing', async () => {
+	it('should return 400 when edition_id is missing', async () => {
 		const response = await POST({
 			request: createMockRequest({
 				claimant_name: 'John Doe',
@@ -74,24 +78,26 @@ describe('POST /copyright', () => {
 				reason: 'Copyright claim',
 				attestation: true
 			}),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
 		const data = (await response.json()) as TakedownResponse;
-		expect(data.error).toContain('score_id');
+		expect(data.error).toContain('edition_id');
 	});
 
 	it('should return 400 when attestation is false', async () => {
 		const response = await POST({
 			request: createMockRequest({
-				score_id: 'score-123',
+				edition_id: 'edition-123',
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Copyright claim',
 				attestation: false
 			}),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
@@ -102,13 +108,14 @@ describe('POST /copyright', () => {
 	it('should return 400 when email is invalid', async () => {
 		const response = await POST({
 			request: createMockRequest({
-				score_id: 'score-123',
+				edition_id: 'edition-123',
 				claimant_name: 'John Doe',
 				claimant_email: 'not-an-email',
 				reason: 'Copyright claim',
 				attestation: true
 			}),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(400);
@@ -116,18 +123,19 @@ describe('POST /copyright', () => {
 		expect(data.error).toContain('email');
 	});
 
-	it('should return 500 when score creation fails', async () => {
-		vi.mocked(createTakedownRequest).mockRejectedValue(new Error('Score not found'));
+	it('should return 500 when takedown creation fails', async () => {
+		vi.mocked(createTakedownRequest).mockRejectedValue(new Error('Edition not found'));
 
 		const response = await POST({
 			request: createMockRequest({
-				score_id: 'nonexistent-score',
+				edition_id: 'nonexistent-edition',
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Copyright claim',
 				attestation: true
 			}),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(500);
@@ -138,15 +146,34 @@ describe('POST /copyright', () => {
 
 		const response = await POST({
 			request: createMockRequest({
-				score_id: 'score-123',
+				edition_id: 'edition-123',
 				claimant_name: 'John Doe',
 				claimant_email: 'john@example.com',
 				reason: 'Copyright claim',
 				attestation: true
 			}),
-			platform: { env: { DB: createMockDb() } }
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: TEST_ORG }
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(500);
+	});
+
+	it('should return 500 when org context is missing', async () => {
+		const response = await POST({
+			request: createMockRequest({
+				edition_id: 'edition-123',
+				claimant_name: 'John Doe',
+				claimant_email: 'john@example.com',
+				reason: 'Copyright claim',
+				attestation: true
+			}),
+			platform: { env: { DB: createMockDb() } },
+			locals: { org: null }
+		} as unknown as Parameters<typeof POST>[0]);
+
+		expect(response.status).toBe(500);
+		const data = (await response.json()) as TakedownResponse;
+		expect(data.error).toContain('Organization');
 	});
 });

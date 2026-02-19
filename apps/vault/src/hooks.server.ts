@@ -92,8 +92,7 @@ const orgHandle: Handle = async ({ event, resolve }) => {
 export function isPublicOrAuthRoute(pathname: string): boolean {
 	return (
 		pathname.startsWith('/api/public/') ||
-		pathname.startsWith('/api/auth/') ||
-		pathname.startsWith('/api/takedowns/') || pathname === '/api/takedowns' // TODO: takedowns need org scoping (#250)
+		pathname.startsWith('/api/auth/')
 	);
 }
 

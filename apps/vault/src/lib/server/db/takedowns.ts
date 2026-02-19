@@ -6,7 +6,8 @@ export type TakedownStatus = 'pending' | 'approved' | 'rejected';
 
 export interface TakedownRequest {
 	id: string;
-	score_id: string;
+	edition_id: string;
+	org_id: string;
 	claimant_name: string;
 	claimant_email: string;
 	reason: string;
@@ -19,7 +20,8 @@ export interface TakedownRequest {
 }
 
 export interface CreateTakedownInput {
-	score_id: string;
+	edition_id: string;
+	org_id: string;
 	claimant_name: string;
 	claimant_email: string;
 	reason: string;
@@ -59,8 +61,12 @@ function validateCreateInput(input: CreateTakedownInput): void {
 		throw new Error('Invalid email format');
 	}
 
-	if (!input.score_id?.trim()) {
-		throw new Error('Score ID is required');
+	if (!input.edition_id?.trim()) {
+		throw new Error('Edition ID is required');
+	}
+
+	if (!input.org_id?.trim()) {
+		throw new Error('Organization ID is required');
 	}
 
 	if (!input.reason?.trim()) {
@@ -78,7 +84,8 @@ function validateCreateInput(input: CreateTakedownInput): void {
 function prepareTakedownData(input: CreateTakedownInput, id: string, now: string) {
 	return {
 		id,
-		score_id: input.score_id.trim(),
+		edition_id: input.edition_id.trim(),
+		org_id: input.org_id.trim(),
 		claimant_name: input.claimant_name.trim(),
 		claimant_email: input.claimant_email.trim(),
 		reason: input.reason.trim(),
@@ -104,10 +111,10 @@ export async function createTakedownRequest(
 
 	await db
 		.prepare(
-			`INSERT INTO takedowns (id, score_id, claimant_name, claimant_email, reason, attestation, status, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO takedowns (id, edition_id, org_id, claimant_name, claimant_email, reason, attestation, status, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		)
-		.bind(data.id, data.score_id, data.claimant_name, data.claimant_email, data.reason, data.attestation, data.status, data.created_at)
+		.bind(data.id, data.edition_id, data.org_id, data.claimant_name, data.claimant_email, data.reason, data.attestation, data.status, data.created_at)
 		.run();
 
 	const takedown = await getTakedownById(db, id);
@@ -126,7 +133,7 @@ export async function getTakedownById(
 ): Promise<TakedownRequest | null> {
 	const result = await db
 		.prepare(
-			`SELECT id, score_id, claimant_name, claimant_email, reason, attestation, 
+			`SELECT id, edition_id, org_id, claimant_name, claimant_email, reason, attestation,
 			        status, created_at, processed_at, processed_by, resolution_notes
 			 FROM takedowns WHERE id = ?`
 		)
@@ -142,26 +149,28 @@ export async function getTakedownById(
 }
 
 /**
- * List all takedown requests
+ * List takedown requests scoped to an organization
  */
 export async function listTakedownRequests(
 	db: D1Database,
+	orgId: string,
 	status?: TakedownStatus
 ): Promise<TakedownRequest[]> {
-	let query = `SELECT id, score_id, claimant_name, claimant_email, reason, attestation, 
+	let query = `SELECT id, edition_id, org_id, claimant_name, claimant_email, reason, attestation,
 	                    status, created_at, processed_at, processed_by, resolution_notes
-	             FROM takedowns`;
-	
+	             FROM takedowns
+	             WHERE org_id = ?`;
+
 	if (status) {
-		query += ` WHERE status = ?`;
+		query += ` AND status = ?`;
 	}
-	
+
 	query += ` ORDER BY created_at DESC`;
 
 	const stmt = db.prepare(query);
-	const result = status 
-		? await stmt.bind(status).all<TakedownRequest>()
-		: await stmt.all<TakedownRequest>();
+	const result = status
+		? await stmt.bind(orgId, status).all<TakedownRequest>()
+		: await stmt.bind(orgId).all<TakedownRequest>();
 
 	return result.results.map(r => ({
 		...r,
@@ -203,11 +212,11 @@ async function updateTakedownStatus(
 }
 
 /**
- * Soft-delete score if takedown approved
+ * Soft-delete edition if takedown approved
  */
-async function softDeleteApprovedScore(db: D1Database, scoreId: string): Promise<void> {
+async function softDeleteApprovedEdition(db: D1Database, editionId: string): Promise<void> {
 	const now = new Date().toISOString();
-	await db.prepare(`UPDATE scores SET deleted_at = ? WHERE id = ?`).bind(now, scoreId).run();
+	await db.prepare(`UPDATE editions SET deleted_at = ? WHERE id = ?`).bind(now, editionId).run();
 }
 
 /**
@@ -227,7 +236,7 @@ export async function processTakedown(
 	await updateTakedownStatus(db, input.takedownId, input.status, input.processedBy, input.notes);
 
 	if (input.status === 'approved') {
-		await softDeleteApprovedScore(db, takedown!.score_id);
+		await softDeleteApprovedEdition(db, takedown!.edition_id);
 	}
 
 	return { success: true };
