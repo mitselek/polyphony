@@ -99,7 +99,8 @@ On väga oluline, et dirigent teaks, kui palju lauljaid proovi tuleb.
 
 ### Omanik (Owner)
 
-- Täielik juurdepääs kõikidele funktsioonidele
+- Haldab seadeid ja liikmeid
+- Saab vajaduse korral lisada endale muid rolle (nt Raamatukoguhoidja, Dirigent)
 
 ---
 
@@ -126,4 +127,4 @@ Jah, kliki oma koori nimel — avaleht näitab kõigi liikmete RSVP staatust.
 
 ---
 
-_Juhend uuendatud: 13.02.2026_
+_Juhend uuendatud: 19.02.2026_

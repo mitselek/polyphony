@@ -235,7 +235,7 @@ POST   /api/public/organizations            # Create new organization (from Regi
 
 ### 5.3 Database Schema (D1)
 
-See [DATABASE-SCHEMA.md](DATABASE-SCHEMA.md) for complete schema. Key tables:
+See [schema/README.md](schema/README.md) for complete schema (split into modules under `docs/schema/`). Key tables:
 
 ```sql
 -- Organizations (Schema V2 - supports umbrellas + collectives)

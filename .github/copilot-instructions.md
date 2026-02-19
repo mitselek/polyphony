@@ -52,7 +52,7 @@ wrangler d1 migrations apply DB --local  # D1 migrations (run from app dir)
 ## Database
 - **Registry tables**: `signing_keys`, `email_auth_codes`, `email_rate_limits` — auth only.
 - **Vault tables** (25 tables, Schema V2): `organizations`, `members`, `member_roles`, `member_organizations`, `affiliations`, `voices`, `sections`, `member_voices`, `member_sections`, `works`, `editions`, `edition_files`, `edition_chunks`, `physical_copies`, `copy_assignments`, `seasons`, `season_works`, `season_work_editions`, `events`, `event_works`, `event_work_editions`, `participation`, `invites`, `invite_voices`, `invite_sections`, `sessions`, `takedowns`, `vault_settings`.
-- Schema details: `docs/DATABASE-SCHEMA.md`. Migrations in `apps/<app>/migrations/`.
+- Schema details: `docs/schema/README.md` (split into modules under `docs/schema/`). Migrations in `apps/<app>/migrations/`.
 
 ## Key references
 - Terminology: `docs/GLOSSARY.md` — use "Vault" and "Registry" consistently.
@@ -67,6 +67,6 @@ wrangler d1 migrations apply DB --local  # D1 migrations (run from app dir)
 
 **New Vault page**: `+page.svelte` + `+page.server.ts` for data loading. Use paraglide `m.*()` for user-facing strings.
 
-**Schema change**: new migration SQL → `wrangler d1 migrations apply DB --local` → update TypeScript types in `src/lib/server/db/*.ts` and `src/lib/types.ts` → update `docs/DATABASE-SCHEMA.md`.
+**Schema change**: new migration SQL → `wrangler d1 migrations apply DB --local` → update TypeScript types in `src/lib/server/db/*.ts` and `src/lib/types.ts` → update relevant file in `docs/schema/`.
 
 **Shared package**: add to `packages/shared/src/` → export from `src/index.ts` → import as `@polyphony/shared`.
