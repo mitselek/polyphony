@@ -6,6 +6,8 @@
 
 	export interface Invite {
 		id: string;
+		/** roster_member_id — the member this invite is for */
+		rosterId: string;
 		name: string;
 		expiresAt: string;
 		invitedBy: string;
