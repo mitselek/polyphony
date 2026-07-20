@@ -4,6 +4,22 @@
 
 ---
 
+## Session 2026-04-01
+
+### [GOTCHA] getMemberByEmailId is NOT org-scoped
+
+`apps/vault/src/lib/server/db/members.ts:260-271` — the SQL query searches globally by `email_id` without joining `member_organizations`. The `orgId` param is only used for loading relations (roles/sections) after the member is found. This causes cross-org collisions when the same person is a registered member in one org and a roster-only member in another. Bug manifests as "Email already registered to another member" during invite acceptance via `upgradeToRegistered()`. Reported to team-lead 2026-04-01.
+
+### [GOTCHA] members table has no created_at column
+
+Remote D1 schema for `members`: `id, name, email_id, email_contact, invited_by, joined_at, nickname`. No `created_at`, no `org_id` directly — org membership is via `member_organizations` junction table.
+
+### [GOTCHA] Expired invites not cleaned up
+
+`createInvite()` checks for pending (non-expired) invites but never deletes expired ones. Found 3 invites for same roster member (2 expired, 1 active) in production.
+
+---
+
 ## Session 2026-03-26
 
 ### [CHECKPOINT] Test Coverage Audit (delivered to team-lead)

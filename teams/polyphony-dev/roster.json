@@ -18,7 +18,7 @@
     {
       "name": "byrd",
       "agentType": "general-purpose",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-6[1m]",
       "color": "green",
       "prompt": "prompts/byrd.md",
       "lore": {
@@ -44,7 +44,7 @@
     {
       "name": "tallis",
       "agentType": "general-purpose",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-6[1m]",
       "color": "purple",
       "prompt": "prompts/tallis.md",
       "lore": {
@@ -70,7 +70,7 @@
     {
       "name": "comenius",
       "agentType": "general-purpose",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-6[1m]",
       "color": "cyan",
       "prompt": "prompts/comenius.md",
       "lore": {
@@ -83,7 +83,7 @@
     {
       "name": "victoria",
       "agentType": "general-purpose",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-6[1m]",
       "color": "pink",
       "prompt": "prompts/victoria.md",
       "lore": {
@@ -96,7 +96,7 @@
     {
       "name": "finn",
       "agentType": "general-purpose",
-      "model": "claude-sonnet-4-6",
+      "model": "claude-opus-4-6[1m]",
       "color": "black",
       "prompt": "prompts/finn.md",
       "lore": {

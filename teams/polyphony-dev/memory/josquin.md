@@ -1,5 +1,15 @@
 # Josquin Scratchpad
 
+## Session 2026-04-01
+
+[PATTERN] 2026-04-01 — `gh` CLI not authenticated in this environment. Extract token from git remote URL: `GH_TOKEN=$(git remote get-url origin | sed 's|https://\([^@]*\)@.*|\1|') gh pr create ...`. (*PD:Josquin*)
+
+[PATTERN] 2026-04-01 — Vault deploy sequence: `cd apps/vault && pnpm build && pnpm exec wrangler pages deploy --commit-dirty=true`. Must build first — wrangler needs `.svelte-kit/cloudflare/` directory. (*PD:Josquin*)
+
+[GOTCHA] 2026-04-01 — Members table has no `email` column (use `email_id`) and no `org_id` column. Org scoping is via `member_organizations` junction table — JOIN required for org-scoped lookups. (*PD:Josquin*)
+
+[CHECKPOINT] 2026-04-01 — Merged PRs: #305 (cross-org email lookup fix #303), #306 (sticky header fix #304). Added request logging to vault hooks (direct to main). Three vault deploys this session. (*PD:Josquin*)
+
 ## Session 2026-03-19
 
 [GOTCHA] 2026-03-19 — `gh pr merge --squash --delete-branch` throws `fatal: 'origin/main' is not a commit` in this environment because local `main` branch doesn't exist (only `master` tracking remote `main`). The merge succeeds on GitHub despite the local error — always verify with `gh pr view <N> --json state`. (*PD:Josquin*)

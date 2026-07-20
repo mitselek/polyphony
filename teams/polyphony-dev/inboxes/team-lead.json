@@ -1,200 +1,5 @@
 [
   {
-    "from": "finn",
-    "text": "[2026-03-19 13:28] Finn online. Research Coordinator ready.\n\nStartup complete — scratchpad fresh (no prior session), shared memory files (architecture-decisions, test-gaps, i18n-conventions) are all empty headers. Ready to receive research requests.",
-    "summary": "Finn online, ready for research requests",
-    "timestamp": "2026-03-19T11:28:42.821Z",
-    "color": "blue",
-    "read": true
-  },
-  {
-    "from": "finn",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-03-19T11:28:45.704Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T11:28:45.704Z",
-    "color": "blue",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "[2026-03-19 13:28] Bentham online and ready for reviews.\n\nStartup complete:\n- Read my prompt and common standards\n- No prior scratchpad (fresh session)\n- `architecture-decisions.md` and `test-gaps.md` are initialized but empty — no prior decisions or gaps recorded yet\n\nStanding by for code review assignments. Send me a branch or diff and I'll return a RED/YELLOW/GREEN verdict.",
-    "summary": "Bentham ready for code reviews",
-    "timestamp": "2026-03-19T11:28:54.099Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-03-19T11:28:55.966Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T11:28:55.966Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "byrd",
-    "text": "[2026-03-19 13:29] Byrd online. Scratchpad is fresh (no prior session). Architecture decisions file is empty. Ready for assignment — awaiting tasks.",
-    "summary": "Byrd online and ready for assignment",
-    "timestamp": "2026-03-19T11:29:28.195Z",
-    "color": "purple",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "[2026-03-19 13:29] Tallis online. Scratchpad doesn't exist yet (fresh start). test-gaps.md is empty. Ready to receive story assignments for RED phase. Awaiting tasks.",
-    "summary": "Tallis ready, awaiting story assignments",
-    "timestamp": "2026-03-19T11:29:29.832Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "byrd",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"byrd\",\"timestamp\":\"2026-03-19T11:29:31.156Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T11:29:31.156Z",
-    "color": "purple",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-03-19T11:29:31.895Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T11:29:31.895Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "josquin",
-    "text": "[2026-03-19 13:29] Josquin online and ready. Scratchpad is empty (fresh start). Architecture decisions file read — no entries yet. Standing by for task assignment. (*PD:Josquin*)",
-    "summary": "Josquin ready for task assignment",
-    "timestamp": "2026-03-19T11:29:32.683Z",
-    "color": "orange",
-    "read": true
-  },
-  {
-    "from": "josquin",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-03-19T11:29:35.356Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T11:29:35.356Z",
-    "color": "orange",
-    "read": true
-  },
-  {
-    "from": "finn",
-    "text": "[2026-03-19 14:33] Test Coverage Audit — Full Report\n\n---\n\n## 1. Test File Inventory\n\n**Note on vault test layout:** Vault uses two patterns — co-located (`src/lib/server/db/foo.spec.ts` next to `foo.ts`) and centralized (`src/tests/lib/server/db/foo.spec.ts`). Both count as coverage.\n\n### packages/shared — 4 spec files\n\n```\nsrc/types/orgid.spec.ts\nsrc/auth/verify.spec.ts\nsrc/crypto/jwt.spec.ts\nsrc/crypto/jwks.spec.ts\n```\n\n### apps/registry — 13 spec files\n\n**Co-located:**\n```\nsrc/lib/setup.spec.ts\nsrc/lib/server/db/keys.spec.ts\n```\n\n**Centralized (src/tests/):**\n```\nsrc/tests/lib/server/db/activity.spec.ts\nsrc/tests/lib/server/db/snapshots.spec.ts\nsrc/tests/lib/auth-codes.spec.ts\nsrc/tests/acceptance.spec.ts\nsrc/tests/routes/api/notify/registration.spec.ts\nsrc/tests/routes/.well-known/jwks.json/+server.spec.ts\nsrc/tests/routes/register.spec.ts\nsrc/tests/routes/auth/init.spec.ts\nsrc/tests/routes/auth/callback.spec.ts\nsrc/tests/routes/auth/logout.spec.ts\nsrc/tests/routes/auth/email.spec.ts\nsrc/tests/routes/auth/verify.spec.ts\n```\n\n### apps/vault — 83 spec files\n\n**Co-located (src/lib/):**\n```\nsrc/lib/nav.spec.ts\nsrc/lib/nav-single-org.spec.ts\nsrc/lib/nav-urls.spec.ts\nsrc/lib/content/guides/guides.spec.ts\nsrc/lib/server/cloudflare/domains.spec.ts\nsrc/lib/server/db/inventory-reports.spec.ts\nsrc/lib/server/db/season-repertoire.spec.ts\nsrc/lib/server/db/sections.spec.ts\nsrc/lib/server/db/editions.spec.ts\nsrc/lib/server/db/works.spec.ts\nsrc/lib/server/db/member-organizations.spec.ts\nsrc/lib/server/db/event-materials.spec.ts\nsrc/lib/server/db/voices.spec.ts\nsrc/lib/server/db/event-repertoire.spec.ts\nsrc/lib/server/db/member-preferences.spec.ts\nsrc/lib/server/db/copy-assignments.spec.ts\nsrc/lib/server/db/copy-assignments-query.spec.ts\nsrc/lib/server/db/seasons.spec.ts\nsrc/lib/server/db/organizations.spec.ts\nsrc/lib/server/db/affiliations.spec.ts\nsrc/lib/server/db/participation.spec.ts\nsrc/lib/server/db/queries/members.spec.ts\nsrc/lib/server/db/roles.spec.ts\nsrc/lib/server/db/roster.spec.ts\nsrc/lib/server/db/physical-copies.spec.ts\nsrc/lib/server/i18n/preferences.spec.ts\nsrc/lib/server/email/admin-notification.spec.ts\nsrc/lib/server/storage/edition-storage.spec.ts\nsrc/lib/components/SortableList.spec.ts\nsrc/lib/utils/section-ordering.spec.ts\nsrc/lib/utils/sticky-header.spec.ts\nsrc/lib/utils/badges.spec.ts\nsrc/lib/utils/participation-permissions.spec.ts\nsrc/lib/utils/initials.spec.ts\nsrc/lib/utils/formatters.spec.ts\nsrc/lib/stores/toast.spec.ts\nsrc/hooks.server.sso.spec.ts\nsrc/hooks.server.spec.ts\n```\n\n**Co-located (src/routes/):**\n```\nsrc/routes/invite/accept/accept.spec.ts\nsrc/routes/guides/guides.spec.ts\nsrc/routes/api/internal/stats/stats.spec.ts\n```\n\n**Centralized (src/tests/):**\n```\nsrc/tests/i18n/messages.spec.ts\nsrc/tests/lib/server/db/events.spec.ts\nsrc/tests/lib/server/db/invites-roster.spec.ts\nsrc/tests/lib/server/db/member-sections-multi-org.spec.ts\nsrc/tests/lib/server/db/org-id-not-null.spec.ts\nsrc/tests/lib/server/db/members.spec.ts\nsrc/tests/lib/server/db/settings.spec.ts\nsrc/tests/lib/server/db/members-roster.spec.ts\nsrc/tests/lib/server/db/takedowns.spec.ts\nsrc/tests/lib/server/db/multi-org-isolation.spec.ts\nsrc/tests/lib/server/db/voices-org-scoped.spec.ts\nsrc/tests/lib/server/db/multi-org-isolation-extended.spec.ts\nsrc/tests/lib/server/db/invites-renew.spec.ts\nsrc/tests/lib/server/validation/schemas.spec.ts\nsrc/tests/lib/server/auth/middleware.spec.ts\nsrc/tests/lib/server/auth/permissions.spec.ts\nsrc/tests/lib/server/auth/middleware-roster.spec.ts\nsrc/tests/lib/server/auth/trust-individual-responsibility.spec.ts\nsrc/tests/routes/api/public/scores/pd/+server.spec.ts\nsrc/tests/routes/api/public/subdomains/check/+server.spec.ts\nsrc/tests/routes/api/public/organizations/+server.spec.ts\nsrc/tests/routes/api/events.spec.ts\nsrc/tests/routes/api/sections.spec.ts\nsrc/tests/routes/api/members-roles-owner-permission.spec.ts\nsrc/tests/routes/api/events/[id].spec.ts\nsrc/tests/routes/api/events/repertoire.spec.ts\nsrc/tests/routes/api/editions.spec.ts\nsrc/tests/routes/api/works.spec.ts\nsrc/tests/routes/api/voices.spec.ts\nsrc/tests/routes/api/invites/renew.spec.ts\nsrc/tests/routes/api/invites/revoke.spec.ts\nsrc/tests/routes/api/settings.spec.ts\nsrc/tests/routes/api/profile-preferences.spec.ts\nsrc/tests/routes/api/takedowns.spec.ts\nsrc/tests/routes/api/members/sections.spec.ts\nsrc/tests/routes/api/members/voices.spec.ts\nsrc/tests/routes/api/members/invite.spec.ts\nsrc/tests/routes/api/members/roster.spec.ts\nsrc/tests/routes/api/takedowns-org-scoped.spec.ts\nsrc/tests/routes/api/participation/attendance.spec.ts\nsrc/tests/routes/api/participation/validation.spec.ts\nsrc/tests/routes/api/participation/rsvp.spec.ts\nsrc/tests/routes/api/participation/trust-individual-responsibility.spec.ts\nsrc/tests/routes/api/participation/rsvp-override.spec.ts\nsrc/tests/routes/api/participation/status.spec.ts\nsrc/tests/routes/api/organizations.spec.ts\nsrc/tests/routes/api/takedowns-process-org-auth.spec.ts\nsrc/tests/routes/api/assignments/bulk-return.spec.ts\nsrc/tests/routes/api/copies/assignment.spec.ts\nsrc/tests/routes/api/copies/copies.spec.ts\nsrc/tests/routes/api/members-roles.spec.ts\nsrc/tests/routes/api/auth/callback-roster.spec.ts\nsrc/tests/routes/api/profile.spec.ts\nsrc/tests/routes/api/editions/file.spec.ts\nsrc/tests/routes/api/events-roster.spec.ts\nsrc/tests/routes/home.spec.ts\nsrc/tests/routes/layout.spec.ts\nsrc/tests/routes/copyright.spec.ts\n```\n\n### apps/vault — Playwright E2E (5 files)\n\n```\ntests/e2e/members.spec.ts\ntests/e2e/invite.spec.ts\ntests/e2e/homepage.spec.ts\ntests/e2e/api-auth.spec.ts\ntests/e2e/copyright.spec.ts\n```\n\n---\n\n## 2. Coverage Map by Module\n\n| Module | Location | Tests Exist? |\n|--------|----------|-------------|\n| **shared** | | |\n| Crypto (JWT sign/verify) | `packages/shared/src/crypto/` | ✅ jwt.spec, jwks.spec |\n| Auth token verification | `packages/shared/src/auth/` | ✅ verify.spec |\n| Types (OrgId) | `packages/shared/src/types/` | ✅ orgid.spec |\n| Types (index) | `packages/shared/src/types/index.ts` | ❌ no test |\n| **registry** | | |\n| OAuth init | `routes/auth/+server.ts` | ✅ init.spec |\n| OAuth callback | `routes/auth/callback/+server.ts` | ✅ callback.spec |\n| Logout | `routes/auth/logout/+server.ts` | ✅ logout.spec |\n| Email auth | `routes/auth/email/+server.ts` | ✅ email.spec |\n| Email verify | `routes/auth/verify/+server.ts` | ✅ verify.spec |\n| JWKS endpoint | `routes/.well-known/jwks.json/+server.ts` | ✅ +server.spec |\n| Registration notify | `routes/api/notify/registration/+server.ts` | ✅ registration.spec |\n| Register page | `routes/register/+page.server.ts` | ✅ register.spec |\n| DB keys | `lib/server/db/keys.ts` | ✅ keys.spec |\n| DB activity | `lib/server/db/activity.ts` | ✅ activity.spec |\n| DB snapshots | `lib/server/db/snapshots.ts` | ✅ snapshots.spec |\n| Auth codes | `lib/server/auth-codes.ts` | ✅ auth-codes.spec |\n| Email service | `lib/server/email.ts` | ❌ no test |\n| Directory page | `routes/directory/+page.server.ts` | ❌ no test |\n| Dashboard page | `routes/dashboard/+page.server.ts` | ❌ no test |\n| Register success page | `routes/register/success/+page.server.ts` | ❌ no test |\n| **vault** | | |\n| DB members | `lib/server/db/members.ts` | ✅ members.spec (centralized) |\n| DB invites | `lib/server/db/invites.ts` | ✅ invites-roster/renew.spec (centralized) |\n| DB settings | `lib/server/db/settings.ts` | ✅ settings.spec (centralized) |\n| DB takedowns | `lib/server/db/takedowns.ts` | ✅ takedowns.spec (centralized) |\n| DB roles | `lib/server/db/roles.ts` | ✅ roles.spec (co-located) |\n| DB sections | `lib/server/db/sections.ts` | ✅ sections.spec |\n| DB editions | `lib/server/db/editions.ts` | ✅ editions.spec |\n| DB works | `lib/server/db/works.ts` | ✅ works.spec |\n| DB seasons | `lib/server/db/seasons.ts` | ✅ seasons.spec |\n| DB participation | `lib/server/db/participation.ts` | ✅ participation.spec |\n| DB events | *(no direct lib file)* | ✅ events.spec (centralized) |\n| DB copies | `lib/server/db/physical-copies.ts` | ✅ physical-copies.spec |\n| DB assignments | `lib/server/db/copy-assignments.ts` | ✅ copy-assignments.spec |\n| DB organizations | `lib/server/db/organizations.ts` | ✅ organizations.spec |\n| Auth middleware | `lib/server/auth/middleware.ts` | ✅ middleware.spec (centralized) |\n| Auth permissions | `lib/server/auth/permissions.ts` | ✅ permissions.spec (centralized) |\n| Validation schemas | `lib/server/validation/schemas.ts` | ✅ schemas.spec (centralized) |\n| Storage (editions) | `lib/server/storage/edition-storage.ts` | ✅ edition-storage.spec |\n| Email notifications | `lib/server/email/admin-notification.ts` | ✅ admin-notification.spec |\n| i18n preferences | `lib/server/i18n/preferences.ts` | ✅ preferences.spec |\n| Cloudflare domains | `lib/server/cloudflare/domains.ts` | ✅ domains.spec |\n| API routes (all major) | `routes/api/` | ✅ see centralized test inventory |\n| hooks.server | `src/hooks.server.ts` | ✅ hooks.server.spec (FAILING) |\n| Utils | `lib/utils/` | ✅ multiple spec files |\n| Components | `lib/components/` | ✅ SortableList.spec |\n| **Untested lib/server** | | |\n| Server constants | `lib/server/constants.ts` | ❌ no test |\n| Auth index | `lib/server/auth/index.ts` | ❌ (likely re-exports) |\n| Utils/strings | `lib/server/utils/strings.ts` | ❌ no test |\n| Utils/id | `lib/server/utils/id.ts` | ❌ no test |\n| Utils/api-responses | `lib/server/utils/api-responses.ts` | ❌ no test |\n| **Untested page routes** | | |\n| All +page.server.ts files | `routes/*/+page.server.ts` | ❌ ~20 files (see section 3) |\n| Seasons API | `routes/api/seasons/` | ❌ no test found |\n\n---\n\n## 3. Untested Source Files\n\n### packages/shared\n- `src/types/index.ts` — type declarations only, no behavior\n- `src/index.ts` — re-exports only\n- `src/crypto/index.ts` — re-exports only\n\n### apps/registry\n- `src/lib/server/email.ts`\n- `src/routes/directory/+page.server.ts`\n- `src/routes/dashboard/+page.server.ts`\n- `src/routes/register/success/+page.server.ts`\n\n### apps/vault — lib/server (genuinely untested)\n- `src/lib/server/constants.ts`\n- `src/lib/server/auth/index.ts`\n- `src/lib/server/utils/strings.ts`\n- `src/lib/server/utils/id.ts`\n- `src/lib/server/utils/api-responses.ts`\n\n### apps/vault — routes/api (no test found)\n- `src/routes/api/seasons/+server.ts`\n- `src/routes/api/seasons/[id]/+server.ts`\n- `src/routes/api/seasons/[id]/works/` (all sub-routes)\n- `src/routes/api/editions/[id]/copies/+server.ts`\n- `src/routes/api/voices/reorder/+server.ts`\n- `src/routes/api/voices/[id]/reassign/+server.ts`\n- `src/routes/api/sections/reorder/+server.ts`\n- `src/routes/api/sections/[id]/reassign/+server.ts`\n\n### apps/vault — +page.server.ts files (all untested)\n```\nsrc/routes/+page.server.ts\nsrc/routes/login/+page.server.ts\nsrc/routes/profile/+page.server.ts\nsrc/routes/settings/+page.server.ts\nsrc/routes/members/+page.server.ts\nsrc/routes/members/[id]/+page.server.ts\nsrc/routes/members/add-roster/+page.server.ts\nsrc/routes/works/+page.server.ts\nsrc/routes/works/[id]/+page.server.ts\nsrc/routes/editions/+page.server.ts\nsrc/routes/editions/[id]/+page.server.ts\nsrc/routes/editions/[id]/view/+page.server.ts\nsrc/routes/events/+page.server.ts\nsrc/routes/events/new/+page.server.ts\nsrc/routes/events/[id]/+page.server.ts\nsrc/routes/events/roster/+page.server.ts\nsrc/routes/events/roster/classic/+page.server.ts\nsrc/routes/seasons/+page.server.ts\nsrc/routes/seasons/[id]/+page.server.ts\nsrc/routes/library/inventory/+page.server.ts\nsrc/routes/library/reports/collection/+page.server.ts\nsrc/routes/library/reports/missing-copies/+page.server.ts\nsrc/routes/invite/+page.server.ts\nsrc/routes/guides/+page.server.ts\nsrc/routes/guides/[slug]/+page.server.ts\n```\n\n---\n\n## 4. Test Counts\n\n### packages/shared\n- **Files:** 4 passed\n- **Tests:** 24 passed, 0 failed\n- **Duration:** 205ms\n\n### apps/registry\n- **Files:** 13 passed, 1 skipped (14 total)\n- **Tests:** 137 passed, 2 skipped, 0 failed\n- **Duration:** 298ms\n\n### apps/vault (unit)\n- **Files:** 96 passed, 4 failed (100 total)\n- **Tests:** 1230 passed, 2 failed, 1 skipped (1233 total)\n- **Duration:** 1.97s\n\n**Failing suites:**\n```\nFAIL  src/hooks.server.spec.ts\nFAIL  src/hooks.server.sso.spec.ts\nFAIL  src/tests/routes/api/takedowns-org-scoped.spec.ts\n```\n**Error:** `Cannot find module '$lib/paraglide/runtime'` — Paraglide generated files missing from test environment (build artifact, not committed).\n\n**Failing tests (2):**\n```\nFAIL  src/routes/guides/guides.spec.ts > guides [slug] page server > returns rendered HTML for valid guide slug\nFAIL  src/routes/guides/guides.spec.ts > guides [slug] page server > throws 404 for invalid slug\n```\n**Error:** `Cannot find module '$lib/paraglide/runtime.js'` — same root cause.\n\n### apps/vault (E2E/Playwright)\n- **Files:** 5 spec files\n- Counts not run (requires full dev server + browser)\n\n---\n\n**Total unit test count across monorepo:** ~1,391 tests (24 + 139 + 1,233), with 4 failing due to missing Paraglide build artifact.",
-    "summary": "Full test coverage audit report delivered",
-    "timestamp": "2026-03-19T12:34:53.826Z",
-    "color": "blue",
-    "read": true
-  },
-  {
-    "from": "finn",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-03-19T12:35:00.911Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:35:00.911Z",
-    "color": "blue",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "[2026-03-19 14:34] Test Architecture Review — Verdict: **YELLOW**\n\n## Summary\n\nThe security-critical paths are well covered. The architectural gaps are real but non-blocking — they represent risk accumulation, not immediate danger.\n\n---\n\n## 1. Are We Testing the Right Boundaries?\n\n**Mostly yes.** Strong coverage at the right layers:\n\n- **Auth middleware** — tested (`middleware.spec.ts`, `middleware-roster.spec.ts`). Registration checks, cookie validation, roster-member rejection all covered.\n- **Permission system** — thorough (`permissions.spec.ts`). Every role × permission combination tested, including multi-role unions, org-scoped permissions, null/undefined guards, and the `canEditParticipation` trust model.\n- **DB access layer** — extensive mock-D1 tests for members, works, editions, events, sections, voices, roles, copy-assignments, participation, organizations, affiliations, seasons, inventory-reports, settings. Good.\n- **API routes** — most routes have unit tests with mocked dependencies.\n- **Server/client boundary** — `hooks.server.spec.ts` tests subdomain extraction and public/protected route classification. SSO auto-auth tested in `hooks.server.sso.spec.ts`.\n\n**Gap:** All DB tests use **mock D1**. No test ever hits a real SQLite database. This means schema mismatches, constraint violations, and trigger bugs can hide until production. Not a RED because D1 local (`wrangler d1 migrations apply --local`) exists as a manual gate, but it's a structural weakness.\n\n## 2. Missing Test Categories\n\n| Category | Status | Notes |\n|----------|--------|-------|\n| Unit tests (logic) | ✅ Strong | Permissions, validation, formatters, nav, storage chunking |\n| Unit tests (routes) | ⚠️ Gaps | See §4 below — seasons, event sub-routes, reassign/reorder |\n| Integration tests (DB) | ❌ Missing | Zero tests against real SQLite/D1 — all mocked |\n| E2E (Playwright) | ⚠️ Thin | 5 files: homepage, members, invite, copyright, api-auth. No user journeys. |\n| Contract tests (Registry↔Vault) | ❌ Missing | No tests verify that Registry's public API queries match Vault's `/api/public/*` response shapes |\n| Migration tests | ❌ Missing | 43 migrations, zero automated verification (see §5) |\n\n## 3. Security-Critical Path Coverage\n\n### ✅ Well Covered\n- **Permission matrix** — all roles tested including edge cases (roster-only `email_id=null`, org-scoped isolation, multi-role union)\n- **JWT verification** (`packages/shared/src/auth/verify.spec.ts`) — valid token, wrong audience, wrong signature, different key, JWKS caching, JWKS fetch failure, malformed JWT, missing claims\n- **JWT signing** (`packages/shared/src/crypto/jwt.spec.ts`) — basic signing verified\n- **Auth middleware** — unauthenticated rejection (401), roster-member rejection, role checking\n- **Multi-org isolation** — `multi-org-isolation.spec.ts` and `multi-org-isolation-extended.spec.ts` document the isolation contracts (though 7 tests are documented as intentionally failing pending #233)\n- **SSO auto-auth** — loop guards, redirect triggers, bypass conditions all tested\n- **Owner permission escalation** — `members-roles-owner-permission.spec.ts` tests that owner role assignment requires org_id\n- **E2E auth enforcement** — `api-auth.spec.ts` verifies 401 on unauthenticated API calls\n\n### ⚠️ Weak Spots\n- **JWT expiry** — The test in `verify.spec.ts:127-155` is essentially a **TODO**. Comment says \"we'll add proper expiry testing later\" and the test creates a non-expired token and just verifies it works. **Expired tokens are never actually tested for rejection.** This is the most concerning security gap.\n- **Vault auth callback** (`api/auth/callback`) — `callback-roster.spec.ts` exists but no basic callback test for the Vault side (Registry callback is well tested)\n- **Vault auth login/logout** — no route-level tests for `api/auth/login` or `api/auth/logout`\n\n## 4. Untested API Routes\n\nThese Vault API routes have **no corresponding test file**:\n\n**Entire Seasons sub-tree (6 endpoints):**\n- `api/seasons`, `api/seasons/[id]`\n- `api/seasons/[id]/works`, `api/seasons/[id]/works/reorder`\n- `api/seasons/[id]/works/[workId]`\n- `api/seasons/[id]/works/[workId]/editions`, `api/seasons/[id]/works/[workId]/editions/[editionId]`\n\n**Event repertoire sub-routes (4 endpoints):**\n- `api/events/[id]/works/reorder`\n- `api/events/[id]/works/[workId]`\n- `api/events/[id]/works/[workId]/editions`\n- `api/events/[id]/works/[workId]/editions/[editionId]`\n\n**CRUD sub-operations (4 endpoints):**\n- `api/sections/[id]/reassign`, `api/sections/reorder`\n- `api/voices/[id]/reassign`, `api/voices/reorder`\n\n**Other:**\n- `api/works/[id]/editions`\n- `api/editions/[id]/copies`\n- `api/auth/login`, `api/auth/logout`\n\n## 5. D1 Migration Safety\n\n**No migration tests exist.** 43 migrations with zero automated verification. Specific risks:\n\n- No idempotency checks\n- No data-preservation tests for table rebuilds (the `_new` table pattern documented in common-prompt)\n- No tests for CASCADE behavior on D1 (where `PRAGMA foreign_keys = OFF` is a no-op)\n- The multi-org isolation tests document 7 known failures from migrations that haven't landed yet (#233)\n\nThis is mitigated by the manual `wrangler d1 migrations apply --local` gate and the remote migration protocol, but as migration count grows, this becomes increasingly fragile.\n\n## 6. Architectural Verdict: YELLOW\n\n**Why not RED:**\n- Security-critical paths (permissions, JWT, auth middleware, multi-org isolation) are well tested\n- The codebase has strong TDD discipline — most new features have tests\n- E2E exists and enforces auth boundaries\n- No active security vulnerability from test gaps\n\n**Why not GREEN:**\n- JWT expiry test is a TODO — this is the single most concerning item\n- No integration tests against real D1/SQLite — all DB tests use mocks\n- No Registry↔Vault contract tests — cross-service API surface is untested\n- Seasons sub-tree (6 endpoints) entirely untested\n- 43 migrations with zero automated safety nets\n- E2E is thin — no real user journeys\n\n## Recommended Actions (Priority Order)\n\n1. **[SECURITY]** Fix JWT expiry test — actually create an expired token and verify rejection. Assign to Tallis.\n2. **[ARCHITECTURE]** Add at least one integration test that runs against real D1 local — validate that mock assumptions match real SQLite behavior.\n3. **[COVERAGE]** File issues for untested seasons routes and event repertoire sub-routes.\n4. **[ARCHITECTURE]** Add contract test: Registry queries Vault's `/api/public/organizations` — verify response shape matches what Registry expects.\n5. **[COVERAGE]** Add migration smoke tests: apply all migrations to fresh D1, verify schema matches expectations.\n\n(*PD:Bentham*)",
-    "summary": "YELLOW verdict on test architecture review",
-    "timestamp": "2026-03-19T12:35:10.419Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-03-19T12:35:28.256Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:35:28.256Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "[2026-03-19 14:34] Test Coverage Gap Assessment — Report from Tallis\n\n---\n\n## Test Coverage Gap Assessment\n\n### 1. Overall Scale\n\n- **~100 spec files** across all packages (~75 vault, ~15 registry, 4 shared)\n- **Vault**: strong DB-layer and permissions coverage; route coverage is good for core CRUD but has systematic gaps in newer features\n- **Registry**: solid auth flow coverage (OAuth callback, SSO cookies, JWKS, email auth)\n- **Shared**: crypto and JWT well-tested (62 tests as of Phase 0)\n\n---\n\n### 2. Test Quality — What's Good\n\n**Permissions** (`permissions.spec.ts`): Excellent. Tests multi-role union, conductor-specific permissions, org-scoped role isolation, and registration requirement (null email_id → no permissions). Each `it()` asserts a single rule. Parameterised helpers make coverage readable.\n\n**Edition storage** (`edition-storage.spec.ts`): Excellent. Tests chunking boundaries (exactly at threshold, 1 byte over, 1 byte under), byte-level reassembly correctness, D1 data format normalization (ArrayBuffer vs number[]), and error rejection. This is the right level of depth for a critical algorithm.\n\n**SSO hooks** (`hooks.server.sso.spec.ts`): Good. Loop-guard, auth-route bypass, cookie attribute checks — all tested individually.\n\n**Registry OAuth callback** (`callback.spec.ts`): Good. Tests missing code/state, token exchange failure, 302 redirect location, Set-Cookie with all required attributes (Domain, HttpOnly, Secure, SameSite, Max-Age), JWT structure.\n\n**DB layer tests** (`members.spec.ts`, `invites-*.spec.ts`, `multi-org-isolation.spec.ts`): Good pattern — hand-crafted `createMockDb()` with realistic state machines. Covers voice/section CRUD, primary voice enforcement, CASCADE simulation.\n\n---\n\n### 3. Mock Pattern Consistency\n\nTwo patterns in use — both acceptable:\n\n| Pattern | Where used | Notes |\n|---------|-----------|-------|\n| Hand-crafted `createMockDb()` | DB layer tests, middleware | Stateful, realistic |\n| `vi.mock('$lib/server/...')` | Route handler tests | Fast, isolated |\n\nNo anti-pattern mixing within a file. Consistent across new test files. ✅\n\n**One issue**: `apps/vault/src/lib/server/db/permissions.ts` is a **dead file** with the old single-role API (`canUploadScores(role: Role)` — takes a string, not a Member). It conflicts with the live multi-role system in `auth/permissions.ts`. It has no tests because nothing uses it anymore. It should be deleted, not tested.\n\n---\n\n### 4. Anti-Patterns Found\n\n**[HIGH]** `middleware.spec.ts` L100–105 and L126–130: Two `it()` blocks invoke the middleware but never assert the result. The `result` variable is either not captured at all or not checked. These tests look like coverage but verify nothing:\n\n```ts\n// Line 100-105 — no assertion on result\nit('allows request when role meets minimum', async () => {\n    const result = await middleware({ ... });\n    // ← nothing here\n});\n\n// Line 126-130 — same\nit('rejects request when role below minimum', async () => {\n    const result = await middleware({ ... });\n    // ← nothing here\n});\n```\n\nThese need `expect(result.authorized).toBe(true/false)` added.\n\n**[MEDIUM]** `e2e/members.spec.ts` L41–97: Voice/section badge tests are wrapped in `if (count > 0)` — if test data has no voices/sections, tests trivially pass without asserting anything. They need unconditional test data setup in fixtures.\n\n---\n\n### 5. AC Coverage for Completed Issues\n\nSpot-checked completed items from CLAUDE.md:\n- ✅ #52 Permission helpers — `permissions.spec.ts` covers all helper functions\n- ✅ #50 Auth middleware consolidation — `middleware.spec.ts` + `middleware-roster.spec.ts` cover middleware\n- ✅ #51 Zod validation schemas — `validation/schemas.spec.ts` covers schemas\n- ✅ #55 Conductor role — conductor permissions tested in `permissions.spec.ts`\n- ✅ #54 Vault settings table — `settings.spec.ts` covers CRUD\n- ✅ Events (#56-58) — events DB + route tests exist\n- ✅ Participation (#59-60) — 6 participation spec files covering RSVP, attendance, trust-individual-responsibility, validation\n\n---\n\n### 6. Critical Gaps (Prioritized)\n\n**P0 — Security risk:**\n1. `GET /api/auth/login` — `return_to` open-redirect guard is untested. The guard rejects values not starting with `/` or starting with `//`. A bug here is a security vulnerability.\n\n**P1 — New features with zero route-level tests:**\n2. **Seasons API** (GET/POST/PATCH/DELETE `/api/seasons`, `/api/seasons/[id]`, season-works endpoints) — completely untested at route level\n3. `GET/DELETE /api/members/[id]` — member removal route has no tests\n4. `GET /api/auth/logout` — session termination logic untested\n\n**P2 — CRUD gaps:**\n5. `api/voices/[id]`, `api/voices/reorder`, `api/voices/[id]/reassign` — no route tests\n6. `api/sections/[id]`, `api/sections/reorder`, `api/sections/[id]/reassign` — no route tests\n7. `api/works/[id]` — individual work GET/PATCH/DELETE untested\n8. `api/copies/[id]`, `/assign`, `/return`, `editions/[id]/copies` — copy lifecycle untested at route level\n9. `api/events/[id]/works/*` — all event-works sub-resources (add, reorder, remove, edition attach) untested\n\n**P3 — Utility tests:**\n10. `lib/server/utils/strings.ts` — `trimOrNull`/`trimOrUndefined` have no tests (used in ~15 route handlers for validation)\n\n---\n\n### 7. Recommended Next Tests (ordered by impact)\n\n1. **Fix existing**: Add missing assertions to `middleware.spec.ts` L100-105 and L126-130 (15-min fix, high signal)\n2. **Delete dead file**: `lib/server/db/permissions.ts` — remove to eliminate confusion\n3. **New: auth/login return_to** — 3-4 tests covering redirect guard logic\n4. **New: seasons API** — ~15 tests for GET/POST/PATCH/DELETE + 409 conflict handling\n5. **New: members/[id] deletion** — ~5 tests including permission check (admin only) and 404\n6. **New: strings utils** — ~6 tests for `trimOrNull` / `trimOrUndefined` edge cases\n7. **Fix E2E**: Voice/section badge tests need test fixtures that guarantee pre-existing data\n\nFull gap list appended to `test-gaps.md`.\n\n(*PD:Tallis*)",
-    "summary": "Full test coverage gap assessment delivered",
-    "timestamp": "2026-03-19T12:35:40.672Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-03-19T12:35:45.453Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:35:45.453Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "[2026-03-19 14:39] Story #286 — JWT expiry tests — COMPLETE\n\n## Story Handoff\n- **Story:** #286 — Fix JWT expiry test\n- **Branch:** `fix/286-jwt-expiry-test`\n- **From:** Tallis (phase: GREEN — test-only fix, no implementation needed)\n- **To:** team-lead (merge or PR)\n- **Status:** TESTS_PASSING ✅\n\n### What was done\n\nReplaced the TODO stub in `packages/shared/src/auth/verify.spec.ts:127-155` with 3 real expiry tests using `vi.useFakeTimers()`:\n\n1. **`rejects expired token`** — signs token, advances time by 6 min (TTL=5 min), verifies rejection with `exp` in error\n2. **`rejects token expired by just one second`** — boundary test: TTL+1s triggers rejection\n3. **`accepts token that has not yet expired`** — advances 4 min, confirms still valid\n\n**Finding:** The implementation already handles expiry correctly. `jose`'s `jwtVerify` enforces `exp` natively. The error propagates as `\"Token verification failed: \"exp\" claim timestamp check failed\"`. No implementation fix was needed.\n\n### Test results\n\n```\nTests  26 passed (26)   ← was 23 before (3 new tests added)\n```\n\nAll 4 spec files pass. Duration: 194ms.\n\n### Files changed\n\n- `packages/shared/src/auth/verify.spec.ts` — replaced stub (L127-155) with 3 real expiry tests\n\n(*PD:Tallis*)",
-    "summary": "#286 JWT expiry tests complete, all 26 passing",
-    "timestamp": "2026-03-19T12:39:48.445Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-03-19T12:39:54.344Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:39:54.344Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "[2026-03-19 14:41] Code Review: #286 — JWT expiry test fix — Verdict: **GREEN**\n\n## Review Summary\n\nClean, correct fix for the security test gap I flagged in my audit. The three tests properly verify expiry behavior using `vi.useFakeTimers()`.\n\n## Analysis\n\n### Correctness ✅\n\nAll three tests use the right approach:\n\n1. **\"rejects expired token\"** — Signs at time T, advances 6 min past 5-min TTL. `Date.now()` in `signToken` and `jwtVerify` both see the mocked clock. The `exp` check (`360 > 300`) correctly triggers rejection. Error assertion `.toThrow('exp')` matches jose's `JWTExpired` message as wrapped by `verifyAuthToken`.\n\n2. **\"rejects token expired by just one second\"** — Advances 5m01s. Boundary test: `301 > 300` → expired. Good.\n\n3. **\"accepts token that has not yet expired\"** — Advances 4 min. `240 < 300` → valid. Positive boundary. Verifies `result.email` — good assertion.\n\n### Timer Interaction ✅\n\nEach test uses a **unique `registryUrl`**, which avoids JWKS cache collisions across tests (since `fetchJWKS` caches by URL with `Date.now()` timestamps). Tallis clearly thought about this.\n\n### Boundary Coverage ✅\n\nThe three tests form a proper boundary triplet:\n- Well past expiry (6 min) — rejects\n- Just past expiry (5m01s) — rejects  \n- Just before expiry (4 min) — accepts\n\n### Minor Note (not blocking)\n\nTimer cleanup uses `vi.useRealTimers()` at the end of each test. If a test throws before reaching that line, fake timers leak. An `afterEach(() => vi.useRealTimers())` in the `describe('expiry validation')` block would be more robust. Not worth YELLOW — this is style-level, and each test uses a unique registryUrl so cross-contamination risk is negligible.\n\n### TDD Compliance ✅\n\nTest-only change in spec file. No implementation change needed — the `signToken` TTL (`TOKEN_EXPIRY_SECONDS = 5 * 60`) and jose's `jwtVerify` expiry check were already correct. The gap was purely in test coverage.\n\n## Verdict: GREEN — Ready to merge.\n\n(*PD:Bentham*)",
-    "summary": "GREEN verdict on #286 JWT expiry test",
-    "timestamp": "2026-03-19T12:41:41.312Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-03-19T12:41:54.653Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:41:54.653Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "josquin",
-    "text": "[2026-03-19 14:43] Merge complete for #286.\n\n- **PR:** https://github.com/mitselek/polyphony/pull/295\n- **Status:** MERGED (squash-merge to main)\n- **Quality gates:** 26/26 shared tests passing. `pnpm check` has a pre-existing vault paraglide issue (unrelated to this change).\n- **Changes:** Test-only — replaced placeholder JWT expiry test with 3 proper tests using `vi.useFakeTimers()`.\n\n(*PD:Josquin*)",
-    "summary": "PR #295 merged for issue #286",
-    "timestamp": "2026-03-19T12:43:31.611Z",
-    "color": "orange",
-    "read": true
-  },
-  {
-    "from": "josquin",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-03-19T12:43:35.404Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:43:35.404Z",
-    "color": "orange",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "[2026-03-19 14:45] Story #287 — return_to redirect guard tests — COMPLETE\n\n## Story Handoff\n- **Story:** #287 — Test return_to open-redirect guard on /api/auth/login\n- **Branch:** `fix/287-return-to-redirect-guard`\n- **From:** Tallis (phase: GREEN — test-only, implementation already correct)\n- **To:** team-lead (merge or PR)\n- **Status:** TESTS_PASSING ✅\n\n### What was done\n\nCreated `apps/vault/src/tests/routes/api/auth/login.spec.ts` with 11 tests covering all guard branches:\n\n**Valid paths (cookie IS set):**\n- `/dashboard` → accepted ✅\n- `/members/invite` (nested) → accepted ✅\n- `/` (root) → accepted ✅\n- `/events?date=2026-03-19` (with query string) → accepted ✅\n\n**Invalid values (cookie NOT set — open-redirect guard):**\n- `https://evil.com/steal` → rejected ✅\n- `http://evil.com` → rejected ✅\n- `//evil.com/steal` (protocol-relative) → rejected ✅\n- `` (empty string) → rejected ✅\n\n**Missing param (safe default):**\n- No `return_to` param → no cookie set ✅\n\n**Redirect behaviour:**\n- Always 302 to registry regardless of `return_to` validity ✅\n- Redirect URL includes `vault_id` and `callback` params ✅\n\n**Finding:** The guard (`returnTo.startsWith('/') && !returnTo.startsWith('//')`) is already implemented and works correctly. All 11 tests pass first try. No implementation fix needed.\n\n### Test results\n\n```\nTest Files  1 passed (1)\n     Tests  11 passed (11)\n  Duration  171ms\n```\n\n### Files changed\n\n- `apps/vault/src/tests/routes/api/auth/login.spec.ts` — new file, 11 tests\n\n(*PD:Tallis*)",
-    "summary": "#287 redirect guard tests complete, 11/11 passing",
-    "timestamp": "2026-03-19T12:45:21.873Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "tallis",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-03-19T12:45:27.391Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:45:27.391Z",
-    "color": "yellow",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "[2026-03-19 14:45] Code Review: #287 — return_to redirect guard tests — Verdict: **YELLOW** (approve with notes)\n\n## Review Summary\n\nTests are correct and cover the primary attack vectors well. Two untested bypass patterns worth filing as follow-ups.\n\n## Analysis\n\n### Implementation Correctness ✅\n\nVerified against source (`apps/vault/src/routes/api/auth/login/+server.ts:13`):\n\n```ts\nif (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {\n```\n\nThe guard checks: truthy + starts with `/` + not `//`. Tests align perfectly with this logic.\n\n### Test Quality ✅\n\n- **Valid paths (4):** simple, nested, root `/`, path with query string — good coverage\n- **Invalid values (4):** `https://`, `http://`, `//`, empty string — covers the main attack vectors\n- **Missing param (1):** safe default — correct\n- **Redirect behavior (2):** verifies 302 to registry with correct params regardless of return_to validity — important to confirm the redirect still fires even on invalid input\n\nCookie assertions check `httpOnly: true` and `path: '/'` — confirms the cookie isn't readable by client JS. Good.\n\n### Mock Pattern ✅\n\nThe `vi.mock('@sveltejs/kit')` pattern with `redirect` throwing an error mimics SvelteKit's actual behavior correctly. Cookie store using `Map` is clean.\n\n### TDD Compliance ✅\n\nNew test file, no implementation changes. Tests verify existing behavior.\n\n### Untested Bypass Vectors ⚠️\n\nTwo patterns worth adding in a follow-up:\n\n1. **Backslash trick:** `\\evil.com` — Some browsers normalize `\\` to `/`, making `\\evil.com` equivalent to `//evil.com` or a relative URL. The current guard would accept it (starts with `\\`, not `/`... actually it doesn't start with `/` so it'd be rejected). Wait — `\\evil.com` doesn't start with `/` so the guard correctly rejects it. But `/\\evil.com` DOES start with `/` and doesn't start with `//` — so the guard would **accept** it and set the cookie to `/\\evil.com`. Whether this is exploitable depends on the browser interpreting the redirect target. **This is worth a test to document the behavior.**\n\n2. **Path with `@` or userinfo:** `/login@evil.com` — starts with `/`, not `//`. Would be accepted. Not directly exploitable as a redirect since the callback route controls where the redirect goes (it reads the cookie value and does a relative redirect). But worth verifying the callback's handling.\n\nNeither of these is RED-worthy because the `auth_return_to` cookie is only consumed by the callback route (which presumably does its own redirect), and the cookie is `httpOnly` + `secure` + short-lived (`maxAge: 300`). The blast radius of a bypass here is limited. But they should be documented.\n\n### Cookie Security ✅\n\n`httpOnly: true`, `sameSite: 'lax'`, `secure: true`, `maxAge: 300` (5 min) — all correct for a transient auth redirect cookie.\n\n## Verdict: YELLOW — Approve with notes\n\nThe tests are correct and cover the main vectors. File a follow-up issue to add tests for `/\\evil.com` (backslash after leading slash) to document whether the guard rejects it. Not blocking because the callback route controls the actual redirect, but defense-in-depth matters.\n\n(*PD:Bentham*)",
-    "summary": "YELLOW verdict on #287 redirect guard tests",
-    "timestamp": "2026-03-19T12:46:23.015Z",
-    "color": "green",
-    "read": true
-  },
-  {
-    "from": "bentham",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-03-19T12:46:26.010Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-03-19T12:46:26.010Z",
-    "color": "green",
-    "read": true
-  },
-  {
     "from": "josquin",
     "text": "[2026-03-19 14:47] Merge complete for #287.\n\n- **PR:** https://github.com/mitselek/polyphony/pull/297\n- **Status:** MERGED (squash-merge to main)\n- **Quality gates:** 1290/1290 vault tests passing (1 skipped). 11 new tests in login.spec.ts all green.\n- **Changes:** Test-only — new file `apps/vault/src/tests/routes/api/auth/login.spec.ts`.\n\n(*PD:Josquin*)",
     "summary": "PR #297 merged for issue #287",
@@ -492,55 +297,450 @@
     "read": true
   },
   {
-    "from": "finn",
-    "text": "[2026-05-03 17:57]\n\nFinn online. Startup reads complete: common-prompt.md, finn.md, architecture-decisions.md, test-gaps.md, i18n-conventions.md.\n\n**Flagging from scratchpad (session 2026-03-26):**\n\n- **Test gaps** — my previous audit found ~25 untested `+page.server.ts` load functions, several untested route handlers (voices, sections, works, copies, event-works sub-resources), and the `permissions.ts` dead-file issue (#289). test-gaps.md has the details. Most are still UNFILED as issues.\n- **architecture-decisions.md** — still nearly empty. PO left a note on 2026-03-26 asking bentham to populate it with known ADRs. Still not done.\n- **i18n-conventions.md** — empty (no entries from comenius yet).\n\nNo blocking issues. Ready for research requests.",
-    "summary": "Finn ready, flagging scratchpad notes",
-    "timestamp": "2026-05-03T14:58:10.136Z",
+    "from": "bentham",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-04-01T13:50:23.889Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:50:23.889Z",
     "color": "blue",
     "read": true
   },
   {
     "from": "finn",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-05-03T14:58:12.656Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-05-03T14:58:12.656Z",
-    "color": "blue",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T13:50:30.800Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:50:30.800Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-04-01T13:50:37.854Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:50:37.854Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"byrd\",\"timestamp\":\"2026-04-01T13:50:39.922Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:50:39.922Z",
+    "color": "green",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T13:50:40.517Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:50:40.517Z",
+    "color": "yellow",
     "read": true
   },
   {
     "from": "bentham",
-    "text": "[2026-05-03 17:58] Bentham ready. Read common-prompt, my scratchpad, architecture-decisions, test-gaps.\n\nFlagging from scratchpad:\n- **Open follow-ups deferred from prior sessions** (worth tracking if relevant work surfaces): #296 allowlist hardening for return_to redirect, Registry-side validation of section preset IDs (#340), `INSERT OR IGNORE` for cross-org voice/section transfer (#307), `voiceId` validation against voices table (#320 PUT endpoint), dead i18n key `invite_roles_legend`, and PO-asked backfill of architecture-decisions.md with stable ADRs (D1 BLOB choice, EdDSA JWT, no-R2, monorepo, Paraglide) — not started.\n- **PO decision still pending**: section preset picker optional vs required per #340 AC.\n- **GROUP_CONCAT comma issue**: `child_names` in #347 breaks if a section name contains a comma.\n\nStanding by for PR review requests.\n\n(*PD:Bentham*)",
-    "summary": "Bentham ready for review",
-    "timestamp": "2026-05-03T14:58:55.734Z",
+    "text": "[2026-04-01 16:55] Bentham online. Scratchpad and architecture-decisions.md loaded. Deferred items from last session noted (backslash redirect #296, untested event routes, integration test gaps). Ready for review assignments. (*PD:Bentham*)",
+    "summary": "Bentham online, ready for reviews",
+    "timestamp": "2026-04-01T13:55:28.489Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "[2026-04-01 16:55] Byrd online. Prompt read, architecture-decisions.md reviewed. No prior scratchpad found — fresh session. Ready for frontend tasks (components, routes, Svelte 5 runes). Standing by.",
+    "summary": "Byrd reporting ready for duty",
+    "timestamp": "2026-04-01T13:55:29.497Z",
     "color": "green",
     "read": true
   },
   {
     "from": "bentham",
-    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-05-03T14:58:57.878Z\",\"idleReason\":\"available\"}",
-    "timestamp": "2026-05-03T14:58:57.878Z",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-04-01T13:55:29.791Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:55:29.791Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 16:55] Josquin online. Scratchpad and architecture decisions read. Ready for DB/API tasks — migrations, endpoints, auth work. Standing by.",
+    "summary": "Josquin ready, standing by",
+    "timestamp": "2026-04-01T13:55:30.466Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T13:55:33.074Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:55:33.074Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "[2026-04-01 16:55] Tallis reporting in. Scratchpad and test-gaps loaded.\n\n**Status from last session (2026-03-26):**\n- 4 stories completed (#286, #287, #288, #290) — branches awaiting PR/merge\n- Known gaps logged in test-gaps.md (9 items, all UNFILED except #289)\n\nReady for RED phase assignments. (*PD:Tallis*)",
+    "summary": "Tallis online, ready for test assignments",
+    "timestamp": "2026-04-01T13:55:34.868Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"byrd\",\"timestamp\":\"2026-04-01T13:55:34.930Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:55:34.930Z",
     "color": "green",
     "read": true
   },
   {
     "from": "finn",
-    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1777821707984@finn\",\"from\":\"finn\",\"timestamp\":\"2026-05-03T15:21:55.612Z\",\"paneId\":\"in-process\",\"backendType\":\"in-process\"}",
-    "timestamp": "2026-05-03T15:21:55.612Z",
+    "text": "[2026-04-01 16:55] Finn online. Scratchpad loaded, shared files read (architecture-decisions, test-gaps, i18n-conventions). Ready for research requests.",
+    "summary": "Finn reports ready for duty",
+    "timestamp": "2026-04-01T13:55:36.308Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-04-01T13:55:37.095Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:55:37.095Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T13:55:40.833Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:55:40.833Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T13:57:09.363Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T13:57:09.363Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "[2026-04-01 17:51] Research report: `wrangler tail` for live logs\n\n## Auth Status\n\n**Valid.** Logged in as `mihkel.putrinsh@gmail.com`, account `1431b76f0b65e3d23833966744ff2bdf`. Token has `workers_tail (read)` permission — tail will work.\n\n## Deployment Names\n\n| App | `name` in wrangler.toml | D1 database |\n|-----|------------------------|-------------|\n| Registry | `polyphony-registry` | `polyphony-registry-db` |\n| Vault | `polyphony-vault` | `polyphony-vault-db` |\n\n**Note:** Both are Pages projects (`pages_build_output_dir` set), not plain Workers. `wrangler tail` was historically Workers-only, but **Cloudflare Pages Functions support `wrangler pages deployment tail`** since late 2024.\n\n## Exact Commands\n\n### Option A: Pages tail (recommended for Pages projects)\n\n```bash\n# Registry live logs\ncd apps/registry && pnpm exec wrangler pages deployment tail --project-name polyphony-registry\n\n# Vault live logs\ncd apps/vault && pnpm exec wrangler pages deployment tail --project-name polyphony-vault\n```\n\n### Option B: Classic worker tail (may work if Pages exposes a Worker name)\n\n```bash\npnpm exec wrangler tail polyphony-registry\npnpm exec wrangler tail polyphony-vault\n```\n\nOption B may fail with \"worker not found\" since these are Pages projects, not standalone Workers. Start with Option A.\n\n### Useful flags\n\n- `--format pretty` — human-readable output (default)\n- `--format json` — machine-parseable\n- `--status error` — only show error responses\n- `--method POST` — filter by HTTP method\n- `--search \"keyword\"` — filter log lines\n\n(*PD:Finn*)",
+    "summary": "Wrangler tail research report delivered",
+    "timestamp": "2026-04-01T14:52:12.620Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T14:52:16.377Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T14:52:16.377Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "[2026-04-01 18:18] Research report: Vault auth & request logging insertion points\n\n## Current Hook Chain\n\n`hooks.server.ts:233` — five handles in sequence:\n```\norgHandle → orgContextGuard → ssoHandle → localeHandle → paraglideHandle\n```\n\n**No auth handle exists in hooks.** Auth is resolved per-route, not globally.\n\n## How Member Identity Works\n\n### No Global Auth — Cookie-Based, Per-Route\n\nThere is **no auth middleware in hooks.server.ts**. Identity is resolved ad-hoc:\n\n1. **Cookie:** `member_id` (plain string, set during OAuth callback)\n2. **Lookup:** Each route calls `cookies.get('member_id')` then `getMemberById(db, memberId, orgId)` to get the full `Member` object\n3. **Helper:** `getAuthenticatedMember(db, cookies, orgId)` in `src/lib/server/auth/middleware.ts:85-107` wraps this pattern — returns `Member` or throws 401\n\n### `event.locals` — Only Has Org\n\n```typescript\n// app.d.ts:6-8\ninterface Locals {\n    org: Organization;  // Set by orgHandle hook\n}\n```\n\n**No `event.locals.member` or `event.locals.user` exists.** Member is not set in hooks.\n\n## Where to Add Logging — Two Options\n\n### Option A: Add an Auth Hook (recommended)\n\nAdd a new handle between `ssoHandle` and `localeHandle` that resolves the member and sets `event.locals.member`, then logs:\n\n```typescript\nconst authLogHandle: Handle = async ({ event, resolve }) => {\n    const memberId = event.cookies.get('member_id');\n    const org = event.locals.org;\n    const db = event.platform?.env?.DB;\n\n    let memberInfo = 'anonymous';\n    if (memberId && db && org) {\n        const member = await getMemberById(db, memberId, org.id);\n        if (member) {\n            memberInfo = `${member.name} <${member.email_id}> [${member.id}]`;\n            // Bonus: set event.locals.member for downstream use\n        }\n    }\n\n    console.log(`[${event.request.method}] ${event.url.pathname} — ${memberInfo} — org:${org?.subdomain ?? 'none'}`);\n    return resolve(event);\n};\n```\n\nUpdate the sequence:\n```typescript\nexport const handle = sequence(orgHandle, orgContextGuard, ssoHandle, authLogHandle, localeHandle, paraglideHandle);\n```\n\n**Pros:** Every request logged, member info centralized.\n**Cons:** Extra DB query per request (even if route doesn't need auth). Could be mitigated by skipping for static assets.\n\n### Option B: Log Inside `getAuthenticatedMember`\n\nAdd `console.log` in `src/lib/server/auth/middleware.ts:85-107` after member is resolved:\n\n```typescript\nexport async function getAuthenticatedMember(db, cookies, orgId) {\n    // ... existing logic ...\n    console.log(`[AUTH] ${member.name} <${member.email_id}> [${member.id}] — org:${orgId}`);\n    return member;\n}\n```\n\n**Pros:** Zero extra DB queries, only fires for authenticated routes.\n**Cons:** Misses anonymous requests and routes that don't use the helper (many routes call `cookies.get('member_id')` directly — found 19+ such call sites).\n\n## Key Files\n\n| File | What's there |\n|------|-------------|\n| `apps/vault/src/hooks.server.ts` | Hook chain, org routing, SSO — **no auth** |\n| `apps/vault/src/app.d.ts` | `Locals` type — only `org`, no member |\n| `apps/vault/src/lib/server/auth/middleware.ts` | `getAuthenticatedMember()`, role assertions |\n| `apps/vault/src/routes/+layout.server.ts` | Root layout resolves member from cookie for every page load |\n\n## Key Observation\n\nThe `+layout.server.ts` already does `getMemberById` on every page load (line 21). So if logging is only needed for page navigations (not API calls), that's another natural insertion point — but it won't catch `/api/*` requests.\n\n(*PD:Finn*)",
+    "summary": "Vault auth logging research report",
+    "timestamp": "2026-04-01T15:18:37.190Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T15:18:40.627Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:18:40.627Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:19] Request logging done. Committed to main: `3dbf8d4`.\n\n- Added `requestLogHandle` in `apps/vault/src/hooks.server.ts` between `ssoHandle` and `localeHandle`\n- Logs `[REQ] METHOD /path — member:<id> org:<subdomain>` via console.log\n- Skips `/_app/` and `/favicon` paths\n- All 1324 vault tests pass, no new type errors",
+    "summary": "Request logging committed to main",
+    "timestamp": "2026-04-01T15:19:57.988Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:20:00.356Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:20:00.356Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:21] Vault deployed successfully.\n\n- Pushed `3dbf8d4` to main\n- Built and deployed to Cloudflare Pages\n- Deployment URL: https://0b9fc0b9.polyphony-vault.pages.dev\n- 130 files uploaded (21 new, 109 cached)",
+    "summary": "Vault deployed to Cloudflare Pages",
+    "timestamp": "2026-04-01T15:21:21.273Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:21:23.228Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:21:23.228Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:25] Both tasks done.\n\n**1. Member lookup:** `db056854b627423e98d1e` is **Mihkel Putrinš** (mitselek@gmail.com).\n\n**2. Logging upgrade:** Committed `4bfc455`, pushed, deployed.\n- Request log now resolves member name from DB: `[REQ] GET /path — Mihkel Putrinš — org:crede`\n- Falls back to `id:<cookie>` if name not found, `anon` if no cookie\n- No `org_id` on members table so query is just `WHERE id = ?`\n- Deployment: https://bb6ee07a.polyphony-vault.pages.dev\n- All 1324 tests pass",
+    "summary": "Lookup done + logging upgraded and deployed",
+    "timestamp": "2026-04-01T15:25:43.524Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:25:45.570Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:25:45.570Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "[2026-04-01 18:33] Research report: Auth callback \"Email already registered\" bug\n\n## Root Cause Found\n\n**The `getMemberByEmailId` query is NOT org-scoped.** It searches the global `members` table by `email_id` without filtering by org.\n\n### The Data\n\n| member_id | name | email_id | org |\n|-----------|------|----------|-----|\n| `roster-019` | Valdur Hüvato | `v.hyvato@gmail.com` | **crede** |\n| `8ad622efe9c14f1a930d4` | Valdur Hüvato | `NULL` (roster-only) | **hannijoggi** |\n\nValdur is a **registered member in crede** (has `email_id`) and a **roster-only member in hannijoggi** (no `email_id`, pending invite).\n\n### The Error Path\n\n1. Valdur clicks invite link for hannijoggi → `/api/auth/callback`\n2. `routeToHandler()` finds `pending_invite` cookie → calls `handleInviteAcceptance()` (callback:58-82)\n3. `acceptInvite()` (invites.ts:204) finds the invite, calls `upgradeToRegistered()` (members.ts:231)\n4. `upgradeToRegistered()` calls `getMemberByEmailId(db, 'v.hyvato@gmail.com', hannijoggiOrgId)` (members.ts:238)\n5. **BUG HERE** — `getMemberByEmailId` (members.ts:260-271) runs:\n   ```sql\n   SELECT ... FROM members WHERE email_id = ?\n   ```\n   This is a **global query** — no org filter. It finds `roster-019` (crede member).\n6. `roster-019.id !== rosterMemberId` (`8ad622efe9c14f1a930d4`) → **throws \"Email already registered to another member\"** (members.ts:240)\n\n### Why He \"Eventually Gets Through\"\n\nAfter the invite path fails, the error is caught by `handleAuthError()` (callback:166-176), which returns a generic 401. The SSO loop guard (`sso_attempted` cookie) or a subsequent direct login attempt hits `handleLogin()` instead, which also calls `getMemberByEmailId` — but that path just redirects to `/login?error=not_registered` since the hannijoggi roster member has no `email_id`. \n\nIf he eventually succeeds, it's likely because the `pending_invite` cookie expired and a fresh invite + callback cycle happened where something different occurred. **Or** someone manually set his `email_id` in crede first and he's logging in there, not hannijoggi.\n\n### The Fix\n\n**`getMemberByEmailId` needs an org-scoped variant**, or `upgradeToRegistered` should check email uniqueness within the org only:\n\n```typescript\n// members.ts:237-241 — current (broken)\nconst existingEmail = await getMemberByEmailId(db, verifiedEmailId, orgId);\nif (existingEmail && existingEmail.id !== rosterMemberId) {\n    throw new Error('Email already registered to another member');\n}\n```\n\nThe `getMemberByEmailId` function **accepts `orgId` as a parameter** but **doesn't use it in the WHERE clause** — it only uses it for loading relations (roles/sections) after finding the member. The SQL at line 262 is:\n\n```sql\nSELECT ... FROM members WHERE email_id = ?\n-- No JOIN to member_organizations, no org_id filter\n```\n\n**Fix option A (minimal):** Add org filter to `getMemberByEmailId`:\n```sql\nSELECT m.* FROM members m\nJOIN member_organizations mo ON m.id = mo.member_id\nWHERE m.email_id = ? AND mo.org_id = ?\n```\n\n**Fix option B (cross-org safety):** Keep the global check but allow the same email across orgs. This is architecturally correct — a person should be able to join multiple orgs with the same Google account.\n\n### Additional Data Issue\n\nThere are **3 invites** for Valdur's hannijoggi roster member (old expired ones not cleaned up):\n- `5c64f62a...` expired 2026-02-15\n- `59cd50ec...` expired 2026-02-21\n- `d5f8e9ee...` expires 2026-04-02 ← **active**\n\nThe expired invites should have been cleaned up. The `createInvite` function checks for pending (non-expired) invites but doesn't clean expired ones.\n\n### Key Files\n\n| File | Line | What |\n|------|------|------|\n| `src/lib/server/db/members.ts` | 260-271 | `getMemberByEmailId` — **missing org filter** |\n| `src/lib/server/db/members.ts` | 231-254 | `upgradeToRegistered` — calls the broken query |\n| `src/lib/server/db/invites.ts` | 204-241 | `acceptInvite` — calls upgradeToRegistered |\n| `src/routes/api/auth/callback/+server.ts` | 58-82 | `handleInviteAcceptance` — entry point |\n\n(*PD:Finn*)",
+    "summary": "Root cause: getMemberByEmailId not org-scoped",
+    "timestamp": "2026-04-01T15:34:10.113Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"finn\",\"timestamp\":\"2026-04-01T15:34:16.856Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:34:16.856Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "[2026-04-01 16:57] Acknowledged. Stopped work on cross-org email lookup — no commits made to `fix/cross-org-email-lookup`. Standing by for next instruction. (*PD:Tallis*)",
+    "summary": "Tallis stopped, no commits, standing by",
+    "timestamp": "2026-04-01T15:36:38.279Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-04-01T15:36:46.554Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:36:46.554Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "[2026-04-01 18:40]\n\n## Story Handoff\n- **Story:** #303 — getMemberByEmailId not org-scoped\n- **Branch:** `fix/cross-org-email-lookup`\n- **From:** tallis (phase: RED)\n- **To:** josquin (phase: GREEN)\n- **Status:** TESTS_WRITTEN\n\n### What was done\n- Created `apps/vault/src/tests/lib/server/db/members-cross-org.spec.ts` with 4 tests\n- 2 FAIL (proving the bug): `getMemberByEmailId` returns members from wrong org; `upgradeToRegistered` throws on valid cross-org upgrade\n- 2 PASS (guard rails): same-org lookup works; same-org collision still rejects\n- Existing 18 member tests unaffected\n\n### What to do next\nFix `getMemberByEmailId` (members.ts:260-271) to JOIN `member_organizations` and filter by `orgId`, matching the pattern used by `getMemberById` (line 294-300).\n\n### Files to start with\n- `apps/vault/src/lib/server/db/members.ts:260-271` — the buggy query\n- `apps/vault/src/tests/lib/server/db/members-cross-org.spec.ts` — the failing tests\n\n(*PD:Tallis*)",
+    "summary": "RED done #303, handoff to josquin for GREEN",
+    "timestamp": "2026-04-01T15:40:25.342Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"tallis\",\"timestamp\":\"2026-04-01T15:40:28.894Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:40:28.894Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:43] GREEN phase complete for #303. Committed `4579a73` on `fix/cross-org-email-lookup`, pushed to origin.\n\n- Fixed `getMemberByEmailId` and `getMemberByName` — both now JOIN `member_organizations` and filter by `org_id`\n- All 1328 vault tests pass (104 files), including the 4 new cross-org tests\n- Also fixed `getMemberByName` which had the same unscoped bug\n- No i18n strings → skipping comenius, handed off directly to bentham for REVIEW",
+    "summary": "GREEN #303 done, handed to bentham",
+    "timestamp": "2026-04-01T15:43:44.163Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:43:48.801Z\",\"idleReason\":\"available\",\"summary\":\"[to bentham] Handoff #303 GREEN to bentham for REVIEW\"}",
+    "timestamp": "2026-04-01T15:43:48.801Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "bentham",
+    "text": "[2026-04-01 18:44] **Code Review: #303 — getMemberByEmailId not org-scoped**\nBranch: `fix/cross-org-email-lookup`\n\n## Verdict: GREEN\n\n### TDD Compliance\n- ✅ `ecc5f99` — RED tests committed first (cross-org isolation tests)\n- ✅ `4579a73` — GREEN implementation committed second\n- ✅ Tests cover the core bug scenario (cross-org email leakage) and `upgradeToRegistered` edge cases\n\n### Security Assessment\nThis was a **cross-org data isolation bug** — `getMemberByEmailId` and `getMemberByName` queried `members` without joining `member_organizations`, meaning a member in org A could be returned when querying org B. This is exactly the kind of multi-tenant boundary violation that matters.\n\n**Fix is correct:**\n- Both functions now JOIN `member_organizations` and filter by `mo.org_id = ?`, matching the existing pattern in `getMemberById`\n- `upgradeToRegistered` already passed `orgId` to `getMemberByEmailId`, so the duplicate-email check is now correctly scoped\n- Route handler at `callback/+server.ts:91` already passes `orgId` — no caller changes needed\n- `getMemberByName` has no route-level callers (only used in roster tests) — safe\n\n### Test Quality\n- New `members-cross-org.spec.ts` (289 lines) — dedicated cross-org mock with `memberOrgs` junction tracking. Tests both positive (find in correct org) and negative (null in wrong org) paths, plus `upgradeToRegistered` cross-org collision scenarios\n- Mock matcher updates in `members.spec.ts` and `members-roster.spec.ts` correctly match new SQL shape (`m.email_id`, `member_organizations` JOIN)\n\n### Notes\n- No YELLOW items — clean, minimal, pattern-consistent fix\n- Ready to merge\n\n(*PD:Bentham*)",
+    "summary": "GREEN verdict for #303 cross-org fix",
+    "timestamp": "2026-04-01T15:44:24.279Z",
     "color": "blue",
     "read": true
   },
   {
     "from": "bentham",
-    "text": "[2026-05-03 17:58] Closing — no PRs reviewed this session, scratchpad unchanged.\n\n[DEFERRED] PO-asked backfill of architecture-decisions.md with stable ADRs (D1 BLOB storage, EdDSA JWT, no-R2, monorepo, Paraglide) is still not started — flagging for next session.\n\n(*PD:Bentham*)",
-    "summary": "Bentham closing — no reviews this session",
-    "timestamp": "2026-05-03T15:22:05.169Z",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-04-01T15:44:27.509Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:44:27.509Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:45] #303 merged. PR #305 squash-merged to main, branch deleted.\n\n- PR: https://github.com/mitselek/polyphony/pull/305\n- `Fixes #303` in PR body should auto-close the issue\n- 4 files changed: members.ts fix + 3 test file updates",
+    "summary": "#303 merged via PR #305",
+    "timestamp": "2026-04-01T15:45:38.394Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:45:41.504Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:45:41.504Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:46] Vault deployed with #303 fix. Ready for log tail.\n\n- Deployment: https://18f336ef.polyphony-vault.pages.dev",
+    "summary": "Vault deployed, ready for log tail",
+    "timestamp": "2026-04-01T15:46:46.048Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:46:49.823Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:46:49.823Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "[2026-04-01 18:55] Done. Created `apps/vault/static/robots.txt` — disallows all crawlers. Committed to main and pushed (1675384). Standing by.",
+    "summary": "robots.txt done, pushed to main",
+    "timestamp": "2026-04-01T15:55:28.955Z",
+    "color": "green",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"byrd\",\"timestamp\":\"2026-04-01T15:55:31.561Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:55:31.561Z",
+    "color": "green",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 18:56] Vault deployed with robots.txt (`1675384`). 131 files (21 new).\n\n- Deployment: https://b1136e08.polyphony-vault.pages.dev",
+    "summary": "Vault deployed with robots.txt",
+    "timestamp": "2026-04-01T15:56:50.862Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T15:56:52.932Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T15:56:52.932Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "[2026-04-01 18:59] #304 fix ready on `fix/304-sticky-header` (41adf2e).\n\n**Root cause:** `shouldHeaderStick()` compared `gridBottom` against `viewportHeight - threshold` (near viewport bottom). This meant the header unstuck when the table's bottom edge entered the viewport — way too early.\n\n**Fix:** Changed comparison to `gridBottom > threshold` (near viewport top). Now the header stays sticky until the last data row scrolls up to meet the header position. Also removed `overflow: hidden` from the header band div — overflow on ancestors of sticky elements breaks sticky in browsers.\n\n**Files changed:**\n- `apps/vault/src/lib/utils/sticky-header.ts` — simplified to 2-param signature, fixed comparison\n- `apps/vault/src/lib/utils/sticky-header.spec.ts` — updated 7 tests for new signature\n- `apps/vault/src/routes/events/roster/+page.svelte` — updated call site, removed overflow:hidden\n\nAll tests pass. `pnpm check` has only pre-existing errors (test files). Ready for review/merge.",
+    "summary": "#304 sticky header fix ready for review",
+    "timestamp": "2026-04-01T16:00:04.221Z",
+    "color": "green",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"byrd\",\"timestamp\":\"2026-04-01T16:00:09.789Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T16:00:09.789Z",
     "color": "green",
     "read": true
   },
   {
     "from": "bentham",
-    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1777821708580@bentham\",\"from\":\"bentham\",\"timestamp\":\"2026-05-03T15:22:06.090Z\",\"paneId\":\"in-process\",\"backendType\":\"in-process\"}",
-    "timestamp": "2026-05-03T15:22:06.090Z",
+    "text": "[2026-04-01 19:00] **Code Review: #304 — Sticky table header unsticks too early on events/roster**\nBranch: `fix/304-sticky-header` (commit `41adf2e`)\n\n## Verdict: YELLOW — approve with notes\n\n### Logic Fix — Correct\nOld logic: `gridBottom > viewportHeight - threshold` — compared against viewport bottom, meaning the header unstuck when the grid was still 100px from the bottom of the screen. This is wrong for a `position: sticky; top: 0` header — the header is pinned at the *top*, so the relevant metric is how close the grid bottom is to the *top* of the viewport.\n\nNew logic: `gridBottom > threshold` — correctly unsticks when the grid bottom approaches the header's own position (top of viewport + threshold). Simpler, removes the unnecessary `viewportHeight` parameter. The semantic change is sound.\n\n### Overflow Fix — Correct and Important\nRemoved `style=\"overflow: hidden;\"` from the header band `<div>`. This directly addresses a known pitfall documented in `common-prompt.md`: \"NEVER put `overflow` on ancestors of `position: sticky` elements.\" `overflow: hidden` on a parent breaks sticky positioning in CSS. Good catch.\n\n### TDD Compliance — YELLOW\nSingle commit (`41adf2e`) bundles both test updates and implementation changes. TDD flow requires tests committed before or in the same commit as implementation. Since the tests *existed before* (this is modifying existing tests to match new signature), this is borderline acceptable — but the tests should have been updated in a separate RED commit first with the old implementation failing. Minor process note, not a blocker.\n\n### Test Coverage\n7 tests cover the boundary conditions well: deep below, middle, just above threshold, exactly at threshold, above, off-screen, and custom threshold values. All cases are clear and well-commented.\n\n### Security\nNo security surface — pure frontend CSS/JS scroll logic. No auth, no data, no server code.\n\n### Notes\n- No other callers of `shouldHeaderStick` exist — the signature change is safe\n- Net deletion of 10 lines — good simplification\n\nReady to merge.\n\n(*PD:Bentham*)",
+    "summary": "YELLOW verdict for #304 sticky header fix",
+    "timestamp": "2026-04-01T16:00:45.044Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "bentham",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"bentham\",\"timestamp\":\"2026-04-01T16:00:47.745Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T16:00:47.745Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 19:02] #304 merged and deployed.\n\n- PR #306 squash-merged to main: https://github.com/mitselek/polyphony/pull/306\n- `Fixes #304` should auto-close the issue\n- Deployment: https://82af0c49.polyphony-vault.pages.dev",
+    "summary": "#304 merged via PR #306 and deployed",
+    "timestamp": "2026-04-01T16:02:52.200Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"idle_notification\",\"from\":\"josquin\",\"timestamp\":\"2026-04-01T16:02:55.131Z\",\"idleReason\":\"available\"}",
+    "timestamp": "2026-04-01T16:02:55.131Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "[2026-07-20 11:31] Shutting down.\n- [LEARNED] `shouldHeaderStick` bug was comparing against wrong end of viewport\n- [DEFERRED] Branch `fix/304-sticky-header` needs merge\n- [WARNING] `pnpm check` has pre-existing failures (paraglide sed step + test file type errors)",
+    "summary": "Byrd closing message before shutdown",
+    "timestamp": "2026-07-20T11:31:16.305Z",
     "color": "green",
+    "read": true
+  },
+  {
+    "from": "byrd",
+    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1784547053620@byrd\",\"from\":\"byrd\",\"timestamp\":\"2026-07-20T11:31:21.696Z\",\"paneId\":\"%1\",\"backendType\":\"tmux\"}",
+    "timestamp": "2026-07-20T11:31:21.696Z",
+    "color": "green",
+    "read": true
+  },
+  {
+    "from": "bentham",
+    "text": "[2026-07-20 14:31] Closing message before shutdown:\n- [LEARNED] #303 cross-org isolation bug pattern — getMemberByX functions must always JOIN member_organizations. Worth auditing for similar gaps in other lookup functions.\n- [DEFERRED] architecture-decisions.md still needs populating with known ADRs per PO request from 2026-03-26.\n- [DEFERRED] Backslash redirect bypass #296 — never verified closure.\n\n(*PD:Bentham*)",
+    "summary": "Bentham closing message before shutdown",
+    "timestamp": "2026-07-20T11:31:33.663Z",
+    "color": "blue",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "[2026-04-01 19:02] Josquin signing off.\n\n- [LEARNED] gh CLI auth via remote URL token extraction works reliably\n- [LEARNED] members table org scoping requires JOIN member_organizations — no org_id on members directly\n- [CHECKPOINT] Merged #305 (#303 fix), #306 (#304 fix), added request logging, 3 vault deploys",
+    "summary": "Josquin closing — session summary",
+    "timestamp": "2026-07-20T11:31:34.303Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "[2026-07-20 11:31] Closing down.\n\n- [LEARNED] Cross-org mock pattern: `first` handler order matters — `WHERE m.id` must precede `email_id` check due to SELECT clause collision.\n- [DEFERRED] #303 GREEN phase with josquin — tests committed on `fix/cross-org-email-lookup`.\n- [DEFERRED] 9 test gaps in test-gaps.md still UNFILED.\n\n(*PD:Tallis*)",
+    "summary": "Tallis closing, scratchpad saved",
+    "timestamp": "2026-07-20T11:31:35.770Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "tallis",
+    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1784547054336@tallis\",\"from\":\"tallis\",\"timestamp\":\"2026-07-20T11:31:39.672Z\",\"paneId\":\"%3\",\"backendType\":\"tmux\"}",
+    "timestamp": "2026-07-20T11:31:39.672Z",
+    "color": "purple",
+    "read": true
+  },
+  {
+    "from": "josquin",
+    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1784547054093@josquin\",\"from\":\"josquin\",\"timestamp\":\"2026-07-20T11:31:40.063Z\"}",
+    "timestamp": "2026-07-20T11:31:40.063Z",
+    "color": "yellow",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "[2026-07-20 11:31] Finn signing off.\n- [LEARNED] getMemberByEmailId cross-org bug confirmed and reported\n- [DEFERRED] None\n- [WARNING] None",
+    "summary": "Finn closing message before shutdown",
+    "timestamp": "2026-07-20T11:31:44.922Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "finn",
+    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1784547052483@finn\",\"from\":\"finn\",\"timestamp\":\"2026-07-20T11:31:49.847Z\",\"paneId\":\"%2\",\"backendType\":\"tmux\"}",
+    "timestamp": "2026-07-20T11:31:49.847Z",
+    "color": "black",
+    "read": true
+  },
+  {
+    "from": "bentham",
+    "text": "{\"type\":\"shutdown_approved\",\"requestId\":\"shutdown-1784547053146@bentham\",\"from\":\"bentham\",\"timestamp\":\"2026-07-20T11:32:25.181Z\",\"paneId\":\"%6\",\"backendType\":\"tmux\"}",
+    "timestamp": "2026-07-20T11:32:25.181Z",
+    "color": "blue",
     "read": true
   }
 ]
